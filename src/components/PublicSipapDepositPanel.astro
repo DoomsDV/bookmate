@@ -1,18 +1,22 @@
 ---
 /**
  * Paso de seña SIPAP (reserva pública).
- * Layout: acciones a la izquierda + ticket resumen sticky a la derecha (desktop).
+ * Móvil: monto arriba + CTA sticky. Desktop: resumen + CTA en panel sticky derecho.
  */
 interface Props {
 	stepPanel?: number;
+	variant?: 'booking' | 'manage';
 }
 
-const { stepPanel = 7 } = Astro.props;
+const { stepPanel = 7, variant = 'booking' } = Astro.props;
 ---
 
 <section
 	data-step-panel={String(stepPanel)}
-	class="sipap-deposit-panel public-booking-panel hidden text-(--on-surface)"
+	class:list={[
+		'sipap-deposit-panel public-booking-panel hidden text-(--on-surface)',
+		{ 'sipap-deposit-panel--manage': variant === 'manage' },
+	]}
 >
 	<div class="sipap-hold-banner" data-sipap-hold-banner data-sipap-hold-state="active">
 		<span class="material-symbols-rounded sipap-hold-banner__icon" aria-hidden="true">timer</span>
@@ -35,12 +39,12 @@ const { stepPanel = 7 } = Astro.props;
 	</div>
 	<p class="sr-only" data-sipap-hold-live role="status" aria-live="polite"></p>
 
+	<header class="sipap-deposit-intro">
+		<h2 class="sipap-deposit-title tracking-tight">Transferí la seña para confirmar</h2>
+	</header>
+
 	<div class="sipap-layout">
 		<div class="sipap-main">
-			<header class="sipap-deposit-intro">
-				<h2 class="sipap-deposit-title tracking-tight">Transferí la seña para confirmar</h2>
-			</header>
-
 			<div class="sipap-panel sipap-sheet">
 				<div class="sipap-panel__core">
 					<p class="sipap-panel__kicker">Datos de transferencia</p>
@@ -116,8 +120,7 @@ const { stepPanel = 7 } = Astro.props;
 							</button>
 						</div>
 						<p class="sipap-ref-hint" id="sipap-ref-hint">
-							Pegalo en el concepto de tu transferencia para aprobación automática. Si tu banco no
-							te deja, subí el ticket igual.
+							Incluye este código en tu transferencia para validación automática.
 						</p>
 					</div>
 
@@ -169,44 +172,54 @@ const { stepPanel = 7 } = Astro.props;
 								</button>
 							</div>
 						</div>
-
-						<div class="sipap-submit-dock" data-sipap-submit-dock>
-							<p
-								class="sipap-upload-status"
-								data-sipap-upload-status
-								data-state="idle"
-								role="status"
-								aria-live="polite"
-							></p>
-							<button
-								type="button"
-								data-sipap-upload-submit
-								class="sipap-submit-cta inline-flex h-12 w-full items-center justify-center rounded-full px-6 text-base font-medium"
-								disabled
-							>
-								Confirmar y enviar comprobante
-							</button>
-						</div>
 					</div>
 				</div>
 			</div>
 		</div>
 
 		<aside class="sipap-panel sipap-summary-ticket" aria-label="Resumen de la seña">
-			<div class="sipap-panel__core">
+			<div class="sipap-panel__core sipap-summary-ticket__core">
 				<p class="sipap-panel__kicker">Resumen</p>
 				<p class="sipap-summary-ticket__amount" data-sipap-amount>—</p>
 				<p class="sipap-summary-ticket__for" data-sipap-for>Seña por: —</p>
-				<div class="sipap-policy-card">
-					<span class="material-symbols-rounded sipap-policy-card__icon" aria-hidden="true"
-						>verified_user</span
-					>
-					<div class="min-w-0">
-						<p class="sipap-policy-card__title">
+				<details class="sipap-policy-details">
+					<summary class="sipap-policy-summary">
+						<span class="material-symbols-rounded sipap-policy-summary__shield" aria-hidden="true"
+							>verified_user</span
+						>
+						<span class="sipap-policy-summary__title">
 							Política: <span data-sipap-policy-label>—</span>
-						</p>
-						<p class="sipap-policy-card__copy" data-sipap-policy-summary>—</p>
-					</div>
+						</span>
+						<span class="material-symbols-rounded sipap-policy-summary__info" aria-hidden="true"
+							>info</span
+						>
+						<span class="sr-only">Ver detalles</span>
+					</summary>
+					<p class="sipap-policy-details__copy" data-sipap-policy-summary>—</p>
+				</details>
+
+				<div class="sipap-submit-dock" data-sipap-submit-dock>
+					<p
+						class="sipap-upload-status"
+						data-sipap-upload-status
+						data-state="idle"
+						role="status"
+						aria-live="polite"
+					></p>
+					<button
+						type="button"
+						data-sipap-upload-submit
+						class="sipap-submit-cta inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-base font-medium leading-snug"
+						disabled
+						aria-busy="false"
+					>
+						<span
+							class="sipap-submit-cta__spinner material-symbols-rounded"
+							aria-hidden="true"
+							data-sipap-submit-spinner>progress_activity</span
+						>
+						<span data-sipap-submit-label>Confirmar y enviar comprobante</span>
+					</button>
 				</div>
 			</div>
 		</aside>
@@ -237,6 +250,7 @@ const { stepPanel = 7 } = Astro.props;
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
+		margin-bottom: 1.25rem;
 		padding: 0.45rem 0.75rem;
 		border-radius: 0.65rem;
 		border: 1px solid rgb(249 115 22 / 0.2);
@@ -250,10 +264,13 @@ const { stepPanel = 7 } = Astro.props;
 
 	.sipap-hold-banner.hidden {
 		display: none;
+		margin-bottom: 0;
 	}
 
-	/* Comprobante ya subido y en revisión: tono ámbar calmo (el reloj está congelado, no
-	   hay urgencia para el cliente, la pelota está del lado del negocio). */
+	.sipap-hold-banner:not(.hidden) ~ .sipap-deposit-intro {
+		margin-top: 0;
+	}
+
 	.sipap-hold-banner.is-submitted {
 		border-color: rgb(251 191 36 / 0.3);
 		background: rgb(251 191 36 / 0.12);
@@ -286,33 +303,78 @@ const { stepPanel = 7 } = Astro.props;
 
 	.sipap-deposit-panel {
 		container-type: inline-size;
-	}
-
-	.sipap-layout {
-		display: grid;
-		gap: 1rem;
-		align-items: start;
-		margin-top: 0.85rem;
-	}
-
-	.sipap-main {
-		display: grid;
-		gap: 0.35rem;
-		min-width: 0;
+		text-align: left;
 	}
 
 	.sipap-deposit-intro {
-		margin: 0;
+		margin: 0.85rem 0 0;
+		text-align: left;
 	}
 
 	.sipap-deposit-title {
 		margin: 0;
-		max-width: 34rem;
+		max-width: none;
 		font-size: 1.25rem;
 		font-weight: 400;
 		letter-spacing: -0.03em;
 		line-height: 1.15;
+		text-align: left;
 		text-wrap: balance;
+	}
+
+	.sipap-layout {
+		display: flex;
+		flex-direction: column;
+		gap: 0.85rem;
+		align-items: stretch;
+		margin-top: 0.75rem;
+	}
+
+	.sipap-main {
+		display: grid;
+		gap: 0;
+		min-width: 0;
+	}
+
+	.sipap-summary-ticket {
+		align-self: stretch;
+	}
+
+	/* Móvil: timer → monto → título → datos. */
+	@media (max-width: 959px) {
+		.sipap-deposit-panel {
+			display: flex;
+			flex-direction: column;
+		}
+
+		.sipap-hold-banner {
+			order: 0;
+			margin-bottom: 1rem;
+		}
+
+		.sipap-hold-banner:not(.hidden) ~ .sipap-layout .sipap-summary-ticket {
+			margin-top: 0;
+		}
+
+		.sipap-layout {
+			display: contents;
+			margin-top: 0;
+		}
+
+		.sipap-summary-ticket {
+			order: 1;
+			margin-top: 0.85rem;
+		}
+
+		.sipap-deposit-intro {
+			order: 2;
+			margin-top: 0.75rem;
+		}
+
+		.sipap-main {
+			order: 3;
+			margin-top: 0.75rem;
+		}
 	}
 
 	.sipap-panel {
@@ -336,13 +398,18 @@ const { stepPanel = 7 } = Astro.props;
 		box-shadow: none;
 	}
 
+	.sipap-summary-ticket__core {
+		gap: 0;
+	}
+
 	.sipap-panel__kicker {
 		margin: 0;
-		font-size: 0.78rem;
+		font-size: 0.72rem;
 		font-weight: 600;
-		letter-spacing: 0.01em;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
 		line-height: 1.2;
-		color: color-mix(in srgb, var(--on-surface-variant) 78%, #000);
+		color: color-mix(in srgb, var(--on-surface-variant) 72%, transparent);
 	}
 
 	.sipap-panel__lede {
@@ -378,91 +445,41 @@ const { stepPanel = 7 } = Astro.props;
 		list-style: none;
 	}
 
-	@media (min-width: 960px) {
-		.sipap-hold-banner {
-			align-items: flex-start;
-			gap: 0.65rem;
-			padding: 0.85rem 1rem;
-			border-radius: 1rem;
-		}
-
-		.sipap-hold-banner__icon {
-			margin-top: 0.05rem;
-			font-size: 1.25rem;
-		}
-
-		.sipap-hold-banner__text {
-			font-size: 0.9rem;
-			line-height: 1.4;
-		}
-
-		.sipap-layout {
-			gap: 1.25rem;
-			margin-top: 1.1rem;
-		}
-
-		.sipap-deposit-title {
-			font-size: 1.75rem;
-		}
-
-		.sipap-panel__core {
-			padding: 1rem 1.25rem 1.2rem;
-		}
-
-		.sipap-panel__lede {
-			font-size: 0.82rem;
-		}
-	}
-
-	@container (min-width: 40rem) {
-		.sipap-layout {
-			grid-template-columns: minmax(0, 1.7fr) minmax(16rem, 0.82fr);
-		}
-
-		.sipap-summary-ticket {
-			position: sticky;
-			top: 1.15rem;
-		}
-	}
-
 	.sipap-bank-row {
 		display: grid;
 		grid-template-columns: auto minmax(0, 1fr);
 		align-items: center;
 		gap: 0.75rem;
-		padding: 0.38rem 0;
+		padding: 0.42rem 0;
 	}
 
 	.sipap-bank-row + .sipap-bank-row {
-		border-top: 1px solid color-mix(in srgb, var(--outline-variant) 60%, transparent);
+		border-top: 1px solid color-mix(in srgb, var(--outline-variant) 45%, transparent);
 	}
 
 	.sipap-bank-row__label {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 0.35rem 0.45rem;
-		font-size: 0.82rem;
-		font-weight: 600;
-		color: var(--on-surface-variant);
+		font-size: 0.72rem;
+		font-weight: 500;
+		letter-spacing: 0.02em;
+		color: color-mix(in srgb, var(--on-surface-variant) 68%, transparent);
 	}
 
 	.sipap-bank-row__value {
 		display: inline-flex;
 		align-items: center;
 		justify-content: flex-end;
-		gap: 0.35rem;
+		gap: 0.4rem;
 		min-width: 0;
-		font-size: 0.92rem;
+		font-size: 0.95rem;
 		font-weight: 700;
-		color: var(--on-surface);
+		color: #fff;
 		text-align: right;
 		overflow-wrap: anywhere;
 	}
 
 	.sipap-ref-block {
 		margin-top: 0.65rem;
-		padding: 0.5rem 0.65rem;
+		padding: 0.55rem 0.7rem 0.65rem;
 		border-radius: 0.9rem;
 		background: color-mix(in srgb, var(--primary) 7%, #1a1a1a);
 		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 16%, transparent);
@@ -503,6 +520,7 @@ const { stepPanel = 7 } = Astro.props;
 		font-weight: 800;
 		letter-spacing: 0.03em;
 		line-height: 1.2;
+		color: #fff;
 	}
 
 	.sipap-ref-badge {
@@ -520,52 +538,37 @@ const { stepPanel = 7 } = Astro.props;
 	}
 
 	.sipap-ref-hint {
-		margin: 0.45rem 0 0;
+		margin: 0.4rem 0 0;
 		font-size: 0.75rem;
 		font-weight: 500;
-		line-height: 1.4;
+		line-height: 1.35;
 		color: var(--on-surface-variant);
-	}
-
-	@media (min-width: 960px) {
-		.sipap-transfer-card__list {
-			margin-top: 0.45rem;
-		}
-
-		.sipap-bank-row {
-			padding: 0.42rem 0;
-		}
-
-		.sipap-bank-row__value {
-			font-size: 0.95rem;
-		}
-
-		.sipap-ref-hint {
-			font-size: 0.78rem;
-		}
 	}
 
 	.sipap-copy-icon {
 		display: inline-grid;
 		place-items: center;
-		width: 2.75rem;
-		height: 2.75rem;
+		flex-shrink: 0;
+		width: 2.35rem;
+		height: 2.35rem;
 		margin-left: 0.05rem;
-		border: 0;
-		border-radius: 999px;
-		background: color-mix(in srgb, var(--surface-container-highest) 70%, transparent);
-		color: var(--on-surface-variant);
+		border: 1px solid color-mix(in srgb, var(--primary) 28%, transparent);
+		border-radius: 0.65rem;
+		background: color-mix(in srgb, var(--primary) 14%, #2a2a2a);
+		color: color-mix(in srgb, var(--primary) 88%, #fff);
 		cursor: pointer;
 		transition:
 			background 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+			border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
 			color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
 			transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 
 	.sipap-copy-icon:hover {
-		background: color-mix(in srgb, var(--primary) 22%, transparent);
-		color: var(--primary);
-		transform: scale(1.08);
+		background: color-mix(in srgb, var(--primary) 28%, #2a2a2a);
+		border-color: color-mix(in srgb, var(--primary) 55%, transparent);
+		color: #fff;
+		transform: scale(1.05);
 	}
 
 	.sipap-copy-icon:focus-visible {
@@ -579,14 +582,9 @@ const { stepPanel = 7 } = Astro.props;
 	}
 
 	.sipap-copy-icon.is-copied {
+		border-color: color-mix(in srgb, var(--tertiary) 45%, transparent);
+		background: color-mix(in srgb, var(--tertiary) 18%, #2a2a2a);
 		color: var(--tertiary);
-	}
-
-	@media (min-width: 960px) {
-		.sipap-copy-icon {
-			width: 2rem;
-			height: 2rem;
-		}
 	}
 
 	.sipap-dropzone {
@@ -594,26 +592,27 @@ const { stepPanel = 7 } = Astro.props;
 		display: flex;
 		box-sizing: border-box;
 		width: 100%;
-		min-height: 5.25rem;
+		min-height: 5.5rem;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		padding: 0.75rem 0.9rem;
-		border: 0;
-		border-radius: 0.7rem;
-		background: color-mix(in srgb, #161616 70%, var(--surface-container-lowest) 30%);
-		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--outline-variant) 82%, #fff 18%);
+		padding: 0.85rem 0.9rem;
+		border: 2px dashed color-mix(in srgb, var(--outline-variant) 50%, #fff 28%);
+		border-radius: 0.85rem;
+		background: color-mix(in srgb, #141414 78%, var(--surface-container-lowest) 22%);
+		box-shadow: none;
 		cursor: pointer;
 		transition:
-			box-shadow 0.28s cubic-bezier(0.32, 0.72, 0, 1),
+			border-color 0.28s cubic-bezier(0.32, 0.72, 0, 1),
 			background-color 0.28s cubic-bezier(0.32, 0.72, 0, 1),
 			transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
 	}
 
 	.sipap-dropzone:hover,
 	.sipap-dropzone.is-dragging {
-		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 55%, var(--outline-variant));
-		background: color-mix(in srgb, var(--primary) 8%, var(--surface-container-lowest));
+		border-color: color-mix(in srgb, var(--primary) 70%, var(--outline-variant));
+		border-style: dashed;
+		background: color-mix(in srgb, var(--primary) 10%, #141414);
 	}
 
 	.sipap-dropzone:focus-within {
@@ -630,6 +629,8 @@ const { stepPanel = 7 } = Astro.props;
 	.sipap-dropzone.has-preview {
 		padding: 0;
 		min-height: 5.75rem;
+		border-style: solid;
+		overflow: hidden;
 	}
 
 	.sipap-dropzone__empty {
@@ -648,7 +649,7 @@ const { stepPanel = 7 } = Astro.props;
 	}
 
 	.sipap-dropzone__icon {
-		font-size: 1.55rem;
+		font-size: 1.65rem;
 		line-height: 1;
 		color: var(--primary);
 	}
@@ -656,7 +657,7 @@ const { stepPanel = 7 } = Astro.props;
 	.sipap-dropzone__title {
 		max-width: 22rem;
 		font-size: 0.86rem;
-		font-weight: 760;
+		font-weight: 700;
 		line-height: 1.35;
 		color: var(--on-surface);
 	}
@@ -712,13 +713,17 @@ const { stepPanel = 7 } = Astro.props;
 		border: 0;
 		border-radius: 999px;
 		background: rgb(0 0 0 / 0.62);
-		color: #fff;
+		color: #f87171;
 		cursor: pointer;
-		transition: background 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+		transition:
+			background 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+			color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+			transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 
 	.sipap-dropzone__clear:hover {
 		background: rgb(0 0 0 / 0.8);
+		color: #fca5a5;
 	}
 
 	.sipap-dropzone__clear:focus-visible {
@@ -738,12 +743,45 @@ const { stepPanel = 7 } = Astro.props;
 	.sipap-submit-dock {
 		display: grid;
 		gap: 0.35rem;
+		margin-top: 1rem;
+		padding-top: 0.85rem;
+		border-top: 1px solid color-mix(in srgb, var(--outline-variant) 50%, transparent);
 	}
 
-	.sipap-submit-cta {
-		height: 3rem;
-		background: var(--primary-container);
-		color: var(--on-primary-container);
+	.sipap-submit-dock .sipap-submit-cta {
+		height: auto;
+		min-height: 3rem;
+		border: 0;
+		background: #f97316;
+		color: #fff;
+		text-align: center;
+		box-shadow: none;
+		transition:
+			filter 0.2s ease,
+			transform 0.2s ease,
+			opacity 0.2s ease;
+	}
+
+	.sipap-submit-dock .sipap-submit-cta [data-sipap-submit-label] {
+		display: block;
+		text-wrap: balance;
+	}
+
+	.sipap-submit-cta__spinner {
+		display: none;
+		font-size: 1.25rem;
+		line-height: 1;
+	}
+
+	.sipap-submit-cta.is-loading .sipap-submit-cta__spinner {
+		display: inline-block;
+		animation: sipap-submit-spin 0.8s linear infinite;
+	}
+
+	@keyframes sipap-submit-spin {
+		to {
+			transform: rotate(360deg);
+		}
 	}
 
 	.sipap-submit-cta:hover:not(:disabled) {
@@ -751,67 +789,39 @@ const { stepPanel = 7 } = Astro.props;
 	}
 
 	.sipap-submit-cta:focus-visible {
-		outline: 2px solid color-mix(in srgb, var(--primary) 70%, transparent);
+		outline: 2px solid #fb923c;
 		outline-offset: 3px;
 	}
 
-	@media (max-width: 959px) {
-		.sipap-deposit-panel {
-			padding-bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
-		}
-
-		.sipap-submit-dock {
-			position: fixed;
-			right: 0;
-			bottom: 0;
-			left: 0;
-			z-index: 24;
-			margin-top: 0;
-			padding: 0.55rem 1rem calc(0.55rem + env(safe-area-inset-bottom, 0px));
-			border-top: 1px solid rgb(255 255 255 / 0.08);
-			background: color-mix(in srgb, #121212 82%, transparent);
-			backdrop-filter: blur(14px);
-			-webkit-backdrop-filter: blur(14px);
-		}
-
-		@supports not ((backdrop-filter: blur(14px))) {
-			.sipap-submit-dock {
-				background: #161616;
-			}
-		}
-	}
-
-	@media (min-width: 960px) {
-		.sipap-dropzone {
-			min-height: 5.75rem;
-		}
-
-		.sipap-dropzone.has-preview,
-		.sipap-dropzone__preview {
-			min-height: 6.5rem;
-		}
-
-		.sipap-dropzone__thumb {
-			height: 6.5rem;
-			min-height: 6.5rem;
-		}
-
-		.sipap-dropzone__clear {
-			width: 2.25rem;
-			height: 2.25rem;
-		}
-	}
-
-	.sipap-submit-cta:disabled {
-		background: color-mix(in srgb, var(--surface-container-highest) 82%, transparent) !important;
-		color: var(--on-surface-variant) !important;
+	.sipap-submit-cta:disabled:not(.is-loading) {
+		background: color-mix(in srgb, var(--surface-container-highest) 88%, transparent) !important;
+		color: color-mix(in srgb, var(--on-surface-variant) 85%, transparent) !important;
 		cursor: not-allowed;
-		opacity: 0.55;
+		opacity: 0.72;
+		filter: none;
+		box-shadow: none;
+	}
+
+	.sipap-submit-cta[data-sipap-submitted='1']:disabled {
+		pointer-events: none;
+	}
+
+	.sipap-submit-cta.is-loading:disabled {
+		background: #f97316 !important;
+		color: #fff !important;
+		cursor: wait;
+		opacity: 0.92;
 		filter: none;
 	}
 
 	.sipap-submit-cta:active:not(:disabled) {
 		transform: scale(0.98);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.sipap-submit-cta.is-loading .sipap-submit-cta__spinner {
+			animation: none;
+		}
 	}
 
 	.sipap-upload-status {
@@ -844,13 +854,9 @@ const { stepPanel = 7 } = Astro.props;
 		color: #fbbf24;
 	}
 
-	.sipap-summary-ticket {
-		align-self: start;
-	}
-
 	.sipap-summary-ticket__amount {
-		margin: 0.85rem 0 0;
-		font-size: 2rem;
+		margin: 0.55rem 0 0;
+		font-size: 2.05rem;
 		font-weight: 800;
 		letter-spacing: -0.045em;
 		line-height: 1;
@@ -858,57 +864,307 @@ const { stepPanel = 7 } = Astro.props;
 		color: #fff;
 	}
 
-	@media (min-width: 640px) {
-		.sipap-summary-ticket__amount {
-			font-size: 2.35rem;
-		}
-	}
-
 	.sipap-summary-ticket__for {
-		margin: 0.55rem 0 0;
-		font-size: 0.88rem;
+		margin: 0.4rem 0 0;
+		font-size: 0.86rem;
 		font-weight: 550;
 		line-height: 1.4;
 		color: var(--on-surface-variant);
 	}
 
-	.sipap-policy-card {
-		display: flex;
-		align-items: flex-start;
-		gap: 0.65rem;
-		margin-top: auto;
-		padding: 0.85rem 0 0;
+	.sipap-policy-details {
+		margin-top: 0.75rem;
 	}
 
-	.sipap-policy-card__icon {
+	.sipap-policy-summary {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		list-style: none;
+		cursor: pointer;
+		user-select: none;
+	}
+
+	.sipap-policy-summary::-webkit-details-marker,
+	.sipap-policy-summary::marker {
+		display: none;
+		content: '';
+	}
+
+	.sipap-policy-summary__shield {
 		flex-shrink: 0;
-		margin-top: 0.05rem;
-		font-size: 1.15rem;
+		font-size: 1.1rem;
 		line-height: 1;
 		color: var(--on-surface-variant);
-		opacity: 0.85;
+		opacity: 0.9;
 	}
 
-	.sipap-policy-card__title {
-		margin: 0;
+	.sipap-policy-summary__title {
+		flex: 1 1 auto;
+		min-width: 0;
 		font-size: 0.84rem;
 		font-weight: 650;
 		color: var(--on-surface);
 	}
 
-	.sipap-policy-card__copy {
-		margin: 0.35rem 0 0;
-		font-size: 0.8rem;
+	.sipap-policy-summary__info {
+		flex-shrink: 0;
+		font-size: 1.05rem;
+		line-height: 1;
+		color: color-mix(in srgb, var(--primary) 80%, #fff);
+		opacity: 0.95;
+	}
+
+	.sipap-policy-details[open] .sipap-policy-summary__info {
+		color: var(--primary);
+	}
+
+	.sipap-policy-details__copy {
+		margin: 0.45rem 0 0 1.55rem;
+		font-size: 0.78rem;
 		font-weight: 500;
 		line-height: 1.45;
 		color: var(--on-surface-variant);
 	}
 
 	@media (max-width: 959px) {
+		.sipap-deposit-panel {
+			padding-bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
+		}
+
+		.sipap-summary-ticket {
+			border-radius: 1rem;
+		}
+
+		.sipap-summary-ticket__core {
+			padding: 0.8rem 1rem 0.95rem;
+		}
+
+		.sipap-policy-details {
+			margin-top: 0.55rem;
+		}
+
+		.sipap-submit-dock {
+			position: fixed;
+			right: 0;
+			bottom: 0;
+			left: 0;
+			z-index: 24;
+			margin-top: 0;
+			padding: 0.55rem 1rem calc(0.55rem + env(safe-area-inset-bottom, 0px));
+			border-top: 1px solid rgb(255 255 255 / 0.08);
+			background: color-mix(in srgb, #121212 82%, transparent);
+			backdrop-filter: blur(14px);
+			-webkit-backdrop-filter: blur(14px);
+		}
+
+		@supports not ((backdrop-filter: blur(14px))) {
+			.sipap-submit-dock {
+				background: #161616;
+			}
+		}
+
 		:global(body:has(.sipap-submit-dock) [data-flash-stack]),
 		:global(body:has(.sipap-submit-dock) [data-flash-stack]:popover-open) {
 			bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px)) !important;
 			inset: auto 0 calc(5.75rem + env(safe-area-inset-bottom, 0px)) 0 !important;
+		}
+	}
+
+	@media (min-width: 640px) {
+		.sipap-summary-ticket__amount {
+			font-size: 2.25rem;
+		}
+	}
+
+	@media (min-width: 960px) {
+		.sipap-hold-banner {
+			align-items: flex-start;
+			gap: 0.65rem;
+			padding: 0.85rem 1rem;
+			border-radius: 1rem;
+		}
+
+		.sipap-hold-banner__icon {
+			margin-top: 0.05rem;
+			font-size: 1.25rem;
+		}
+
+		.sipap-hold-banner__text {
+			font-size: 0.9rem;
+			line-height: 1.4;
+		}
+
+		.sipap-layout {
+			display: grid;
+			grid-template-columns: minmax(0, 1.75fr) minmax(20rem, 24rem);
+			gap: 1.75rem;
+			align-items: start;
+			margin-top: 0.85rem;
+		}
+
+		.sipap-deposit-intro {
+			margin-top: 1.1rem;
+		}
+
+		.sipap-deposit-title {
+			font-size: 1.75rem;
+		}
+
+		.sipap-main,
+		.sipap-summary-ticket {
+			order: unset;
+			margin-top: 0;
+		}
+
+		.sipap-summary-ticket {
+			position: sticky;
+			top: 1.15rem;
+			align-self: start;
+		}
+
+		.sipap-summary-ticket__core {
+			min-height: 100%;
+		}
+
+		.sipap-panel__core {
+			padding: 1.15rem 1.5rem 1.35rem;
+		}
+
+		.sipap-panel__lede {
+			font-size: 0.82rem;
+		}
+
+		.sipap-bank-row__value {
+			font-size: 0.98rem;
+		}
+
+		.sipap-copy-icon {
+			width: 2rem;
+			height: 2rem;
+			border-radius: 0.55rem;
+		}
+
+		.sipap-dropzone {
+			min-height: 6rem;
+		}
+
+		.sipap-dropzone.has-preview,
+		.sipap-dropzone__preview {
+			min-height: 6.5rem;
+		}
+
+		.sipap-dropzone__thumb {
+			height: 6.5rem;
+			min-height: 6.5rem;
+		}
+
+		.sipap-dropzone__clear {
+			width: 2.25rem;
+			height: 2.25rem;
+		}
+
+		.sipap-submit-dock {
+			margin-top: auto;
+			padding-top: 1rem;
+		}
+	}
+
+	/* Gestión de reserva: el comprobante es una tarea principal, no un paso del wizard. */
+	.sipap-deposit-panel--manage .sipap-hold-banner {
+		padding: 0.8rem 1rem;
+		border-radius: 0.9rem;
+	}
+
+	.sipap-deposit-panel--manage .sipap-deposit-intro {
+		margin-top: 1.25rem;
+	}
+
+	.sipap-deposit-panel--manage .sipap-deposit-title {
+		font-size: clamp(1.55rem, 3vw, 2rem);
+		font-weight: 560;
+		letter-spacing: -0.04em;
+	}
+
+	.sipap-deposit-panel--manage .sipap-panel {
+		border-color: color-mix(in srgb, var(--outline-variant) 35%, transparent);
+		background: color-mix(in srgb, var(--surface-container, #1b1b1b) 92%, #111820);
+	}
+
+	.sipap-deposit-panel--manage .sipap-panel__kicker {
+		letter-spacing: 0.075em;
+	}
+
+	@media (min-width: 640px) {
+		.sipap-deposit-panel--manage .sipap-transfer-card__list {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			margin-top: 1rem;
+			border-block: 1px solid color-mix(in srgb, var(--outline-variant) 42%, transparent);
+		}
+
+		.sipap-deposit-panel--manage .sipap-bank-row {
+			display: flex;
+			flex-direction: column;
+			align-items: stretch;
+			justify-content: center;
+			gap: 0.4rem;
+			min-height: 5rem;
+			padding: 0.9rem 1rem;
+		}
+
+		.sipap-deposit-panel--manage .sipap-bank-row + .sipap-bank-row {
+			border-top: 0;
+		}
+
+		.sipap-deposit-panel--manage .sipap-bank-row:nth-child(even) {
+			border-left: 1px solid color-mix(in srgb, var(--outline-variant) 42%, transparent);
+		}
+
+		.sipap-deposit-panel--manage .sipap-bank-row:nth-child(n + 3) {
+			border-top: 1px solid color-mix(in srgb, var(--outline-variant) 42%, transparent);
+		}
+
+		.sipap-deposit-panel--manage .sipap-bank-row__label {
+			font-size: 0.7rem;
+			font-weight: 650;
+			letter-spacing: 0.055em;
+			text-transform: uppercase;
+		}
+
+		.sipap-deposit-panel--manage .sipap-bank-row__value {
+			justify-content: space-between;
+			width: 100%;
+			font-size: 1.05rem;
+			line-height: 1.35;
+			text-align: left;
+			overflow-wrap: break-word;
+		}
+
+		.sipap-deposit-panel--manage .sipap-ref-block {
+			margin-top: 1rem;
+			padding: 0.9rem 1rem 1rem;
+		}
+	}
+
+	@media (min-width: 960px) {
+		.sipap-deposit-panel--manage .sipap-layout {
+			grid-template-columns: minmax(34rem, 1fr) minmax(20rem, 22rem);
+			gap: 1.5rem;
+		}
+
+		.sipap-deposit-panel--manage .sipap-panel__core {
+			padding: 1.35rem 1.5rem 1.5rem;
+		}
+
+		.sipap-deposit-panel--manage .sipap-summary-ticket__amount {
+			margin-top: 0.55rem;
+			font-size: 2.65rem;
+			letter-spacing: -0.055em;
+		}
+
+		.sipap-deposit-panel--manage .sipap-submit-dock {
+			padding-top: 1.35rem;
 		}
 	}
 

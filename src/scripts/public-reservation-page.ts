@@ -17,10 +17,7 @@ import {
 import { formatCustomerCancelNoRefundHint } from '../lib/public-reservation-refund';
 import { parseSipapAlias, sanitizeSipapAliasInput, SIPAP_ALIAS_ERROR } from '../lib/sipap-alias';
 import { normalizePublicBookingLocations } from '../lib/public-booking-locations';
-import {
-	isMobileSlotRouletteViewport,
-	mountPublicSlotBranches,
-} from '../lib/public-booking-slots-ui';
+import { mountPublicSlotBranches } from '../lib/public-booking-slots-ui';
 import {
 	createBrandMarker,
 	createStadiaTransformRequest,
@@ -96,23 +93,21 @@ type PublicReservationDetail = {
 
 type Coordinates = { lat: number; lng: number };
 
-type RescheduleStep = 1 | 2 | 3 | 4;
+type RescheduleStep = 1 | 2 | 3;
 
 const RESCHEDULE_MODAL_TITLES: Record<RescheduleStep, string> = {
-	1: 'Elige una nueva fecha y horario',
-	2: '¿Dónde querés atenderte?',
-	3: 'Selecciona un horario',
-	4: 'Confirma tu reprogramación',
+	1: 'Elegí fecha y hora',
+	2: 'Elegí la sucursal',
+	3: 'Confirmá los cambios',
 };
 
 const RESCHEDULE_STEP_LABELS: Record<RescheduleStep, string> = {
-	1: 'Fecha',
+	1: 'Fecha y Hora',
 	2: 'Sucursal',
-	3: 'Horario',
-	4: 'Confirmar',
+	3: 'Confirmar',
 };
 
-const RESCHEDULE_STEP_COUNT = 4;
+const RESCHEDULE_STEP_COUNT = 3;
 
 const toPositiveInt = (value: unknown, fallback = 0) => {
 	const parsed = Number(value);
@@ -282,7 +277,7 @@ export const initializePublicReservationPage = () => {
 	const slotInput = root.querySelector<HTMLInputElement>('[data-reservation-slot]');
 	const locationInput = root.querySelector<HTMLInputElement>('[data-reservation-location]');
 	const slotsContainer = root.querySelector<HTMLElement>('[data-reservation-slots-container]');
-	const slotsPanel = root.querySelector<HTMLElement>('[data-reservation-slots-panel]');
+	const slotsHint = root.querySelector<HTMLElement>('[data-slots-hint]');
 	const slotsLoading = root.querySelector<HTMLElement>('[data-reservation-slots-loading]');
 	const noSlots = root.querySelector<HTMLElement>('[data-no-reservation-slots]');
 	const locationsGrid = root.querySelector<HTMLElement>('[data-reschedule-locations-grid]');
@@ -436,12 +431,19 @@ export const initializePublicReservationPage = () => {
 				selectedDate = prefer;
 				dateInput.value = prefer;
 				syncDateLabels(prefer);
+				void loadSlots(prefer);
 				return;
 			}
 			if (selectedDate.startsWith(ymPrefix) && selectedDate && !dates.has(selectedDate)) {
 				selectedDate = '';
 				dateInput.value = '';
 				syncDateLabels('');
+				selectedSlot = '';
+				slotInput.value = '';
+				availableSlotGroups = [];
+				slotsContainer.innerHTML = '';
+				slotsHint?.toggleAttribute('hidden', true);
+				noSlots.classList.add('hidden');
 			}
 		};
 
@@ -739,10 +741,8 @@ export const initializePublicReservationPage = () => {
 
 	const updateFooterButtons = () => {
 		const isStep1 = rescheduleStep === 1;
-		const isConfirmStep = rescheduleStep === 4;
+		const isConfirmStep = rescheduleStep === 3;
 		const hasLocations = availableSlotGroups.length > 0;
-		const selectedGroup = getSelectedLocationGroup();
-		const hasSlotsForLocation = Boolean(selectedGroup && selectedGroup.slots.length > 0);
 
 		rescheduleBackButton.classList.toggle('is-hidden', isStep1);
 		rescheduleBackButton.textContent = 'Volver';
@@ -754,19 +754,14 @@ export const initializePublicReservationPage = () => {
 			const month = visibleMonth.getMonth();
 			const isLoadingAvailability =
 				availableDatesLoadingKey === availableDatesMonthKey(year, month);
-			rescheduleNextButton.disabled = !selectedDate || isLoadingAvailability;
+			rescheduleNextButton.disabled =
+				!selectedDate || !selectedSlot || isLoadingSlots || isLoadingAvailability;
 			return;
 		}
 
 		if (rescheduleStep === 2) {
 			rescheduleNextButton.disabled =
-				isLoadingSlots || !hasLocations || selectedLocationId <= 0;
-			return;
-		}
-
-		if (rescheduleStep === 3) {
-			rescheduleNextButton.disabled =
-				isLoadingSlots || !selectedSlot || !hasSlotsForLocation;
+				isLoadingSlots || !hasLocations || selectedLocationId <= 0 || !selectedSlot;
 			return;
 		}
 
@@ -789,8 +784,11 @@ export const initializePublicReservationPage = () => {
 
 			if (itemStep === nextStep) {
 				item.classList.add('step-item-current');
+				item.setAttribute('aria-current', 'step');
 				continue;
 			}
+
+			item.removeAttribute('aria-current');
 
 			if (itemStep < nextStep) {
 				item.classList.add('step-item-done');
@@ -804,27 +802,14 @@ export const initializePublicReservationPage = () => {
 			rescheduleStepCompactLabel.textContent = `Paso ${nextStep} de ${RESCHEDULE_STEP_COUNT}: ${RESCHEDULE_STEP_LABELS[nextStep]}`;
 		}
 		if (rescheduleStepProgressBar) {
-			rescheduleStepProgressBar.style.width = `${(nextStep / RESCHEDULE_STEP_COUNT) * 100}%`;
+			rescheduleStepProgressBar.style.width = `${((nextStep - 1) / (RESCHEDULE_STEP_COUNT - 1)) * 100}%`;
 		}
 
-		if (nextStep === 3) {
-			const group = getSelectedLocationGroup();
-			const orderedSlots = group
-				? sortTimeSlotsChronologically(group.slots)
-				: [];
-			if (group && orderedSlots.length > 0) {
-				group.slots = orderedSlots;
-				// Empezar siempre por el primer horario disponible (más temprano).
-				if (!selectedSlot || !orderedSlots.includes(selectedSlot)) {
-					selectedSlot = orderedSlots[0];
-					slotInput.value = orderedSlots[0];
-					locationInput.value = String(group.location.id_location);
-				}
-			}
+		if (nextStep === 1 && selectedDate) {
 			renderSlotSections();
 		}
 
-		if (nextStep === 4) {
+		if (nextStep === 3) {
 			updateChangeSummary();
 		}
 
@@ -848,7 +833,7 @@ export const initializePublicReservationPage = () => {
 		locationsGrid.innerHTML = '';
 		noSlots.classList.add('hidden');
 		noLocations.classList.add('hidden');
-		if (slotsPanel) slotsPanel.classList.add('hidden');
+		slotsHint?.toggleAttribute('hidden', true);
 		slotsLoading.classList.add('hidden');
 		locationsLoading.classList.add('hidden');
 		syncDateLabels('');
@@ -873,7 +858,7 @@ export const initializePublicReservationPage = () => {
 		resetRescheduleFlow({ loadAvailability: false });
 	};
 
-	const selectDate = (date: Date, options: { loadSlots?: boolean } = {}) => {
+	const selectDate = (date: Date) => {
 		const dateStart = toDateStart(date);
 		const dateKey = formatApiDate(dateStart);
 		if (dateStart.getTime() < today.getTime()) return;
@@ -891,7 +876,7 @@ export const initializePublicReservationPage = () => {
 		locationsGrid.innerHTML = '';
 		renderCalendar();
 		updateFooterButtons();
-		if (options.loadSlots) void loadSlots(dateKey);
+		void loadSlots(dateKey);
 	};
 
 	const fetchAvailableSlotsForLocation = async (location: BookingLocation, targetDate: string) => {
@@ -946,8 +931,20 @@ export const initializePublicReservationPage = () => {
 	const softSelectRescheduleLocation = (location: BookingLocation, stack?: HTMLElement | null) => {
 		selectedLocationId = location.id_location;
 		locationInput.value = String(location.id_location);
-		selectedSlot = '';
-		slotInput.value = '';
+		const group = availableSlotGroups.find(
+			(item) => item.location.id_location === location.id_location
+		);
+		const orderedSlots = group ? sortTimeSlotsChronologically(group.slots) : [];
+		if (group) group.slots = orderedSlots;
+		if (selectedSlot && orderedSlots.includes(selectedSlot)) {
+			slotInput.value = selectedSlot;
+		} else if (orderedSlots[0]) {
+			selectedSlot = orderedSlots[0];
+			slotInput.value = orderedSlots[0];
+		} else {
+			selectedSlot = '';
+			slotInput.value = '';
+		}
 		const rootEl = stack || locationsGrid;
 		for (const card of rootEl.querySelectorAll<HTMLElement>('.public-location-card')) {
 			const id = Number(card.dataset.locationId || 0);
@@ -1136,14 +1133,21 @@ export const initializePublicReservationPage = () => {
 	};
 
 	const renderSlotSections = () => {
+		if (!selectedDate) {
+			slotsLoading.classList.add('hidden');
+			slotsHint?.toggleAttribute('hidden', true);
+			noSlots.classList.add('hidden');
+			slotsContainer.innerHTML = '';
+			updateFooterButtons();
+			return;
+		}
+
 		slotsLoading.classList.toggle('hidden', !isLoadingSlots);
 
 		const selectedGroup = getSelectedLocationGroup();
 		const totalSlots = selectedGroup?.slots.length || 0;
+		slotsHint?.toggleAttribute('hidden', isLoadingSlots || totalSlots === 0);
 		noSlots.classList.toggle('hidden', isLoadingSlots || totalSlots > 0);
-		if (slotsPanel) {
-			slotsPanel.classList.toggle('hidden', isLoadingSlots);
-		}
 
 		if (isLoadingSlots) {
 			slotsContainer.innerHTML = '';
@@ -1162,7 +1166,7 @@ export const initializePublicReservationPage = () => {
 					]
 				: [],
 			selectedSlotKey: getSelectedSlotKey(),
-			useRoulette: isMobileSlotRouletteViewport(),
+			useRoulette: false,
 			showLocationHeader: false,
 			onSelect: (locationId, slot) => {
 				selectedSlot = slot;
@@ -1184,7 +1188,7 @@ export const initializePublicReservationPage = () => {
 		selectedSlot = '';
 		slotInput.value = '';
 		renderLocationsStep();
-		if (rescheduleStep === 3) renderSlotSections();
+		renderSlotSections();
 		updateFooterButtons();
 
 		try {
@@ -1251,7 +1255,7 @@ export const initializePublicReservationPage = () => {
 		} finally {
 			isLoadingSlots = false;
 			renderLocationsStep();
-			if (rescheduleStep === 3) renderSlotSections();
+			renderSlotSections();
 			updateFooterButtons();
 		}
 	};
@@ -1404,8 +1408,14 @@ export const initializePublicReservationPage = () => {
 				showToast('Selecciona una fecha.', 'error');
 				return;
 			}
+			if (!selectedSlot) {
+				showToast('Selecciona un horario.', 'error');
+				return;
+			}
+			if (availableSlotGroups.length === 0 && !isLoadingSlots) {
+				await loadSlots(selectedDate);
+			}
 			setRescheduleStep(2);
-			await loadSlots(selectedDate);
 			return;
 		}
 
@@ -1418,18 +1428,11 @@ export const initializePublicReservationPage = () => {
 				showToast('Esa sucursal no tiene horarios para este día.', 'error');
 				return;
 			}
-			selectedSlot = '';
-			slotInput.value = '';
-			setRescheduleStep(3);
-			return;
-		}
-
-		if (rescheduleStep === 3) {
 			if (!selectedSlot) {
 				showToast('Selecciona un horario.', 'error');
 				return;
 			}
-			setRescheduleStep(4);
+			setRescheduleStep(3);
 		}
 	};
 
@@ -1440,14 +1443,7 @@ export const initializePublicReservationPage = () => {
 		}
 
 		if (rescheduleStep === 3) {
-			selectedSlot = '';
-			slotInput.value = '';
 			setRescheduleStep(2);
-			return;
-		}
-
-		if (rescheduleStep === 4) {
-			setRescheduleStep(3);
 		}
 	};
 

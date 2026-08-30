@@ -267,7 +267,7 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 											</div>
 										</div>
 									)}
-									<PublicSipapDepositPanel stepPanel={7} />
+									<PublicSipapDepositPanel stepPanel={7} variant="manage" />
 								</div>
 							)}
 
@@ -470,7 +470,7 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 						data-cancel-refund-modal
 					>
 						<form class="reservation-reschedule-form p-5 sm:p-6" data-cancel-refund-form>
-							<div class="reservation-reschedule-header !mb-4">
+							<div class="reservation-reschedule-header reservation-cancel-header !mb-4">
 								<div>
 									<h2 class="reservation-reschedule-title">Cancelar y pedir reembolso</h2>
 									<p class="mt-1 text-sm text-(--on-surface-variant)" data-cancel-refund-summary></p>
@@ -502,58 +502,61 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 					</dialog>
 
 					<dialog
-						class="reservation-reschedule-modal m-0 mt-auto mb-0 w-screen max-w-none open:flex open:flex-col max-h-[90dvh] overflow-hidden rounded-t-[1.75rem] rounded-b-none border border-(--outline-variant) border-b-0 bg-(--surface-container) p-0 text-(--on-surface) shadow-2xl backdrop:bg-black/70 md:m-auto md:mb-auto md:w-[min(42rem,calc(100vw-2rem))] md:max-w-[min(42rem,calc(100vw-2rem))] md:max-h-[min(90vh,52rem)] md:rounded-[28px] md:border-b"
+						class="reservation-reschedule-modal m-0 mt-auto mb-0 w-screen max-w-none open:flex open:flex-col min-h-[90dvh] max-h-[90dvh] overflow-hidden rounded-t-[1.75rem] rounded-b-none border border-(--shell-border) border-b-0 bg-(--surface-bright) p-0 text-(--on-surface) shadow-2xl backdrop:bg-black/70 md:m-0 md:ml-auto md:h-[100dvh] md:min-h-[100dvh] md:max-h-[100dvh] md:w-[min(32rem,100%)] md:max-w-[min(32rem,100%)] md:rounded-none md:border-y-0 md:border-r-0 md:border-b-0"
 						data-reschedule-modal
 					>
 						<form class="reservation-reschedule-form" data-reservation-form data-reschedule-step="1">
-							<div class="reservation-reschedule-header">
-								<div>
-									<h2 class="reservation-reschedule-title" data-reschedule-modal-title>Elige una nueva fecha y horario</h2>
+							<header class="reservation-reschedule-titlebar">
+								<div class="reservation-reschedule-titlebar__leading">
+									<div class="reservation-reschedule-titlebar__icon">
+										<span class="material-symbols-rounded">event_repeat</span>
+									</div>
+									<div class="reservation-reschedule-titlebar__text">
+										<h2 class="reservation-reschedule-titlebar__title">Reprogramar</h2>
+										<p class="reservation-reschedule-titlebar__subtitle" data-reschedule-modal-title>
+											Elegí fecha y hora
+										</p>
+									</div>
 								</div>
 								<button
 									type="button"
-									class="reservation-modal-close"
+									class="reservation-reschedule-titlebar__close"
 									data-reschedule-close
 									aria-label="Cerrar"
 								>
 									<span class="material-symbols-rounded" aria-hidden="true">close</span>
 								</button>
-							</div>
+							</header>
 
-							<div class="reservation-reschedule-stepper public-booking-stepper">
-								<div class="public-booking-stepper__mobile">
-									<p
-										class="text-sm font-medium tracking-wide text-(--on-surface)"
-										data-reschedule-step-compact-label
-										aria-live="polite"
-									>
-										Paso 1 de 4: Fecha
-									</p>
+							<nav class="reservation-reschedule-steps" aria-label="Pasos de reprogramación">
+								<p class="sr-only" data-reschedule-step-compact-label aria-live="polite">
+									Paso 1 de 3: Fecha y Hora
+								</p>
+								<div class="reservation-reschedule-steps__track" aria-hidden="true">
 									<div
-										class="h-2 flex-1 overflow-hidden rounded-full bg-(--surface-container-highest)"
-										aria-hidden="true"
-									>
-										<div
-											class="h-full rounded-full bg-(--primary) transition-[width] duration-500 ease-out"
-											data-reschedule-step-progress-bar
-											style="width:25%"
-										></div>
-									</div>
+										class="reservation-reschedule-steps__fill"
+										data-reschedule-step-progress-bar
+										style="width:0%"
+									></div>
 								</div>
 								<ol data-reschedule-step-indicator>
-									<li data-reschedule-step-item="1" class="step-item-current">1. Fecha</li>
-									<li data-reschedule-step-item="2" class="step-item-default">2. Sucursal</li>
-									<li data-reschedule-step-item="3" class="step-item-default">3. Horario</li>
-									<li data-reschedule-step-item="4" class="step-item-default">4. Confirmar</li>
+									<li data-reschedule-step-item="1" class="step-item-current" aria-current="step">
+										<span class="reservation-reschedule-steps__index" aria-hidden="true">1</span>
+										<span class="reservation-reschedule-steps__label">Fecha</span>
+									</li>
+									<li data-reschedule-step-item="2" class="step-item-default">
+										<span class="reservation-reschedule-steps__index" aria-hidden="true">2</span>
+										<span class="reservation-reschedule-steps__label">Sucursal</span>
+									</li>
+									<li data-reschedule-step-item="3" class="step-item-default">
+										<span class="reservation-reschedule-steps__index" aria-hidden="true">3</span>
+										<span class="reservation-reschedule-steps__label">Confirmar</span>
+									</li>
 								</ol>
-							</div>
+							</nav>
 
 							<div class="reservation-reschedule-body">
 								<section data-reschedule-step-panel="1" class="grid gap-3 reservation-reschedule-panel">
-									<div class="reservation-reschedule-panel__intro">
-										<h3 class="reservation-reschedule-panel__title">Selecciona una fecha</h3>
-									</div>
-
 									<div class="public-booking-calendar">
 										<div class="public-booking-calendar__toolbar">
 											<button type="button" data-calendar-prev class="calendar-nav-btn" aria-label="Mes anterior">
@@ -570,11 +573,44 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 										</div>
 										<div class="public-booking-calendar__grid" data-calendar-grid></div>
 									</div>
+
+									<div class="public-booking-datetime-slots mt-4" data-slots-under-calendar>
+										<p
+											class="public-slots-under-calendar__hint text-sm font-medium text-(--on-surface-variant)"
+											data-slots-hint
+											hidden
+										>
+											Horarios disponibles
+										</p>
+										<div
+											data-reservation-slots-loading
+											class="public-slots-skeleton mt-3 hidden"
+											aria-busy="true"
+											aria-live="polite"
+										>
+											<span class="sr-only">Consultando horarios disponibles…</span>
+											<div class="public-slots-skeleton__grid public-slots-skeleton__grid--pills" aria-hidden="true">
+												<span class="public-slots-skeleton__chip"></span>
+												<span class="public-slots-skeleton__chip"></span>
+												<span class="public-slots-skeleton__chip"></span>
+												<span class="public-slots-skeleton__chip"></span>
+												<span class="public-slots-skeleton__chip"></span>
+												<span class="public-slots-skeleton__chip"></span>
+											</div>
+										</div>
+										<div class="mt-2 grid gap-4" data-reservation-slots-container></div>
+										<div data-no-reservation-slots class="public-slots-empty mt-4 hidden">
+											<span class="material-symbols-rounded public-slots-empty__icon" aria-hidden="true">event_busy</span>
+											<p class="public-slots-empty__text">
+												No se encontraron horarios para este día. Elegí otra fecha.
+											</p>
+										</div>
+									</div>
 								</section>
 
 								<section data-reschedule-step-panel="2" class="hidden grid gap-3 reservation-reschedule-panel">
 									<p class="reservation-reschedule-panel__hint">
-										<span class="public-locations-hint__desktop">Elegí la sucursal para ver horarios disponibles</span>
+										<span class="public-locations-hint__desktop">Elegí la sucursal</span>
 										<span class="public-locations-hint__mobile">Deslizá para elegir una sucursal</span>
 									</p>
 
@@ -597,46 +633,7 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 									</p>
 								</section>
 
-								<section data-reschedule-step-panel="3" class="hidden grid gap-3 reservation-reschedule-panel">
-									<p class="reservation-reschedule-panel__hint">
-										<span class="public-slots-hint__desktop">Elegí un horario disponible</span>
-										<span class="public-slots-hint__mobile">Deslizá para seleccionar un horario</span>
-									</p>
-
-									<div
-										data-reservation-slots-loading
-										class="public-slots-skeleton mt-2 hidden"
-										aria-busy="true"
-										aria-live="polite"
-									>
-										<span class="sr-only">Consultando horarios disponibles…</span>
-										<div class="public-slots-skeleton__roulette" aria-hidden="true">
-											<span class="public-slots-skeleton__bar public-slots-skeleton__bar--far"></span>
-											<span class="public-slots-skeleton__bar public-slots-skeleton__bar--near"></span>
-											<span class="public-slots-skeleton__bar public-slots-skeleton__bar--focus"></span>
-											<span class="public-slots-skeleton__bar public-slots-skeleton__bar--near"></span>
-											<span class="public-slots-skeleton__bar public-slots-skeleton__bar--far"></span>
-										</div>
-										<div class="public-slots-skeleton__grid" aria-hidden="true">
-											<span class="public-slots-skeleton__chip"></span>
-											<span class="public-slots-skeleton__chip"></span>
-											<span class="public-slots-skeleton__chip"></span>
-											<span class="public-slots-skeleton__chip"></span>
-										</div>
-									</div>
-
-									<div class="reservation-slots-panel hidden" data-reservation-slots-panel>
-										<div class="public-slots-container grid gap-0" data-reservation-slots-container></div>
-										<p
-											data-no-reservation-slots
-											class="hidden rounded-2xl border border-(--error-container) bg-(--error-container) px-4 py-3 text-sm font-medium text-(--on-error-container)"
-										>
-											No se encontraron horarios para esta sucursal. Probá otra sucursal o fecha.
-										</p>
-									</div>
-								</section>
-
-								<section data-reschedule-step-panel="4" class="hidden">
+								<section data-reschedule-step-panel="3" class="hidden">
 									<div class="reservation-change-compare" data-reschedule-change-summary></div>
 								</section>
 							</div>
@@ -741,6 +738,24 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 }
 
 .reservation-manage__column {
+	width: 100%;
+	max-width: 36rem;
+	margin-inline: auto;
+}
+
+/* La carga SIPAP necesita una composición más amplia que el ticket de la reserva. */
+.reservation-shell:has(.sipap-deposit-panel--manage:not(.hidden)) {
+	max-width: 72rem;
+}
+
+.reservation-manage__column:has(.sipap-deposit-panel--manage:not(.hidden)) {
+	max-width: 68rem;
+}
+
+.reservation-manage__column:has(.sipap-deposit-panel--manage:not(.hidden))
+	> .reservation-manage__title,
+.reservation-manage__body:has(.sipap-deposit-panel--manage:not(.hidden))
+	> :not(.reservation-manage__deposit) {
 	width: 100%;
 	max-width: 36rem;
 	margin-inline: auto;
@@ -1142,73 +1157,29 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 }
 
 .reservation-reschedule-modal:has([data-reservation-form]) {
-	height: fit-content;
+	--surface-bright: #121214;
+	--surface-container: #121214;
+	--surface-container-high: #1a1a1c;
+	--surface-container-highest: #222224;
+	--shell-border: rgba(255, 255, 255, 0.08);
+	--outline-variant: rgba(255, 255, 255, 0.08);
+	--primary: #426edb;
+	--primary-soft: rgba(66, 110, 219, 0.14);
+	--primary-soft-hover: rgba(66, 110, 219, 0.2);
+	--primary-hover: #5b82e3;
+	--on-primary: #ffffff;
+	--on-surface: #ffffff;
+	--on-surface-variant: #a0a0a0;
+	--control-surface: #1a1a1c;
+	min-height: 90dvh;
+	height: 90dvh;
 	max-height: 90dvh;
 }
 
-/* Paso horario: ruleta más alta y centrada (mobile). */
-@media (max-width: 767px) {
-	.reservation-reschedule-form[data-reschedule-step='3'] .reservation-reschedule-body {
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-	}
-
-	.reservation-reschedule-form[data-reschedule-step='3'] .reservation-reschedule-panel,
-	.reservation-reschedule-form[data-reschedule-step='3'] .reservation-slots-panel,
-	.reservation-reschedule-form[data-reschedule-step='3'] .public-slots-container {
-		width: 100%;
-	}
-
-	.reservation-reschedule-form[data-reschedule-step='3'] .public-slot-roulette {
-		height: 15.5rem;
-		-webkit-mask-image: linear-gradient(
-			to bottom,
-			transparent 0%,
-			#000 10%,
-			#000 90%,
-			transparent 100%
-		);
-		mask-image: linear-gradient(
-			to bottom,
-			transparent 0%,
-			#000 10%,
-			#000 90%,
-			transparent 100%
-		);
-	}
-
-	.reservation-reschedule-form[data-reschedule-step='3']
-		.public-slot-roulette
-		.public-slot-time--roulette.is-near-up {
-		transform: translate3d(0, -3.35rem, 0) scale(0.52);
-		opacity: 0.58;
-	}
-
-	.reservation-reschedule-form[data-reschedule-step='3']
-		.public-slot-roulette
-		.public-slot-time--roulette.is-near-down {
-		transform: translate3d(0, 3.35rem, 0) scale(0.52);
-		opacity: 0.58;
-	}
-
-	.reservation-reschedule-form[data-reschedule-step='3']
-		.public-slot-roulette
-		.public-slot-time--roulette.is-far-up {
-		transform: translate3d(0, -6.1rem, 0) scale(0.4);
-		opacity: 0.34;
-	}
-
-	.reservation-reschedule-form[data-reschedule-step='3']
-		.public-slot-roulette
-		.public-slot-time--roulette.is-far-down {
-		transform: translate3d(0, 6.1rem, 0) scale(0.4);
-		opacity: 0.34;
-	}
-
-	.reservation-reschedule-form[data-reschedule-step='3'] .public-slots-skeleton__roulette {
-		min-height: 15.5rem;
-	}
+.reservation-reschedule-modal:has([data-reservation-form]) .reservation-reschedule-form {
+	height: 100%;
+	min-height: 0;
+	max-height: inherit;
 }
 
 .reservation-reschedule-modal::backdrop {
@@ -1229,6 +1200,98 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 @media (max-width: 639px) {
 	.reservation-reschedule-footer {
 		padding: 0.65rem 1.15rem max(0.65rem, env(safe-area-inset-bottom, 0px));
+	}
+}
+
+.reservation-reschedule-titlebar {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 0.75rem;
+	flex-shrink: 0;
+	padding: 0.75rem 1rem;
+	border-bottom: 1px solid var(--shell-border);
+	background: var(--surface-bright);
+}
+
+.reservation-reschedule-titlebar__leading {
+	display: flex;
+	min-width: 0;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.reservation-reschedule-titlebar__icon {
+	display: flex;
+	flex-shrink: 0;
+	align-items: center;
+	justify-content: center;
+	width: 2.75rem;
+	height: 2.75rem;
+	border-radius: 1rem;
+	background: var(--primary-soft);
+	color: var(--primary);
+}
+
+.reservation-reschedule-titlebar__icon .material-symbols-rounded {
+	font-size: 1.35rem;
+	line-height: 1;
+}
+
+.reservation-reschedule-titlebar__text {
+	min-width: 0;
+}
+
+.reservation-reschedule-titlebar__title {
+	margin: 0;
+	font-size: 1.05rem;
+	font-weight: 800;
+	letter-spacing: -0.02em;
+	line-height: 1.2;
+	color: var(--on-surface);
+}
+
+.reservation-reschedule-titlebar__subtitle {
+	margin: 0.12rem 0 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 0.82rem;
+	font-weight: 500;
+	line-height: 1.25;
+	color: var(--on-surface-variant);
+}
+
+.reservation-reschedule-titlebar__close {
+	display: flex;
+	flex-shrink: 0;
+	align-items: center;
+	justify-content: center;
+	width: 2.5rem;
+	height: 2.5rem;
+	border: 1px solid var(--shell-border);
+	border-radius: 999px;
+	background: transparent;
+	color: var(--on-surface-variant);
+	cursor: pointer;
+	transition:
+		background 160ms ease,
+		color 160ms ease;
+}
+
+.reservation-reschedule-titlebar__close:hover {
+	background: var(--control-surface, var(--surface-container-high));
+	color: var(--on-surface);
+}
+
+.reservation-reschedule-titlebar__close .material-symbols-rounded {
+	font-size: 1.2rem;
+	line-height: 1;
+}
+
+@media (min-width: 640px) {
+	.reservation-reschedule-titlebar {
+		padding: 1rem 1.25rem;
 	}
 }
 
@@ -1258,6 +1321,20 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 	text-align: center;
 }
 
+.reservation-cancel-header {
+	justify-content: space-between;
+	padding: 0;
+	text-align: left;
+}
+
+.reservation-cancel-header > div {
+	padding: 0 3rem 0 0;
+}
+
+.reservation-cancel-header .reservation-reschedule-title {
+	text-align: left;
+}
+
 .reservation-modal-close {
 	position: absolute;
 	top: 0.55rem;
@@ -1281,42 +1358,125 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 	color: var(--on-surface);
 }
 
-.reservation-reschedule-stepper {
-	margin: 0;
-	padding: 0.35rem 1.15rem 0.65rem;
+.reservation-reschedule-steps {
+	position: relative;
 	flex-shrink: 0;
-	border-bottom: 1px solid color-mix(in srgb, var(--outline-variant) 55%, transparent);
-	justify-content: stretch;
+	margin: 0;
+	padding: 0.9rem 1.15rem 0.85rem;
+	border-bottom: 1px solid var(--shell-border);
+	background: var(--surface-bright);
 }
 
-.reservation-reschedule-stepper [data-reschedule-step-compact-label] {
+.reservation-reschedule-steps [data-reschedule-step-indicator] {
+	position: relative;
+	z-index: 1;
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	align-items: start;
+	gap: 0;
 	margin: 0;
-	text-align: center;
-	font-size: 0.7rem;
-	font-weight: 600;
-	letter-spacing: 0.02em;
-	line-height: 1.2;
-	color: var(--on-surface-variant);
-}
-
-.reservation-reschedule-stepper [data-reschedule-step-indicator] {
-	display: none;
-	align-items: center;
-	gap: 0.55rem;
-	margin: 0;
-	padding: 0.35rem;
+	padding: 0;
 	list-style: none;
-	background: color-mix(in srgb, var(--surface-container-high) 55%, transparent);
-	border: 1px solid color-mix(in srgb, var(--outline-variant) 45%, transparent);
-	border-radius: 9999px;
 }
 
-@media (min-width: 768px) {
-	.reservation-reschedule-stepper [data-reschedule-step-indicator] {
-		display: inline-flex;
-		width: 100%;
-		justify-content: center;
-	}
+.reservation-reschedule-steps [data-reschedule-step-item] {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 0.42rem;
+	min-width: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+	color: var(--on-surface-variant);
+	text-align: center;
+	cursor: default;
+	transition: color 420ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.reservation-reschedule-steps__index {
+	position: relative;
+	z-index: 2;
+	display: grid;
+	place-items: center;
+	width: 1.75rem;
+	height: 1.75rem;
+	border: 1px solid var(--shell-border);
+	border-radius: 0.62rem;
+	background: var(--surface-bright);
+	box-shadow: 0 0 0 3px var(--surface-bright);
+	font-size: 0.7rem;
+	font-weight: 750;
+	font-variant-numeric: tabular-nums;
+	letter-spacing: 0;
+	line-height: 1;
+	transition:
+		background 420ms cubic-bezier(0.32, 0.72, 0, 1),
+		border-color 420ms cubic-bezier(0.32, 0.72, 0, 1),
+		color 420ms cubic-bezier(0.32, 0.72, 0, 1),
+		box-shadow 420ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.reservation-reschedule-steps__label {
+	font-size: 0.76rem;
+	font-weight: 600;
+	letter-spacing: -0.015em;
+	line-height: 1.2;
+	white-space: nowrap;
+}
+
+.reservation-reschedule-steps .step-item-current {
+	color: var(--on-surface);
+}
+
+.reservation-reschedule-steps .step-item-current .reservation-reschedule-steps__index {
+	border-color: var(--primary);
+	background: var(--primary);
+	color: var(--on-primary);
+	box-shadow:
+		0 0 0 3px var(--surface-bright),
+		0 0 0 6px var(--primary-soft);
+}
+
+.reservation-reschedule-steps .step-item-current .reservation-reschedule-steps__label {
+	font-weight: 750;
+}
+
+.reservation-reschedule-steps .step-item-done {
+	color: var(--on-surface);
+}
+
+.reservation-reschedule-steps .step-item-done::before {
+	display: none;
+	content: none;
+}
+
+.reservation-reschedule-steps .step-item-done .reservation-reschedule-steps__index {
+	border-color: color-mix(in srgb, var(--primary) 34%, var(--surface-bright));
+	background: color-mix(in srgb, var(--primary) 14%, var(--surface-bright));
+	color: var(--primary);
+}
+
+.reservation-reschedule-steps__track {
+	position: absolute;
+	z-index: 0;
+	top: 1.72rem;
+	left: calc(16.666% + 0.75rem);
+	right: calc(16.666% + 0.75rem);
+	height: 2px;
+	margin: 0;
+	overflow: hidden;
+	border-radius: 999px;
+	background: var(--shell-border);
+}
+
+.reservation-reschedule-steps__fill {
+	height: 100%;
+	border-radius: inherit;
+	background: var(--primary);
+	transition: width 520ms cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .reservation-reschedule-body {
@@ -1327,21 +1487,7 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 	-webkit-overflow-scrolling: touch;
 	overscroll-behavior: contain;
 	touch-action: pan-y;
-	padding: 0.75rem 1.15rem 0.85rem;
-}
-
-.reservation-reschedule-panel__intro {
-	text-align: center;
-}
-
-.reservation-reschedule-panel__title {
-	margin: 0;
-	font-size: clamp(1.05rem, 3.2vw, 1.25rem);
-	font-weight: 400;
-	letter-spacing: -0.02em;
-	line-height: 1.25;
-	color: var(--on-surface);
-	text-align: center;
+	padding: 0.35rem 1.15rem 0.85rem;
 }
 
 .reservation-reschedule-panel__hint {
@@ -1367,8 +1513,8 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 	gap: 0.75rem;
 	flex-shrink: 0;
 	padding: 0.75rem 1.15rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
-	border-top: 1px solid color-mix(in srgb, var(--outline-variant) 70%, transparent);
-	background: var(--surface-container);
+	border-top: 1px solid var(--shell-border);
+	background: var(--surface-bright);
 }
 
 .reservation-reschedule-footer-actions {
@@ -1568,49 +1714,6 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 	}
 }
 
-.step-item-default,
-.step-item-current,
-.step-item-done {
-	border-radius: 100px;
-	padding: 0.55rem 0.65rem;
-	font-size: 0.78rem;
-	font-weight: 500;
-	text-align: center;
-	transition: all 0.2s ease-in-out;
-	cursor: default;
-	white-space: nowrap;
-}
-
-@media (min-width: 640px) {
-	.step-item-default,
-	.step-item-current,
-	.step-item-done {
-		padding: 0.6rem 1.15rem;
-		font-size: 0.82rem;
-	}
-}
-
-.step-item-default {
-	background: transparent;
-	color: var(--on-surface-variant);
-}
-
-.step-item-current {
-	background: var(--primary-container);
-	color: var(--on-primary-container);
-}
-
-.step-item-done {
-	background: var(--surface-container-highest);
-	color: var(--on-surface);
-}
-
-.step-item-done::before {
-	content: '\2713';
-	display: inline-block;
-	margin-right: 0.35rem;
-	color: var(--primary);
-}
 
 .reservation-danger,
 .reservation-link {
@@ -1687,9 +1790,9 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 		right: 0;
 		bottom: 0;
 		left: 0;
-		width: min(42rem, calc(100vw - 2rem));
-		max-width: min(42rem, calc(100vw - 2rem));
-		max-height: min(90vh, 52rem);
+		width: min(44rem, calc(100vw - 2rem));
+		max-width: min(44rem, calc(100vw - 2rem));
+		max-height: min(94vh, 58rem);
 		height: fit-content;
 		margin: auto;
 		border-bottom: 1px solid var(--outline-variant);
@@ -1697,13 +1800,25 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 	}
 
 	.reservation-reschedule-modal:has([data-reservation-form]) {
-		height: fit-content;
-		max-height: min(90vh, 52rem);
+		top: 0;
+		right: 0;
+		bottom: 0;
+		left: auto;
+		margin: 0 0 0 auto;
+		width: min(32rem, 100%);
+		max-width: min(32rem, 100%);
+		height: 100dvh;
+		min-height: 100dvh;
+		max-height: 100dvh;
+		border-radius: 0;
+		border-right: 0;
+		border-bottom: 0;
+		animation-name: reservation-reschedule-drawer-in;
 	}
 
-	.reservation-reschedule-form {
-		height: auto;
-		max-height: min(90vh, 52rem);
+	.reservation-reschedule-modal:has([data-reservation-form]) .reservation-reschedule-form {
+		height: 100%;
+		max-height: 100dvh;
 	}
 
 	.reservation-reschedule-header {
@@ -1725,19 +1840,21 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 		right: auto;
 	}
 
-	.reservation-reschedule-panel__intro,
-	.reservation-reschedule-panel__title,
 	.reservation-reschedule-panel__hint,
 	.reservation-slots-date-subtitle {
 		text-align: left;
 	}
 
-	.reservation-reschedule-stepper {
-		padding: 0.5rem 1.5rem 0.75rem;
+	.reservation-reschedule-steps {
+		padding: 1rem 1.5rem 0.95rem;
 	}
 
-	.reservation-reschedule-stepper [data-reschedule-step-indicator] {
-		gap: 0.85rem;
+	.reservation-reschedule-steps__label {
+		font-size: 0.8rem;
+	}
+
+	.reservation-reschedule-steps__track {
+		top: 1.82rem;
 	}
 }
 
@@ -1991,6 +2108,17 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 			opacity: 1;
 			transform: translateY(0) scale(1);
 		}
+	}
+}
+
+@keyframes reservation-reschedule-drawer-in {
+	from {
+		opacity: 0;
+		transform: translateX(100%);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0);
 	}
 }
 

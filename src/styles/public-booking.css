@@ -883,6 +883,33 @@ html:has(.sipap-deposit-panel:not(.hidden)) body,
 	display: none;
 }
 
+/* Paso seña: usar más ancho en tablet/PC. El wizard (pasos 1–6) sigue en 42/48/52rem. */
+.public-booking-shell:has(.sipap-deposit-panel:not(.hidden)) .public-booking-shell__canvas,
+.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile__inner {
+	max-width: min(56rem, 100%);
+}
+
+@media (min-width: 768px) {
+	.public-booking-shell:has(.sipap-deposit-panel:not(.hidden)) .public-booking-shell__canvas,
+	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile__inner {
+		max-width: min(64rem, 100%);
+	}
+}
+
+@media (min-width: 1024px) {
+	.public-booking-shell:has(.sipap-deposit-panel:not(.hidden)) .public-booking-shell__canvas,
+	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile__inner {
+		max-width: min(72rem, calc(100vw - 2.5rem));
+	}
+}
+
+@media (min-width: 1280px) {
+	.public-booking-shell:has(.sipap-deposit-panel:not(.hidden)) .public-booking-shell__canvas,
+	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile__inner {
+		max-width: min(76rem, calc(100vw - 3rem));
+	}
+}
+
 .public-booking-sheet:has([data-step-panel='7']:not(.hidden))
 	.public-booking-profile--card
 	.public-booking-profile__inner {
