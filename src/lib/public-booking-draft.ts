@@ -130,6 +130,13 @@ export const clearSipapHold = (key: string) => {
 	}
 };
 
+/** Fusiona campos en el hold persistido (p. ej. ocr_status tras subir comprobante). */
+export const patchSipapHold = (key: string, patch: Record<string, unknown>) => {
+	const stored = readSipapHold(key);
+	if (!stored) return;
+	writeSipapHold(key, { ...stored.hold, ...patch }, stored.context);
+};
+
 const isDraftStep = (value: unknown): value is PublicBookingDraftStep =>
 	value === 1 || value === 2 || value === 3 || value === 4 || value === 5;
 

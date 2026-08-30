@@ -62,6 +62,8 @@ export const POLICY_SUMMARIES: Record<RefundPolicyCode, string> = {
 
 const SUBMIT_IDLE_LABEL = 'Confirmar y enviar comprobante';
 const SUBMIT_CONFIRMED_LABEL = 'Confirmado';
+const SUBMIT_SENT_LABEL = 'Comprobante enviado';
+const SUBMIT_LOADING_LABEL = 'Enviando…';
 const MAX_RECEIPT_BYTES = 8 * 1024 * 1024;
 const RECEIPT_IMAGE_MIMES = new Set(['image/jpeg', 'image/png']);
 const RECEIPT_PDF_MIMES = new Set(['application/pdf']);
@@ -183,6 +185,19 @@ const setHoldVisibleState = (
 	submitted?.classList.toggle('hidden', state !== 'submitted');
 };
 
+const isHoldFrozen = (root: ParentNode) => {
+	const banner = root.querySelector<HTMLElement>('[data-sipap-hold-banner]');
+	const submitBtn = root.querySelector<HTMLButtonElement>('[data-sipap-upload-submit]');
+	return banner?.dataset.sipapHoldFrozen === '1' || submitBtn?.dataset.sipapSubmitted === '1';
+};
+
+const freezeHoldCountdown = (root: ParentNode) => {
+	const banner = root.querySelector<HTMLElement>('[data-sipap-hold-banner]');
+	if (banner) banner.dataset.sipapHoldFrozen = '1';
+	setHoldVisibleState(root, 'submitted');
+	stopSipapHoldCountdown(root);
+};
+
 const lockReceiptDropzone = (root: ParentNode, locked: boolean) => {
 	const dropzone = root.querySelector<HTMLElement>('[data-sipap-dropzone]');
 	const fileInput = root.querySelector<HTMLInputElement>('[data-sipap-upload-input]');
@@ -193,16 +208,50 @@ const lockReceiptDropzone = (root: ParentNode, locked: boolean) => {
 	if (clearBtn) clearBtn.disabled = locked;
 };
 
+const setSubmitLabel = (submitBtn: HTMLButtonElement, label: string) => {
+	const labelEl = submitBtn.querySelector<HTMLElement>('[data-sipap-submit-label]');
+	if (labelEl) {
+		labelEl.textContent = label;
+		return;
+	}
+	submitBtn.textContent = label;
+};
+
+const setSubmitLoading = (submitBtn: HTMLButtonElement, loading: boolean) => {
+	submitBtn.classList.toggle('is-loading', loading);
+	submitBtn.setAttribute('aria-busy', loading ? 'true' : 'false');
+	if (loading) {
+		setSubmitLabel(submitBtn, SUBMIT_LOADING_LABEL);
+	}
+};
+
+const lockSubmitAfterSend = (
+	root: ParentNode,
+	label: string = SUBMIT_SENT_LABEL
+) => {
+	const submitBtn = root.querySelector<HTMLButtonElement>('[data-sipap-upload-submit]');
+	if (!submitBtn) return;
+	setSubmitLoading(submitBtn, false);
+	submitBtn.disabled = true;
+	submitBtn.dataset.sipapSubmitted = '1';
+	setSubmitLabel(submitBtn, label);
+	lockReceiptDropzone(root, true);
+};
+
 const syncSubmitEnabled = (root: ParentNode, confirmed = false) => {
 	const submitBtn = root.querySelector<HTMLButtonElement>('[data-sipap-upload-submit]');
 	if (!submitBtn) return;
-	if (confirmed) {
+	if (submitBtn.dataset.sipapSubmitted === '1' || confirmed) {
+		lockSubmitAfterSend(root, confirmed ? SUBMIT_CONFIRMED_LABEL : SUBMIT_SENT_LABEL);
+		return;
+	}
+	if (isHoldFrozen(root)) {
 		submitBtn.disabled = true;
-		submitBtn.textContent = SUBMIT_CONFIRMED_LABEL;
 		lockReceiptDropzone(root, true);
 		return;
 	}
-	submitBtn.textContent = SUBMIT_IDLE_LABEL;
+	setSubmitLoading(submitBtn, false);
+	setSubmitLabel(submitBtn, SUBMIT_IDLE_LABEL);
 	const locked = isHoldExpired(root);
 	submitBtn.disabled = locked || !hasSelectedFile(root);
 	lockReceiptDropzone(root, locked);
@@ -287,8 +336,10 @@ export const fillSipapDepositPanel = (
 		(policyCode ? POLICY_SUMMARIES[policyCode] : '');
 
 	const setText = (selector: string, value: string) => {
-		const el = root.querySelector<HTMLElement>(selector);
-		if (el) el.textContent = value || '—';
+		const text = value || '—';
+		root.querySelectorAll<HTMLElement>(selector).forEach((el) => {
+			el.textContent = text;
+		});
 	};
 
 	setText(
@@ -331,21 +382,38 @@ export const fillSipapDepositPanel = (
 	}
 
 	resetSipapReceiptPreview(root);
-	setSipapReceiptStatus(root, null);
 
-	// Si ya hay un comprobante subido en revisión (ocr_status presente, distinto de MATCH)
-	// y el negocio todavía no lo rechazó explícitamente (sin reject_reason), el reloj queda
-	// congelado: el cliente ya hizo su parte, no se lo puede penalizar por la demora del
-	// negocio en revisar. Solo vuelve a correr el countdown si hubo un rechazo explícito
-	// (ahí sí hay un payment_expires_at nuevo y un reject_reason que mostrar).
 	const ocrStatus = String(hold.ocr_status || '').toUpperCase();
 	const hasRejection = Boolean(String(hold.reject_reason || '').trim());
-	if (ocrStatus && ocrStatus !== 'MATCH' && !hasRejection) {
-		stopSipapHoldCountdown(root);
-		setHoldVisibleState(root, 'submitted');
+	const banner = root.querySelector<HTMLElement>('[data-sipap-hold-banner]');
+	const submitBtn = root.querySelector<HTMLButtonElement>('[data-sipap-upload-submit]');
+	const alreadyFrozen =
+		banner?.dataset.sipapHoldFrozen === '1' || submitBtn?.dataset.sipapSubmitted === '1';
+
+	if (ocrStatus === 'MATCH') {
+		freezeHoldCountdown(root);
+		banner?.classList.add('hidden');
+		lockSubmitAfterSend(root, SUBMIT_CONFIRMED_LABEL);
 		return;
 	}
 
+	if (hasRejection) {
+		if (banner) delete banner.dataset.sipapHoldFrozen;
+		if (submitBtn) delete submitBtn.dataset.sipapSubmitted;
+		setSipapReceiptStatus(root, null);
+		startSipapHoldCountdown(root, hold.payment_expires_at);
+		return;
+	}
+
+	// Comprobante ya enviado (hold persistido, banner frozen o botón locked): no reiniciar
+	// el countdown. El rechazo (arriba) es el único caso que lo reanuda.
+	if ((ocrStatus && ocrStatus !== 'MATCH') || alreadyFrozen) {
+		freezeHoldCountdown(root);
+		lockSubmitAfterSend(root, SUBMIT_SENT_LABEL);
+		return;
+	}
+
+	setSipapReceiptStatus(root, null);
 	startSipapHoldCountdown(root, hold.payment_expires_at);
 };
 
@@ -368,6 +436,7 @@ export const stopSipapHoldCountdown = (root: ParentNode) => {
 };
 
 const expireSipapHoldUi = (root: ParentNode) => {
+	if (isHoldFrozen(root)) return;
 	setHoldVisibleState(root, 'expired');
 	setHoldLive(root, 'Se venció el tiempo para adjuntar el comprobante.');
 	const countdownEl = root.querySelector<HTMLElement>('[data-sipap-countdown]');
@@ -377,20 +446,30 @@ const expireSipapHoldUi = (root: ParentNode) => {
 
 export const startSipapHoldCountdown = (root: ParentNode, expiresAt?: string | null) => {
 	const countdownEl = root.querySelector<HTMLElement>('[data-sipap-countdown]');
+	const banner = root.querySelector<HTMLElement>('[data-sipap-hold-banner]');
 	if (!countdownEl || !(root instanceof Element)) return;
+	if (isHoldFrozen(root)) return;
 
 	stopSipapHoldCountdown(root);
 	setHoldLive(root, '');
 
 	const parsed = expiresAt ? Date.parse(String(expiresAt)) : Number.NaN;
 	if (!Number.isFinite(parsed)) {
+		if (banner) delete banner.dataset.sipapExpiresAt;
 		setHoldVisibleState(root, 'unknown');
 		syncSubmitEnabled(root);
 		return;
 	}
 
+	if (banner) banner.dataset.sipapExpiresAt = String(expiresAt);
+
 	let warnedTwoMinutes = false;
 	const tick = () => {
+		const liveBanner = root.querySelector<HTMLElement>('[data-sipap-hold-banner]');
+		if (isHoldFrozen(root) || liveBanner?.dataset.sipapHoldState === 'submitted') {
+			stopSipapHoldCountdown(root);
+			return;
+		}
 		const remaining = parsed - Date.now();
 		countdownEl.textContent = formatCountdown(remaining);
 		if (remaining <= 0) {
@@ -423,11 +502,12 @@ export const setSipapReceiptStatus = (
 	if (!statusEl) return;
 
 	if (phase === 'uploading') {
-		statusEl.textContent = result?.message?.trim() || 'Leyendo comprobante…';
-		statusEl.dataset.state = 'loading';
+		statusEl.textContent = '';
+		statusEl.dataset.state = 'idle';
+		freezeHoldCountdown(root);
 		if (submitBtn) {
 			submitBtn.disabled = true;
-			submitBtn.textContent = SUBMIT_IDLE_LABEL;
+			setSubmitLoading(submitBtn, true);
 		}
 		lockReceiptDropzone(root, true);
 		return;
@@ -436,6 +516,15 @@ export const setSipapReceiptStatus = (
 	if (phase === 'error') {
 		statusEl.textContent = result?.message || 'No fue posible subir el comprobante.';
 		statusEl.dataset.state = 'error';
+		// Tras uploading el freeze es durable: timeout/red no reanudan el MM:SS
+		// (el servidor puede haber guardado el comprobante). Solo reanudar si el
+		// error fue de validación local antes de enviar.
+		if (isHoldFrozen(root)) {
+			setHoldVisibleState(root, 'submitted');
+			stopSipapHoldCountdown(root);
+			lockSubmitAfterSend(root, SUBMIT_SENT_LABEL);
+			return;
+		}
 		syncSubmitEnabled(root);
 		return;
 	}
@@ -463,24 +552,17 @@ export const setSipapReceiptStatus = (
 		autoHideMs: 5000,
 	});
 
-	// El reloj se congela apenas se sube el comprobante: el cliente ya hizo su parte y no
-	// debe perder el turno por una demora del negocio en revisar (ver también
-	// fillSipapDepositPanel, que aplica el mismo freeze al recargar la página).
-	stopSipapHoldCountdown(root);
+	freezeHoldCountdown(root);
 	const banner = root.querySelector<HTMLElement>('[data-sipap-hold-banner]');
 	if (ocr === 'MATCH') {
 		banner?.classList.add('hidden');
-	} else {
-		banner?.classList.remove('hidden');
-		setHoldVisibleState(root, 'submitted');
-	}
-
-	if (ocr === 'MATCH') {
-		syncSubmitEnabled(root, true);
+		lockSubmitAfterSend(root, SUBMIT_CONFIRMED_LABEL);
 		if (fileInput) fileInput.disabled = true;
 		return;
 	}
-	syncSubmitEnabled(root);
+	banner?.classList.remove('hidden');
+	lockSubmitAfterSend(root, SUBMIT_SENT_LABEL);
+	if (fileInput) fileInput.disabled = true;
 };
 
 const fileToBase64 = (file: File) =>
@@ -539,10 +621,12 @@ export const bindSipapReceiptUpload = (
 	let idemKey: string | null = null;
 	let idemFileSignature: string | null = null;
 	let isUploading = false;
+	let hasSubmitted = submitBtn.dataset.sipapSubmitted === '1';
 
 	const applyUploadSuccess = (result: SipapReceiptUploadResult) => {
 		idemKey = null;
 		idemFileSignature = null;
+		hasSubmitted = true;
 		setSipapReceiptStatus(root, result, 'done');
 		options?.onResult?.(result);
 	};
@@ -567,9 +651,10 @@ export const bindSipapReceiptUpload = (
 	};
 
 	const upload = async () => {
-		if (isUploading || isHoldExpired(root)) return;
+		if (isUploading || hasSubmitted || isHoldExpired(root) || submitBtn.disabled) return;
 		isUploading = true;
 		submitBtn.disabled = true;
+		setSubmitLoading(submitBtn, true);
 		try {
 			const token = String(tokenInput.value || '').trim();
 			const file = fileInput.files?.[0];
@@ -672,6 +757,10 @@ export const bindSipapReceiptUpload = (
 			options?.onError?.(message);
 		} finally {
 			isUploading = false;
+			if (hasSubmitted) {
+				submitBtn.disabled = true;
+				setSubmitLoading(submitBtn, false);
+			}
 		}
 	};
 
@@ -764,6 +853,9 @@ export const bindSipapReceiptUpload = (
 		'click',
 		(event) => {
 			event.preventDefault();
+			if (isUploading || hasSubmitted || submitBtn.disabled || submitBtn.dataset.sipapSubmitted === '1') {
+				return;
+			}
 			void upload();
 		},
 		{ signal: options?.signal }

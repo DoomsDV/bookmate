@@ -15,6 +15,7 @@ import {
 import {
 	clearSipapHold,
 	createDraftPersister,
+	patchSipapHold,
 	readPublicBookingDraft,
 	readSipapHold,
 	SLOT_UNAVAILABLE_RESTORE_MESSAGE,
@@ -2339,10 +2340,13 @@ export const initializePublicUserBookingPage = () => {
 		signal,
 		onResult: (result) => {
 			const ocr = String(result.ocr_status || '').toUpperCase();
-			// Seña verificada: la cita quedó confirmada, ya no hace falta persistir el hold.
 			if (ocr === 'MATCH') {
 				clearSipapHold(holdStorageKey);
+				return;
 			}
+			patchSipapHold(holdStorageKey, {
+				ocr_status: result.ocr_status || 'MANUAL_REVIEW',
+			});
 		},
 		onError: (message) => showToast(message, 'error'),
 	});
