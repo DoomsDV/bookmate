@@ -3448,8 +3448,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 	}
 
-	/* Desktop: drawer lateral desde la derecha (como Servicios / Cita). */
-	@media (min-width: 1024px) {
+	/* Tablet+: drawer lateral desde la derecha (como Servicios / Cita). */
+	@media (min-width: 640px) {
 		dialog[data-ai-summary-modal][open] {
 			flex-direction: row;
 			align-items: stretch;
