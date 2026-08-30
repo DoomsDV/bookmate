@@ -2977,14 +2977,18 @@ html:has(.sipap-deposit-panel:not(.hidden)) body,
 	}
 
 	.public-booking-actions .public-booking-back-link {
+		align-self: center;
+		height: 3rem;
 		min-height: 3rem;
-		padding: 0.65rem 0.9rem 0.65rem 0.65rem;
+		padding: 0 1.1rem 0 0.85rem;
 		border: 1px solid var(--outline, #79747e);
 		background: transparent;
 		box-shadow: none;
 		border-radius: 999px;
 		white-space: nowrap;
-		font-size: 0.9rem;
+		font-size: 0.95rem;
+		font-weight: 650;
+		line-height: 1;
 	}
 
 	html[data-theme='dark'] .public-booking-actions .public-booking-back-link {
@@ -3031,13 +3035,14 @@ html:has(.sipap-deposit-panel:not(.hidden)) body,
 	}
 
 	.public-booking-actions [data-booking-primary-actions] .booking-primary-action {
+		height: 3rem;
 		min-height: 3rem;
-		height: auto;
 		width: 100%;
 		margin: 0;
-		padding: 0.7rem 1.1rem;
+		padding: 0 1.1rem;
 		font-size: 0.95rem;
 		font-weight: 650;
+		line-height: 1;
 		border-radius: 999px;
 	}
 }
@@ -3192,8 +3197,19 @@ html:has(.sipap-deposit-panel:not(.hidden)) body,
 
 	.public-booking-actions .public-booking-back-row {
 		display: flex;
+		align-items: center;
 		flex: 0 0 auto;
 		margin: 0;
+	}
+
+	.public-booking-actions .public-booking-back-link {
+		align-self: center;
+		height: 2.75rem;
+		min-height: 2.75rem;
+		padding: 0 1.25rem 0 0.85rem;
+		font-size: 0.9375rem;
+		font-weight: 650;
+		line-height: 1;
 	}
 
 	.public-booking-actions > .public-booking-continue,
@@ -3201,9 +3217,15 @@ html:has(.sipap-deposit-panel:not(.hidden)) body,
 	.public-booking-actions > .public-location-stack__continue,
 	.public-booking-actions > .public-slot-roulette__continue {
 		flex: 0 0 auto;
+		align-self: center;
 		width: fit-content;
 		min-width: 0;
+		height: 2.75rem;
+		min-height: 2.75rem;
 		margin: 0;
+		padding: 0 1.35rem;
+		font-size: 0.9375rem;
+		line-height: 1;
 	}
 
 	.public-booking-actions:has(.public-booking-back-row:not(.hidden)) > .public-booking-continue,
@@ -3217,14 +3239,21 @@ html:has(.sipap-deposit-panel:not(.hidden)) body,
 	.public-booking-actions > [data-booking-primary-actions] {
 		display: grid;
 		flex: 0 0 auto;
+		align-self: center;
 		width: fit-content;
 		max-width: 100%;
-		margin-inline: 0;
+		margin: 0 !important;
 	}
 
 	.public-booking-actions [data-booking-primary-actions] .booking-primary-action {
 		width: auto;
 		min-width: 13.5rem;
+		height: 2.75rem;
+		min-height: 2.75rem;
+		padding: 0 1.35rem;
+		font-size: 0.9375rem;
+		font-weight: 650;
+		line-height: 1;
 	}
 }
 
