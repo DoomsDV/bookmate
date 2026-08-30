@@ -90,6 +90,15 @@ type PublicReservationDetail = {
 	} | null;
 	can_claim_refund?: number | null;
 	refund_claim_open?: number | null;
+	refund_sent_at?: string | null;
+	refund_dispute?: {
+		status?: string | null;
+		can_open?: number | null;
+		wait_modal_required?: number | null;
+		has_viewable_proof?: number | null;
+		public_whatsapp?: string | null;
+		phone_last4_hint?: string | null;
+	} | null;
 };
 
 type Coordinates = { lat: number; lng: number };
@@ -239,30 +248,120 @@ export const initializePublicReservationPage = () => {
 		return;
 	}
 
-	// Reembolso pendiente: reclamo si SLA vencido.
-	if (isCancelledReservation && refundStatus === 'PENDING') {
-		const claimBtn = root.querySelector<HTMLButtonElement>('[data-refund-claim-submit]');
-		const claimStatus = root.querySelector<HTMLElement>('[data-refund-claim-status]');
-		claimBtn?.addEventListener('click', async () => {
-			if (claimStatus) claimStatus.textContent = 'Registrando reclamo…';
-			claimBtn.disabled = true;
+	if (
+		isCancelledReservation &&
+		(refundStatus === 'PENDING' || refundStatus === 'SENT')
+	) {
+		const dialog = root.querySelector<HTMLDialogElement>('[data-refund-dispute-dialog]');
+		const waitRequired = Number(dialog?.dataset.waitModal || 0) === 1;
+		const last4Input = dialog?.querySelector<HTMLInputElement>('[data-refund-dialog-last4]');
+		const dialogStatus = dialog?.querySelector<HTMLElement>('[data-refund-dialog-status]');
+		const titleEl = dialog?.querySelector<HTMLElement>('[data-refund-dialog-title]');
+		const copyEl = dialog?.querySelector<HTMLElement>('[data-refund-dialog-copy]');
+		const primaryBtn = dialog?.querySelector<HTMLButtonElement>('[data-refund-dialog-primary]');
+		const openBtn = dialog?.querySelector<HTMLButtonElement>('[data-refund-dialog-open]');
+		const closeBtn = dialog?.querySelector<HTMLButtonElement>('[data-refund-dialog-close]');
+		const confirmWrap = dialog?.querySelector<HTMLElement>('[data-refund-dialog-confirm-wrap]');
+		const notReceivedBtn = root.querySelector<HTMLButtonElement>('[data-refund-not-received]');
+		const insistBtn = root.querySelector<HTMLButtonElement>('[data-refund-insist]');
+		const statusEl = root.querySelector<HTMLElement>('[data-refund-dispute-status]');
+		let confirmMode = false;
+
+		const closeDialog = () => dialog?.close();
+		const showWaitStep = () => {
+			confirmMode = false;
+			if (titleEl) titleEl.textContent = '¿No recibiste tu dinero?';
+			if (copyEl) {
+				copyEl.textContent =
+					'Las transferencias SIPAP pueden tardar hasta 48 horas hábiles en acreditarse. Si ya pasó ese plazo, podés abrir una disputa.';
+			}
+			confirmWrap?.classList.add('hidden');
+			if (primaryBtn) {
+				primaryBtn.classList.remove('hidden');
+				primaryBtn.textContent = 'Entendido, voy a esperar';
+			}
+			if (openBtn) openBtn.textContent = 'Abrir disputa';
+			if (dialogStatus) dialogStatus.textContent = '';
+		};
+		const showConfirmStep = () => {
+			confirmMode = true;
+			if (titleEl) titleEl.textContent = 'Confirmar disputa';
+			if (copyEl) {
+				copyEl.textContent =
+					'Para abrir la disputa, ingresá los últimos 4 dígitos del teléfono de la reserva. El comercio tendrá 48 horas hábiles para adjuntar el comprobante.';
+			}
+			confirmWrap?.classList.remove('hidden');
+			primaryBtn?.classList.add('hidden');
+			if (openBtn) openBtn.textContent = 'Confirmar y abrir disputa';
+			if (dialogStatus) dialogStatus.textContent = '';
+		};
+
+		notReceivedBtn?.addEventListener('click', () => {
+			if (!dialog) return;
+			if (waitRequired) showWaitStep();
+			else showConfirmStep();
+			if (!dialog.open) dialog.showModal();
+		});
+		closeBtn?.addEventListener('click', closeDialog);
+		dialog?.addEventListener('click', (event) => {
+			if (event.target === dialog) closeDialog();
+		});
+		primaryBtn?.addEventListener('click', closeDialog);
+		openBtn?.addEventListener('click', async () => {
+			if (!confirmMode && waitRequired) {
+				showConfirmStep();
+				return;
+			}
+			const last4 = String(last4Input?.value || '').replace(/\D/g, '');
+			if (last4.length !== 4) {
+				if (dialogStatus) dialogStatus.textContent = 'Ingresá los 4 dígitos.';
+				return;
+			}
+			if (openBtn) openBtn.disabled = true;
+			if (dialogStatus) dialogStatus.textContent = 'Abriendo disputa…';
 			const response = await fetch(
-				`/api/public/reservations/${encodeURIComponent(token)}/refund-claim`,
+				`/api/public/reservations/${encodeURIComponent(token)}/refund-dispute`,
 				{
 					method: 'POST',
 					headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-					body: JSON.stringify({ notes: 'Reclamo desde enlace de reserva' }),
+					body: JSON.stringify({
+						phone_last4: last4,
+						confirm_open: waitRequired ? 1 : 0,
+					}),
 				}
 			);
 			const data = await response.json().catch(() => ({}));
 			if (!response.ok) {
-				claimBtn.disabled = false;
-				if (claimStatus) claimStatus.textContent = '';
-				showToast(data.message || 'No fue posible registrar el reclamo.', 'error');
+				if (openBtn) openBtn.disabled = false;
+				if (dialogStatus) dialogStatus.textContent = '';
+				showToast(data.message || 'No fue posible abrir la disputa.', 'error');
 				return;
 			}
 			window.location.reload();
 		});
+
+		insistBtn?.addEventListener('click', async () => {
+			insistBtn.disabled = true;
+			const response = await fetch(
+				`/api/public/reservations/${encodeURIComponent(token)}/refund-dispute/insist`,
+				{
+					method: 'POST',
+					headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+					body: '{}',
+				}
+			);
+			const data = await response.json().catch(() => ({}));
+			if (!response.ok) {
+				insistBtn.disabled = false;
+				showToast(data.message || 'No fue posible registrar el seguimiento.', 'error');
+				return;
+			}
+			const wa = String(dialog?.dataset.whatsapp || '').trim();
+			if (wa) window.open(wa, '_blank', 'noopener');
+			showToast(data.message || 'Registramos que el dinero sigue sin aparecer.', 'success');
+			window.location.reload();
+		});
+		if (statusEl) statusEl.textContent = '';
 		return;
 	}
 

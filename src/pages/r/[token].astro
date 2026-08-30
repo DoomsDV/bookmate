@@ -55,12 +55,14 @@ const refundStatus = String(reservation?.refund_status || '').trim().toUpperCase
 const awaitsRefundAlias = isCancelled && refundStatus === 'AWAITING_ALIAS';
 const refundPending = isCancelled && refundStatus === 'PENDING';
 const refundSent = isCancelled && refundStatus === 'SENT';
-const canClaimRefund =
-	refundPending &&
-	Number(reservation?.can_claim_refund || 0) === 1 &&
-	Number(reservation?.refund_claim_open || 0) === 0;
-const claimAlreadyOpen =
-	refundPending && Number(reservation?.refund_claim_open || 0) === 1;
+const dispute = reservation?.refund_dispute || null;
+const disputeStatus = String(dispute?.status || '').trim().toUpperCase();
+const canOpenDispute = Number(dispute?.can_open || 0) === 1;
+const disputeOpen = ['OPEN', 'EVIDENCE_PROCESSING'].includes(disputeStatus);
+const disputeHasProof = Number(dispute?.has_viewable_proof || 0) === 1;
+const publicWhatsapp = String(dispute?.public_whatsapp || '').replace(/\D/g, '');
+const whatsappHref = publicWhatsapp ? `https://wa.me/${publicWhatsapp}` : '';
+const phoneLast4Hint = String(dispute?.phone_last4_hint || '').trim();
 const refundAmountLabel =
 	reservation?.refund_amount != null
 		? new Intl.NumberFormat('es-PY', {
@@ -312,35 +314,52 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 												<p class="m-0 text-sm text-(--on-surface-variant)" data-refund-alias-status></p>
 											</form>
 										</>
-									) : refundPending ? (
+									) : refundPending || refundSent ? (
 										<>
 											<p class="reservation-cancelled-text">
-												Reserva cancelada. Tu reembolso
-												{refundAmountLabel ? ` de ${refundAmountLabel}` : ''} está pendiente: el comercio te transferirá en hasta 48 horas hábiles.
+												{refundSent
+													? `Reserva cancelada. El reembolso${refundAmountLabel ? ` de ${refundAmountLabel}` : ''} ya fue marcado como enviado.`
+													: `Reserva cancelada. Tu reembolso${refundAmountLabel ? ` de ${refundAmountLabel}` : ''} está pendiente: el comercio te transferirá en hasta 48 horas hábiles.`}
 											</p>
-											{claimAlreadyOpen ? (
+											{disputeOpen ? (
 												<p class="mt-3 text-sm font-semibold text-amber-700">
-													Ya registraste un reclamo. Hasel está al tanto.
+													Disputa abierta. El comercio tiene 48 horas hábiles para adjuntar el comprobante de transferencia.
 												</p>
-											) : canClaimRefund ? (
-												<div class="mt-4 grid gap-2" data-refund-claim-wrap>
-													<p class="m-0 text-sm text-(--on-surface-variant)">
-														Pasaron las 48 horas hábiles y aún no marcó el reembolso como enviado.
+											) : null}
+											{disputeHasProof ? (
+												<div class="mt-4 grid gap-3">
+													<p class="m-0 text-sm font-semibold text-(--on-surface)">
+														El comercio adjuntó el comprobante de la transferencia.
 													</p>
-													<button type="button" class="reservation-danger" data-refund-claim-submit>
-														Reclamar reembolso
-													</button>
-													<p class="m-0 text-sm text-(--on-surface-variant)" data-refund-claim-status></p>
+													<img
+														src={`/api/public/reservations/${encodeURIComponent(token)}/refund-proof`}
+														alt="Comprobante de reembolso"
+														class="max-h-80 w-full rounded-2xl object-contain bg-(--surface-container-highest)"
+													/>
+													{disputeStatus === 'CUSTOMER_FOLLOW_UP' ? (
+														<p class="m-0 text-sm text-(--on-surface-variant)">
+															Registramos que el dinero sigue sin aparecer. Hasel no puede verificar la transferencia bancaria.
+														</p>
+													) : (
+														<button type="button" class="reservation-link text-left" data-refund-insist>
+															Sigue sin aparecer en mi cuenta
+														</button>
+													)}
+												</div>
+											) : canOpenDispute ? (
+												<div class="mt-4 grid gap-2" data-refund-dispute-wrap>
+													{refundSent ? (
+														<button type="button" class="reservation-link text-left" data-refund-not-received>
+															¿No recibiste tu dinero?
+														</button>
+													) : (
+														<button type="button" class="reservation-danger" data-refund-not-received>
+															Abrir disputa por demora
+														</button>
+													)}
+													<p class="m-0 text-sm text-(--on-surface-variant)" data-refund-dispute-status></p>
 												</div>
 											) : null}
-											<a href={rebookHref} class="reservation-link">Volver a reservar</a>
-										</>
-									) : refundSent ? (
-										<>
-											<p class="reservation-cancelled-text">
-												Reserva cancelada. El reembolso
-												{refundAmountLabel ? ` de ${refundAmountLabel}` : ''} ya fue marcado como enviado.
-											</p>
 											<a href={rebookHref} class="reservation-link">Volver a reservar</a>
 										</>
 									) : (
@@ -377,6 +396,60 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 						</div>
 						</div>
 					</article>
+
+					<dialog
+						class="reservation-history-modal"
+						data-refund-dispute-dialog
+						data-wait-modal={Number(dispute?.wait_modal_required || 0)}
+						data-phone-hint={phoneLast4Hint}
+						data-whatsapp={whatsappHref}
+					>
+						<div class="reservation-history-modal__sheet">
+							<div class="reservation-history-modal__handle" aria-hidden="true">
+								<span></span>
+							</div>
+							<div class="reservation-history-modal__header">
+								<div>
+									<h2 class="reservation-history-modal__title" data-refund-dialog-title>
+										¿No recibiste tu dinero?
+									</h2>
+									<p class="reservation-history-modal__subtitle" data-refund-dialog-copy>
+										Las transferencias SIPAP pueden tardar hasta 48 horas hábiles en acreditarse.
+									</p>
+								</div>
+								<button
+									type="button"
+									class="reservation-history-modal__close"
+									data-refund-dialog-close
+									aria-label="Cerrar"
+								>
+									<span class="material-symbols-rounded">close</span>
+								</button>
+							</div>
+							<div class="reservation-history-modal__scroll grid gap-3">
+								<label class="grid gap-1 text-sm font-semibold text-(--on-surface)" data-refund-dialog-confirm-wrap>
+									Últimos 4 dígitos de tu teléfono
+									<input
+										type="text"
+										inputmode="numeric"
+										maxlength="4"
+										autocomplete="one-time-code"
+										class="rounded-2xl border border-(--outline-variant) bg-(--surface-bright) px-4 py-3 text-base font-normal"
+										data-refund-dialog-last4
+									/>
+								</label>
+								<p class="m-0 text-sm text-(--on-surface-variant)" data-refund-dialog-status></p>
+								<div class="grid gap-2">
+									<button type="button" class="reservation-primary-action" data-refund-dialog-primary>
+										Entendido, voy a esperar
+									</button>
+									<button type="button" class="reservation-danger" data-refund-dialog-open>
+										Abrir disputa
+									</button>
+								</div>
+							</div>
+						</div>
+					</dialog>
 
 					<dialog
 						class="public-map-modal rounded-[28px] border-0 bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_64px_rgba(0,0,0,0.55)] backdrop:bg-black/70"

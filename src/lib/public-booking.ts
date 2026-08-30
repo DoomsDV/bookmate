@@ -217,6 +217,18 @@ export interface PublicReservationDepositSettings {
 	sipap?: PublicReservationSipapBankDetails | null;
 }
 
+export interface PublicRefundDispute {
+	status?: string | null;
+	can_open?: number | null;
+	wait_modal_required?: number | null;
+	has_viewable_proof?: number | null;
+	proof_due_at?: string | null;
+	refund_sent_at?: string | null;
+	public_whatsapp?: string | null;
+	phone_last4_hint?: string | null;
+	source?: string | null;
+}
+
 export interface PublicReservationDetail {
 	id_appointment: number;
 	org_id_organization: number;
@@ -248,6 +260,8 @@ export interface PublicReservationDetail {
 	refund_preview?: PublicReservationRefundPreview | null;
 	can_claim_refund?: number | null;
 	refund_claim_open?: number | null;
+	refund_sent_at?: string | null;
+	refund_dispute?: PublicRefundDispute | null;
 	service_includes?: string[];
 	visit_history?: PublicVisitHistoryItem[];
 	visit_history_count?: number;
@@ -941,6 +955,23 @@ const normalizeReservationDetail = (value: unknown): PublicReservationDetail | n
 		})(),
 		can_claim_refund: Number(source.can_claim_refund ?? 0) === 1 ? 1 : 0,
 		refund_claim_open: Number(source.refund_claim_open ?? 0) === 1 ? 1 : 0,
+		refund_sent_at: String(source.refund_sent_at || '').trim() || null,
+		refund_dispute: (() => {
+			const raw = source.refund_dispute;
+			if (!raw || typeof raw !== 'object') return null;
+			const d = raw as Record<string, unknown>;
+			return {
+				status: String(d.status || '').trim() || null,
+				can_open: Number(d.can_open ?? 0) === 1 ? 1 : 0,
+				wait_modal_required: Number(d.wait_modal_required ?? 0) === 1 ? 1 : 0,
+				has_viewable_proof: Number(d.has_viewable_proof ?? 0) === 1 ? 1 : 0,
+				proof_due_at: String(d.proof_due_at || '').trim() || null,
+				refund_sent_at: String(d.refund_sent_at || '').trim() || null,
+				public_whatsapp: String(d.public_whatsapp || '').trim() || null,
+				phone_last4_hint: String(d.phone_last4_hint || '').trim() || null,
+				source: String(d.source || '').trim() || null,
+			};
+		})(),
 		service_includes: Array.isArray(source.service_includes)
 			? source.service_includes.map((item) => String(item || '').trim()).filter(Boolean)
 			: [],
@@ -1095,25 +1126,72 @@ export const submitRefundAliasWithOrds = async (token: string, refundAlias: stri
 	};
 };
 
-export const submitRefundClaimWithOrds = async (token: string, notes?: string) => {
+export const openRefundDisputeWithOrds = async (
+	token: string,
+	payload: { phone_last4: string; confirm_open?: boolean; notes?: string }
+) => {
 	const safeToken = String(token || '').trim();
 	if (!safeToken) {
 		throw new PublicBookingApiError('Token de reserva requerido.', 400);
 	}
 
-	const response = await ordsFetch(`${resolvePublicReservationApiUrl(safeToken)}/refund-claim`, {
+	const response = await ordsFetch(`${resolvePublicReservationApiUrl(safeToken)}/refund-dispute`, {
 		method: 'POST',
 		headers: {
 			Accept: 'application/json',
 			'Content-Type': 'application/json',
 		},
-		body: JSON.stringify({ notes: String(notes || '').trim() || null }),
+		body: JSON.stringify({
+			phone_last4: String(payload.phone_last4 || '').trim(),
+			confirm_open: payload.confirm_open ? 1 : 0,
+			notes: String(payload.notes || '').trim() || null,
+		}),
 	});
 
-	const data = await parseApiResponse(response, 'No fue posible registrar el reclamo.');
+	const data = await parseApiResponse(response, 'No fue posible abrir la disputa.');
 	return {
-		message: String(data.message || '').trim() || 'Reclamo registrado.',
+		message: String(data.message || '').trim() || 'Disputa abierta.',
 		data: data.data || null,
+	};
+};
+
+export const insistRefundDisputeWithOrds = async (token: string) => {
+	const safeToken = String(token || '').trim();
+	if (!safeToken) {
+		throw new PublicBookingApiError('Token de reserva requerido.', 400);
+	}
+
+	const response = await ordsFetch(
+		`${resolvePublicReservationApiUrl(safeToken)}/refund-dispute/insist`,
+		{
+			method: 'POST',
+			headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+			body: '{}',
+		}
+	);
+
+	const data = await parseApiResponse(response, 'No fue posible registrar el seguimiento.');
+	return {
+		message: String(data.message || '').trim() || 'Seguimiento registrado.',
+		data: data.data || null,
+	};
+};
+
+export const getPublicRefundProofMetaWithOrds = async (token: string) => {
+	const safeToken = String(token || '').trim();
+	if (!safeToken) {
+		throw new PublicBookingApiError('Token de reserva requerido.', 400);
+	}
+
+	const response = await ordsFetch(`${resolvePublicReservationApiUrl(safeToken)}/refund-proof`, {
+		method: 'GET',
+		headers: { Accept: 'application/json' },
+	});
+
+	const data = await parseApiResponse(response, 'No fue posible obtener la prueba.');
+	return {
+		url: String(data.data?.url || '').trim(),
+		mime_type: String(data.data?.mime_type || 'application/octet-stream').trim(),
 	};
 };
 
