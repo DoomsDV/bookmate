@@ -4,6 +4,13 @@ import {
 	receiptFileSignature,
 } from './receipt-file';
 
+/**
+ * Contrato: bindReceiptDropzone lo usa Cobros (panel interno).
+ * El flujo público SIPAP implementa su propio dropzone en
+ * `public-deposit-sipap.ts` (preview, hold expirado y enablement del CTA).
+ * No montar ambos listeners sobre el mismo input.
+ */
+
 export type ReceiptDropzoneApi = {
 	reset: () => void;
 	getFile: () => File | null;

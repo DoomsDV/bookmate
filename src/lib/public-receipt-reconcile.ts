@@ -15,6 +15,12 @@ const CONFIRMED_PAYMENT_STATUSES = new Set(['PAID_TRANSFER', 'PAID', 'PAID_CASH'
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+export type ReservationPaymentSnapshot = {
+	payment_status?: string | null;
+	status?: string;
+	ocr_status?: string | null;
+};
+
 export const isDepositConfirmed = (reservation: {
 	payment_status?: string | null;
 	status?: string;
@@ -23,6 +29,15 @@ export const isDepositConfirmed = (reservation: {
 	const st = String(reservation.status || '').trim().toUpperCase();
 	return CONFIRMED_PAYMENT_STATUSES.has(pay) || st === 'CONFIRMADO';
 };
+
+/** Red, timeout, 409/429 y 5xx: el servidor pudo haber guardado el comprobante. */
+export const isAmbiguousReceiptFailure = (status: number) =>
+	!Number.isFinite(status) ||
+	status <= 0 ||
+	status === 408 ||
+	status === 409 ||
+	status === 429 ||
+	status >= 500;
 
 const parseReceiptUploadSuccess = (data: Record<string, unknown>): ReceiptUploadResult => ({
 	message: String(data.message || '').trim(),
@@ -64,7 +79,7 @@ export const postReceiptUpload = async (
 export const fetchReservationStatus = async (
 	token: string,
 	signal?: AbortSignal
-): Promise<{ payment_status?: string | null; status?: string } | null> => {
+): Promise<ReservationPaymentSnapshot | null> => {
 	const response = await fetch(`/api/public/reservations/${encodeURIComponent(token)}`, {
 		method: 'GET',
 		headers: { Accept: 'application/json' },
@@ -74,7 +89,21 @@ export const fetchReservationStatus = async (
 	if (!response.ok || data.status !== 'success' || !data.data || typeof data.data !== 'object') {
 		return null;
 	}
-	return data.data as { payment_status?: string | null; status?: string };
+	return data.data as ReservationPaymentSnapshot;
+};
+
+const snapshotToResult = (reservation: ReservationPaymentSnapshot): ReceiptUploadResult => {
+	const ocr = String(reservation.ocr_status || '').trim();
+	const confirmed = isDepositConfirmed(reservation);
+	return {
+		message: confirmed
+			? ocr.toUpperCase() === 'MATCH'
+				? 'Pago verificado. Tu turno quedó confirmado.'
+				: 'Tu turno quedó confirmado.'
+			: 'Comprobante recibido. El comercio lo revisará.',
+		...(ocr ? { ocr_status: ocr } : {}),
+		payment_status: String(reservation.payment_status || '').trim() || undefined,
+	};
 };
 
 /**
@@ -99,12 +128,10 @@ export const reconcileReceiptUpload = async (
 		if (options?.signal?.aborted) return null;
 
 		const reservation = await fetchReservationStatus(token, options?.signal);
-		if (reservation && isDepositConfirmed(reservation)) {
-			return {
-				message: 'Pago verificado. Tu turno quedó confirmado.',
-				ocr_status: 'MATCH',
-				payment_status: String(reservation.payment_status || 'PAID_TRANSFER'),
-			};
+		if (!reservation) continue;
+		const ocr = String(reservation.ocr_status || '').trim();
+		if (isDepositConfirmed(reservation) || ocr) {
+			return snapshotToResult(reservation);
 		}
 	}
 
