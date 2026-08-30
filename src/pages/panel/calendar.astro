@@ -3622,6 +3622,49 @@ const googleErrorMessage = hasGoogleError
 		background-color: rgba(255, 255, 255, 0.1);
 	}
 
+	@media (min-width: 768px) and (max-width: 1023.98px) {
+		.app-shell > :last-child:has([data-calendar-main]) > .grid {
+			height: auto;
+			min-height: 0;
+			display: block;
+		}
+
+		.calendar-main[data-calendar-main] {
+			height: auto;
+			max-height: none;
+			overflow: visible;
+			padding-bottom: calc(4.85rem + env(safe-area-inset-bottom, 0px));
+		}
+
+		[data-calendar-root].material-region,
+		[data-calendar-root] .calendar-page-stack,
+		.calendar-stage-wrap,
+		.calendar-stage {
+			flex: 0 0 auto;
+			min-height: auto;
+			height: auto;
+		}
+
+		[data-calendar-root] .calendar-host {
+			flex: 0 0 auto;
+			min-height: 32rem;
+			height: auto;
+		}
+
+		[data-calendar-root] .fc {
+			height: auto;
+		}
+
+		[data-calendar-root] .fc .fc-view-harness {
+			height: auto !important;
+			min-height: 0 !important;
+		}
+
+		[data-calendar-root] .fc .fc-timegrid-body .fc-scroller {
+			overflow-y: visible !important;
+		}
+	}
+
 	@media (max-width: 767px) {
 		.appointment-modal-footer {
 			flex-direction: row;
