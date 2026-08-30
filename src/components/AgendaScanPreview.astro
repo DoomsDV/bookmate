@@ -1866,7 +1866,8 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		.agenda-preview-row__control select,
 		.agenda-preview-row__control .agenda-preview-row__select-trigger,
 		.agenda-preview-dateinput,
-		.agenda-preview-timeinput {
+		.agenda-preview-timeinput,
+		.agenda-preview--native-selects .agenda-preview-defaults__field select {
 			font-size: 16px;
 		}
 	}
@@ -2185,10 +2186,62 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 			display: none;
 		}
 
+		/* Asignación: mismos selects nativos y caja unificada que las filas. */
+		.agenda-preview--native-selects .agenda-preview-defaults__field label {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			padding: 0;
+			margin: -1px;
+			overflow: hidden;
+			clip: rect(0, 0, 0, 0);
+			white-space: nowrap;
+			border: 0;
+		}
+
+		.agenda-preview--native-selects .agenda-preview-defaults__fields {
+			gap: 0.65rem 0.5rem;
+		}
+
 		.agenda-preview--native-selects .agenda-preview-defaults__field select {
+			display: block;
+			width: 100%;
+			min-height: 3rem;
+			padding: 0.4rem 2rem 0.4rem 0.75rem;
+			border: 1px solid var(--shell-border);
+			border-radius: 0.75rem;
+			background: var(--surface-bright);
+			color: var(--on-surface);
+			font-size: 16px;
+			font-weight: 600;
+			line-height: 1.4;
 			appearance: auto;
 			-webkit-appearance: menulist-button;
 			color-scheme: light dark;
+			cursor: pointer;
+			box-sizing: border-box;
+			overflow: visible;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			box-shadow: none;
+		}
+
+		.agenda-preview--native-selects .agenda-preview-defaults__field select.is-placeholder {
+			color: color-mix(in srgb, var(--on-surface-variant) 82%, transparent);
+			font-weight: 500;
+		}
+
+		.agenda-preview--native-selects .agenda-preview-defaults__field select:not(.is-placeholder) {
+			color: var(--on-surface);
+			font-weight: 600;
+		}
+
+		.agenda-preview--native-selects .agenda-preview-defaults__field select:focus,
+		.agenda-preview--native-selects .agenda-preview-defaults__field select:focus-visible {
+			outline: none;
+			border-color: var(--shell-border);
+			box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 28%, transparent);
+			background: var(--surface-bright);
 		}
 
 		.agenda-preview-row__control:focus-within,
@@ -2219,7 +2272,8 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		.agenda-preview-row__control select,
 		.agenda-preview-row__control .agenda-preview-row__select-trigger,
 		.agenda-preview-dateinput,
-		.agenda-preview-timeinput {
+		.agenda-preview-timeinput,
+		.agenda-preview--native-selects .agenda-preview-defaults__field select {
 			font-size: 16px;
 		}
 
@@ -2254,6 +2308,11 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 			font-size: 0.88rem;
 			padding-left: 0.85rem;
 			padding-right: 2.4rem;
+		}
+
+		.agenda-preview--native-selects .agenda-preview-defaults__field select {
+			font-size: 16px;
+			padding: 0.4rem 2rem 0.4rem 0.75rem;
 		}
 
 		.agenda-preview-select__chevron {
