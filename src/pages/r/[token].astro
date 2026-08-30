@@ -578,7 +578,7 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 					</dialog>
 
 					<dialog
-						class="reservation-reschedule-modal m-0 mt-auto mb-0 w-screen max-w-none open:flex open:flex-col min-h-[90dvh] max-h-[90dvh] overflow-hidden rounded-t-[1.75rem] rounded-b-none border border-(--shell-border) border-b-0 bg-(--surface-bright) p-0 text-(--on-surface) shadow-2xl backdrop:bg-black/70 md:m-0 md:ml-auto md:h-[100dvh] md:min-h-[100dvh] md:max-h-[100dvh] md:w-[min(32rem,100%)] md:max-w-[min(32rem,100%)] md:rounded-none md:border-y-0 md:border-r-0 md:border-b-0"
+						class="reservation-reschedule-modal m-0 mt-auto mb-0 w-screen max-w-none open:flex open:flex-col min-h-[95dvh] max-h-[95dvh] overflow-hidden rounded-t-[1.75rem] rounded-b-none border border-(--shell-border) border-b-0 bg-(--surface-bright) p-0 text-(--on-surface) shadow-2xl backdrop:bg-black/70 md:m-0 md:ml-auto md:h-[100dvh] md:min-h-[100dvh] md:max-h-[100dvh] md:w-[min(32rem,100%)] md:max-w-[min(32rem,100%)] md:rounded-none md:border-y-0 md:border-r-0 md:border-b-0"
 						data-reschedule-modal
 					>
 						<form class="reservation-reschedule-form" data-reservation-form data-reschedule-step="1">
@@ -1354,9 +1354,17 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 	--on-surface: #ffffff;
 	--on-surface-variant: #a0a0a0;
 	--control-surface: #1a1a1c;
-	min-height: 90dvh;
-	height: 90dvh;
-	max-height: 90dvh;
+	min-height: 95dvh;
+	height: 95dvh;
+	max-height: 95dvh;
+}
+
+@media (min-width: 768px) {
+	.reservation-reschedule-modal:has([data-reservation-form]) {
+		min-height: 100dvh;
+		height: 100dvh;
+		max-height: 100dvh;
+	}
 }
 
 .reservation-reschedule-modal:has([data-reservation-form]) .reservation-reschedule-form {
