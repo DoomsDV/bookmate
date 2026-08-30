@@ -65,6 +65,7 @@ export interface CobrosListQuery {
 	limit?: number;
 	sort_dir?: 'asc' | 'desc';
 	sort_by?: 'date' | 'price';
+	appointment_id?: number;
 }
 
 export class CobrosApiError extends Error {
@@ -147,6 +148,9 @@ export const listCobrosWithOrds = async (
 	url.searchParams.set('limit', String(query.limit || 9));
 	url.searchParams.set('sort_dir', query.sort_dir === 'asc' ? 'asc' : 'desc');
 	url.searchParams.set('sort_by', query.sort_by === 'price' ? 'price' : 'date');
+	if (query.appointment_id && query.appointment_id > 0) {
+		url.searchParams.set('appointment_id', String(query.appointment_id));
+	}
 
 	const response = await fetch(url.toString(), {
 		method: 'GET',

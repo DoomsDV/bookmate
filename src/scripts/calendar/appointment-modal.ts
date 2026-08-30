@@ -149,6 +149,9 @@ class AppointmentModal extends HTMLElement {
 	editingRefundStatus: string | null = null;
 	editingRefundAmount: number | null = null;
 	editingCancelReason: string | null = null;
+	editingReceiptUploaded = false;
+	editingReceiptPendingReview = false;
+	editingOcrStatus: string | null = null;
 	isImmutableReadOnly = false;
 	/** Estado bloqueado en solo lectura (cancelada o completada). */
 	immutableReadOnlyStatus: 'CANCELADO' | 'COMPLETADO' | null = null;
@@ -1514,14 +1517,25 @@ class AppointmentModal extends HTMLElement {
 	private syncRefundGuideLink() {
 		const link = this.form?.querySelector<HTMLAnchorElement>('[data-modal-refund-link]');
 		if (!link) return;
-		const show = this.isCancelledStatus() && this.hasRefundToGuide();
+		const pay = String(this.editingPaymentStatus || '').toUpperCase();
+		const refundGuide = this.isCancelledStatus() && this.hasRefundToGuide();
+		const pendingGuide = pay === 'PENDING';
+		const show = refundGuide || pendingGuide;
 		link.hidden = !show;
 		link.classList.toggle('hidden', !show);
-		if (show && this.editingAppointmentId > 0) {
-			link.href = `/panel/cobros?status=refunded&appointment=${this.editingAppointmentId}`;
-		} else {
+		if (!show || this.editingAppointmentId <= 0) {
 			link.href = '/panel/cobros';
+			link.textContent = 'Gestionar reembolso en Cobros';
+			return;
 		}
+		if (refundGuide) {
+			link.href = `/panel/cobros?status=refunded&appointment=${this.editingAppointmentId}`;
+			link.textContent = 'Gestionar reembolso en Cobros';
+			return;
+		}
+		const cobrosStatus = this.editingReceiptPendingReview ? 'pending' : 'all';
+		link.href = `/panel/cobros?status=${cobrosStatus}&appointment=${this.editingAppointmentId}`;
+		link.textContent = 'Ver cobro';
 	}
 
 	private syncPaymentStatusLabel(status: string | null, depositAmount: number | null) {
@@ -1561,10 +1575,29 @@ class AppointmentModal extends HTMLElement {
 				}
 			}
 		} else if (pay === 'PENDING') {
-			label.textContent = amount ? `Seña pendiente · ${amount}` : 'Seña pendiente';
-			if (hint) {
-				hint.hidden = false;
-				hint.textContent = 'El cliente todavía no pagó la seña.';
+			const pendingReview = this.editingReceiptPendingReview;
+			const rejected =
+				this.editingReceiptUploaded &&
+				!pendingReview &&
+				String(this.editingOcrStatus || '').toUpperCase() === 'MISMATCH';
+			if (pendingReview) {
+				label.textContent = amount ? `Pendiente de revisión · ${amount}` : 'Pendiente de revisión';
+				if (hint) {
+					hint.hidden = false;
+					hint.textContent = 'El cliente subió el comprobante. Falta validarlo en Cobros.';
+				}
+			} else if (rejected) {
+				label.textContent = amount ? `Comprobante rechazado · ${amount}` : 'Comprobante rechazado';
+				if (hint) {
+					hint.hidden = false;
+					hint.textContent = 'El comprobante no coincidió. El cliente puede volver a subir uno.';
+				}
+			} else {
+				label.textContent = amount ? `Seña pendiente · ${amount}` : 'Seña pendiente';
+				if (hint) {
+					hint.hidden = false;
+					hint.textContent = 'El cliente todavía no pagó la seña.';
+				}
 			}
 		} else if (pay === 'EXPIRED') {
 			label.textContent = amount ? `Seña no pagada · ${amount}` : 'Seña no pagada';
@@ -2010,6 +2043,9 @@ class AppointmentModal extends HTMLElement {
 		this.editingRefundStatus = null;
 		this.editingRefundAmount = null;
 		this.editingCancelReason = null;
+		this.editingReceiptUploaded = false;
+		this.editingReceiptPendingReview = false;
+		this.editingOcrStatus = null;
 		if (this.modalTitle) this.modalTitle.textContent = 'Crear reserva';
 		if (this.modalDescription) {
 			this.modalDescription.textContent = 'Completa los datos para registrar una nueva reserva.';
@@ -2087,6 +2123,9 @@ class AppointmentModal extends HTMLElement {
 			appointment.refund_amount != null && Number(appointment.refund_amount) > 0
 				? Number(appointment.refund_amount)
 				: null;
+		this.editingReceiptUploaded = appointment.receipt_uploaded === true;
+		this.editingReceiptPendingReview = appointment.receipt_pending_review === true;
+		this.editingOcrStatus = String(appointment.ocr_status || '').trim().toUpperCase() || null;
 		if (requiredNodes.paymentStatusInput) {
 			requiredNodes.paymentStatusInput.value = this.editingPaymentStatus;
 		}

@@ -71,6 +71,9 @@ export type AppointmentDetail = {
 	refund_status?: string | null;
 	refund_amount?: number | null;
 	cancel_reason?: string | null;
+	receipt_uploaded?: boolean;
+	receipt_pending_review?: boolean;
+	ocr_status?: string | null;
 };
 
 export type AppointmentFormPayload = {

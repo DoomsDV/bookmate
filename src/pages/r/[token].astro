@@ -86,8 +86,10 @@ const showDepositUpload =
 	Number(reservation?.deposit_amount || 0) > 0;
 const wasReceiptRejected =
 	showDepositUpload &&
-	String(reservation?.ocr_status || '').trim().toUpperCase() === 'MISMATCH' &&
-	Boolean(reservation?.reject_reason);
+	(reservation?.receipt_rejected === true ||
+		reservation?.receipt_rejected === 1 ||
+		(String(reservation?.ocr_status || '').trim().toUpperCase() === 'MISMATCH' &&
+			Boolean(reservation?.reject_reason)));
 const professionalSlug = String(reservation?.professional_slug || '').trim();
 const organizationSlug = String(reservation?.organization_slug || '').trim();
 const rebookHref =
@@ -158,6 +160,12 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 						<h1 class="reservation-manage__title">Gestionar reserva</h1>
 
 						<div class="reservation-manage__body">
+							<div
+								class:list={[
+									'reservation-manage__stack',
+									{ 'reservation-manage__dashboard': showDepositUpload },
+								]}
+							>
 							<article class="booking-ticket">
 								<header class="booking-ticket__header">
 									{professionalImageUrl ? (
@@ -257,19 +265,14 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 
 							{showDepositUpload && (
 								<div class="reservation-manage__deposit" data-reservation-deposit>
-									{wasReceiptRejected && (
-										<div class="reservation-manage__notice reservation-manage__notice--warning" data-deposit-reject-notice>
-											<span class="material-symbols-rounded" aria-hidden="true">error</span>
-											<div>
-												<p class="reservation-manage__notice-title">No pudimos validar tu comprobante</p>
-												<p class="reservation-manage__notice-text">{reservation.reject_reason}</p>
-												<p class="reservation-manage__notice-text">Subí un comprobante nuevo para confirmar tu turno.</p>
-											</div>
-										</div>
-									)}
-									<PublicSipapDepositPanel stepPanel={7} variant="manage" />
+									<PublicSipapDepositPanel
+										stepPanel={7}
+										variant="manage"
+										receiptRejected={wasReceiptRejected}
+									/>
 								</div>
 							)}
+							</div>
 
 							{visitHistoryCount > 0 && (
 								<p class="reservation-manage__history-summary">
@@ -755,7 +758,7 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 .reservation-manage__column:has(.sipap-deposit-panel--manage:not(.hidden))
 	> .reservation-manage__title,
 .reservation-manage__body:has(.sipap-deposit-panel--manage:not(.hidden))
-	> :not(.reservation-manage__deposit) {
+	> :not(.reservation-manage__deposit):not(.reservation-manage__stack) {
 	width: 100%;
 	max-width: 36rem;
 	margin-inline: auto;
@@ -776,6 +779,119 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 	gap: 1.15rem;
 	padding: 0;
 	background: transparent;
+}
+
+.reservation-manage__stack {
+	display: grid;
+	gap: 1rem;
+	min-width: 0;
+}
+
+.reservation-manage__dashboard .booking-ticket {
+	gap: 0.75rem;
+	padding: 0.9rem 1rem 1rem;
+	border-radius: 1.15rem;
+	border: 1px solid #27272a;
+	background: #18181b;
+	box-shadow: none;
+}
+
+.reservation-manage__dashboard .booking-ticket__service-name {
+	font-size: 1.35rem;
+}
+
+.reservation-manage__dashboard {
+	position: relative;
+}
+
+.reservation-manage__dashboard [data-sipap-hold-live] {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+}
+
+@media (min-width: 960px) {
+	.reservation-manage__dashboard {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(20rem, 24rem);
+		gap: 1.5rem 1.75rem;
+		align-items: start;
+	}
+
+	.reservation-manage__dashboard .reservation-manage__deposit,
+	.reservation-manage__dashboard .sipap-deposit-panel--manage,
+	.reservation-manage__dashboard .sipap-layout {
+		display: contents;
+	}
+
+	.reservation-manage__dashboard .sipap-hold-banner {
+		grid-column: 1 / -1;
+		grid-row: 1;
+		justify-self: start;
+		margin-bottom: 0;
+	}
+
+	.reservation-manage__dashboard .booking-ticket {
+		grid-column: 1;
+		grid-row: 2;
+	}
+
+	.reservation-manage__dashboard .sipap-deposit-intro {
+		grid-column: 1;
+		grid-row: 3;
+		margin-top: 0;
+	}
+
+	.reservation-manage__dashboard .sipap-main {
+		grid-column: 1;
+		grid-row: 4;
+	}
+
+	.reservation-manage__dashboard .sipap-summary-ticket {
+		grid-column: 2;
+		grid-row: 2 / span 3;
+		position: sticky;
+		top: 1.15rem;
+		align-self: start;
+	}
+}
+
+@media (max-width: 959px) {
+	.reservation-manage__dashboard {
+		display: flex;
+		flex-direction: column;
+		gap: 0.85rem;
+	}
+
+	.reservation-manage__dashboard .reservation-manage__deposit,
+	.reservation-manage__dashboard .sipap-deposit-panel--manage,
+	.reservation-manage__dashboard .sipap-layout {
+		display: contents;
+	}
+
+	.reservation-manage__dashboard .sipap-hold-banner {
+		order: 0;
+		margin-bottom: 0;
+	}
+
+	.reservation-manage__dashboard .booking-ticket {
+		order: 1;
+	}
+
+	.reservation-manage__dashboard .sipap-summary-ticket {
+		order: 2;
+	}
+
+	.reservation-manage__dashboard .sipap-deposit-intro {
+		order: 3;
+		margin: 0.35rem 0 0;
+	}
+
+	.reservation-manage__dashboard .sipap-main {
+		order: 4;
+	}
 }
 
 .reservation-manage__history-summary {

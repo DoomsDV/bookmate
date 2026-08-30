@@ -35,6 +35,7 @@ export interface SipapHoldResponse {
 	refund_policy_label?: string;
 	refund_policy_summary?: string;
 	ocr_status?: string | null;
+	receipt_rejected?: boolean;
 	reject_reason?: string | null;
 	message?: string;
 	data?: SipapHoldResponse;
@@ -384,13 +385,19 @@ export const fillSipapDepositPanel = (
 	resetSipapReceiptPreview(root);
 
 	const ocrStatus = String(hold.ocr_status || '').toUpperCase();
-	const hasRejection = Boolean(String(hold.reject_reason || '').trim());
+	const hasRejection =
+		hold.receipt_rejected === true ||
+		Number(hold.receipt_rejected) === 1 ||
+		String(hold.receipt_rejected || '').trim().toLowerCase() === 'true' ||
+		(hold.receipt_rejected == null && Boolean(String(hold.reject_reason || '').trim()));
+	setSipapRejectAlert(root, hasRejection);
 	const banner = root.querySelector<HTMLElement>('[data-sipap-hold-banner]');
 	const submitBtn = root.querySelector<HTMLButtonElement>('[data-sipap-upload-submit]');
 	const alreadyFrozen =
 		banner?.dataset.sipapHoldFrozen === '1' || submitBtn?.dataset.sipapSubmitted === '1';
 
 	if (ocrStatus === 'MATCH') {
+		setSipapRejectAlert(root, false);
 		freezeHoldCountdown(root);
 		banner?.classList.add('hidden');
 		lockSubmitAfterSend(root, SUBMIT_CONFIRMED_LABEL);
@@ -433,6 +440,13 @@ export const stopSipapHoldCountdown = (root: ParentNode) => {
 		window.clearInterval(previous);
 		countdownTimers.delete(root);
 	}
+};
+
+const setSipapRejectAlert = (root: ParentNode, show: boolean) => {
+	const alert = root.querySelector<HTMLElement>('[data-sipap-reject-alert]');
+	if (!alert) return;
+	alert.classList.toggle('hidden', !show);
+	alert.toggleAttribute('hidden', !show);
 };
 
 const expireSipapHoldUi = (root: ParentNode) => {
@@ -627,6 +641,7 @@ export const bindSipapReceiptUpload = (
 		idemKey = null;
 		idemFileSignature = null;
 		hasSubmitted = true;
+		setSipapRejectAlert(root, false);
 		setSipapReceiptStatus(root, result, 'done');
 		options?.onResult?.(result);
 	};

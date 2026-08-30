@@ -6,31 +6,33 @@
 interface Props {
 	stepPanel?: number;
 	variant?: 'booking' | 'manage';
+	receiptRejected?: boolean;
 }
 
-const { stepPanel = 7, variant = 'booking' } = Astro.props;
+const { stepPanel = 7, variant = 'booking', receiptRejected = false } = Astro.props;
 ---
 
 <section
 	data-step-panel={String(stepPanel)}
 	class:list={[
-		'sipap-deposit-panel public-booking-panel hidden text-(--on-surface)',
+		'sipap-deposit-panel public-booking-panel text-(--on-surface)',
 		{ 'sipap-deposit-panel--manage': variant === 'manage' },
+		{ hidden: variant !== 'manage' },
 	]}
 >
 	<div class="sipap-hold-banner" data-sipap-hold-banner data-sipap-hold-state="active">
 		<span class="material-symbols-rounded sipap-hold-banner__icon" aria-hidden="true">timer</span>
 		<p class="sipap-hold-banner__text">
 			<span data-sipap-hold-active>
-				Tu turno está reservado. Tenés
+				Tenés
 				<strong class="tabular-nums" data-sipap-countdown>10:00</strong>
-				min para adjuntar el comprobante.
+				min para confirmar
 			</span>
 			<span class="hidden" data-sipap-hold-expired>
 				Se venció el tiempo para adjuntar el comprobante.
 			</span>
 			<span class="hidden" data-sipap-hold-unknown>
-				Tu turno está reservado. Adjuntá el comprobante para confirmar.
+				Adjuntá el comprobante para confirmar tu turno.
 			</span>
 			<span class="hidden" data-sipap-hold-submitted>
 				Comprobante enviado. Esperando confirmación del comercio.
@@ -49,51 +51,77 @@ const { stepPanel = 7, variant = 'booking' } = Astro.props;
 				<div class="sipap-panel__core">
 					<p class="sipap-panel__kicker">Datos de transferencia</p>
 					<ul class="sipap-transfer-card__list">
-						<li class="sipap-bank-row">
-							<span class="sipap-bank-row__label">Banco</span>
-							<span class="sipap-bank-row__value">
-								<span data-sipap-bank>—</span>
-							</span>
-						</li>
-						<li class="sipap-bank-row">
-							<span class="sipap-bank-row__label">Titular</span>
-							<span class="sipap-bank-row__value">
-								<span data-sipap-holder>—</span>
-							</span>
-						</li>
-						<li class="sipap-bank-row">
-							<span class="sipap-bank-row__label">C.I. / RUC</span>
-							<span class="sipap-bank-row__value">
-								<span data-sipap-document>—</span>
-								<button
-									type="button"
-									data-sipap-copy="document"
-									class="sipap-copy-icon"
-									aria-label="Copiar C.I. / RUC"
-									title="Copiar"
-								>
-									<span class="material-symbols-rounded" aria-hidden="true" data-sipap-copy-icon
+						<li>
+							<button
+								type="button"
+								class="sipap-bank-row"
+								data-sipap-copy="bank"
+								data-sipap-copy-keep-label
+								aria-label="Copiar banco"
+							>
+								<span class="sipap-bank-row__label">Banco</span>
+								<span class="sipap-bank-row__value">
+									<span data-sipap-bank>—</span>
+									<span class="sipap-copy-feedback" aria-hidden="true">¡Copiado!</span>
+									<span class="material-symbols-rounded sipap-copy-glyph" aria-hidden="true" data-sipap-copy-icon
 										>content_copy</span
 									>
-								</button>
-							</span>
+								</span>
+							</button>
 						</li>
-						<li class="sipap-bank-row">
-							<span class="sipap-bank-row__label">Alias</span>
-							<span class="sipap-bank-row__value">
-								<span data-sipap-alias>—</span>
-								<button
-									type="button"
-									data-sipap-copy="alias"
-									class="sipap-copy-icon"
-									aria-label="Copiar alias"
-									title="Copiar"
-								>
-									<span class="material-symbols-rounded" aria-hidden="true" data-sipap-copy-icon
+						<li>
+							<button
+								type="button"
+								class="sipap-bank-row"
+								data-sipap-copy="holder"
+								data-sipap-copy-keep-label
+								aria-label="Copiar titular"
+							>
+								<span class="sipap-bank-row__label">Titular</span>
+								<span class="sipap-bank-row__value">
+									<span data-sipap-holder>—</span>
+									<span class="sipap-copy-feedback" aria-hidden="true">¡Copiado!</span>
+									<span class="material-symbols-rounded sipap-copy-glyph" aria-hidden="true" data-sipap-copy-icon
 										>content_copy</span
 									>
-								</button>
-							</span>
+								</span>
+							</button>
+						</li>
+						<li>
+							<button
+								type="button"
+								class="sipap-bank-row"
+								data-sipap-copy="document"
+								data-sipap-copy-keep-label
+								aria-label="Copiar C.I. / RUC"
+							>
+								<span class="sipap-bank-row__label">C.I. / RUC</span>
+								<span class="sipap-bank-row__value">
+									<span data-sipap-document>—</span>
+									<span class="sipap-copy-feedback" aria-hidden="true">¡Copiado!</span>
+									<span class="material-symbols-rounded sipap-copy-glyph" aria-hidden="true" data-sipap-copy-icon
+										>content_copy</span
+									>
+								</span>
+							</button>
+						</li>
+						<li>
+							<button
+								type="button"
+								class="sipap-bank-row"
+								data-sipap-copy="alias"
+								data-sipap-copy-keep-label
+								aria-label="Copiar alias"
+							>
+								<span class="sipap-bank-row__label">Alias</span>
+								<span class="sipap-bank-row__value">
+									<span data-sipap-alias>—</span>
+									<span class="sipap-copy-feedback" aria-hidden="true">¡Copiado!</span>
+									<span class="material-symbols-rounded sipap-copy-glyph" aria-hidden="true" data-sipap-copy-icon
+										>content_copy</span
+									>
+								</span>
+							</button>
 						</li>
 					</ul>
 
@@ -103,22 +131,21 @@ const { stepPanel = 7, variant = 'booking' } = Astro.props;
 							<span class="sipap-ref-optional">(opcional)</span>
 							<span class="sipap-ref-badge">Recomendado</span>
 						</p>
-						<div class="sipap-ref-block__code">
+						<button
+							type="button"
+							class="sipap-ref-block__code"
+							data-sipap-copy="reference"
+							data-sipap-copy-keep-label
+							aria-label="Copiar código"
+							aria-describedby="sipap-ref-hint"
+						>
 							<p class="sipap-ref-block__value" data-sipap-reference>—</p>
 							<input type="hidden" data-sipap-reference-value />
-							<button
-								type="button"
-								data-sipap-copy="reference"
-								class="sipap-copy-icon"
-								aria-label="Copiar código"
-								aria-describedby="sipap-ref-hint"
-								title="Copiar"
+							<span class="sipap-copy-feedback" aria-hidden="true">¡Copiado!</span>
+							<span class="material-symbols-rounded sipap-copy-glyph" aria-hidden="true" data-sipap-copy-icon
+								>content_copy</span
 							>
-								<span class="material-symbols-rounded" aria-hidden="true" data-sipap-copy-icon
-									>content_copy</span
-								>
-							</button>
-						</div>
+						</button>
 						<p class="sipap-ref-hint" id="sipap-ref-hint">
 							Incluye este código en tu transferencia para validación automática.
 						</p>
@@ -131,6 +158,19 @@ const { stepPanel = 7, variant = 'booking' } = Astro.props;
 						<div class="sipap-upload-card" data-sipap-upload>
 							<p class="sipap-panel__kicker" id="sipap-upload-title">Comprobante</p>
 							<p class="sipap-panel__lede" id="sipap-upload-hint">JPG, PNG o PDF (máx. 8 MB).</p>
+							<div
+								class:list={['sipap-reject-alert', { hidden: !receiptRejected }]}
+								data-sipap-reject-alert
+								hidden={!receiptRejected}
+							>
+								<span class="material-symbols-rounded" aria-hidden="true">error</span>
+								<div>
+									<p class="sipap-reject-alert__title">Comprobante rechazado</p>
+									<p class="sipap-reject-alert__text">
+										El comprobante adjunto no se pudo validar. Por favor, subí una foto más clara.
+									</p>
+								</div>
+							</div>
 							<div class="sipap-dropzone-wrap">
 								<label
 									class="sipap-dropzone"
@@ -366,14 +406,15 @@ const { stepPanel = 7, variant = 'booking' } = Astro.props;
 			margin-top: 0.85rem;
 		}
 
-		.sipap-deposit-intro {
+		.sipap-deposit-intro,
+		.sipap-hold-banner:not(.hidden) ~ .sipap-deposit-intro {
 			order: 2;
-			margin-top: 0.75rem;
+			margin: 1.15rem 1rem 0.25rem;
 		}
 
 		.sipap-main {
 			order: 3;
-			margin-top: 0.75rem;
+			margin-top: 1rem;
 		}
 	}
 
@@ -383,8 +424,8 @@ const { stepPanel = 7, variant = 'booking' } = Astro.props;
 		min-width: 0;
 		padding: 0;
 		border-radius: 1.15rem;
-		border: 1px solid rgb(255 255 255 / 0.08);
-		background: color-mix(in srgb, #1c1c1c 94%, var(--surface-container-lowest));
+		border: 1px solid #27272a;
+		background: #18181b;
 		box-shadow: none;
 	}
 
@@ -409,7 +450,7 @@ const { stepPanel = 7, variant = 'booking' } = Astro.props;
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
 		line-height: 1.2;
-		color: color-mix(in srgb, var(--on-surface-variant) 72%, transparent);
+		color: #9ca3af;
 	}
 
 	.sipap-panel__lede {
@@ -433,6 +474,45 @@ const { stepPanel = 7, variant = 'booking' } = Astro.props;
 		display: none;
 	}
 
+	.sipap-reject-alert {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.55rem;
+		margin-top: 0.65rem;
+		padding: 0.7rem 0.8rem;
+		border-radius: 0.85rem;
+		border: 1px solid color-mix(in srgb, #ef4444 38%, transparent);
+		background: color-mix(in srgb, #ef4444 12%, #18181b);
+	}
+
+	.sipap-reject-alert.hidden {
+		display: none;
+	}
+
+	.sipap-reject-alert .material-symbols-rounded {
+		flex-shrink: 0;
+		margin-top: 0.05rem;
+		font-size: 1.15rem;
+		line-height: 1;
+		color: #f87171;
+	}
+
+	.sipap-reject-alert__title {
+		margin: 0;
+		font-size: 0.84rem;
+		font-weight: 750;
+		line-height: 1.3;
+		color: #fecaca;
+	}
+
+	.sipap-reject-alert__text {
+		margin: 0.2rem 0 0;
+		font-size: 0.8rem;
+		font-weight: 500;
+		line-height: 1.4;
+		color: #fca5a5;
+	}
+
 	.sipap-dropzone-wrap {
 		position: relative;
 		margin-top: 0.55rem;
@@ -450,11 +530,31 @@ const { stepPanel = 7, variant = 'booking' } = Astro.props;
 		grid-template-columns: auto minmax(0, 1fr);
 		align-items: center;
 		gap: 0.75rem;
-		padding: 0.42rem 0;
+		width: 100%;
+		margin: 0;
+		padding: 0.5rem 0.15rem;
+		border: 0;
+		border-radius: 0.65rem;
+		background: transparent;
+		color: inherit;
+		font: inherit;
+		text-align: left;
+		cursor: pointer;
 	}
 
-	.sipap-bank-row + .sipap-bank-row {
+	.sipap-transfer-card__list > li + li .sipap-bank-row {
 		border-top: 1px solid color-mix(in srgb, var(--outline-variant) 45%, transparent);
+		border-radius: 0;
+	}
+
+	.sipap-bank-row:hover,
+	.sipap-bank-row:focus-visible {
+		background: color-mix(in srgb, var(--primary) 8%, transparent);
+	}
+
+	.sipap-bank-row:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--primary) 70%, transparent);
+		outline-offset: 2px;
 	}
 
 	.sipap-bank-row__label {
@@ -481,8 +581,8 @@ const { stepPanel = 7, variant = 'booking' } = Astro.props;
 		margin-top: 0.65rem;
 		padding: 0.55rem 0.7rem 0.65rem;
 		border-radius: 0.9rem;
-		background: color-mix(in srgb, var(--primary) 7%, #1a1a1a);
-		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 16%, transparent);
+		background: color-mix(in srgb, var(--primary) 10%, #1a1a1a);
+		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 28%, transparent);
 	}
 
 	.sipap-ref-block__label {
@@ -506,8 +606,22 @@ const { stepPanel = 7, variant = 'booking' } = Astro.props;
 		display: flex;
 		align-items: center;
 		gap: 0.4rem;
+		width: 100%;
 		min-width: 0;
 		margin-top: 0.35rem;
+		padding: 0.2rem 0;
+		border: 0;
+		background: transparent;
+		color: inherit;
+		font: inherit;
+		text-align: left;
+		cursor: pointer;
+		border-radius: 0.55rem;
+	}
+
+	.sipap-ref-block__code:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--primary) 70%, transparent);
+		outline-offset: 2px;
 	}
 
 	.sipap-ref-block__value {
@@ -545,46 +659,29 @@ const { stepPanel = 7, variant = 'booking' } = Astro.props;
 		color: var(--on-surface-variant);
 	}
 
-	.sipap-copy-icon {
-		display: inline-grid;
-		place-items: center;
+	.sipap-copy-feedback {
+		display: none;
 		flex-shrink: 0;
-		width: 2.35rem;
-		height: 2.35rem;
-		margin-left: 0.05rem;
-		border: 1px solid color-mix(in srgb, var(--primary) 28%, transparent);
-		border-radius: 0.65rem;
-		background: color-mix(in srgb, var(--primary) 14%, #2a2a2a);
-		color: color-mix(in srgb, var(--primary) 88%, #fff);
-		cursor: pointer;
-		transition:
-			background 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-			border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-			color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-			transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+		font-size: 0.72rem;
+		font-weight: 700;
+		color: #4ade80;
 	}
 
-	.sipap-copy-icon:hover {
-		background: color-mix(in srgb, var(--primary) 28%, #2a2a2a);
-		border-color: color-mix(in srgb, var(--primary) 55%, transparent);
-		color: #fff;
-		transform: scale(1.05);
+	.sipap-bank-row.is-copied .sipap-copy-feedback,
+	.sipap-ref-block__code.is-copied .sipap-copy-feedback {
+		display: inline;
 	}
 
-	.sipap-copy-icon:focus-visible {
-		outline: 2px solid color-mix(in srgb, var(--primary) 70%, transparent);
-		outline-offset: 2px;
-	}
-
-	.sipap-copy-icon .material-symbols-rounded {
+	.sipap-copy-glyph {
+		flex-shrink: 0;
 		font-size: 1.05rem;
 		line-height: 1;
+		color: color-mix(in srgb, var(--primary) 88%, #fff);
 	}
 
-	.sipap-copy-icon.is-copied {
-		border-color: color-mix(in srgb, var(--tertiary) 45%, transparent);
-		background: color-mix(in srgb, var(--tertiary) 18%, #2a2a2a);
-		color: var(--tertiary);
+	.sipap-bank-row.is-copied .sipap-copy-glyph,
+	.sipap-ref-block__code.is-copied .sipap-copy-glyph {
+		color: #4ade80;
 	}
 
 	.sipap-dropzone {
@@ -1039,12 +1136,6 @@ const { stepPanel = 7, variant = 'booking' } = Astro.props;
 			font-size: 0.98rem;
 		}
 
-		.sipap-copy-icon {
-			width: 2rem;
-			height: 2rem;
-			border-radius: 0.55rem;
-		}
-
 		.sipap-dropzone {
 			min-height: 6rem;
 		}
@@ -1070,74 +1161,64 @@ const { stepPanel = 7, variant = 'booking' } = Astro.props;
 		}
 	}
 
-	/* Gestión de reserva: el comprobante es una tarea principal, no un paso del wizard. */
+	/* Gestión de reserva: dashboard compacto, chip de timer, cards zinc. */
 	.sipap-deposit-panel--manage .sipap-hold-banner {
-		padding: 0.8rem 1rem;
-		border-radius: 0.9rem;
+		display: inline-flex;
+		align-items: center;
+		width: fit-content;
+		max-width: 100%;
+		margin-bottom: 0.85rem;
+		padding: 0.35rem 0.8rem;
+		border-radius: 999px;
+		border-color: rgb(249 115 22 / 0.28);
+		background: rgb(249 115 22 / 0.12);
+	}
+
+	.sipap-deposit-panel--manage .sipap-hold-banner__text {
+		font-size: 0.78rem;
+		font-weight: 600;
 	}
 
 	.sipap-deposit-panel--manage .sipap-deposit-intro {
-		margin-top: 1.25rem;
+		margin-top: 0.35rem;
 	}
 
 	.sipap-deposit-panel--manage .sipap-deposit-title {
-		font-size: clamp(1.55rem, 3vw, 2rem);
+		font-size: clamp(1.2rem, 2.4vw, 1.55rem);
 		font-weight: 560;
 		letter-spacing: -0.04em;
 	}
 
 	.sipap-deposit-panel--manage .sipap-panel {
-		border-color: color-mix(in srgb, var(--outline-variant) 35%, transparent);
-		background: color-mix(in srgb, var(--surface-container, #1b1b1b) 92%, #111820);
+		border-color: #27272a;
+		background: #18181b;
+	}
+
+	.sipap-deposit-panel--manage .sipap-summary-ticket {
+		background: #1e1e2e;
+		border-color: #27272a;
 	}
 
 	.sipap-deposit-panel--manage .sipap-panel__kicker {
 		letter-spacing: 0.075em;
+		color: #9ca3af;
 	}
 
 	@media (min-width: 640px) {
 		.sipap-deposit-panel--manage .sipap-transfer-card__list {
-			display: grid;
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-			margin-top: 1rem;
-			border-block: 1px solid color-mix(in srgb, var(--outline-variant) 42%, transparent);
+			margin-top: 0.75rem;
 		}
 
 		.sipap-deposit-panel--manage .sipap-bank-row {
-			display: flex;
-			flex-direction: column;
-			align-items: stretch;
-			justify-content: center;
-			gap: 0.4rem;
-			min-height: 5rem;
-			padding: 0.9rem 1rem;
-		}
-
-		.sipap-deposit-panel--manage .sipap-bank-row + .sipap-bank-row {
-			border-top: 0;
-		}
-
-		.sipap-deposit-panel--manage .sipap-bank-row:nth-child(even) {
-			border-left: 1px solid color-mix(in srgb, var(--outline-variant) 42%, transparent);
-		}
-
-		.sipap-deposit-panel--manage .sipap-bank-row:nth-child(n + 3) {
-			border-top: 1px solid color-mix(in srgb, var(--outline-variant) 42%, transparent);
-		}
-
-		.sipap-deposit-panel--manage .sipap-bank-row__label {
-			font-size: 0.7rem;
-			font-weight: 650;
-			letter-spacing: 0.055em;
-			text-transform: uppercase;
+			padding: 0.55rem 0.35rem;
 		}
 
 		.sipap-deposit-panel--manage .sipap-bank-row__value {
-			justify-content: space-between;
+			justify-content: flex-end;
 			width: 100%;
-			font-size: 1.05rem;
+			font-size: 1.02rem;
 			line-height: 1.35;
-			text-align: left;
+			text-align: right;
 			overflow-wrap: break-word;
 		}
 
@@ -1169,14 +1250,14 @@ const { stepPanel = 7, variant = 'booking' } = Astro.props;
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.sipap-copy-icon,
+		.sipap-copy-glyph,
 		.sipap-dropzone,
 		.sipap-dropzone__clear,
 		.sipap-submit-cta {
 			transition: none;
 		}
 
-		.sipap-copy-icon:hover,
+		.sipap-bank-row:hover,
 		.sipap-submit-cta:active:not(:disabled) {
 			transform: none;
 		}

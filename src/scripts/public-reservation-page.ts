@@ -73,6 +73,7 @@ type PublicReservationDetail = {
 	policy_code_snapshot?: string | null;
 	policy_label?: string | null;
 	ocr_status?: string | null;
+	receipt_rejected?: boolean;
 	reject_reason?: string | null;
 	payment_reference?: string | null;
 	payment_expires_at?: string | null;
@@ -1382,6 +1383,7 @@ export const initializePublicReservationPage = () => {
 				refund_policy: reservation.policy_code_snapshot ?? undefined,
 				refund_policy_label: reservation.policy_label ?? undefined,
 				ocr_status: reservation.ocr_status ?? undefined,
+				receipt_rejected: reservation.receipt_rejected === true,
 				reject_reason: reservation.reject_reason ?? undefined,
 				public_manage_token: token,
 			},
@@ -1395,7 +1397,6 @@ export const initializePublicReservationPage = () => {
 		bindSipapCopyButtons(depositRoot);
 		bindSipapReceiptUpload(sipapPanel, {
 			onResult: () => {
-				depositRoot.querySelector('[data-deposit-reject-notice]')?.remove();
 				void refreshReservationSummary();
 			},
 			onError: (message) => showToast(message, 'error'),

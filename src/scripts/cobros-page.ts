@@ -845,6 +845,19 @@ export const initCobrosPage = () => {
 		}
 	};
 
+	const fetchCobros = async (params: URLSearchParams) => {
+		const response = await fetch(`/api/cobros?${params.toString()}`, {
+			headers: { Accept: 'application/json' },
+		});
+		const payload = await response.json().catch(() => ({}));
+		if (!response.ok || payload.status !== 'success') {
+			throw new Error(String(payload.message || 'No fue posible cargar los cobros.'));
+		}
+		const list = Array.isArray(payload.data) ? (payload.data as CobroItem[]) : [];
+		const meta = payload.meta && typeof payload.meta === 'object' ? payload.meta : {};
+		return { items: list, meta };
+	};
+
 	const load = async () => {
 		if (!applyFeatureGate()) {
 			setLoading(false);
@@ -859,6 +872,7 @@ export const initCobrosPage = () => {
 		setLoading(true);
 		updatePagination();
 		try {
+			const lookupId = pendingAppointmentId;
 			const params = new URLSearchParams({
 				status: statusFilter,
 				date_preset: datePreset,
@@ -872,18 +886,26 @@ export const initCobrosPage = () => {
 				if (dateToEl?.value) params.set('date_to', dateToEl.value);
 			}
 
-			const response = await fetch(`/api/cobros?${params.toString()}`, {
-				headers: { Accept: 'application/json' },
-			});
-			const payload = await response.json().catch(() => ({}));
+			const lookupParams = lookupId
+				? new URLSearchParams({
+						status: 'all',
+						date_preset: 'all',
+						page: '1',
+						limit: '5',
+						sort_dir: 'desc',
+						sort_by: 'date',
+						appointment_id: String(lookupId),
+					})
+				: null;
+
+			const listPromise = fetchCobros(params);
+			const lookupPromise = lookupParams ? fetchCobros(lookupParams) : null;
+			const listResult = await listPromise;
 			if (requestId !== loadRequestId) return;
-			if (!response.ok || payload.status !== 'success') {
-				throw new Error(String(payload.message || 'No fue posible cargar los cobros.'));
-			}
-			items = Array.isArray(payload.data) ? payload.data : [];
-			const meta = payload.meta && typeof payload.meta === 'object' ? payload.meta : {};
-			totalRecords = Number(meta.total ?? items.length) || 0;
-			page = Number(meta.page ?? page) || page;
+
+			items = listResult.items;
+			totalRecords = Number(listResult.meta.total ?? items.length) || 0;
+			page = Number(listResult.meta.page ?? page) || page;
 			const pages = totalPages();
 			if (items.length === 0 && page > 1 && totalRecords > 0) {
 				page = Math.min(page - 1, pages);
@@ -897,8 +919,13 @@ export const initCobrosPage = () => {
 					return;
 				}
 			}
-			if (pendingAppointmentId) {
-				const match = items.find((item) => item.id_appointment === pendingAppointmentId);
+			if (lookupPromise) {
+				const lookupResult = await lookupPromise;
+				if (requestId !== loadRequestId) return;
+				const match =
+					lookupResult.items.find((item) => item.id_appointment === lookupId) ||
+					lookupResult.items[0] ||
+					null;
 				pendingAppointmentId = 0;
 				if (match) openModal(match);
 			}

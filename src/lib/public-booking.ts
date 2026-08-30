@@ -256,6 +256,8 @@ export interface PublicReservationDetail {
 	locations?: PublicBookingLocation[];
 	/** Solo presentes cuando payment_status='PENDING' (permite ofrecer subir/resubir comprobante). */
 	ocr_status?: string | null;
+	/** True si el comercio rechazó el último comprobante (independiente de reject_reason). */
+	receipt_rejected?: boolean;
 	/** Solo se expone si el último comprobante fue rechazado explícitamente por el comercio. */
 	reject_reason?: string | null;
 	payment_reference?: string | null;
@@ -957,6 +959,10 @@ const normalizeReservationDetail = (value: unknown): PublicReservationDetail | n
 		last_recommendations: String(source.last_recommendations || '').trim() || null,
 		locations: normalizePublicBookingLocations(source.locations) as PublicBookingLocation[],
 		ocr_status: String(source.ocr_status || '').trim() || null,
+		receipt_rejected:
+			source.receipt_rejected === true ||
+			Number(source.receipt_rejected) === 1 ||
+			String(source.receipt_rejected || '').trim().toLowerCase() === 'true',
 		reject_reason: String(source.reject_reason || '').trim() || null,
 		payment_reference: String(source.payment_reference || '').trim() || null,
 		payment_expires_at: String(source.payment_expires_at || '').trim() || null,
