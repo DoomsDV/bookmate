@@ -929,7 +929,12 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 		display: flex;
 		flex-direction: column;
 		gap: 0.85rem;
-		padding-bottom: calc(10.75rem + env(safe-area-inset-bottom, 0px));
+		padding-bottom: 0;
+	}
+
+	/* El espacio para el dock fijo va al final de la página, no entre la carga y el historial. */
+	.reservation-manage__body:has(.sipap-deposit-panel--manage:not(.hidden)) {
+		padding-bottom: calc(8rem + env(safe-area-inset-bottom, 0px));
 	}
 
 	.reservation-manage__dashboard .reservation-manage__deposit,

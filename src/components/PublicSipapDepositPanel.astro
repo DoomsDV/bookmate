@@ -1145,8 +1145,10 @@ const copyRows = [
 	@media (max-width: 959px) {
 		.sipap-deposit-panel,
 		.sipap-deposit-panel:not(.sipap-deposit-panel--manage) {
-			padding-top: 0.5rem;
-			padding-bottom: calc(var(--sipap-dock-space) + 1.35rem + env(safe-area-inset-bottom, 0px));
+			/* Reserva el alto real del dock fijo sin dejar un bloque vacío excesivo al final. */
+			--sipap-dock-space: 7.5rem;
+			padding-top: 0.35rem;
+			padding-bottom: calc(var(--sipap-dock-space) + 0.75rem + env(safe-area-inset-bottom, 0px));
 		}
 
 		.sipap-deposit-intro {
@@ -1261,10 +1263,14 @@ const copyRows = [
 			}
 		}
 
+		/*
+		 * El host del flash se crea en <body>; debe ser un selector global completo
+		 * y no puede depender de variables CSS declaradas dentro de este panel.
+		 */
 		:global(body:has(.sipap-deposit-panel:not(.hidden) .sipap-submit-dock) [data-flash-stack]),
 		:global(body:has(.sipap-deposit-panel:not(.hidden) .sipap-submit-dock) [data-flash-stack]:popover-open) {
-			bottom: calc(var(--sipap-dock-space) + env(safe-area-inset-bottom, 0px)) !important;
-			inset: auto 0 calc(var(--sipap-dock-space) + env(safe-area-inset-bottom, 0px)) 0 !important;
+			bottom: calc(8rem + env(safe-area-inset-bottom, 0px)) !important;
+			inset: auto 0 calc(8rem + env(safe-area-inset-bottom, 0px)) 0 !important;
 		}
 	}
 
