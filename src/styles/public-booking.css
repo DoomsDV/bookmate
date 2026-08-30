@@ -606,16 +606,18 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 
 /* Ticket físico compartido (Gestionar reserva + Success Screen) */
 .booking-ticket {
+	--ticket-pad-x: 1.15rem;
+	--ticket-notch-r: 0.625rem;
 	display: grid;
 	gap: 1rem;
-	padding: 1.15rem 1.15rem 1.25rem;
+	padding: 1.15rem var(--ticket-pad-x) 1.25rem;
 	border-radius: 1.5rem;
 	background: var(--ticket-surface, #27272a);
 	border: 0;
 	box-shadow:
 		0 10px 15px -3px rgb(0 0 0 / 0.5),
 		0 4px 6px -4px rgb(0 0 0 / 0.5);
-	overflow: hidden;
+	overflow: visible;
 	text-align: left;
 }
 
@@ -747,8 +749,9 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 
 .booking-ticket__tear {
 	position: relative;
+	z-index: 1;
 	height: 0;
-	margin: 0.15rem -1.15rem 0;
+	margin: 0.15rem calc(-1 * var(--ticket-pad-x)) 0;
 	border-top: 1px dashed color-mix(in srgb, var(--outline-variant) 85%, transparent);
 }
 
@@ -756,19 +759,22 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 .booking-ticket__tear::after {
 	content: '';
 	position: absolute;
-	top: -0.5rem;
-	width: 1rem;
-	height: 1rem;
+	top: 0;
+	width: calc(var(--ticket-notch-r) * 2 + 2px);
+	height: calc(var(--ticket-notch-r) * 2 + 2px);
 	border-radius: 50%;
 	background: var(--surface-background);
+	box-shadow: 0 0 0 1px var(--surface-background);
+	transform: translateY(-50%);
+	z-index: 2;
 }
 
 .booking-ticket__tear::before {
-	left: -0.5rem;
+	left: calc(-1 * var(--ticket-notch-r) - 1px);
 }
 
 .booking-ticket__tear::after {
-	right: -0.5rem;
+	right: calc(-1 * var(--ticket-notch-r) - 1px);
 }
 
 .booking-ticket__details {
