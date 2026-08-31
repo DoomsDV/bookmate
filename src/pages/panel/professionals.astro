@@ -372,7 +372,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 			
 			<div class="shrink-0 z-20 mt-auto border-t border-(--shell-border) bg-(--surface-bright) px-4 py-4 sm:px-7 sm:py-5 lg:px-6">
 				<div class="modal-footer">
-				<button type="button" class="hidden modal-action-danger" data-delete-professional aria-label="Eliminar personal">
+				<button type="button" class="hidden modal-action-danger" data-delete-professional data-requires-write aria-label="Eliminar personal">
 					<span class="material-symbols-rounded mr-1.5 align-[-0.22em] text-[1.15rem]" data-delete-professional-icon aria-hidden="true">delete</span>
 					<span class="modal-action-danger__label" data-delete-professional-label>Eliminar</span>
 				</button>
@@ -381,7 +381,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 				<button type="button" class="modal-action-secondary" data-close-professional-modal>
 					Cancelar
 				</button>
-				<button type="submit" class="modal-action-primary" data-submit-professional>
+				<button type="submit" class="modal-action-primary" data-submit-professional data-requires-write>
 					<span class="material-symbols-rounded text-[1.2rem]" data-submit-professional-icon aria-hidden="true">check</span>
 					<span data-submit-professional-label>Crear personal</span>
 				</button>

@@ -67,6 +67,7 @@ const cardItems = professionals.map((professional) => ({
 					type="button"
 					class="professionals-create-btn hidden sm:inline-flex items-center justify-center gap-2"
 					data-open-professional-modal
+					data-requires-write
 				>
 					<svg class="professionals-create-btn-icon w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" aria-hidden="true">
 						<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" />
@@ -82,6 +83,7 @@ const cardItems = professionals.map((professional) => ({
 			type="button"
 			class="professionals-create-fab"
 			data-open-professional-modal
+			data-requires-write
 			aria-label="Nuevo Personal"
 			title="Nuevo Personal"
 		>

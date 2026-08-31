@@ -283,6 +283,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 							type="button"
 							class="location-closures-add-btn"
 							data-add-closure-btn
+							data-requires-write
 						>
 							<span class="material-symbols-rounded text-[1.05rem]">add</span>
 							<span>Añadir cierre</span>
@@ -337,6 +338,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 							type="button"
 							class="hidden modal-action-danger"
 							data-delete-location
+							data-requires-write
 							aria-label="Eliminar sucursal"
 						>
 							<span
@@ -359,6 +361,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 								type="submit"
 								class="modal-action-primary"
 								data-submit-location
+								data-requires-write
 							>
 								<span
 									class="material-symbols-rounded text-[1.2rem]"
@@ -415,6 +418,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 					type="button"
 					class="location-closures-add-btn location-closures-add-btn--wide"
 					data-add-org-closure-btn
+					data-requires-write
 				>
 					<span class="material-symbols-rounded text-[1.05rem]">add</span>
 					<span>Nuevo cierre general</span>
@@ -590,6 +594,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 						type="submit"
 						class="modal-action-primary"
 						data-submit-closure
+						data-requires-write
 					>
 						<span class="material-symbols-rounded text-[1.2rem]" aria-hidden="true">save</span>
 						<span>Guardar cierre</span>

@@ -76,6 +76,15 @@ export interface CreateEsignDocumentPayload {
 	items: EsignItem[];
 	cdcRef?: string;
 	motivo?: number;
+	/** iTipTra — 2 = Prestación de servicios */
+	tipoTransaccion?: number;
+	desTipoTransaccion?: string;
+	/** iIndPres — 3 = operación electrónica / internet */
+	indPres?: number;
+	desIndPres?: string;
+	/** iTiPago en contado — 3 = tarjeta de crédito */
+	medioPago?: number;
+	desMedioPago?: string;
 }
 
 export interface EsignDocumentResult {
@@ -128,17 +137,23 @@ const parseEnvelope = async <T>(response: Response, fallbackMessage: string): Pr
 };
 
 export const createEsignDocument = async (
-	payload: CreateEsignDocumentPayload
+	payload: CreateEsignDocumentPayload,
+	options?: { idempotencyKey?: string }
 ): Promise<EsignDocumentResult> => {
 	const apiKey = requireApiKey();
+	const headers: Record<string, string> = {
+		'Content-Type': 'application/json',
+		Accept: 'application/json',
+		Authorization: `Bearer ${apiKey}`,
+	};
+	const idem = String(options?.idempotencyKey || '').trim();
+	if (idem) {
+		headers['Idempotency-Key'] = idem;
+	}
 
 	const response = await fetch(`${ESIGN_API_BASE_URL}/v1/documents`, {
 		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-			Accept: 'application/json',
-			Authorization: `Bearer ${apiKey}`,
-		},
+		headers,
 		body: JSON.stringify(payload),
 	});
 

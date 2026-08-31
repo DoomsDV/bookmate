@@ -676,6 +676,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 									type="button"
 									class="cobros-modal-btn cobros-modal-btn--ghost cobros-modal-btn--icon"
 									data-cobros-reject
+									data-requires-write
 									aria-label="Rechazar seña"
 								>
 									<span class="material-symbols-rounded" aria-hidden="true">close</span>
@@ -685,6 +686,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 									type="button"
 									class="cobros-modal-btn cobros-modal-btn--primary"
 									data-cobros-approve
+									data-requires-write
 								>
 									<span class="material-symbols-rounded" aria-hidden="true" data-cobros-approve-icon
 										>check</span
@@ -704,6 +706,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 									type="button"
 									class="cobros-modal-btn cobros-modal-btn--danger"
 									data-cobros-reject-confirm
+									data-requires-write
 								>
 									Rechazar
 								</button>
@@ -727,6 +730,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 									type="button"
 									class="cobros-modal-btn cobros-modal-btn--primary cobros-modal-btn--island group"
 									data-cobros-mark-refund-sent
+									data-requires-write
 								>
 									<span class="cobros-modal-btn__label">Marcar como enviado</span>
 									<span class="cobros-modal-btn__icon-ring" aria-hidden="true">
@@ -737,6 +741,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 									type="button"
 									class="cobros-modal-btn cobros-modal-btn--text"
 									data-cobros-waive
+									data-requires-write
 								>
 									Omitir reembolso
 								</button>
@@ -748,6 +753,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 									type="button"
 									class="cobros-modal-btn cobros-modal-btn--primary cobros-modal-btn--island group"
 									data-cobros-dispute-upload
+									data-requires-write
 								>
 									<span class="cobros-modal-btn__label" data-cobros-dispute-upload-label>Enviar prueba</span>
 									<span class="cobros-modal-btn__icon-ring" aria-hidden="true">

@@ -946,7 +946,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 								<button type="button" class="modal-action-secondary" data-settings-close-action>
 									Cancelar
 								</button>
-								<button type="submit" class="modal-action-primary" form="settings-workspace-form">
+								<button type="submit" class="modal-action-primary" form="settings-workspace-form" data-requires-write>
 									<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline" aria-hidden="true">save</span>
 									Guardar negocio
 								</button>
@@ -959,7 +959,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 										<button type="button" class="modal-action-secondary" data-settings-close-action>
 											Cancelar
 										</button>
-										<button type="submit" class="modal-action-primary" form="settings-payments-form">
+										<button type="submit" class="modal-action-primary" form="settings-payments-form" data-requires-write>
 											<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline" aria-hidden="true">save</span>
 											Guardar cobros
 										</button>
@@ -972,7 +972,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 								<button type="button" class="modal-action-secondary" data-settings-close-action>
 									Cancelar
 								</button>
-								<button type="submit" class="modal-action-primary" form="settings-system-form">
+								<button type="submit" class="modal-action-primary" form="settings-system-form" data-requires-write>
 									<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline" aria-hidden="true">save</span>
 									Guardar sistema
 								</button>

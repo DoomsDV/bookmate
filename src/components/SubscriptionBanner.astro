@@ -45,6 +45,12 @@ const { isAdmin = false } = Astro.props;
 	.hasel-sub-banner-danger a  { background: rgba(153,27,27,.12); }
 	.hasel-sub-banner-warning a { background: rgba(146,64,14,.12); }
 	[data-requires-feature-hidden] { display: none !important; }
+	[data-requires-write][disabled],
+	[data-requires-write][aria-disabled='true'] {
+		opacity: 0.55;
+		cursor: not-allowed;
+		pointer-events: none;
+	}
 </style>
 
 <script>
@@ -125,10 +131,19 @@ const { isAdmin = false } = Astro.props;
 
 	class SubscriptionBanner extends HTMLElement {
 		private isAdmin = false;
+		private _writeObserver: MutationObserver | null = null;
+		private _gateRaf = 0;
 
 		connectedCallback() {
 			this.isAdmin = this.dataset.isAdmin === 'true';
+			this.observeDynamicWriteGates();
 			void this.load();
+		}
+
+		disconnectedCallback() {
+			this._writeObserver?.disconnect();
+			this._writeObserver = null;
+			if (this._gateRaf) cancelAnimationFrame(this._gateRaf);
 		}
 
 		private async load() {
@@ -193,17 +208,47 @@ const { isAdmin = false } = Astro.props;
 				}
 			});
 
-			if (!state.canWrite) {
-				const writeHint =
-					state.planCode === 'FREE' || state.canceledAt
-						? 'Tu cuenta está en solo lectura. Renová tu plan para seguir agendando.'
-						: 'Tu suscripción está en solo lectura. Regularizá el pago para habilitar esta acción.';
-				document.querySelectorAll<HTMLElement>('[data-requires-write]').forEach((el) => {
+			const writeHint =
+				state.planCode === 'FREE' || state.canceledAt
+					? 'Tu cuenta está en solo lectura. Renová tu plan para seguir agendando.'
+					: 'Tu suscripción está en solo lectura. Regularizá el pago para habilitar esta acción.';
+
+			document.querySelectorAll<HTMLElement>('[data-requires-write]').forEach((el) => {
+				if (!state.canWrite) {
 					el.setAttribute('disabled', 'true');
 					el.setAttribute('aria-disabled', 'true');
 					el.title = writeHint;
+				} else {
+					el.removeAttribute('disabled');
+					el.removeAttribute('aria-disabled');
+					if (el.title === writeHint) el.removeAttribute('title');
+				}
+			});
+		}
+
+		private observeDynamicWriteGates() {
+			if (this._writeObserver) return;
+			this._writeObserver = new MutationObserver(() => {
+				if (this._gateRaf) return;
+				this._gateRaf = requestAnimationFrame(() => {
+					this._gateRaf = 0;
+					const sub = window.HaselSubscription;
+					if (!sub) return;
+					this.applyEntitlementGates({
+						features: sub.features,
+						addonFeatures: sub.addonFeatures,
+						effectiveStatus: sub.effectiveStatus,
+						canWrite: sub.canWrite,
+						planName: sub.planName,
+						planCode: sub.planCode,
+						trialEndsAt: sub.trialEndsAt,
+						graceEndsAt: sub.graceEndsAt,
+						canceledAt: sub.canceledAt,
+						orgSpecialtyCode: sub.orgSpecialtyCode,
+					});
 				});
-			}
+			});
+			this._writeObserver.observe(document.body, { childList: true, subtree: true });
 		}
 
 		private daysLeft(iso: string | null): number | null {

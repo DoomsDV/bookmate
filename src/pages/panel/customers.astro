@@ -286,6 +286,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 							type="button"
 							class="panel-modal-header__close"
 							data-edit-customer-profile-toggle
+							data-requires-write
 							aria-label="Editar datos del cliente"
 							hidden
 						>
@@ -945,7 +946,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 									<button type="button" class="modal-action-secondary" data-close-odontogram-popover>
 										Cancelar
 									</button>
-									<button type="submit" class="modal-action-primary" data-customer-odontogram-save>
+									<button type="submit" class="modal-action-primary" data-customer-odontogram-save data-requires-write>
 										Guardar
 									</button>
 								</div>
@@ -997,6 +998,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 						form="customer-profile-edit-form"
 						class="modal-action-primary w-full sm:w-auto"
 						data-save-customer-profile-edit
+						data-requires-write
 					>
 						Guardar cambios
 					</button>

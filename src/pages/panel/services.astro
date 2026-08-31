@@ -419,6 +419,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 							type="button"
 							class="hidden modal-action-danger"
 							data-delete-service
+							data-requires-write
 							aria-label="Eliminar servicio"
 						>
 							<span
@@ -442,6 +443,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 								type="submit"
 								class:list={['modal-action-primary', !canManageServices && 'hidden']}
 								data-submit-service
+								data-requires-write
 							>
 								<span
 									class="material-symbols-rounded text-[1.2rem]"

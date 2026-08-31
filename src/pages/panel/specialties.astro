@@ -145,7 +145,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 
 				<div class="z-20 mt-auto shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-4 py-4 sm:px-7 sm:py-5 lg:px-6">
 					<div class="modal-footer">
-					<button type="button" class="hidden modal-action-danger" data-delete-specialty aria-label="Eliminar especialidad">
+					<button type="button" class="hidden modal-action-danger" data-delete-specialty data-requires-write aria-label="Eliminar especialidad">
 						<span class="material-symbols-rounded mr-1.5 align-[-0.22em] text-[1.15rem]" aria-hidden="true">delete</span>
 						<span class="modal-action-danger__label" data-delete-specialty-label>Eliminar</span>
 					</button>
@@ -154,7 +154,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 					<button type="button" class="modal-action-secondary" data-close-specialty-modal>
 						Cancelar
 					</button>
-					<button type="submit" class="modal-action-primary" data-submit-specialty>
+					<button type="submit" class="modal-action-primary" data-submit-specialty data-requires-write>
 						<span class="material-symbols-rounded text-[1.2rem]" data-submit-specialty-icon aria-hidden="true">check</span>
 						<span data-submit-specialty-label>Crear especialidad</span>
 					</button>

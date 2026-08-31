@@ -667,6 +667,7 @@ const { showVoiceButton = false }: Props = Astro.props;
 						type="button"
 						class="hidden appointment-delete-btn"
 						data-delete-appointment
+						data-requires-write
 						aria-label="Eliminar cita"
 					>
 						<span class="material-symbols-rounded mr-1.5 align-[-0.22em] text-[1.15rem]" aria-hidden="true">delete</span>
@@ -685,6 +686,7 @@ const { showVoiceButton = false }: Props = Astro.props;
 							type="submit"
 							class="appointment-submit-btn"
 							data-submit-appointment
+							data-requires-write
 						>
 							<span class="material-symbols-rounded text-[1.2rem]" data-submit-appointment-icon aria-hidden="true">check</span>
 							<span data-submit-appointment-label>Crear reserva</span>
