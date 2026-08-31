@@ -219,3 +219,121 @@ export const getEsignKudeStatus = async (cdc: string): Promise<EsignKudeStatus> 
 
 	return parseEnvelope<EsignKudeStatus>(response, 'No fue posible consultar el KuDE.');
 };
+
+/** Límite de descarga del XML firmado (bytes). DE típico << 1 MiB. */
+export const ESIGN_XML_MAX_BYTES = 2 * 1024 * 1024;
+/** Timeout de descarga XML (ms). */
+export const ESIGN_XML_TIMEOUT_MS = 30_000;
+
+export interface EsignDocumentXml {
+	/** Bytes canónicos del XML firmado (UTF-8). */
+	bytes: Uint8Array;
+	/** Texto UTF-8 del XML (mismo contenido que bytes). */
+	text: string;
+	sha256: string;
+	size: number;
+	mime: string;
+}
+
+const hashSha256Hex = async (bytes: Uint8Array): Promise<string> => {
+	const copy = new Uint8Array(bytes.byteLength);
+	copy.set(bytes);
+	const digest = await crypto.subtle.digest('SHA-256', copy as BufferSource);
+	return Array.from(new Uint8Array(digest))
+		.map((b) => b.toString(16).padStart(2, '0'))
+		.join('');
+};
+
+/**
+ * GET /v1/documents/{cdc}/xml — XML firmado canónico (API key del tenant).
+ * 404 si no hay; 401/403 si auth/tenant incorrecto.
+ */
+export const getEsignDocumentXml = async (
+	cdc: string,
+	options?: { maxBytes?: number; timeoutMs?: number }
+): Promise<EsignDocumentXml> => {
+	const apiKey = requireApiKey();
+	const cleanCdc = String(cdc || '').trim();
+	if (!cleanCdc) {
+		throw new EsignApiError('Falta el CDC para descargar el XML.', 400, 'MISSING_CDC');
+	}
+
+	const maxBytes = options?.maxBytes ?? ESIGN_XML_MAX_BYTES;
+	const timeoutMs = options?.timeoutMs ?? ESIGN_XML_TIMEOUT_MS;
+	const controller = new AbortController();
+	const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+	let response: Response;
+	try {
+		response = await fetch(`${ESIGN_API_BASE_URL}/v1/documents/${encodeURIComponent(cleanCdc)}/xml`, {
+			method: 'GET',
+			headers: {
+				Accept: 'application/xml, text/xml, */*',
+				Authorization: `Bearer ${apiKey}`,
+			},
+			signal: controller.signal,
+		});
+	} catch (error) {
+		if (error instanceof Error && error.name === 'AbortError') {
+			throw new EsignApiError(
+				`Timeout al descargar XML (${timeoutMs}ms).`,
+				504,
+				'ESIGN_XML_TIMEOUT'
+			);
+		}
+		throw new EsignApiError(
+			error instanceof Error ? error.message : 'Error de red al descargar XML.',
+			502,
+			'ESIGN_XML_NETWORK'
+		);
+	} finally {
+		clearTimeout(timer);
+	}
+
+	if (response.status === 401 || response.status === 403) {
+		throw new EsignApiError(
+			'No autorizado para descargar el XML (API key / tenant).',
+			response.status,
+			'ESIGN_XML_FORBIDDEN'
+		);
+	}
+	if (response.status === 404) {
+		throw new EsignApiError('XML no disponible para este CDC.', 404, 'ESIGN_XML_NOT_FOUND');
+	}
+	if (!response.ok) {
+		throw new EsignApiError(
+			`Firmador respondió HTTP ${response.status} al pedir XML.`,
+			response.status,
+			'ESIGN_XML_HTTP'
+		);
+	}
+
+	const contentLength = Number(response.headers.get('content-length') || 0);
+	if (contentLength > maxBytes) {
+		throw new EsignApiError(
+			`XML demasiado grande (${contentLength} > ${maxBytes} bytes).`,
+			413,
+			'ESIGN_XML_TOO_LARGE'
+		);
+	}
+
+	const buffer = new Uint8Array(await response.arrayBuffer());
+	if (buffer.byteLength === 0) {
+		throw new EsignApiError('XML vacío.', 502, 'ESIGN_XML_EMPTY');
+	}
+	if (buffer.byteLength > maxBytes) {
+		throw new EsignApiError(
+			`XML demasiado grande (${buffer.byteLength} > ${maxBytes} bytes).`,
+			413,
+			'ESIGN_XML_TOO_LARGE'
+		);
+	}
+
+	const mimeHeader = String(response.headers.get('content-type') || '').trim();
+	const mime =
+		mimeHeader || 'application/xml; charset=UTF-8';
+	const text = new TextDecoder('utf-8').decode(buffer);
+	const sha256 = await hashSha256Hex(buffer);
+
+	return { bytes: buffer, text, sha256, size: buffer.byteLength, mime };
+};
