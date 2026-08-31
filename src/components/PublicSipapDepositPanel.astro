@@ -597,7 +597,6 @@ const copyRows = [
 	.sipap-dropzone-wrap {
 		position: relative;
 		margin-top: 0.7rem;
-		padding: 1px;
 	}
 
 	.sipap-transfer-card__list {
@@ -786,20 +785,20 @@ const copyRows = [
 		align-items: center;
 		justify-content: center;
 		padding: 1.15rem 1rem;
-		border: 1.5px dashed color-mix(in srgb, var(--sipap-line) 30%, #71717a);
-		border-radius: 0.95rem;
-		background: #141414;
+		border: 1.5px dashed color-mix(in srgb, var(--sipap-muted) 52%, var(--sipap-line));
+		border-radius: 0.9rem;
+		background: color-mix(in srgb, var(--sipap-accent) 5%, #161618);
 		box-shadow: none;
 		cursor: pointer;
 		transition:
-			border-color 0.24s ease,
-			background-color 0.24s ease;
+			border-color 0.24s cubic-bezier(0.32, 0.72, 0, 1),
+			background-color 0.24s cubic-bezier(0.32, 0.72, 0, 1);
 	}
 
 	.sipap-dropzone:hover,
 	.sipap-dropzone.is-dragging {
-		border-color: var(--sipap-accent);
-		background: var(--sipap-accent-soft);
+		border-color: color-mix(in srgb, var(--sipap-accent) 58%, var(--sipap-muted));
+		background: color-mix(in srgb, var(--sipap-accent) 10%, #18181b);
 	}
 
 	.sipap-dropzone:focus-within {
@@ -814,9 +813,11 @@ const copyRows = [
 	}
 
 	.sipap-dropzone.has-preview {
-		padding: 0.65rem;
+		padding: 0.55rem;
 		min-height: 10rem;
-		border-style: solid;
+		border-style: dashed;
+		border-color: color-mix(in srgb, var(--sipap-muted) 38%, var(--sipap-line));
+		background: color-mix(in srgb, var(--sipap-accent) 4%, #141416);
 		overflow: hidden;
 	}
 
@@ -857,8 +858,8 @@ const copyRows = [
 		align-items: center;
 		justify-content: center;
 		overflow: hidden;
-		border-radius: inherit;
-		background: #111113;
+		border-radius: 0.65rem;
+		background: #101114;
 	}
 
 	.sipap-dropzone__thumb {
@@ -866,7 +867,7 @@ const copyRows = [
 		width: 100%;
 		height: 10rem;
 		object-fit: contain;
-		background: #111113;
+		background: #101114;
 	}
 
 	.sipap-dropzone__pdf {
@@ -1154,6 +1155,7 @@ const copyRows = [
 		.sipap-deposit-intro {
 			order: 2;
 			margin-top: 1.15rem;
+			margin-bottom: 0.9rem;
 		}
 
 		.sipap-deposit-title {
@@ -1340,6 +1342,7 @@ const copyRows = [
 	@media (max-width: 959px) {
 		.sipap-deposit-panel--manage .sipap-deposit-intro {
 			margin-top: 1.5rem;
+			margin-bottom: 1rem;
 		}
 	}
 
