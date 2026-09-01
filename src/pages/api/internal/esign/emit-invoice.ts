@@ -218,6 +218,13 @@ export const POST: APIRoute = async ({ request }) => {
 		}
 
 		const status = error instanceof EsignApiError ? error.status : 502;
-		return Response.json({ status: 'error', message }, { status });
+		return Response.json(
+			{
+				status: 'error',
+				message,
+				...(error instanceof EsignApiError && error.code ? { code: error.code } : {}),
+			},
+			{ status }
+		);
 	}
 };
