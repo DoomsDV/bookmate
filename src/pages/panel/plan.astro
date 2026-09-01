@@ -69,6 +69,16 @@ const hasCard = cards.length > 0;
 
 const currency = new Intl.NumberFormat('es-PY');
 const formatGs = (amount: number) => `${currency.format(Math.max(0, Math.round(amount)))} Gs`;
+const formatInvoiceDescription = (raw: string | null | undefined, creditApplied = 0) => {
+	let text = String(raw || '').trim();
+	if (!text) return '';
+	text = text.replace(/\bSuscripcion\b/g, 'Suscripción');
+	text = text.replace(/\b[Cc]redito\b/g, 'crédito');
+	if (creditApplied > 0) {
+		text = text.replace(/\s*-\s*crédito\s+[\d.\s]+\s*Gs\.?$/i, '').trim();
+	}
+	return text.replace(/(\d{4,})(?=\s*Gs\b)/g, (value) => currency.format(Number(value)));
+};
 const formatDateEs = (iso: string | null | undefined) => {
 	if (!iso) return '—';
 	const d = new Date(iso);
@@ -1141,7 +1151,7 @@ const defaultCardHint = defaultCard
 																>
 																	<td>{formatDateTimeEs(invoiceTs)}</td>
 																	<td>
-																		<span class="plan-invoice-desc">{inv.description || inv.invoice_type}</span>
+																		<span class="plan-invoice-desc">{formatInvoiceDescription(inv.description, inv.credit_applied) || inv.invoice_type}</span>
 																		{inv.credit_applied > 0 ? (
 																			<small class="plan-invoice-credit">
 																				Crédito aplicado: {formatGs(inv.credit_applied)}
@@ -1215,7 +1225,7 @@ const defaultCardHint = defaultCard
 															<div class="plan-invoice-card__ledger">
 																<strong class="plan-invoice-card__amount">{formatGs(inv.amount)}</strong>
 																<p class="plan-invoice-card__title">
-																	{inv.description || inv.invoice_type}
+																	{formatInvoiceDescription(inv.description, inv.credit_applied) || inv.invoice_type}
 																</p>
 																{inv.credit_applied > 0 ? (
 																	<p class="plan-invoice-card__credit">
