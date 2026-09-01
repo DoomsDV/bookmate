@@ -110,6 +110,29 @@ interface EsignEnvelope<T> {
 	error?: { code?: string; message?: string } | null;
 }
 
+interface OrdsInternalEnvelope<T> {
+	status: string;
+	data?: T;
+	message?: unknown;
+	code?: unknown;
+}
+
+const isOrdsInternalEnvelope = (payload: unknown): payload is OrdsInternalEnvelope<unknown> =>
+	typeof payload === 'object' &&
+	payload !== null &&
+	!Array.isArray(payload) &&
+	typeof (payload as Record<string, unknown>).status === 'string';
+
+const ordsMessage = (payload: OrdsInternalEnvelope<unknown> | null, fallback: string) => {
+	const message = payload?.message;
+	return typeof message === 'string' && message.trim() ? message.trim() : fallback;
+};
+
+const ordsCode = (payload: OrdsInternalEnvelope<unknown> | null) => {
+	const code = payload?.code;
+	return typeof code === 'string' && code.trim() ? code.trim() : undefined;
+};
+
 const requireApiKey = () => {
 	if (!isEsignConfigured()) {
 		throw new EsignApiError('ESIGN_API_KEY no configurada.', 500, 'ESIGN_NOT_CONFIGURED');
@@ -183,23 +206,44 @@ export const callEsignInternalOrds = async <T = unknown>(
 		body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
 	});
 
-	let payload: any = null;
+	let payload: unknown = null;
 	try {
-		payload = await response.json();
+		payload = (await response.json()) as unknown;
 	} catch {
 		payload = null;
 	}
+	const envelope = isOrdsInternalEnvelope(payload) ? payload : null;
 
 	if (!response.ok) {
 		throw new EsignApiError(
-			String(payload?.message || `ORDS respondió HTTP ${response.status} en ${path}.`),
+			ordsMessage(envelope, `ORDS respondió HTTP ${response.status} en ${path}.`),
 			response.status,
-			'ORDS_INTERNAL_ERROR',
+			ordsCode(envelope) || 'ORDS_INTERNAL_ERROR',
 			payload
 		);
 	}
 
-	return (payload?.data ?? payload) as T;
+	if (!envelope) {
+		throw new EsignApiError(
+			`ORDS devolvió una envoltura inválida en ${path}.`,
+			502,
+			'ORDS_INTERNAL_INVALID_ENVELOPE',
+			payload
+		);
+	}
+
+	if (envelope.status !== 'success') {
+		const code = ordsCode(envelope);
+		const message = ordsMessage(envelope, 'Sin detalle.');
+		throw new EsignApiError(
+			`ORDS devolvió status "${envelope.status}"${code ? ` (${code})` : ''} en ${path}: ${message}`,
+			502,
+			code || 'ORDS_INTERNAL_LOGICAL_ERROR',
+			payload
+		);
+	}
+
+	return envelope.data as T;
 };
 
 export const getEsignKudeStatus = async (cdc: string): Promise<EsignKudeStatus> => {

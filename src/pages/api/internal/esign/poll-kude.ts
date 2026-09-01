@@ -43,7 +43,16 @@ export const GET: APIRoute = async ({ request }) => {
 
 	let pending: PendingArtifactItem[] = [];
 	try {
-		pending = await callEsignInternalOrds<PendingArtifactItem[]>('/pending-kude', { method: 'GET' });
+		const pendingResponse = await callEsignInternalOrds<PendingArtifactItem[]>('/pending-kude', { method: 'GET' });
+		if (!Array.isArray(pendingResponse)) {
+			throw new EsignApiError(
+				'ORDS devolvió una lista de KuDE pendientes inválida.',
+				502,
+				'ORDS_PENDING_KUDE_INVALID',
+				pendingResponse
+			);
+		}
+		pending = pendingResponse;
 	} catch (error) {
 		return Response.json(
 			{ status: 'error', message: error instanceof Error ? error.message : 'No fue posible listar pendientes.' },
@@ -55,7 +64,7 @@ export const GET: APIRoute = async ({ request }) => {
 	let artifactsSaved = 0;
 	const errors: Array<{ invoice_id: number; message: string; code?: string }> = [];
 
-	for (const item of pending || []) {
+	for (const item of pending) {
 		try {
 			const kude = await getEsignKudeStatus(item.cdc);
 			if (kude.estado !== 'ready' || !kude.kudeUrl) {
@@ -91,7 +100,7 @@ export const GET: APIRoute = async ({ request }) => {
 	return Response.json({
 		status: 'success',
 		data: {
-			checked: pending?.length || 0,
+			checked: pending.length,
 			/** Alias histórico: solo incrementa tras callback ORDS exitoso de artefactos. */
 			sent: artifactsSaved,
 			artifactsSaved,
