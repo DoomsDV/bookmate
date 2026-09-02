@@ -366,13 +366,22 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 											</div>
 											<div class="dashboard-profit-card__hero">
 												<p class="dashboard-profit-value" data-profit-month-revenue>&nbsp;</p>
-												<div class="dashboard-profit-viz dashboard-profit-viz--bars" aria-hidden="true">
-													<span class="dashboard-profit-viz__col">
-														<span class="dashboard-profit-viz__bar" data-profit-bar="last"></span>
-													</span>
-													<span class="dashboard-profit-viz__col">
-														<span class="dashboard-profit-viz__bar is-now" data-profit-bar="month"></span>
-													</span>
+												<div class="dashboard-profit-viz dashboard-profit-viz--spark">
+													<svg
+														class="dashboard-profit-spark"
+														viewBox="0 0 120 36"
+														data-profit-spark
+														role="img"
+														aria-label="Ingresos de este mes frente al mes anterior"
+													>
+														<path class="dashboard-profit-spark__last-fill" data-profit-spark-last-fill d="M 2 35 H 118 V 35 H 2 Z"></path>
+														<path class="dashboard-profit-spark__last" data-profit-spark-last d="M 2 32 H 118"></path>
+														<path class="dashboard-profit-spark__now" data-profit-spark-now d="M 2 32 H 118"></path>
+													</svg>
+													<p class="dashboard-profit-spark__legend" aria-hidden="true">
+														<span class="is-now"><i></i>este mes</span>
+														<span><i></i>anterior</span>
+													</p>
 												</div>
 											</div>
 											<ul class="dashboard-profit-stats">
@@ -399,18 +408,24 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 												<p class="dashboard-profit-label">Agenda de hoy</p>
 											</div>
 											<div class="dashboard-profit-card__hero">
-												<p class="dashboard-profit-value" data-profit-today>&nbsp;</p>
-												<svg class="dashboard-profit-viz dashboard-profit-viz--ring" viewBox="0 0 36 36" aria-hidden="true">
-													<circle class="dashboard-profit-viz__track" cx="18" cy="18" r="14" pathLength="100"></circle>
-													<circle
-														class="dashboard-profit-viz__arc"
-														cx="18"
-														cy="18"
-														r="14"
-														pathLength="100"
-														style={`--ring:${todayTotal > 0 ? dayProgressPct : 0}`}
-													></circle>
-												</svg>
+												<div class="dashboard-profit-hero-copy">
+													<p class="dashboard-profit-value dashboard-profit-value--static">{todayTotal}</p>
+													<span class="dashboard-profit-unit">turnos</span>
+												</div>
+												<div
+													class="dashboard-profit-viz dashboard-profit-viz--split"
+													role="img"
+													aria-label={`${todayCompleted} completados, ${todayRemaining} pendientes, de ${todayTotal} programados`}
+												>
+													<span class="dashboard-profit-split">
+														{todayTotal > 0 && todayCompleted > 0 && (
+															<span class="dashboard-profit-split__seg is-done" style={`flex: ${todayCompleted} 1 0`}></span>
+														)}
+														{todayTotal > 0 && todayRemaining > 0 && (
+															<span class="dashboard-profit-split__seg is-left" style={`flex: ${todayRemaining} 1 0`}></span>
+														)}
+													</span>
+												</div>
 											</div>
 											<ul class="dashboard-profit-stats">
 												<li class="dashboard-profit-stat">
@@ -432,22 +447,23 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">schedule</span>
 												<p class="dashboard-profit-label">Esperado</p>
 											</div>
-											<div class="dashboard-profit-card__hero">
-												<p class="dashboard-profit-value" data-profit-pending>&nbsp;</p>
-												<div class="dashboard-profit-viz dashboard-profit-viz--pipe" aria-hidden="true">
-													<span class="dashboard-profit-viz__pipe">
-														<span class="dashboard-profit-viz__fill" data-profit-pipe="pending"></span>
-													</span>
+											<div class="dashboard-profit-card__hero dashboard-profit-card__hero--stack">
+												<div class="dashboard-profit-pair">
+													<div class="dashboard-profit-pair__item">
+														<p class="dashboard-profit-value" data-profit-pending>&nbsp;</p>
+														<span class="dashboard-profit-pair__label">Pendiente</span>
+													</div>
+													<div class="dashboard-profit-pair__item">
+														<p class="dashboard-profit-value" data-profit-projection>&nbsp;</p>
+														<span class="dashboard-profit-pair__label">Proyección</span>
+													</div>
 												</div>
+												<p class="dashboard-profit-hint dashboard-profit-value--static" data-profit-vs-projection>vs proyección</p>
 											</div>
 											<ul class="dashboard-profit-stats">
 												<li class="dashboard-profit-stat">
 													<span class="dashboard-profit-stat__label">Pendiente de pago</span>
 													<span class="dashboard-profit-stat__value dashboard-profit-value--static">{pendingAppointments}</span>
-												</li>
-												<li class="dashboard-profit-stat">
-													<span class="dashboard-profit-stat__label">Proyección mensual</span>
-													<span class="dashboard-profit-stat__value" data-profit-pipe-label>&nbsp;</span>
 												</li>
 											</ul>
 										</article>
@@ -458,10 +474,22 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 											</div>
 											<div class="dashboard-profit-card__hero">
 												<p class="dashboard-profit-value" data-profit-total-clients>&nbsp;</p>
-												<div class="dashboard-profit-viz dashboard-profit-viz--dots" data-profit-client-dots aria-hidden="true">
-													{Array.from({ length: 8 }).map((_, index) => (
-														<span class="dashboard-profit-viz__dot" data-dot-index={index}></span>
-													))}
+												<div class="dashboard-profit-viz dashboard-profit-viz--mix" data-profit-client-mix aria-hidden="true">
+													<span class="dashboard-profit-mix" data-profit-mix="new">
+														<span class="dashboard-profit-mix__track">
+															<span class="dashboard-profit-mix__fill"></span>
+														</span>
+													</span>
+													<span class="dashboard-profit-mix" data-profit-mix="active">
+														<span class="dashboard-profit-mix__track">
+															<span class="dashboard-profit-mix__fill"></span>
+														</span>
+													</span>
+													<span class="dashboard-profit-mix" data-profit-mix="upcoming">
+														<span class="dashboard-profit-mix__track">
+															<span class="dashboard-profit-mix__fill"></span>
+														</span>
+													</span>
 												</div>
 											</div>
 											<ul class="dashboard-profit-stats">
@@ -1915,7 +1943,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			};
 
 			setText('[data-profit-month-revenue]', formatGs(data.month_revenue));
-			setText('[data-profit-today]', formatGs(data.today_revenue));
 			setText('[data-profit-pending]', formatGs(data.pending_expected_revenue));
 			setText('[data-profit-total-clients]', String(Number(data.total_clients ?? 0)));
 			setText('[data-profit-new-clients]', String(Number(data.new_clients_month ?? 0)));
@@ -1928,28 +1955,51 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			const monthRevenue = Math.max(0, Number(data.month_revenue) || 0);
 			const lastMonthRevenue = Math.max(0, Number(data.last_month_revenue) || 0);
 			const pendingRevenue = Math.max(0, Number(data.pending_expected_revenue) || 0);
-			const clientCount = Math.max(0, Math.floor(Number(data.total_clients) || 0));
-			const barMax = Math.max(monthRevenue, lastMonthRevenue, 1);
-			const barRatio = (value: number) => Math.max(0.08, value / barMax);
+			const newClients = Math.max(0, Math.floor(Number(data.new_clients_month) || 0));
+			const activeClients = Math.max(0, Math.floor(Number(data.active_clients_month) || 0));
+			const upcomingClients = Math.max(0, Math.floor(Number(data.upcoming_clients_7d) || 0));
 
 			// Proyección mensual = cobrado hasta ahora + lo esperado (pendiente de pago).
 			const pipelineTotal = monthRevenue + pendingRevenue;
-			setText('[data-profit-pipe-label]', formatGs(pipelineTotal));
+			const projectionPct = pipelineTotal > 0 ? Math.round((monthRevenue / pipelineTotal) * 100) : 0;
+			setText('[data-profit-projection]', formatGs(pipelineTotal));
+			setText('[data-profit-vs-projection]', `${projectionPct}% vs proyección`);
 
-			const lastBar = panel.querySelector<HTMLElement>('[data-profit-bar="last"]');
-			const monthBar = panel.querySelector<HTMLElement>('[data-profit-bar="month"]');
-			if (lastBar) lastBar.style.transform = `scaleY(${barRatio(lastMonthRevenue)})`;
-			if (monthBar) monthBar.style.transform = `scaleY(${barRatio(monthRevenue)})`;
+			const spark = panel.querySelector<SVGElement>('[data-profit-spark]');
+			if (spark) {
+				const sparkW = 120;
+				const sparkH = 36;
+				const padX = 2;
+				const padTop = 5;
+				const padBottom = 4;
+				const innerH = sparkH - padTop - padBottom;
+				const yAt = (ratio: number) => padTop + innerH * (1 - ratio);
+				const maxRev = Math.max(monthRevenue, lastMonthRevenue, 1);
+				const nowY = yAt(monthRevenue / maxRev);
+				const lastY = yAt(lastMonthRevenue / maxRev);
+				const x0 = padX;
+				const x1 = sparkW - padX;
+				const base = sparkH - 1;
+				spark.querySelector('[data-profit-spark-last-fill]')?.setAttribute(
+					'd',
+					`M ${x0} ${base} L ${x0} ${lastY} L ${x1} ${lastY} L ${x1} ${base} Z`
+				);
+				spark.querySelector('[data-profit-spark-last]')?.setAttribute('d', `M ${x0} ${lastY} L ${x1} ${lastY}`);
+				spark.querySelector('[data-profit-spark-now]')?.setAttribute('d', `M ${x0} ${nowY} L ${x1} ${nowY}`);
+				spark.setAttribute(
+					'aria-label',
+					`Este mes ${formatGs(monthRevenue)} frente a ${formatGs(lastMonthRevenue)} el mes anterior`
+				);
+			}
 
-			const pendingRatio = pipelineTotal > 0 ? pendingRevenue / pipelineTotal : 0;
-			const pendingFill = panel.querySelector<HTMLElement>('[data-profit-pipe="pending"]');
-			if (pendingFill) pendingFill.style.transform = `scaleX(${Math.max(0.06, pendingRatio)})`;
-
-			const dots = panel.querySelectorAll<HTMLElement>('[data-profit-client-dots] .dashboard-profit-viz__dot');
-			const filledDots = Math.min(dots.length, clientCount);
-			dots.forEach((dot, index) => {
-				dot.classList.toggle('is-filled', index < filledDots);
-			});
+			const mixMax = Math.max(newClients, activeClients, upcomingClients, 1);
+			const setMix = (key: string, value: number) => {
+				const fill = panel.querySelector<HTMLElement>(`[data-profit-mix="${key}"] .dashboard-profit-mix__fill`);
+				if (fill) fill.style.setProperty('--mix', String(value / mixMax));
+			};
+			setMix('new', newClients);
+			setMix('active', activeClients);
+			setMix('upcoming', upcomingClients);
 
 			const momNode = panel.querySelector<HTMLElement>('[data-profit-mom]');
 			if (momNode) {
@@ -4672,9 +4722,10 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		.dashboard-day-progress__split,
 		.dashboard-day-progress__metric--empty,
 		.dashboard-day-progress__island,
-		.dashboard-profit-viz__bar,
-		.dashboard-profit-viz__fill,
-		.dashboard-profit-viz__dot {
+		.dashboard-profit-spark__last-fill,
+		.dashboard-profit-spark__last,
+		.dashboard-profit-spark__now,
+		.dashboard-profit-mix__fill {
 			transition: none;
 			animation: none;
 		}
@@ -4682,11 +4733,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		.dashboard-day-progress__slot.is-done::after {
 			animation: none;
 			transform: scaleX(1);
-		}
-
-		.dashboard-profit-viz__arc {
-			animation: none;
-			stroke-dasharray: var(--ring, 0) 100;
 		}
 
 		.dashboard-profit-card:hover,
@@ -4725,6 +4771,26 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		min-width: 0;
 	}
 
+	.dashboard-profit-card__hero--stack {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.45rem;
+	}
+
+	.dashboard-profit-hero-copy {
+		display: flex;
+		align-items: baseline;
+		gap: 0.38rem;
+		min-width: 0;
+	}
+
+	.dashboard-profit-unit {
+		font-size: 0.78rem;
+		font-weight: 650;
+		letter-spacing: -0.01em;
+		color: color-mix(in srgb, var(--on-surface-variant) 80%, var(--on-surface) 20%);
+	}
+
 	.dashboard-profit-value {
 		margin: 0;
 		min-width: 0;
@@ -4736,127 +4802,179 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		font-variant-numeric: tabular-nums lining-nums;
 	}
 
+	.dashboard-profit-pair {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		gap: 0.75rem;
+		width: 100%;
+		min-width: 0;
+	}
+
+	.dashboard-profit-pair__item {
+		min-width: 0;
+	}
+
+	.dashboard-profit-pair .dashboard-profit-value {
+		font-size: 1.22rem;
+	}
+
+	.dashboard-profit-pair__label {
+		display: block;
+		margin-top: 0.22rem;
+		font-size: 0.68rem;
+		font-weight: 650;
+		letter-spacing: -0.01em;
+		color: color-mix(in srgb, var(--on-surface-variant) 80%, var(--on-surface) 20%);
+	}
+
+	.dashboard-profit-hint {
+		margin: 0;
+		font-size: 0.72rem;
+		font-weight: 700;
+		letter-spacing: -0.01em;
+		color: var(--profit-accent);
+	}
+
 	.dashboard-profit-viz {
 		flex: 0 0 auto;
 		display: block;
 	}
 
-	.dashboard-profit-viz--bars {
+	.dashboard-profit-viz--spark {
 		display: flex;
-		align-items: stretch;
+		flex-direction: column;
+		justify-content: flex-end;
 		gap: 0.28rem;
-		width: 2.15rem;
-		height: 2.55rem;
-	}
-
-	.dashboard-profit-viz__col {
-		display: flex;
-		align-items: flex-end;
-		flex: 1 1 0;
+		width: 7.2rem;
 		min-width: 0;
-		border-radius: 999px;
-		background: color-mix(in srgb, var(--profit-accent) 12%, transparent);
-		overflow: hidden;
 	}
 
-	.dashboard-profit-viz__bar {
+	.dashboard-profit-spark {
 		display: block;
 		width: 100%;
-		height: 100%;
-		border-radius: inherit;
-		background: color-mix(in srgb, var(--profit-accent) 42%, #94a3b8 58%);
-		transform: scaleY(0.1);
-		transform-origin: bottom center;
-		transition: transform 720ms cubic-bezier(0.32, 0.72, 0, 1);
+		height: 2.15rem;
+		overflow: visible;
 	}
 
-	.dashboard-profit-viz__bar.is-now {
+	.dashboard-profit-spark__last-fill {
+		fill: color-mix(in srgb, var(--profit-accent) 22%, transparent);
+	}
+
+	.dashboard-profit-spark__last,
+	.dashboard-profit-spark__now {
+		fill: none;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+
+	.dashboard-profit-spark__last {
+		stroke: color-mix(in srgb, var(--profit-accent) 42%, #94a3b8 58%);
+		stroke-width: 1.6;
+	}
+
+	.dashboard-profit-spark__now {
+		stroke: var(--profit-accent);
+		stroke-width: 2.1;
+	}
+
+	.dashboard-profit-spark__legend {
+		display: flex;
+		justify-content: flex-end;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.55rem;
+		margin: 0;
+		font-size: 0.62rem;
+		font-weight: 650;
+		letter-spacing: -0.01em;
+		color: color-mix(in srgb, var(--on-surface-variant) 78%, var(--on-surface) 22%);
+	}
+
+	.dashboard-profit-spark__legend span {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.22rem;
+	}
+
+	.dashboard-profit-spark__legend i {
+		flex-shrink: 0;
+		width: 0.42rem;
+		height: 0.42rem;
+		border-radius: 999px;
+		font-style: normal;
+		background: color-mix(in srgb, var(--profit-accent) 42%, #94a3b8 58%);
+	}
+
+	.dashboard-profit-spark__legend .is-now {
+		color: var(--profit-accent);
+	}
+
+	.dashboard-profit-spark__legend .is-now i {
 		background: var(--profit-accent);
 	}
 
-	.dashboard-profit-viz--ring {
-		width: 2.55rem;
-		height: 2.55rem;
-		transform: rotate(-90deg);
-	}
-
-	.dashboard-profit-viz__track,
-	.dashboard-profit-viz__arc {
-		fill: none;
-		stroke-width: 4.4;
-		stroke-linecap: round;
-	}
-
-	.dashboard-profit-viz__track {
-		stroke: color-mix(in srgb, var(--profit-accent) 16%, transparent);
-	}
-
-	.dashboard-profit-viz__arc {
-		stroke: var(--profit-accent);
-		stroke-dasharray: 0 100;
-		animation: dashboard-profit-ring-in 800ms cubic-bezier(0.32, 0.72, 0, 1) 120ms forwards;
-	}
-
-	.dashboard-profitability-shell.is-ready .dashboard-profit-viz__arc {
-		stroke-dasharray: var(--ring, 0) 100;
-	}
-
-	@keyframes dashboard-profit-ring-in {
-		to {
-			stroke-dasharray: var(--ring, 0) 100;
-		}
-	}
-
-	.dashboard-profit-viz--pipe {
+	.dashboard-profit-viz--split {
 		display: flex;
 		align-items: center;
-		width: 4.4rem;
+		width: 7.2rem;
 		height: 2.55rem;
 	}
 
-	.dashboard-profit-viz__pipe {
-		position: relative;
-		display: block;
+	.dashboard-profit-split {
+		display: flex;
 		width: 100%;
 		height: 0.55rem;
+		overflow: hidden;
+		gap: 2px;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--profit-accent) 16%, transparent);
+	}
+
+	.dashboard-profit-split__seg {
+		min-width: 0;
+		height: 100%;
+		border-radius: 999px;
+	}
+
+	.dashboard-profit-split__seg.is-done {
+		background: var(--profit-accent);
+	}
+
+	.dashboard-profit-split__seg.is-left {
+		background: color-mix(in srgb, var(--profit-accent) 46%, #94a3b8 54%);
+	}
+
+	.dashboard-profit-viz--mix {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		gap: 0.32rem;
+		width: 6.8rem;
+		height: 2.55rem;
+	}
+
+	.dashboard-profit-mix,
+	.dashboard-profit-mix__track {
+		display: block;
+		width: 100%;
+	}
+
+	.dashboard-profit-mix__track {
+		height: 0.38rem;
 		overflow: hidden;
 		border-radius: 999px;
 		background: color-mix(in srgb, var(--profit-accent) 16%, transparent);
 	}
 
-	.dashboard-profit-viz__fill {
-		position: absolute;
-		inset: 0;
+	.dashboard-profit-mix__fill {
+		display: block;
+		width: 100%;
+		height: 100%;
 		border-radius: inherit;
 		background: var(--profit-accent);
-		transform: scaleX(0.08);
+		transform: scaleX(var(--mix, 0));
 		transform-origin: left center;
 		transition: transform 720ms cubic-bezier(0.32, 0.72, 0, 1);
-	}
-
-	.dashboard-profit-viz--dots {
-		display: grid;
-		grid-template-columns: repeat(4, 0.42rem);
-		grid-template-rows: repeat(2, 0.42rem);
-		gap: 0.28rem;
-		align-content: center;
-		height: 2.55rem;
-	}
-
-	.dashboard-profit-viz__dot {
-		width: 0.42rem;
-		height: 0.42rem;
-		border-radius: 999px;
-		background: color-mix(in srgb, var(--profit-accent) 18%, transparent);
-		transform: scale(0.86);
-		transition:
-			background-color 420ms cubic-bezier(0.32, 0.72, 0, 1),
-			transform 420ms cubic-bezier(0.32, 0.72, 0, 1);
-	}
-
-	.dashboard-profit-viz__dot.is-filled {
-		background: var(--profit-accent);
-		transform: scale(1);
 	}
 
 	.dashboard-profit-caption {
@@ -4874,21 +4992,27 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		color: color-mix(in srgb, var(--on-surface-variant) 42%, #e8eaed 58%);
 	}
 
-	.dashboard-profitability-shell.is-loading .dashboard-profit-viz {
+	.dashboard-profitability-shell.is-loading .dashboard-profit-viz:not(.dashboard-profit-viz--split) {
 		opacity: 0.35;
 	}
 
-	html[data-theme='dark'] .dashboard-profit-viz__col,
-	html[data-theme='dark'] .dashboard-profit-viz__pipe {
+	html[data-theme='dark'] .dashboard-profit-unit,
+	html[data-theme='dark'] .dashboard-profit-pair__label,
+	html[data-theme='dark'] .dashboard-profit-spark__legend {
+		color: color-mix(in srgb, var(--on-surface-variant) 42%, #e8eaed 58%);
+	}
+
+	html[data-theme='dark'] .dashboard-profit-spark__last-fill {
+		fill: color-mix(in srgb, var(--profit-accent) 18%, transparent);
+	}
+
+	html[data-theme='dark'] .dashboard-profit-spark__last {
+		stroke: color-mix(in srgb, var(--profit-accent) 48%, #94a3b8 52%);
+	}
+
+	html[data-theme='dark'] .dashboard-profit-split,
+	html[data-theme='dark'] .dashboard-profit-mix__track {
 		background: color-mix(in srgb, var(--profit-accent) 22%, transparent);
-	}
-
-	html[data-theme='dark'] .dashboard-profit-viz__track {
-		stroke: color-mix(in srgb, var(--profit-accent) 28%, transparent);
-	}
-
-	html[data-theme='dark'] .dashboard-profit-viz__dot:not(.is-filled) {
-		background: color-mix(in srgb, var(--profit-accent) 28%, transparent);
 	}
 
 	.dashboard-profit-stats {
@@ -5338,8 +5462,10 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			word-break: break-word;
 		}
 
-		.dashboard-profit-viz--pipe {
-			width: 3.6rem;
+		.dashboard-profit-viz--spark,
+		.dashboard-profit-viz--split,
+		.dashboard-profit-viz--mix {
+			width: 6.2rem;
 		}
 
 		.dashboard-profit-label {
