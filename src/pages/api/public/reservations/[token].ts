@@ -82,8 +82,9 @@ export const DELETE: APIRoute = async ({ request, params }) => {
 					throw new PublicBookingApiError(parsed.message, 400);
 				}
 				if (parsed.isValid) refundAlias = parsed.normalized;
-			} catch {
-				// ignore body parse errors
+			} catch (error) {
+				if (error instanceof PublicBookingApiError) throw error;
+				// Cuerpo malformado: cancelar igual, sin alias.
 			}
 		}
 

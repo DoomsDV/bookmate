@@ -1228,7 +1228,11 @@ export const initCobrosPage = () => {
 				? (payload.data as Record<string, unknown>)
 				: {};
 		const ocr = String(data.ocr_status || '').trim().toUpperCase();
-		if (ocr === 'ACCEPTED' || ocr === 'MANUAL_REVIEW') return 'review' as const;
+		// MATCH es el mismo OCR de señas; el upload ya fue 200. Queda en revisión
+		// (el OCR no acredita la transferencia). Vacío: ORDS guardó sin clasificar.
+		if (!ocr || ocr === 'ACCEPTED' || ocr === 'MANUAL_REVIEW' || ocr === 'MATCH') {
+			return 'review' as const;
+		}
 		return 'retryable_error' as const;
 	};
 
