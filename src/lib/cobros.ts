@@ -54,6 +54,7 @@ export interface CobroItem {
 	refund_sla_breached?: number | null;
 	refund_dispute_status?: string | null;
 	refund_dispute_due_at?: string | null;
+	refund_dispute_ops_due_at?: string | null;
 	refund_dispute_has_proof?: number | null;
 }
 
@@ -147,6 +148,7 @@ const normalizeItem = (raw: any): CobroItem | null => {
 		refund_sla_breached: Number(raw?.refund_sla_breached ?? 0) || 0,
 		refund_dispute_status: String(raw?.refund_dispute_status || '').trim() || null,
 		refund_dispute_due_at: String(raw?.refund_dispute_due_at || '').trim() || null,
+		refund_dispute_ops_due_at: String(raw?.refund_dispute_ops_due_at || '').trim() || null,
 		refund_dispute_has_proof: Number(raw?.refund_dispute_has_proof ?? 0) || 0,
 	};
 };

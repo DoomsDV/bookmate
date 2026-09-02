@@ -1,0 +1,143 @@
+---
+import SideNav from '../../components/SideNav.astro';
+import TopBar from '../../components/TopBar.astro';
+import Layout from '../../layouts/Layout.astro';
+import { panelPageTitle } from '../../lib/panel-page-title';
+import '../../styles/global.css';
+
+const token = Astro.locals.token ?? '';
+---
+
+<Layout pageTitle={panelPageTitle('Operaciones')}>
+	<div class="min-h-screen bg-(--page-background)" data-ops-root>
+		<div
+			class="app-shell grid min-h-screen overflow-hidden bg-transparent"
+			data-app-shell
+			data-sidebar-state="expanded"
+		>
+			<SideNav currentPath={Astro.url.pathname} />
+
+			<div class="grid min-h-full grid-rows-[auto_1fr]">
+				<TopBar />
+
+				<main class="px-4 py-4 sm:px-6 sm:py-6">
+					<section class="mx-auto grid max-w-3xl gap-5">
+						<header class="grid gap-1">
+							<h1 class="m-0 text-[1.5rem] font-bold leading-none tracking-tight text-(--on-surface) sm:text-[1.75rem]">
+								Operaciones Hasel
+							</h1>
+							<p class="m-0 text-[0.92rem] leading-snug text-(--on-surface-variant)">
+								Resolver disputas de reembolso y restaurar sanciones. Solo usuarios en
+								<code class="text-[0.85em]">HASEL_OPS_USER_IDS</code>.
+							</p>
+						</header>
+
+						{
+							!token ? (
+								<p class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-sm text-(--on-surface-variant)">
+									No hay sesión válida.
+								</p>
+							) : (
+								<div class="grid gap-4">
+									<form
+										class="grid gap-4 rounded-[24px] border border-(--shell-border) bg-(--surface-bright) p-5"
+										data-ops-dispute-form
+									>
+										<div class="grid gap-1">
+											<h2 class="m-0 text-[1.05rem] font-bold text-(--on-surface)">Resolver disputa</h2>
+											<p class="m-0 text-sm text-(--on-surface-variant)">
+												El comercio no cierra el caso. ISSUE_CREDIT queda gated (F3 apagado).
+											</p>
+										</div>
+										<label class="grid gap-1 text-sm font-semibold text-(--on-surface)">
+											ID de disputa
+											<input
+												type="number"
+												name="dispute_id"
+												required
+												min="1"
+												inputmode="numeric"
+												class="rounded-2xl border border-(--outline-variant) bg-(--page-background) px-4 py-3 text-base font-normal"
+											/>
+										</label>
+										<label class="grid gap-1 text-sm font-semibold text-(--on-surface)">
+											Resolución
+											<select
+												name="resolution_code"
+												class="rounded-2xl border border-(--outline-variant) bg-(--page-background) px-4 py-3 text-base font-normal"
+											>
+												<option value="SETTLED">SETTLED — el cliente recibió el dinero</option>
+												<option value="DISMISS">DISMISS — desestimar</option>
+												<option value="ADVERSE">ADVERSE — strike / sanción</option>
+												<option value="ISSUE_CREDIT">ISSUE_CREDIT — compensación (F3, gated)</option>
+											</select>
+										</label>
+										<label class="grid gap-1 text-sm font-semibold text-(--on-surface)">
+											Notas
+											<textarea
+												name="notes"
+												rows="3"
+												maxlength="500"
+												class="rounded-2xl border border-(--outline-variant) bg-(--page-background) px-4 py-3 text-base font-normal"
+											></textarea>
+										</label>
+										<p class="m-0 text-sm text-(--on-surface-variant)" data-ops-dispute-status></p>
+										<button type="submit" class="reservation-primary-action justify-self-start rounded-2xl bg-(--primary) px-5 py-3 text-sm font-semibold text-(--on-primary)">
+											Resolver
+										</button>
+									</form>
+
+									<form
+										class="grid gap-4 rounded-[24px] border border-(--shell-border) bg-(--surface-bright) p-5"
+										data-ops-restore-form
+									>
+										<div class="grid gap-1">
+											<h2 class="m-0 text-[1.05rem] font-bold text-(--on-surface)">Restaurar sanciones</h2>
+											<p class="m-0 text-sm text-(--on-surface-variant)">
+												Vuelve el nivel de enforcement a NONE para la organización.
+											</p>
+										</div>
+										<label class="grid gap-1 text-sm font-semibold text-(--on-surface)">
+											ID de organización
+											<input
+												type="number"
+												name="org_id"
+												required
+												min="1"
+												inputmode="numeric"
+												class="rounded-2xl border border-(--outline-variant) bg-(--page-background) px-4 py-3 text-base font-normal"
+											/>
+										</label>
+										<label class="grid gap-1 text-sm font-semibold text-(--on-surface)">
+											Motivo
+											<textarea
+												name="reason"
+												rows="3"
+												required
+												minlength="5"
+												maxlength="400"
+												class="rounded-2xl border border-(--outline-variant) bg-(--page-background) px-4 py-3 text-base font-normal"
+											></textarea>
+										</label>
+										<p class="m-0 text-sm text-(--on-surface-variant)" data-ops-restore-status></p>
+										<button type="submit" class="rounded-2xl border border-(--shell-border) px-5 py-3 text-sm font-semibold text-(--on-surface)">
+											Restaurar
+										</button>
+									</form>
+								</div>
+							)
+						}
+					</section>
+				</main>
+			</div>
+		</div>
+	</div>
+</Layout>
+
+<script>
+	import { initOpsPage } from '../../scripts/ops-page';
+
+	const boot = () => initOpsPage();
+	boot();
+	document.addEventListener('astro:page-load', boot);
+</script>

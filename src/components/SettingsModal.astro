@@ -2879,11 +2879,24 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			if (!form) return;
 
 			const suspended = Number(data?.deposits_suspended) === 1;
+			const enforcement = String(data?.refund_enforcement_level || 'NONE').trim().toUpperCase();
 			const strikes = Number(data?.refund_strike_count) || 0;
 			const maxStrikes = Number(data?.max_refund_strikes) || 3;
 			const banner = form.querySelector<HTMLElement>('[data-payments-strikes-banner]');
 			if (banner) {
-				if (suspended) {
+				const enforcementCopy: Record<string, string> = {
+					DEPOSITS_ONLY: 'Señas suspendidas. Contactá a soporte Hasel para reactivarlas.',
+					PUBLIC_BOOKINGS: 'Reservas públicas bloqueadas por disputas de reembolso. Contactá a soporte Hasel.',
+					PUBLIC_UNPUBLISHED:
+						'El perfil público está oculto por disputas de reembolso. Contactá a soporte Hasel.',
+					OPERATIONS_SUSPENDED:
+						'La agenda interna también está bloqueada. Contactá a soporte Hasel.',
+				};
+				if (enforcement !== 'NONE' && enforcementCopy[enforcement]) {
+					banner.classList.remove('hidden');
+					banner.textContent =
+						String(data?.deposits_suspended_reason || '').trim() || enforcementCopy[enforcement];
+				} else if (suspended) {
 					banner.classList.remove('hidden');
 					banner.textContent =
 						String(data?.deposits_suspended_reason || '').trim() ||

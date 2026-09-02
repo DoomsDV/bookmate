@@ -510,6 +510,13 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 									<strong class="cobros-dispute-deadline__due" data-cobros-dispute-due>—</strong>
 								</div>
 							</div>
+							<div class="cobros-dispute-deadline hidden" data-cobros-ops-deadline>
+								<span class="material-symbols-rounded cobros-dispute-deadline__icon" aria-hidden="true">policy</span>
+								<div class="min-w-0">
+									<p class="cobros-dispute-deadline__kicker">Revisión Hasel</p>
+									<strong class="cobros-dispute-deadline__due" data-cobros-ops-due>—</strong>
+								</div>
+							</div>
 							<p class="cobros-refund-claim hidden" data-cobros-claim-note role="status"></p>
 
 							<div class="cobros-detail-receipt hidden" data-cobros-refund-proof-row>
@@ -873,6 +880,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 	[data-cobros-dispute-proof].hidden,
 	[data-cobros-dispute-actions].hidden,
 	[data-cobros-dispute-deadline].hidden,
+	[data-cobros-ops-deadline].hidden,
 	[data-cobros-refund-proof-row].hidden,
 	[data-cobros-refund-proof-empty].hidden {
 		display: none !important;

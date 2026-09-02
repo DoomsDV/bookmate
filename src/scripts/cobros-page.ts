@@ -20,6 +20,12 @@ import { bindFileViewer } from '../lib/file-viewer';
 import { openPanelModal } from '../lib/panel-scroll-lock';
 import { updateAppPaginationDom } from '../lib/pagination';
 import { showFlashMessage } from '../lib/flash';
+import {
+	cobrosDisputeChipLabel,
+	cobrosDisputeNote,
+	isDisputeStaffUploadOpen,
+	normalizeDisputeStatus,
+} from '../lib/refund-dispute-status';
 
 type CobrosManagerElement = HTMLElement & {
 	__cobrosBound?: boolean;
@@ -84,13 +90,17 @@ const isRefundItem = (item: CobroItem) =>
 	item.ui_status === 'refund_waived' ||
 	Boolean(String(item.refund_dispute_status || '').trim());
 
-const isDisputeOpen = (item: CobroItem) => item.ui_status === 'refund_dispute';
+const isDisputeOpen = (item: CobroItem) => {
+	const status = String(item.refund_dispute_status || '').trim();
+	if (status) return isDisputeStaffUploadOpen(status);
+	return item.ui_status === 'refund_dispute';
+};
 
 const displayAmount = (item: CobroItem) =>
 	isRefundItem(item) && item.refund_amount != null ? item.refund_amount : item.amount;
 
 const openActionLabel = (item: CobroItem) => {
-	if (item.ui_status === 'refund_dispute') return 'Responder disputa';
+	if (isDisputeOpen(item)) return 'Responder disputa';
 	if (
 		item.ui_status === 'refund_pending' ||
 		item.ui_status === 'refund_awaiting_alias' ||
@@ -105,6 +115,8 @@ const openActionLabel = (item: CobroItem) => {
 
 const statusLabel = (item: CobroItem) => {
 	if (isExpiredCobro(item)) return 'Vencido';
+	const disputeChip = cobrosDisputeChipLabel(item.refund_dispute_status || '');
+	if (disputeChip) return disputeChip;
 	if (item.ui_status === 'approved') return 'Aprobado';
 	if (item.ui_status === 'rejected') return 'Rechazado';
 	if (item.ui_status === 'pending') return 'Pendiente de revisión';
@@ -126,7 +138,13 @@ const statusChipClass = (item: CobroItem) => {
 	if (item.ui_status === 'approved') return 'cobros-chip cobros-chip--approved';
 	if (item.ui_status === 'rejected') return 'cobros-chip cobros-chip--rejected';
 	if (item.ui_status === 'pending') return 'cobros-chip cobros-chip--pending';
-	if (item.ui_status === 'refund_dispute') return 'cobros-chip cobros-chip--dispute';
+	if (
+		item.ui_status === 'refund_dispute' ||
+		isDisputeStaffUploadOpen(item.refund_dispute_status) ||
+		Boolean(cobrosDisputeChipLabel(item.refund_dispute_status || ''))
+	) {
+		return 'cobros-chip cobros-chip--dispute';
+	}
 	if (item.ui_status === 'refund_pending' || item.ui_status === 'refund_awaiting_alias') {
 		return 'cobros-chip cobros-chip--refund';
 	}
@@ -653,12 +671,7 @@ export const initCobrosPage = () => {
 		const disputeStatus = String(item.refund_dispute_status || '').trim().toUpperCase();
 		const hasProof = Number(item.refund_dispute_has_proof || 0) === 1;
 		const canUpload = isDisputeOpen(item);
-		const showLead =
-			canUpload ||
-			hasProof ||
-			['EVIDENCE_ACCEPTED', 'CUSTOMER_FOLLOW_UP', 'EXPIRED_STRIKE', 'EVIDENCE_PROCESSING'].includes(
-				disputeStatus
-			);
+		const showLead = Boolean(disputeStatus) || canUpload || hasProof;
 
 		modal?.querySelector<HTMLElement>('[data-cobros-dispute-lead]')?.classList.toggle('hidden', !showLead);
 		modal
@@ -685,28 +698,33 @@ export const initCobrosPage = () => {
 			if (dueEl) dueEl.textContent = '—';
 		}
 
+		const opsDeadline = modal?.querySelector<HTMLElement>('[data-cobros-ops-deadline]');
+		const opsDueEl = modal?.querySelector<HTMLElement>('[data-cobros-ops-due]');
+		const opsDueRaw = String(item.refund_dispute_ops_due_at || '').trim();
+		const showOpsDue = normalizeDisputeStatus(disputeStatus) === 'UNDER_REVIEW' && Boolean(opsDueRaw);
+		if (opsDeadline && opsDueEl && showOpsDue) {
+			const opsDate = new Date(opsDueRaw);
+			const opsOverdue = !Number.isNaN(opsDate.getTime()) && opsDate.getTime() < Date.now();
+			opsDueEl.textContent = opsOverdue
+				? `Venció el ${formatDateTime(opsDueRaw)}`
+				: `Vence el ${formatDateTime(opsDueRaw)}`;
+			opsDeadline.classList.toggle('is-overdue', opsOverdue);
+			opsDeadline.classList.remove('hidden');
+		} else {
+			opsDeadline?.classList.add('hidden');
+			opsDeadline?.classList.remove('is-overdue');
+			if (opsDueEl) opsDueEl.textContent = '—';
+		}
+
 		const claimNote = modal?.querySelector<HTMLElement>('[data-cobros-claim-note]');
 		if (claimNote) {
-			if (canUpload) {
-				claimNote.textContent =
-					'El cliente abrió una disputa. Adjuntá la prueba de transferencia antes del vencimiento. Subir una prueba no cuenta como strike.';
-				claimNote.classList.remove('hidden');
-			} else if (disputeStatus === 'EVIDENCE_ACCEPTED') {
-				claimNote.textContent = 'La prueba fue aceptada y el cliente ya puede verla.';
-				claimNote.classList.remove('hidden');
-			} else if (disputeStatus === 'CUSTOMER_FOLLOW_UP') {
-				claimNote.textContent =
-					'El cliente indica que el dinero sigue sin aparecer. Hasel no puede verificar la transferencia y no aplica un strike adicional.';
-				claimNote.classList.remove('hidden');
-			} else if (disputeStatus === 'EXPIRED_STRIKE') {
-				claimNote.textContent = 'La disputa venció sin prueba aceptable y se registró un strike.';
-				claimNote.classList.remove('hidden');
-			} else if (disputeStatus === 'EVIDENCE_PROCESSING') {
-				claimNote.textContent = 'Estamos leyendo la prueba de reembolso.';
+			if (canUpload && normalizeDisputeStatus(disputeStatus) === 'OPENED') {
+				claimNote.textContent = cobrosDisputeNote('OPENED');
 				claimNote.classList.remove('hidden');
 			} else {
-				claimNote.textContent = '';
-				claimNote.classList.add('hidden');
+				const note = cobrosDisputeNote(disputeStatus);
+				claimNote.textContent = note;
+				claimNote.classList.toggle('hidden', !note);
 			}
 		}
 
@@ -1210,9 +1228,7 @@ export const initCobrosPage = () => {
 				? (payload.data as Record<string, unknown>)
 				: {};
 		const ocr = String(data.ocr_status || '').trim().toUpperCase();
-		const dispute = String(data.dispute_status || '').trim().toUpperCase();
-		if (ocr === 'ACCEPTED' || dispute === 'EVIDENCE_ACCEPTED') return 'accepted' as const;
-		if (ocr === 'MANUAL_REVIEW') return 'manual_review' as const;
+		if (ocr === 'ACCEPTED' || ocr === 'MANUAL_REVIEW') return 'review' as const;
 		return 'retryable_error' as const;
 	};
 
@@ -1267,16 +1283,23 @@ export const initCobrosPage = () => {
 				throw new Error(String(payload.message || 'No fue posible subir la prueba.'));
 			}
 			const outcome = classifyOcrOutcome(payload);
+			const nextStatus = String(
+				(payload.data as Record<string, unknown> | undefined)?.dispute_status || 'UNDER_REVIEW'
+			);
 			const message =
 				String(payload.message || '').trim() ||
-				(outcome === 'accepted'
-					? 'Prueba aceptada.'
-					: outcome === 'manual_review'
-						? 'Comprobante recibido. Quedó en revisión.'
-						: 'No se pudo validar el comprobante.');
-			if (outcome === 'accepted') {
+				(outcome === 'review'
+					? 'Comprobante recibido. Queda en revisión; el OCR no acredita la transferencia.'
+					: 'No se pudo validar el comprobante.');
+			if (outcome === 'review') {
+				selected = {
+					...selected,
+					refund_dispute_has_proof: 1,
+					refund_dispute_status: String(nextStatus || 'UNDER_REVIEW'),
+					ui_status: 'refund_dispute',
+				};
 				closeModal();
-				showFlashMessage({ type: 'success', message, autoHideMs: 4000 });
+				showFlashMessage({ type: 'success', message, autoHideMs: 5000 });
 				await load();
 				document.dispatchEvent(new CustomEvent('hasel:cobros-changed'));
 				return;
@@ -1284,8 +1307,7 @@ export const initCobrosPage = () => {
 			selected = {
 				...selected,
 				refund_dispute_has_proof: 1,
-				refund_dispute_status:
-					outcome === 'manual_review' ? 'OPEN' : selected.refund_dispute_status,
+				refund_dispute_status: selected.refund_dispute_status,
 			};
 			syncDisputeLead(selected);
 			disputeDropzone?.reset();
@@ -1293,7 +1315,7 @@ export const initCobrosPage = () => {
 			disputeIdemSig = null;
 			if (statusEl) statusEl.textContent = message;
 			showFlashMessage({
-				type: outcome === 'manual_review' ? 'warning' : 'error',
+				type: 'error',
 				message,
 				autoHideMs: 5000,
 			});

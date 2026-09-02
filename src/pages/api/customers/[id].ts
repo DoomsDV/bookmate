@@ -11,6 +11,7 @@ import {
 	ORG_ACCESS_INACTIVE_MESSAGE,
 } from '../../../lib/panel-access';
 import { listProfessionalsLovWithOrds } from '../../../lib/schedules';
+import { PARAGUAY_MOBILE_PHONE_ERROR, parseParaguayMobilePhone } from '../../../lib/paraguay-phone';
 import {
 	parseRequestBody,
 	requireToken as requireApiToken,
@@ -120,9 +121,19 @@ export const PUT: APIRoute = async ({ locals, params, request }) => {
 			]);
 		}
 
+		const parsedPhone = parseParaguayMobilePhone(phoneNumber);
+		if (!parsedPhone.isValid) {
+			throw new CustomersApiError('El telefono es obligatorio.', 400, undefined, [
+				{
+					field: 'phone_number',
+					message: phoneNumber ? PARAGUAY_MOBILE_PHONE_ERROR : 'El telefono es obligatorio.',
+				},
+			]);
+		}
+
 		const updated = await updateCustomerProfileWithOrds(token, customerId, {
 			full_name: fullName,
-			phone_number: phoneNumber,
+			phone_number: parsedPhone.e164,
 		});
 
 		return Response.json(

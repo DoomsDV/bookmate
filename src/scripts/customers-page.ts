@@ -3161,16 +3161,18 @@ class CustomerManager extends HTMLElement {
 		}
 
 		const rawPhoneValue = String(this.profilePhoneInput?.value || '').trim();
-		let phoneE164 = '';
-		if (rawPhoneValue) {
-			const parsedPhone = parseParaguayMobilePhone(rawPhoneValue);
-			if (!parsedPhone.isValid) {
-				this.setProfileEditFieldError('phone_number', PARAGUAY_MOBILE_PHONE_ERROR);
-				this.profilePhoneInput?.focus();
-				return;
-			}
-			phoneE164 = parsedPhone.e164;
+		if (!rawPhoneValue) {
+			this.setProfileEditFieldError('phone_number', 'El telefono es obligatorio.');
+			this.profilePhoneInput?.focus();
+			return;
 		}
+		const parsedPhone = parseParaguayMobilePhone(rawPhoneValue);
+		if (!parsedPhone.isValid) {
+			this.setProfileEditFieldError('phone_number', PARAGUAY_MOBILE_PHONE_ERROR);
+			this.profilePhoneInput?.focus();
+			return;
+		}
+		const phoneE164 = parsedPhone.e164;
 
 		this.isSavingProfileEdit = true;
 		this.setProfileSaveButtonLoading(true);

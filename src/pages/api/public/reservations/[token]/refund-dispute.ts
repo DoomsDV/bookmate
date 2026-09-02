@@ -13,7 +13,6 @@ export const POST: APIRoute = async ({ request, params }) => {
 		const body = (await parseRequestBody(request).catch(() => ({}))) as Record<string, unknown>;
 		const result = await openRefundDisputeWithOrds(token, {
 			phone_last4: String(body.phone_last4 || '').trim(),
-			confirm_open: Boolean(body.confirm_open),
 			notes: String(body.notes || '').trim() || undefined,
 		});
 

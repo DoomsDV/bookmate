@@ -58,11 +58,22 @@ const refundSent = isCancelled && refundStatus === 'SENT';
 const dispute = reservation?.refund_dispute || null;
 const disputeStatus = String(dispute?.status || '').trim().toUpperCase();
 const canOpenDispute = Number(dispute?.can_open || 0) === 1;
-const disputeOpen = ['OPEN', 'EVIDENCE_PROCESSING'].includes(disputeStatus);
+const waitModalRequired = Number(dispute?.wait_modal_required || 0) === 1;
+const canConfirmReceived = Number(dispute?.can_confirm_received || 0) === 1;
+const customerInsisted = Number(dispute?.customer_insisted || 0) === 1;
+const disputeOpen = ['OPENED', 'OPEN'].includes(disputeStatus);
+const disputeProcessing = ['PROOF_RECEIVED', 'EVIDENCE_PROCESSING'].includes(disputeStatus);
+const disputeUnderReview = ['UNDER_REVIEW', 'CUSTOMER_FOLLOW_UP', 'EVIDENCE_ACCEPTED'].includes(
+	disputeStatus
+);
+const disputeSettled = disputeStatus === 'REFUND_SETTLED';
+const disputeTimedOut = ['TIMED_OUT', 'EXPIRED_STRIKE'].includes(disputeStatus);
+const disputeOpsResolved = disputeStatus === 'RESOLVED_BY_OPS';
+const disputeDismissed = disputeStatus === 'DISMISSED';
 const disputeHasProof = Number(dispute?.has_viewable_proof || 0) === 1;
+const showDisputeOpenCta = canOpenDispute || waitModalRequired;
 const publicWhatsapp = String(dispute?.public_whatsapp || '').replace(/\D/g, '');
 const whatsappHref = publicWhatsapp ? `https://wa.me/${publicWhatsapp}` : '';
-const phoneLast4Hint = String(dispute?.phone_last4_hint || '').trim();
 const refundAmountLabel =
 	reservation?.refund_amount != null
 		? new Intl.NumberFormat('es-PY', {
@@ -326,6 +337,31 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 													Disputa abierta. El comercio tiene 48 horas hábiles para adjuntar el comprobante de transferencia.
 												</p>
 											) : null}
+											{disputeProcessing ? (
+												<p class="mt-3 text-sm font-semibold text-(--on-surface)">
+													El comercio adjuntó un comprobante. Queda en revisión: el OCR no acredita la transferencia.
+												</p>
+											) : null}
+											{disputeTimedOut ? (
+												<p class="mt-3 text-sm font-semibold text-amber-700">
+													El plazo de la disputa venció sin una prueba válida.
+												</p>
+											) : null}
+											{disputeSettled ? (
+												<p class="mt-3 text-sm font-semibold text-(--on-surface)">
+													Confirmaste que recibiste el reembolso. El caso quedó liquidado.
+												</p>
+											) : null}
+											{disputeOpsResolved ? (
+												<p class="mt-3 text-sm font-semibold text-(--on-surface)">
+													Operaciones Hasel resolvió este caso.
+												</p>
+											) : null}
+											{disputeDismissed ? (
+												<p class="mt-3 text-sm text-(--on-surface-variant)">
+													Este caso fue desestimado.
+												</p>
+											) : null}
 											{disputeHasProof ? (
 												<div class="mt-4 grid gap-3">
 													<p class="m-0 text-sm font-semibold text-(--on-surface)">
@@ -336,17 +372,26 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 														alt="Comprobante de reembolso"
 														class="max-h-80 w-full rounded-2xl object-contain bg-(--surface-container-highest)"
 													/>
-													{disputeStatus === 'CUSTOMER_FOLLOW_UP' ? (
-														<p class="m-0 text-sm text-(--on-surface-variant)">
-															Registramos que el dinero sigue sin aparecer. Hasel no puede verificar la transferencia bancaria.
-														</p>
-													) : (
-														<button type="button" class="reservation-link text-left" data-refund-insist>
-															Sigue sin aparecer en mi cuenta
-														</button>
-													)}
+													{disputeUnderReview ? (
+														<div class="grid gap-2">
+															{canConfirmReceived ? (
+																<button type="button" class="reservation-primary-action" data-refund-confirm-received>
+																	Confirmé que recibí el reembolso
+																</button>
+															) : null}
+															{customerInsisted ? (
+																<p class="m-0 text-sm text-(--on-surface-variant)">
+																	Registramos que el dinero sigue sin aparecer. Hasel no puede verificar la transferencia bancaria.
+																</p>
+															) : (
+																<button type="button" class="reservation-link text-left" data-refund-insist>
+																	Sigue sin aparecer en mi cuenta
+																</button>
+															)}
+														</div>
+													) : null}
 												</div>
-											) : canOpenDispute ? (
+											) : showDisputeOpenCta ? (
 												<div class="mt-4 grid gap-2" data-refund-dispute-wrap>
 													{refundSent ? (
 														<button type="button" class="reservation-link text-left" data-refund-not-received>
@@ -400,8 +445,8 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 					<dialog
 						class="reservation-history-modal"
 						data-refund-dispute-dialog
-						data-wait-modal={Number(dispute?.wait_modal_required || 0)}
-						data-phone-hint={phoneLast4Hint}
+						data-wait-modal={waitModalRequired ? 1 : 0}
+						data-can-open={canOpenDispute ? 1 : 0}
 						data-whatsapp={whatsappHref}
 					>
 						<div class="reservation-history-modal__sheet">

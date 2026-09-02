@@ -222,10 +222,12 @@ export interface PublicRefundDispute {
 	can_open?: number | null;
 	wait_modal_required?: number | null;
 	has_viewable_proof?: number | null;
+	can_confirm_received?: number | null;
+	customer_insisted?: number | null;
 	proof_due_at?: string | null;
+	ops_review_due_at?: string | null;
 	refund_sent_at?: string | null;
 	public_whatsapp?: string | null;
-	phone_last4_hint?: string | null;
 	source?: string | null;
 }
 
@@ -965,10 +967,12 @@ const normalizeReservationDetail = (value: unknown): PublicReservationDetail | n
 				can_open: Number(d.can_open ?? 0) === 1 ? 1 : 0,
 				wait_modal_required: Number(d.wait_modal_required ?? 0) === 1 ? 1 : 0,
 				has_viewable_proof: Number(d.has_viewable_proof ?? 0) === 1 ? 1 : 0,
+				can_confirm_received: Number(d.can_confirm_received ?? 0) === 1 ? 1 : 0,
+				customer_insisted: Number(d.customer_insisted ?? 0) === 1 ? 1 : 0,
 				proof_due_at: String(d.proof_due_at || '').trim() || null,
+				ops_review_due_at: String(d.ops_review_due_at || '').trim() || null,
 				refund_sent_at: String(d.refund_sent_at || '').trim() || null,
 				public_whatsapp: String(d.public_whatsapp || '').trim() || null,
-				phone_last4_hint: String(d.phone_last4_hint || '').trim() || null,
 				source: String(d.source || '').trim() || null,
 			};
 		})(),
@@ -1128,7 +1132,7 @@ export const submitRefundAliasWithOrds = async (token: string, refundAlias: stri
 
 export const openRefundDisputeWithOrds = async (
 	token: string,
-	payload: { phone_last4: string; confirm_open?: boolean; notes?: string }
+	payload: { phone_last4: string; notes?: string }
 ) => {
 	const safeToken = String(token || '').trim();
 	if (!safeToken) {
@@ -1143,7 +1147,6 @@ export const openRefundDisputeWithOrds = async (
 		},
 		body: JSON.stringify({
 			phone_last4: String(payload.phone_last4 || '').trim(),
-			confirm_open: payload.confirm_open ? 1 : 0,
 			notes: String(payload.notes || '').trim() || null,
 		}),
 	});
@@ -1151,6 +1154,31 @@ export const openRefundDisputeWithOrds = async (
 	const data = await parseApiResponse(response, 'No fue posible abrir la disputa.');
 	return {
 		message: String(data.message || '').trim() || 'Disputa abierta.',
+		data: data.data || null,
+	};
+};
+
+export const confirmRefundReceivedWithOrds = async (
+	token: string,
+	payload: { phone_last4: string }
+) => {
+	const safeToken = String(token || '').trim();
+	if (!safeToken) {
+		throw new PublicBookingApiError('Token de reserva requerido.', 400);
+	}
+
+	const response = await ordsFetch(
+		`${resolvePublicReservationApiUrl(safeToken)}/refund-dispute/confirm-received`,
+		{
+			method: 'POST',
+			headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+			body: JSON.stringify({ phone_last4: String(payload.phone_last4 || '').trim() }),
+		}
+	);
+
+	const data = await parseApiResponse(response, 'No fue posible confirmar el reembolso.');
+	return {
+		message: String(data.message || '').trim() || 'Reembolso confirmado.',
 		data: data.data || null,
 	};
 };

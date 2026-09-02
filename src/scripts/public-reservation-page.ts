@@ -97,8 +97,11 @@ type PublicReservationDetail = {
 		can_open?: number | null;
 		wait_modal_required?: number | null;
 		has_viewable_proof?: number | null;
+		can_confirm_received?: number | null;
+		customer_insisted?: number | null;
+		proof_due_at?: string | null;
+		ops_review_due_at?: string | null;
 		public_whatsapp?: string | null;
-		phone_last4_hint?: string | null;
 	} | null;
 };
 
@@ -255,6 +258,7 @@ export const initializePublicReservationPage = () => {
 	) {
 		const dialog = root.querySelector<HTMLDialogElement>('[data-refund-dispute-dialog]');
 		const waitRequired = Number(dialog?.dataset.waitModal || 0) === 1;
+		const canOpen = Number(dialog?.dataset.canOpen || 0) === 1;
 		const last4Input = dialog?.querySelector<HTMLInputElement>('[data-refund-dialog-last4]');
 		const dialogStatus = dialog?.querySelector<HTMLElement>('[data-refund-dialog-status]');
 		const titleEl = dialog?.querySelector<HTMLElement>('[data-refund-dialog-title]');
@@ -265,12 +269,13 @@ export const initializePublicReservationPage = () => {
 		const confirmWrap = dialog?.querySelector<HTMLElement>('[data-refund-dialog-confirm-wrap]');
 		const notReceivedBtn = root.querySelector<HTMLButtonElement>('[data-refund-not-received]');
 		const insistBtn = root.querySelector<HTMLButtonElement>('[data-refund-insist]');
+		const confirmReceivedBtn = root.querySelector<HTMLButtonElement>('[data-refund-confirm-received]');
 		const statusEl = root.querySelector<HTMLElement>('[data-refund-dispute-status]');
-		let confirmMode = false;
+		let dialogMode: 'wait' | 'open' | 'confirm-received' = 'wait';
 
 		const closeDialog = () => dialog?.close();
 		const showWaitStep = () => {
-			confirmMode = false;
+			dialogMode = 'wait';
 			if (titleEl) titleEl.textContent = '¿No recibiste tu dinero?';
 			if (copyEl) {
 				copyEl.textContent =
@@ -281,11 +286,11 @@ export const initializePublicReservationPage = () => {
 				primaryBtn.classList.remove('hidden');
 				primaryBtn.textContent = 'Entendido, voy a esperar';
 			}
-			if (openBtn) openBtn.textContent = 'Abrir disputa';
+			openBtn?.classList.add('hidden');
 			if (dialogStatus) dialogStatus.textContent = '';
 		};
-		const showConfirmStep = () => {
-			confirmMode = true;
+		const showOpenStep = () => {
+			dialogMode = 'open';
 			if (titleEl) titleEl.textContent = 'Confirmar disputa';
 			if (copyEl) {
 				copyEl.textContent =
@@ -293,14 +298,37 @@ export const initializePublicReservationPage = () => {
 			}
 			confirmWrap?.classList.remove('hidden');
 			primaryBtn?.classList.add('hidden');
-			if (openBtn) openBtn.textContent = 'Confirmar y abrir disputa';
+			if (openBtn) {
+				openBtn.classList.remove('hidden');
+				openBtn.textContent = 'Confirmar y abrir disputa';
+			}
+			if (dialogStatus) dialogStatus.textContent = '';
+		};
+		const showConfirmReceivedStep = () => {
+			dialogMode = 'confirm-received';
+			if (titleEl) titleEl.textContent = 'Confirmar que recibiste el dinero';
+			if (copyEl) {
+				copyEl.textContent =
+					'Ingresá los últimos 4 dígitos del teléfono de la reserva para liquidar el caso. El OCR no acredita la transferencia.';
+			}
+			confirmWrap?.classList.remove('hidden');
+			primaryBtn?.classList.add('hidden');
+			if (openBtn) {
+				openBtn.classList.remove('hidden');
+				openBtn.textContent = 'Confirmar recepción';
+			}
 			if (dialogStatus) dialogStatus.textContent = '';
 		};
 
 		notReceivedBtn?.addEventListener('click', () => {
 			if (!dialog) return;
-			if (waitRequired) showWaitStep();
-			else showConfirmStep();
+			if (waitRequired && !canOpen) showWaitStep();
+			else showOpenStep();
+			if (!dialog.open) dialog.showModal();
+		});
+		confirmReceivedBtn?.addEventListener('click', () => {
+			if (!dialog) return;
+			showConfirmReceivedStep();
 			if (!dialog.open) dialog.showModal();
 		});
 		closeBtn?.addEventListener('click', closeDialog);
@@ -309,8 +337,8 @@ export const initializePublicReservationPage = () => {
 		});
 		primaryBtn?.addEventListener('click', closeDialog);
 		openBtn?.addEventListener('click', async () => {
-			if (!confirmMode && waitRequired) {
-				showConfirmStep();
+			if (dialogMode === 'wait') {
+				closeDialog();
 				return;
 			}
 			const last4 = String(last4Input?.value || '').replace(/\D/g, '');
@@ -319,23 +347,29 @@ export const initializePublicReservationPage = () => {
 				return;
 			}
 			if (openBtn) openBtn.disabled = true;
-			if (dialogStatus) dialogStatus.textContent = 'Abriendo disputa…';
-			const response = await fetch(
-				`/api/public/reservations/${encodeURIComponent(token)}/refund-dispute`,
-				{
-					method: 'POST',
-					headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						phone_last4: last4,
-						confirm_open: waitRequired ? 1 : 0,
-					}),
-				}
-			);
+			const confirmingReceived = dialogMode === 'confirm-received';
+			if (dialogStatus) {
+				dialogStatus.textContent = confirmingReceived ? 'Confirmando…' : 'Abriendo disputa…';
+			}
+			const path = confirmingReceived
+				? `/api/public/reservations/${encodeURIComponent(token)}/refund-dispute/confirm-received`
+				: `/api/public/reservations/${encodeURIComponent(token)}/refund-dispute`;
+			const response = await fetch(path, {
+				method: 'POST',
+				headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+				body: JSON.stringify({ phone_last4: last4 }),
+			});
 			const data = await response.json().catch(() => ({}));
 			if (!response.ok) {
 				if (openBtn) openBtn.disabled = false;
 				if (dialogStatus) dialogStatus.textContent = '';
-				showToast(data.message || 'No fue posible abrir la disputa.', 'error');
+				showToast(
+					data.message ||
+						(confirmingReceived
+							? 'No fue posible confirmar el reembolso.'
+							: 'No fue posible abrir la disputa.'),
+					'error'
+				);
 				return;
 			}
 			window.location.reload();

@@ -3,6 +3,13 @@
  * Separados del endpoint Astro para poder probar autorización y headers.
  */
 
+import {
+	assertSafeOciHttpsUrl,
+	fetchOciObject,
+	OciSafeFetchError,
+	readOciBytesCapped,
+} from './oci-safe-fetch.ts';
+
 export const KUDE_PDF_MAX_BYTES = 8 * 1024 * 1024;
 export const KUDE_PDF_TIMEOUT_MS = 30_000;
 
@@ -58,60 +65,45 @@ export const assertPdfBytes = (bytes: Uint8Array, maxBytes = KUDE_PDF_MAX_BYTES)
 	}
 };
 
+const toInvoicePdfError = (error: unknown): InvoicePdfError => {
+	if (error instanceof InvoicePdfError) return error;
+	if (error instanceof OciSafeFetchError) {
+		const code =
+			error.code === 'INVALID_URL' || error.code === 'INSECURE_URL' || error.code === 'HOST_DENIED'
+				? 'INVALID_KUDE_URL'
+				: error.code === 'FETCH_TIMEOUT'
+					? 'PDF_TIMEOUT'
+					: error.code === 'TOO_LARGE'
+						? 'PDF_TOO_LARGE'
+						: error.code === 'REDIRECT_DENIED' || error.code === 'FETCH_HTTP'
+							? 'PDF_HTTP'
+							: 'PDF_NETWORK';
+		return new InvoicePdfError(error.message, error.status, code);
+	}
+	return new InvoicePdfError(
+		error instanceof Error ? error.message : 'Error de red al descargar el PDF.',
+		502,
+		'PDF_NETWORK'
+	);
+};
+
 export const fetchKudePdfBytes = async (
 	kudeUrl: string,
 	options?: { maxBytes?: number; timeoutMs?: number; fetchImpl?: typeof fetch }
 ): Promise<Uint8Array> => {
-	const url = String(kudeUrl || '').trim();
-	if (!url || !/^https?:\/\//i.test(url)) {
-		throw new InvoicePdfError('URL de KuDE inválida.', 502, 'INVALID_KUDE_URL');
-	}
-
-	const maxBytes = options?.maxBytes ?? KUDE_PDF_MAX_BYTES;
-	const timeoutMs = options?.timeoutMs ?? KUDE_PDF_TIMEOUT_MS;
-	const fetchFn = options?.fetchImpl ?? fetch;
-	const controller = new AbortController();
-	const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-	let response: Response;
 	try {
-		response = await fetchFn(url, {
-			method: 'GET',
-			headers: { Accept: 'application/pdf,*/*' },
-			signal: controller.signal,
-			redirect: 'follow',
+		assertSafeOciHttpsUrl(kudeUrl);
+		const maxBytes = options?.maxBytes ?? KUDE_PDF_MAX_BYTES;
+		const response = await fetchOciObject(kudeUrl, {
+			maxBytes,
+			timeoutMs: options?.timeoutMs ?? KUDE_PDF_TIMEOUT_MS,
+			accept: 'application/pdf,*/*',
+			fetchImpl: options?.fetchImpl,
 		});
+		const buffer = await readOciBytesCapped(response, maxBytes);
+		assertPdfBytes(buffer, maxBytes);
+		return buffer;
 	} catch (error) {
-		if (error instanceof Error && error.name === 'AbortError') {
-			throw new InvoicePdfError(`Timeout al descargar el PDF (${timeoutMs}ms).`, 504, 'PDF_TIMEOUT');
-		}
-		throw new InvoicePdfError(
-			error instanceof Error ? error.message : 'Error de red al descargar el PDF.',
-			502,
-			'PDF_NETWORK'
-		);
-	} finally {
-		clearTimeout(timer);
+		throw toInvoicePdfError(error);
 	}
-
-	if (!response.ok) {
-		throw new InvoicePdfError(
-			`No se pudo descargar el KuDE (HTTP ${response.status}).`,
-			502,
-			'PDF_HTTP'
-		);
-	}
-
-	const contentLength = Number(response.headers.get('content-length') || 0);
-	if (contentLength > maxBytes) {
-		throw new InvoicePdfError(
-			`El PDF es demasiado grande (${contentLength} > ${maxBytes} bytes).`,
-			413,
-			'PDF_TOO_LARGE'
-		);
-	}
-
-	const buffer = new Uint8Array(await response.arrayBuffer());
-	assertPdfBytes(buffer, maxBytes);
-	return buffer;
 };
