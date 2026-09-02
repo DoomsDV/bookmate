@@ -1,6 +1,7 @@
 import {
 	buildAppointmentFocusUrl,
 	buildClosurePrefillUrl,
+	buildCobrosFocusUrl,
 	type InboxItem,
 	type InboxNtype,
 } from '../lib/inbox-client';
@@ -174,6 +175,11 @@ const openItem = (item: InboxItem) => {
 		return;
 	}
 
+	if (item.ntype === 'PAYMENT') {
+		window.location.assign(buildCobrosFocusUrl(Number(item.appointment_id || 0)));
+		return;
+	}
+
 	const appointmentId = Number(item.appointment_id || 0);
 	if (appointmentId > 0) {
 		if (window.location.pathname.startsWith('/panel/calendar')) {
@@ -184,7 +190,7 @@ const openItem = (item: InboxItem) => {
 			);
 			return;
 		}
-		window.location.assign(buildAppointmentFocusUrl(appointmentId, item.action_url));
+		window.location.assign(buildAppointmentFocusUrl(appointmentId, item.action_url, item.ntype));
 		return;
 	}
 

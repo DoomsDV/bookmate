@@ -11,9 +11,14 @@ interface Props {
 	stepPanel?: number;
 	variant?: 'booking' | 'manage';
 	receiptRejected?: boolean;
+	rejectReason?: string | null;
 }
 
-const { stepPanel = 7, variant = 'booking', receiptRejected = false } = Astro.props;
+const { stepPanel = 7, variant = 'booking', receiptRejected = false, rejectReason = '' } = Astro.props;
+
+const rejectReasonText =
+	String(rejectReason || '').trim() ||
+	'El comprobante adjunto no se pudo validar. Por favor, subí una foto más clara.';
 
 const copyRows = [
 	{ key: 'bank', label: 'Banco', aria: 'Copiar banco', icon: 'account_balance' },
@@ -134,8 +139,8 @@ const copyRows = [
 									<span class="material-symbols-rounded" aria-hidden="true">error</span>
 									<div>
 										<p class="sipap-reject-alert__title">Comprobante rechazado</p>
-										<p class="sipap-reject-alert__text">
-											El comprobante adjunto no se pudo validar. Por favor, subí una foto más clara.
+										<p class="sipap-reject-alert__text" data-sipap-reject-reason>
+											{rejectReasonText}
 										</p>
 									</div>
 								</div>

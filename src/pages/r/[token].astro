@@ -282,6 +282,7 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 										stepPanel={7}
 										variant="manage"
 										receiptRejected={wasReceiptRejected}
+										rejectReason={reservation?.reject_reason ?? ''}
 									/>
 								</div>
 							)}

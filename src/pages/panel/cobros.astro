@@ -648,6 +648,20 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 									<strong class="cobros-detail-field__value" data-cobros-modal-location>—</strong>
 								</div>
 							</div>
+							<div class="cobros-ocr-row hidden" data-cobros-ocr-block>
+								<div class="cobros-detail-field">
+									<span class="cobros-detail-field__label">Monto OCR</span>
+									<strong class="cobros-detail-field__value tabular-nums" data-cobros-modal-ocr-amount>—</strong>
+								</div>
+								<div class="cobros-detail-field cobros-detail-field--wide">
+									<span class="cobros-detail-field__label">Referencia OCR</span>
+									<strong class="cobros-detail-field__value cobros-detail-field__value--mono" data-cobros-modal-ocr-reference>—</strong>
+								</div>
+								<div class="cobros-detail-field">
+									<span class="cobros-detail-field__label">Confianza OCR</span>
+									<strong class="cobros-detail-field__value" data-cobros-modal-ocr-confidence>—</strong>
+								</div>
+							</div>
 						</section>
 
 						<section class="cobros-refund-panel hidden" data-cobros-refund-block>
@@ -873,6 +887,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 	[data-cobros-refund-actions].hidden,
 	[data-cobros-refund-block].hidden,
 	.cobros-refund-panel.hidden,
+	.cobros-ocr-row.hidden,
 	[data-cobros-waive-wrap].hidden,
 	[data-cobros-mark-refund-sent].hidden,
 	[data-cobros-waive].hidden,
@@ -1888,6 +1903,20 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		gap: 0;
 		padding: 0.15rem 0 0.75rem;
 		border-top: 1px solid color-mix(in srgb, var(--on-surface) 5%, transparent);
+	}
+
+	.cobros-ocr-row {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 0;
+		border-top: 1px dashed color-mix(in srgb, var(--on-surface) 10%, transparent);
+		background: color-mix(in srgb, var(--on-surface) 3%, transparent);
+	}
+
+	@media (min-width: 480px) {
+		.cobros-ocr-row {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
 	}
 
 	@media (min-width: 480px) {

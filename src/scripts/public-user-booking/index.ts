@@ -22,6 +22,7 @@ import {
 	userBookingDraftKey,
 	userBookingHoldKey,
 	writeSipapHold,
+	publicReservationPath,
 	type PublicBookingDraft,
 	type PublicBookingDraftStep,
 } from '../../lib/public-booking-draft';
@@ -2098,18 +2099,9 @@ export const initializePublicUserBookingPage = () => {
 		setStep(6);
 	};
 
-	const finalizeDepositHold = (hold: Record<string, unknown>) => {
+	const finalizeDepositHold = (hold: Record<string, unknown>): boolean => {
 		draftPersister.clear();
 		const unwrapped = unwrapSipapHold(hold as any);
-		fillSipapDepositPanel(root, unwrapped, selectedContext?.deposit_settings, {
-			serviceName: selectedService?.name,
-			professionalName: profile.full_name,
-			professionalImageUrl: profile.image_url,
-			depositAmount: calculateDepositAmount(selectedService),
-		});
-		populateSuccessTicket();
-		// Persistir el hold para que el paso "Transferí la seña" sobreviva a un F5
-		// o al cierre del navegador dentro de la ventana de pago.
 		writeSipapHold(holdStorageKey, unwrapped as unknown as Record<string, unknown>, {
 			serviceId: selectedService?.id_service ?? 0,
 			serviceName: selectedService?.name,
@@ -2119,7 +2111,20 @@ export const initializePublicUserBookingPage = () => {
 			time: selectedTime,
 			locationId: selectedContext?.id_location ?? null,
 		});
+		const managePath = publicReservationPath(String(unwrapped.public_manage_token || ''));
+		if (managePath) {
+			window.location.assign(managePath);
+			return true;
+		}
+		fillSipapDepositPanel(root, unwrapped, selectedContext?.deposit_settings, {
+			serviceName: selectedService?.name,
+			professionalName: profile.full_name,
+			professionalImageUrl: profile.image_url,
+			depositAmount: calculateDepositAmount(selectedService),
+		});
+		populateSuccessTicket();
 		setStep(7);
+		return false;
 	};
 
 	const submitBooking = async (reserveForDeposit: boolean) => {
@@ -2153,7 +2158,7 @@ export const initializePublicUserBookingPage = () => {
 			bookingIdemPayloadJson = null;
 			if (reserveForDeposit) {
 				pendingAppointmentId = created.appointment_id;
-				finalizeDepositHold(created.hold);
+				if (finalizeDepositHold(created.hold)) return;
 				showToast('Turno reservado. Completá la transferencia SIPAP.', 'success');
 				return;
 			}
@@ -2416,6 +2421,11 @@ export const initializePublicUserBookingPage = () => {
 		if (!stored) return false;
 
 		const hold = stored.hold as unknown as ReturnType<typeof unwrapSipapHold>;
+		const managePath = publicReservationPath(String((hold as { public_manage_token?: string }).public_manage_token || ''));
+		if (managePath) {
+			window.location.replace(managePath);
+			return true;
+		}
 		pendingAppointmentId = Number((hold as { appointment_id?: number }).appointment_id || 0);
 
 		// El hold ya trae sipap + política + token, así que el panel se reconstruye aunque

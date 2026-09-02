@@ -75,6 +75,8 @@ const SUBMIT_IDLE_LABEL = 'Confirmar y enviar comprobante';
 const SUBMIT_CONFIRMED_LABEL = 'Confirmado';
 const SUBMIT_SENT_LABEL = 'Comprobante enviado';
 const SUBMIT_LOADING_LABEL = 'Enviando…';
+const DEFAULT_REJECT_TEXT =
+	'El comprobante adjunto no se pudo validar. Por favor, subí una foto más clara.';
 
 export const normalizePolicyCode = (value: unknown): RefundPolicyCode | null => {
 	const code = String(value || '')
@@ -228,6 +230,8 @@ const lockSubmitAfterSend = (
 	submitBtn.dataset.sipapSubmitted = '1';
 	setSubmitLabel(submitBtn, label);
 	lockReceiptDropzone(root, true);
+	const hint = root.querySelector<HTMLElement>('[data-sipap-submit-hint]');
+	if (hint) hint.textContent = '';
 };
 
 const syncSubmitEnabled = (root: ParentNode, confirmed = false) => {
@@ -448,7 +452,7 @@ export const fillSipapDepositPanel = (
 		Number(hold.receipt_rejected) === 1 ||
 		String(hold.receipt_rejected || '').trim().toLowerCase() === 'true' ||
 		(hold.receipt_rejected == null && Boolean(String(hold.reject_reason || '').trim()));
-	setSipapRejectAlert(root, hasRejection);
+	setSipapRejectAlert(root, hasRejection, hold.reject_reason);
 	const banner = root.querySelector<HTMLElement>('[data-sipap-hold-banner]');
 	const submitBtn = root.querySelector<HTMLButtonElement>('[data-sipap-upload-submit]');
 	const alreadyFrozen =
@@ -500,11 +504,16 @@ export const stopSipapHoldCountdown = (root: ParentNode) => {
 	}
 };
 
-const setSipapRejectAlert = (root: ParentNode, show: boolean) => {
+const setSipapRejectAlert = (root: ParentNode, show: boolean, reason?: string | null) => {
 	const alert = root.querySelector<HTMLElement>('[data-sipap-reject-alert]');
 	if (!alert) return;
 	alert.classList.toggle('hidden', !show);
 	alert.toggleAttribute('hidden', !show);
+	const text = alert.querySelector<HTMLElement>('[data-sipap-reject-reason]');
+	if (text && show) {
+		const trimmed = String(reason || '').trim();
+		text.textContent = trimmed || DEFAULT_REJECT_TEXT;
+	}
 };
 
 const expireSipapHoldUi = (root: ParentNode) => {

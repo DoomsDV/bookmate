@@ -818,6 +818,27 @@ export const initCobrosPage = () => {
 		setText('[data-cobros-modal-refund-alias]', item.refund_alias || '—');
 		setText('[data-cobros-modal-refund-status]', statusLabel(item));
 
+		const ocrBlock = modal.querySelector<HTMLElement>('[data-cobros-ocr-block]');
+		const ocrAmount = Number(item.ocr_amount ?? NaN);
+		const ocrReference = String(item.ocr_reference || '').trim();
+		const ocrConfidence = Number(item.ocr_confidence ?? NaN);
+		const hasOcr =
+			Number.isFinite(ocrAmount) || Boolean(ocrReference) || Number.isFinite(ocrConfidence);
+		if (ocrBlock) {
+			ocrBlock.classList.toggle('hidden', !hasOcr);
+			setText(
+				'[data-cobros-modal-ocr-amount]',
+				Number.isFinite(ocrAmount) ? formatMoney(ocrAmount, item.currency) : '—'
+			);
+			setText('[data-cobros-modal-ocr-reference]', ocrReference || '—');
+			setText(
+				'[data-cobros-modal-ocr-confidence]',
+				Number.isFinite(ocrConfidence)
+					? `${Math.round(ocrConfidence <= 1 ? ocrConfidence * 100 : ocrConfidence)}%`
+					: '—'
+			);
+		}
+
 		const receiptRow = modal.querySelector<HTMLElement>('[data-cobros-receipt-row]');
 		const receiptIcon = modal.querySelector<HTMLElement>('[data-cobros-receipt-icon]');
 		const receiptNameEl = modal.querySelector<HTMLElement>('[data-cobros-receipt-name]');

@@ -26,11 +26,16 @@ export const proBookingDraftKey = (orgSlug: string, proSlug: string) =>
 
 export const userBookingDraftKey = (publicSlug: string) => `hasel:pb:user:${publicSlug}`;
 
+export const publicReservationPath = (token: string): string => {
+	const trimmed = String(token || '').trim();
+	if (!trimmed) return '';
+	return `/r/${encodeURIComponent(trimmed)}`;
+};
+
 /**
- * Persistencia de la seña (hold SIPAP) en localStorage. A diferencia del draft de
- * pasos 1-5 (sessionStorage), el hold ya existe en el servidor (cita PENDIENTE con
- * public_manage_token), así que debe sobrevivir un F5 y hasta el cierre del navegador
- * dentro de la ventana de pago, para que el cliente pueda volver a subir el comprobante.
+ * Persistencia de la seña (hold SIPAP) en localStorage.
+ * Post-reserva la página canónica es `/r/{token}`: el hold sirve para redirigir
+ * ahí tras crear la cita o al restaurar un F5 en `/p/{slug}` o `/u/{slug}`.
  */
 
 export type SipapHoldContext = {

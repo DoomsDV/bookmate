@@ -62,10 +62,20 @@ export const buildClosurePrefillUrl = (hint: {
 	return `/panel/locations?${params.toString()}`;
 };
 
+export const buildCobrosFocusUrl = (appointmentId?: number | null) => {
+	if (!Number.isInteger(appointmentId) || (appointmentId ?? 0) <= 0) return '/panel/cobros';
+	return `/panel/cobros?appointment=${appointmentId}`;
+};
+
 export const buildAppointmentFocusUrl = (
 	appointmentId: number,
-	actionUrl?: string | null
+	actionUrl?: string | null,
+	ntype?: InboxNtype | string | null
 ) => {
+	if (String(ntype || '').toUpperCase() === 'PAYMENT') {
+		return buildCobrosFocusUrl(appointmentId);
+	}
+
 	const fallback = '/panel/calendar';
 	if (!Number.isInteger(appointmentId) || appointmentId <= 0) return fallback;
 
