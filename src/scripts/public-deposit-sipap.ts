@@ -9,11 +9,12 @@ import { getPublicProfileSpecialtyLabel } from '../lib/public-profile-labels';
 import {
 	isAmbiguousReceiptFailure,
 	isDepositConfirmed,
+	isReceiptRejected,
 	reconcileReceiptUpload,
 	type ReceiptUploadPayload,
 } from '../lib/public-receipt-reconcile';
 
-export { classifyReceiptFile };
+export { classifyReceiptFile, isReceiptRejected };
 
 export type RefundPolicyCode = 'FLEXIBLE' | 'MODERATE' | 'STRICT';
 
@@ -469,10 +470,7 @@ export const fillSipapDepositPanel = (
 	// NEW-B / BUG-01: el estado del panel se decide 100% desde el hold del API, sin
 	// depender de flags que puedan haber quedado stale en el DOM (banner/botón "frozen").
 	const ocrStatus = String(hold.ocr_status || '').toUpperCase();
-	const hasRejection =
-		hold.receipt_rejected === true ||
-		Number(hold.receipt_rejected) === 1 ||
-		String(hold.receipt_rejected || '').trim().toLowerCase() === 'true';
+	const hasRejection = isReceiptRejected(hold.receipt_rejected);
 	setSipapRejectAlert(root, hasRejection, hold.reject_reason);
 	const banner = root.querySelector<HTMLElement>('[data-sipap-hold-banner]');
 
@@ -501,6 +499,7 @@ export const fillSipapDepositPanel = (
 	if (hasRejection) {
 		unfreezeHoldCountdown(root);
 		setSipapReceiptStatus(root, null);
+		syncSubmitEnabled(root);
 		startSipapHoldCountdown(root, hold.payment_expires_at);
 		return;
 	}
@@ -725,12 +724,11 @@ export const bindSipapReceiptUpload = (
 	let idemKey: string | null = null;
 	let idemFileSignature: string | null = null;
 	let isUploading = false;
-	let hasSubmitted = submitBtn.dataset.sipapSubmitted === '1';
+	const isAlreadySubmitted = () => submitBtn.dataset.sipapSubmitted === '1';
 
 	const applyUploadSuccess = (result: SipapReceiptUploadResult) => {
 		idemKey = null;
 		idemFileSignature = null;
-		hasSubmitted = true;
 		setSipapRejectAlert(root, false);
 		setSipapReceiptStatus(root, result, 'done');
 		options?.onResult?.(result);
@@ -756,7 +754,7 @@ export const bindSipapReceiptUpload = (
 	};
 
 	const upload = async () => {
-		if (isUploading || hasSubmitted || isHoldExpired(root) || submitBtn.disabled) return;
+		if (isUploading || isAlreadySubmitted() || isHoldExpired(root) || submitBtn.disabled) return;
 		isUploading = true;
 		if (root instanceof Element) uploadingRoots.add(root);
 		submitBtn.disabled = true;
@@ -876,7 +874,7 @@ export const bindSipapReceiptUpload = (
 			if (root instanceof Element) uploadingRoots.delete(root);
 			form.classList.remove('is-uploading');
 			setSubmitLoading(submitBtn, false);
-			if (hasSubmitted) {
+			if (isAlreadySubmitted()) {
 				submitBtn.disabled = true;
 			}
 		}
@@ -971,7 +969,12 @@ export const bindSipapReceiptUpload = (
 		'click',
 		(event) => {
 			event.preventDefault();
-			if (isUploading || hasSubmitted || submitBtn.disabled || submitBtn.dataset.sipapSubmitted === '1') {
+			if (
+				isUploading ||
+				submitBtn.disabled ||
+				isAlreadySubmitted() ||
+				isHoldExpired(root)
+			) {
 				return;
 			}
 			void upload();

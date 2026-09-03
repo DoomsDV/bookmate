@@ -39,6 +39,7 @@ import {
 	bindSipapCopyButtons,
 	bindSipapReceiptUpload,
 	fillSipapDepositPanel,
+	isReceiptRejected,
 	isSipapReceiptUploading,
 	type PublicDepositSettings,
 } from './public-deposit-sipap';
@@ -178,7 +179,7 @@ export const initializePublicReservationPage = () => {
 					status,
 					paymentStatus: reservation.payment_status,
 					ocrStatus: reservation.ocr_status,
-					receiptRejected: reservation.receipt_rejected === true,
+					receiptRejected: isReceiptRejected(reservation.receipt_rejected),
 				},
 				{ isPast }
 			);
@@ -1494,7 +1495,7 @@ export const initializePublicReservationPage = () => {
 		reservation.location_address = updated.location_address || reservation.location_address;
 		reservation.payment_status = updated.payment_status ?? reservation.payment_status;
 		reservation.ocr_status = updated.ocr_status ?? reservation.ocr_status;
-		reservation.receipt_rejected = updated.receipt_rejected === true;
+		reservation.receipt_rejected = isReceiptRejected(updated.receipt_rejected);
 		reservation.reject_reason = updated.reject_reason ?? reservation.reject_reason;
 		reservation.payment_reference = updated.payment_reference ?? reservation.payment_reference;
 		reservation.payment_expires_at = updated.payment_expires_at ?? reservation.payment_expires_at;
@@ -1539,7 +1540,7 @@ export const initializePublicReservationPage = () => {
 				// trabado en "Comprobante enviado" hasta que el cliente recargaba.
 				payment_status: reservation.payment_status ?? undefined,
 				ocr_status: reservation.ocr_status ?? undefined,
-				receipt_rejected: reservation.receipt_rejected === true,
+				receipt_rejected: isReceiptRejected(reservation.receipt_rejected),
 				reject_reason: reservation.reject_reason ?? undefined,
 				public_manage_token: token,
 			},

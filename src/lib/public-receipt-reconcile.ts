@@ -30,6 +30,12 @@ export const isDepositConfirmed = (reservation: {
 	return CONFIRMED_PAYMENT_STATUSES.has(pay) || st === 'CONFIRMADO';
 };
 
+/** ORDS puede serializar el flag como boolean, 0/1 o string. */
+export const isReceiptRejected = (value: unknown) =>
+	value === true ||
+	Number(value) === 1 ||
+	String(value || '').trim().toLowerCase() === 'true';
+
 /** Red, timeout, 409/429 y 5xx: el servidor pudo haber guardado el comprobante. */
 export const isAmbiguousReceiptFailure = (status: number) =>
 	!Number.isFinite(status) ||

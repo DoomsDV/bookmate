@@ -1,6 +1,7 @@
 import { resolveOrdsPublicApiUrl } from './env-urls';
 import { normalizePublicBookingLocations } from './public-booking-locations';
 import type { PublicReservationNoRefundReason } from './public-reservation-refund';
+import { isReceiptRejected } from './public-receipt-reconcile';
 
 export { normalizePublicBookingLocations } from './public-booking-locations';
 export {
@@ -994,10 +995,7 @@ const normalizeReservationDetail = (value: unknown): PublicReservationDetail | n
 		last_recommendations: String(source.last_recommendations || '').trim() || null,
 		locations: normalizePublicBookingLocations(source.locations) as PublicBookingLocation[],
 		ocr_status: String(source.ocr_status || '').trim() || null,
-		receipt_rejected:
-			source.receipt_rejected === true ||
-			Number(source.receipt_rejected) === 1 ||
-			String(source.receipt_rejected || '').trim().toLowerCase() === 'true',
+		receipt_rejected: isReceiptRejected(source.receipt_rejected),
 		reject_reason: String(source.reject_reason || '').trim() || null,
 		payment_reference: String(source.payment_reference || '').trim() || null,
 		payment_expires_at: String(source.payment_expires_at || '').trim() || null,
