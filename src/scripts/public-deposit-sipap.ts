@@ -487,6 +487,14 @@ export const fillSipapDepositPanel = (
 		freezeHoldCountdown(root);
 		banner?.classList.add('hidden');
 		lockSubmitAfterSend(root, SUBMIT_CONFIRMED_LABEL);
+		// NEW-D: la vista renderizada tras un F5 no monta el panel de seña cuando
+		// la cita ya está confirmada. Replicar ese estado durante el refresh evita
+		// dejar a la izquierda el mensaje de revisión y los controles del archivo.
+		resetSipapReceiptPreview(root);
+		setSipapReceiptStatus(root, null);
+		if (root instanceof Element) {
+			root.closest<HTMLElement>('[data-reservation-deposit]')?.classList.add('hidden');
+		}
 		return;
 	}
 
