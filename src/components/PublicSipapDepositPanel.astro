@@ -560,6 +560,25 @@ const copyRows = [
 		display: none;
 	}
 
+	.sipap-upload-card {
+		position: relative;
+	}
+
+	/* NEW-A: feedback visible durante el POST (~9s por OCR síncrono en el backend). */
+	.sipap-upload-card.is-uploading {
+		pointer-events: none;
+	}
+
+	.sipap-upload-card.is-uploading::after {
+		content: '';
+		position: absolute;
+		inset: -0.35rem;
+		z-index: 1;
+		border-radius: 0.95rem;
+		background: color-mix(in srgb, #101114 55%, transparent);
+		backdrop-filter: blur(1px);
+	}
+
 	.sipap-reject-alert {
 		display: flex;
 		align-items: flex-start;

@@ -128,8 +128,10 @@ const statusLabel = (item: CobroItem) => {
 	const raw = String(item.ocr_status || item.payment_status || '').trim().toUpperCase();
 	if (raw === 'EXPIRED') return 'Vencido';
 	if (raw === 'CANCELLED' || raw === 'CANCELED') return 'Cancelado';
-	if (raw === 'PENDING') return 'Pendiente';
 	if (raw === 'PAID' || raw === 'PAID_TRANSFER') return 'Pagado';
+	// NEW-C: seña con hold activo pero sin comprobante subido. Antes caía en el fallback
+	// genérico "Pendiente", indistinguible del chip real de "Pendiente de revisión".
+	if (raw === 'PENDING') return 'Esperando comprobante';
 	return String(item.ocr_status || item.payment_status || '—');
 };
 

@@ -138,6 +138,13 @@ const hasSelectedFile = (root: ParentNode) => {
 	return Boolean(input?.files?.[0]);
 };
 
+// NEW-A: evita que un refresh (poll o resultado de OCR) le borre la preview al cliente
+// mientras el POST del comprobante todavía está en curso (~9s por el OCR síncrono).
+const uploadingRoots = new WeakSet<Element>();
+
+export const isSipapReceiptUploading = (root: ParentNode) =>
+	root instanceof Element && uploadingRoots.has(root);
+
 const previewUrls = new WeakMap<Element, string>();
 
 const revokeReceiptPreviewUrl = (root: ParentNode) => {
@@ -444,21 +451,29 @@ export const fillSipapDepositPanel = (
 		uploadSection.classList.toggle('hidden', !token);
 	}
 
-	resetSipapReceiptPreview(root);
+	// NEW-A: si hay un upload en curso o ya hay un archivo elegido, no pisar la preview
+	// (un refresh/poll no debe hacerle creer al cliente que su envío se perdió).
+	if (!isSipapReceiptUploading(root) && !hasSelectedFile(root)) {
+		resetSipapReceiptPreview(root);
+	}
 
+	// NEW-B / BUG-01: el estado del panel se decide 100% desde el hold del API, sin
+	// depender de flags que puedan haber quedado stale en el DOM (banner/botón "frozen").
 	const ocrStatus = String(hold.ocr_status || '').toUpperCase();
 	const hasRejection =
 		hold.receipt_rejected === true ||
 		Number(hold.receipt_rejected) === 1 ||
-		String(hold.receipt_rejected || '').trim().toLowerCase() === 'true' ||
-		(hold.receipt_rejected == null && Boolean(String(hold.reject_reason || '').trim()));
+		String(hold.receipt_rejected || '').trim().toLowerCase() === 'true';
 	setSipapRejectAlert(root, hasRejection, hold.reject_reason);
 	const banner = root.querySelector<HTMLElement>('[data-sipap-hold-banner]');
-	const submitBtn = root.querySelector<HTMLButtonElement>('[data-sipap-upload-submit]');
-	const alreadyFrozen =
-		banner?.dataset.sipapHoldFrozen === '1' || submitBtn?.dataset.sipapSubmitted === '1';
 
-	if (ocrStatus === 'MATCH') {
+	// La aprobación puede llegar por payment_status (aprobación manual sin OCR match) o
+	// por ocr_status='MATCH' (aprobación automática). Antes solo se miraba ocr_status,
+	// por eso el RESUMEN quedaba en "Comprobante enviado" tras aprobar sin recargar.
+	const confirmed =
+		ocrStatus === 'MATCH' || isDepositConfirmed({ payment_status: hold.payment_status });
+
+	if (confirmed) {
 		setSipapRejectAlert(root, false);
 		freezeHoldCountdown(root);
 		banner?.classList.add('hidden');
@@ -467,16 +482,15 @@ export const fillSipapDepositPanel = (
 	}
 
 	if (hasRejection) {
-		if (banner) delete banner.dataset.sipapHoldFrozen;
-		if (submitBtn) delete submitBtn.dataset.sipapSubmitted;
+		unfreezeHoldCountdown(root);
 		setSipapReceiptStatus(root, null);
 		startSipapHoldCountdown(root, hold.payment_expires_at);
 		return;
 	}
 
-	// Comprobante ya enviado (hold persistido, banner frozen o botón locked): no reiniciar
-	// el countdown. El rechazo (arriba) es el único caso que lo reanuda.
-	if ((ocrStatus && ocrStatus !== 'MATCH') || alreadyFrozen) {
+	// Comprobante ya enviado (en revisión, OCR pendiente/mismatch): no reiniciar el
+	// countdown. El rechazo (arriba) es el único caso que lo reanuda.
+	if (ocrStatus && ocrStatus !== 'MATCH') {
 		freezeHoldCountdown(root);
 		lockSubmitAfterSend(root, SUBMIT_SENT_LABEL);
 		return;
@@ -617,18 +631,21 @@ export const setSipapReceiptStatus = (
 	const ocr = String(result.ocr_status || '').toUpperCase();
 	const confirmed =
 		ocr === 'MATCH' || isDepositConfirmed({ payment_status: result.payment_status });
+	const needsManualReview = ocr === 'MISMATCH' || ocr === 'MANUAL_REVIEW' || ocr === 'FAILED';
 	let text = result.message || 'Comprobante recibido.';
 	if (confirmed) {
 		text = result.message || 'Pago verificado. Tu turno quedó confirmado.';
-	} else if (ocr === 'MISMATCH' || ocr === 'MANUAL_REVIEW' || ocr === 'FAILED') {
+	} else if (needsManualReview) {
 		text = result.message || 'Comprobante recibido. El comercio lo revisará.';
 	}
 
 	statusEl.textContent = text;
 	statusEl.dataset.state = confirmed ? 'success' : 'review';
 	setHoldLive(root, text);
+	// NEW-A: "success" solo cuando el pago quedó confirmado; una revisión manual pendiente
+	// no debería leerse como que ya todo está aprobado.
 	showFlashMessage({
-		type: 'success',
+		type: confirmed ? 'success' : 'info',
 		message: text,
 		autoHideMs: 5000,
 	});
@@ -724,6 +741,7 @@ export const bindSipapReceiptUpload = (
 	const upload = async () => {
 		if (isUploading || hasSubmitted || isHoldExpired(root) || submitBtn.disabled) return;
 		isUploading = true;
+		if (root instanceof Element) uploadingRoots.add(root);
 		submitBtn.disabled = true;
 		setSubmitLoading(submitBtn, true);
 		try {
@@ -762,6 +780,14 @@ export const bindSipapReceiptUpload = (
 			}
 
 			setSipapReceiptStatus(root, null, 'uploading');
+			form.classList.add('is-uploading');
+			// NEW-A: la validación OCR es síncrona (~9s en el POST); sin este aviso el
+			// cliente creía que su envío se había perdido.
+			showFlashMessage({
+				type: 'info',
+				message: 'Enviando comprobante… puede tardar unos segundos.',
+				autoHideMs: 10000,
+			});
 			let uploadFile = file;
 			if (kind === 'pdf') {
 				const { prepareReceiptUploadFile } = await import('../lib/pdf-receipt-to-image');
@@ -830,9 +856,11 @@ export const bindSipapReceiptUpload = (
 			options?.onError?.(message);
 		} finally {
 			isUploading = false;
+			if (root instanceof Element) uploadingRoots.delete(root);
+			form.classList.remove('is-uploading');
+			setSubmitLoading(submitBtn, false);
 			if (hasSubmitted) {
 				submitBtn.disabled = true;
-				setSubmitLoading(submitBtn, false);
 			}
 		}
 	};

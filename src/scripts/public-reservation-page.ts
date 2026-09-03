@@ -4,7 +4,7 @@ import {
 	formatApiTime,
 	formatFriendlyTime,
 	formatLongDateFromApiDate,
-	formatReservationStatusLabel,
+	formatReservationDepositLabel,
 	formatTicketDate,
 	getTodayStart,
 	isReservationPast,
@@ -39,6 +39,7 @@ import {
 	bindSipapCopyButtons,
 	bindSipapReceiptUpload,
 	fillSipapDepositPanel,
+	isSipapReceiptUploading,
 	type PublicDepositSettings,
 } from './public-deposit-sipap';
 
@@ -165,11 +166,22 @@ export const initializePublicReservationPage = () => {
 	const currentTime = root.querySelector<HTMLElement>('[data-current-time]');
 	const statusText = root.querySelector<HTMLElement>('[data-status-text]');
 
+	// NEW-B / BUG-01: se lee reservation.payment_status/ocr_status/receipt_rejected desde
+	// el closure para que el badge del ticket refleje la seña sin depender de un F5;
+	// refreshReservationSummary ya deja esos campos actualizados antes de llamar acá.
 	const applyTicketSummary = (start: Date, status: string, isPast: boolean) => {
 		if (currentDate) currentDate.textContent = formatTicketDate(start);
 		if (currentTime) currentTime.textContent = `${formatFriendlyTime(start)} hs`;
 		if (statusText) {
-			const meta = formatReservationStatusLabel(status, { isPast });
+			const meta = formatReservationDepositLabel(
+				{
+					status,
+					paymentStatus: reservation.payment_status,
+					ocrStatus: reservation.ocr_status,
+					receiptRejected: reservation.receipt_rejected === true,
+				},
+				{ isPast }
+			);
 			statusText.textContent = meta.label;
 			statusText.dataset.status = meta.variant;
 		}
@@ -1522,6 +1534,10 @@ export const initializePublicReservationPage = () => {
 				sipap: reservation.deposit_settings?.sipap ?? undefined,
 				refund_policy: reservation.policy_code_snapshot ?? undefined,
 				refund_policy_label: reservation.policy_label ?? undefined,
+				// NEW-B / BUG-01: sin payment_status, fillSipapDepositPanel no podía detectar
+				// una aprobación manual (sin ocr_status='MATCH') y el RESUMEN quedaba
+				// trabado en "Comprobante enviado" hasta que el cliente recargaba.
+				payment_status: reservation.payment_status ?? undefined,
 				ocr_status: reservation.ocr_status ?? undefined,
 				receipt_rejected: reservation.receipt_rejected === true,
 				reject_reason: reservation.reject_reason ?? undefined,
@@ -1540,7 +1556,8 @@ export const initializePublicReservationPage = () => {
 	const shouldPollDepositStatus = () => {
 		const paymentStatus = String(reservation.payment_status || '').toUpperCase();
 		if (paymentStatus !== 'PENDING') return false;
-		if (reservation.receipt_rejected === true) return false;
+		// NEW-B: un rechazo también hay que seguir sondeándolo (countdown extendido tras
+		// rechazo, nuevo comprobante); antes se dejaba de sondear justo en ese caso.
 		if (String(reservation.ocr_status || '').toUpperCase() === 'MATCH') return false;
 		return Boolean(root.querySelector('[data-reservation-deposit] [data-step-panel]'));
 	};
@@ -1552,7 +1569,12 @@ export const initializePublicReservationPage = () => {
 		return true;
 	};
 
+	const DEPOSIT_POLL_SLOW_MS = 20_000;
+	const DEPOSIT_POLL_FAST_MS = 5_000;
+	const DEPOSIT_POLL_FAST_WINDOW_MS = 60_000;
+
 	let depositPollTimer: number | null = null;
+	let depositFastPollUntil = 0;
 
 	const stopDepositPolling = () => {
 		if (depositPollTimer == null) return;
@@ -1563,11 +1585,27 @@ export const initializePublicReservationPage = () => {
 	const startDepositPolling = () => {
 		stopDepositPolling();
 		if (!shouldPollDepositStatus()) return;
+		const fast = Date.now() < depositFastPollUntil;
 		depositPollTimer = window.setInterval(() => {
+			// NEW-A: no pisar el estado mientras el POST del comprobante sigue en curso.
+			if (sipapPanel && isSipapReceiptUploading(sipapPanel)) return;
 			void refreshReservationAndDeposit().then((ok) => {
-				if (!ok || !shouldPollDepositStatus()) stopDepositPolling();
+				if (!ok || !shouldPollDepositStatus()) {
+					stopDepositPolling();
+					return;
+				}
+				if (fast && Date.now() >= depositFastPollUntil) {
+					startDepositPolling();
+				}
 			});
-		}, 20_000);
+		}, fast ? DEPOSIT_POLL_FAST_MS : DEPOSIT_POLL_SLOW_MS);
+	};
+
+	// NEW-B: tras una transición (subida de comprobante, volver a la pestaña) conviene
+	// sondear más rápido un rato para que el rechazo/aprobación se vea sin F5.
+	const triggerDepositFastPoll = () => {
+		depositFastPollUntil = Date.now() + DEPOSIT_POLL_FAST_WINDOW_MS;
+		startDepositPolling();
 	};
 
 	// Seña pendiente: permite subir/resubir el comprobante SIPAP sin salir de esta
@@ -1580,24 +1618,22 @@ export const initializePublicReservationPage = () => {
 		bindSipapReceiptUpload(sipapPanel, {
 			onResult: () => {
 				void refreshReservationAndDeposit().then(() => {
-					startDepositPolling();
+					triggerDepositFastPoll();
 				});
 			},
 			onError: (message) => showToast(message, 'error'),
 		});
 
+		// NEW-B: siempre refrescar al volver a la pestaña (antes se salía sin pedir nada
+		// si ya no correspondía sondear, dejando ver un rechazo/aprobación vieja).
 		document.addEventListener('visibilitychange', () => {
 			if (document.visibilityState !== 'visible') return;
-			if (!shouldPollDepositStatus()) {
-				stopDepositPolling();
-				return;
-			}
 			void refreshReservationAndDeposit().then(() => {
 				if (!shouldPollDepositStatus()) {
 					stopDepositPolling();
 					return;
 				}
-				startDepositPolling();
+				triggerDepositFastPoll();
 			});
 		});
 
