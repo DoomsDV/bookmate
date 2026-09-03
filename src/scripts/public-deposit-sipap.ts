@@ -194,9 +194,18 @@ const freezeHoldCountdown = (root: ParentNode) => {
 const unfreezeHoldCountdown = (root: ParentNode) => {
 	const banner = root.querySelector<HTMLElement>('[data-sipap-hold-banner]');
 	const submitBtn = root.querySelector<HTMLButtonElement>('[data-sipap-upload-submit]');
-	if (banner) delete banner.dataset.sipapHoldFrozen;
+	if (banner) {
+		delete banner.dataset.sipapHoldFrozen;
+		banner.classList.remove('hidden');
+	}
 	if (submitBtn) delete submitBtn.dataset.sipapSubmitted;
 	lockReceiptDropzone(root, false);
+	// BUG-01 ronda 3: sin esto el dock derecho queda en "Comprobante enviado…"
+	// y startSipapHoldCountdown() sale en el primer tick porque sipapHoldState
+	// sigue siendo "submitted" aunque el comercio ya rechazó el comprobante.
+	if (banner?.dataset.sipapHoldState === 'submitted') {
+		setHoldVisibleState(root, 'active');
+	}
 };
 
 const lockReceiptDropzone = (root: ParentNode, locked: boolean) => {
