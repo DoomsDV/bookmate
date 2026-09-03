@@ -15,6 +15,7 @@ import {
 	toDateStart,
 } from '../lib/booking-datetime';
 import { formatCustomerCancelNoRefundHint } from '../lib/public-reservation-refund';
+import { isDepositConfirmed } from '../lib/public-receipt-reconcile';
 import { parseSipapAlias, sanitizeSipapAliasInput, SIPAP_ALIAS_ERROR } from '../lib/sipap-alias';
 import { normalizePublicBookingLocations } from '../lib/public-booking-locations';
 import { mountPublicSlotBranches } from '../lib/public-booking-slots-ui';
@@ -1525,7 +1526,12 @@ export const initializePublicReservationPage = () => {
 		const sipapPanel = depositRoot?.querySelector<HTMLElement>('[data-step-panel]') ?? null;
 		if (!depositRoot || !sipapPanel) return;
 
-		sipapPanel.classList.remove('hidden');
+		// NEW-D: una vez confirmada y ya oculta, no hay nada más que sincronizar; evita
+		// reabrir el panel (remove('hidden')) en cada poll o visibilitychange post-aprobación.
+		const confirmed = isDepositConfirmed(reservation);
+		if (confirmed && depositRoot.classList.contains('hidden')) return;
+
+		if (!confirmed) sipapPanel.classList.remove('hidden');
 		fillSipapDepositPanel(
 			sipapPanel,
 			{
@@ -1539,6 +1545,10 @@ export const initializePublicReservationPage = () => {
 				// una aprobación manual (sin ocr_status='MATCH') y el RESUMEN quedaba
 				// trabado en "Comprobante enviado" hasta que el cliente recargaba.
 				payment_status: reservation.payment_status ?? undefined,
+				// NEW-D: además del pago, la cita puede quedar CONFIRMADO por otra vía;
+				// sin esto fillSipapDepositPanel no detectaba esa aprobación y dejaba el
+				// bloque de seña visible con el CTA trabado en "Comprobante enviado".
+				status: reservation.status,
 				ocr_status: reservation.ocr_status ?? undefined,
 				receipt_rejected: isReceiptRejected(reservation.receipt_rejected),
 				reject_reason: reservation.reject_reason ?? undefined,
@@ -1555,6 +1565,9 @@ export const initializePublicReservationPage = () => {
 	};
 
 	const shouldPollDepositStatus = () => {
+		// NEW-D: si la cita ya quedó confirmada (aunque payment_status no lo refleje),
+		// no tiene sentido seguir sondeando el estado de la seña.
+		if (isDepositConfirmed(reservation)) return false;
 		const paymentStatus = String(reservation.payment_status || '').toUpperCase();
 		if (paymentStatus !== 'PENDING') return false;
 		// NEW-B: un rechazo también hay que seguir sondeándolo (countdown extendido tras

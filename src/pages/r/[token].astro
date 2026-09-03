@@ -865,18 +865,20 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 	margin-inline: auto;
 }
 
-/* La carga SIPAP necesita una composición más amplia que el ticket de la reserva. */
-.reservation-shell:has(.sipap-deposit-panel--manage:not(.hidden)) {
+/* La carga SIPAP necesita una composición más amplia que el ticket de la reserva.
+   NEW-D: el chequeo mira el wrapper [data-reservation-deposit], no el panel interno,
+   para que este ancho extra desaparezca en vivo al aprobar (sin depender de F5). */
+.reservation-shell:has([data-reservation-deposit]:not(.hidden):not([hidden])) {
 	max-width: 72rem;
 }
 
-.reservation-manage__column:has(.sipap-deposit-panel--manage:not(.hidden)) {
+.reservation-manage__column:has([data-reservation-deposit]:not(.hidden):not([hidden])) {
 	max-width: 68rem;
 }
 
-.reservation-manage__column:has(.sipap-deposit-panel--manage:not(.hidden))
+.reservation-manage__column:has([data-reservation-deposit]:not(.hidden):not([hidden]))
 	> .reservation-manage__title,
-.reservation-manage__body:has(.sipap-deposit-panel--manage:not(.hidden))
+.reservation-manage__body:has([data-reservation-deposit]:not(.hidden):not([hidden]))
 	> :not(.reservation-manage__deposit):not(.reservation-manage__stack) {
 	width: 100%;
 	max-width: 36rem;
@@ -940,10 +942,19 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 		align-items: start;
 	}
 
-	.reservation-manage__dashboard .reservation-manage__deposit,
-	.reservation-manage__dashboard .sipap-deposit-panel--manage,
+	.reservation-manage__dashboard .reservation-manage__deposit:not(.hidden):not([hidden]),
+	.reservation-manage__dashboard .sipap-deposit-panel--manage:not(.hidden):not([hidden]),
 	.reservation-manage__dashboard .sipap-layout {
 		display: contents;
+	}
+
+	/* NEW-D: sin esto, display:contents (arriba) le gana a .hidden/[hidden] y el bloque
+	   de seña aprobado en vivo sigue pintándose aplanado en el grid hasta un F5. */
+	.reservation-manage__dashboard .reservation-manage__deposit.hidden,
+	.reservation-manage__dashboard .reservation-manage__deposit[hidden],
+	.reservation-manage__dashboard .sipap-deposit-panel--manage.hidden,
+	.reservation-manage__dashboard .sipap-deposit-panel--manage[hidden] {
+		display: none !important;
 	}
 
 	.reservation-manage__dashboard .booking-ticket {
@@ -979,15 +990,24 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 		padding-bottom: 0;
 	}
 
-	/* El espacio para el dock fijo va al final de la página, no entre la carga y el historial. */
-	.reservation-manage__body:has(.sipap-deposit-panel--manage:not(.hidden)) {
+	/* El espacio para el dock fijo va al final de la página, no entre la carga y el historial.
+	   NEW-D: mirar el wrapper, no el panel interno, para que el padding se libere en vivo. */
+	.reservation-manage__body:has([data-reservation-deposit]:not(.hidden):not([hidden])) {
 		padding-bottom: calc(8rem + env(safe-area-inset-bottom, 0px));
 	}
 
-	.reservation-manage__dashboard .reservation-manage__deposit,
-	.reservation-manage__dashboard .sipap-deposit-panel--manage,
+	.reservation-manage__dashboard .reservation-manage__deposit:not(.hidden):not([hidden]),
+	.reservation-manage__dashboard .sipap-deposit-panel--manage:not(.hidden):not([hidden]),
 	.reservation-manage__dashboard .sipap-layout {
 		display: contents;
+	}
+
+	/* NEW-D: idem versión desktop — el hide en vivo debe ganarle a display:contents. */
+	.reservation-manage__dashboard .reservation-manage__deposit.hidden,
+	.reservation-manage__dashboard .reservation-manage__deposit[hidden],
+	.reservation-manage__dashboard .sipap-deposit-panel--manage.hidden,
+	.reservation-manage__dashboard .sipap-deposit-panel--manage[hidden] {
+		display: none !important;
 	}
 
 	.reservation-manage__dashboard .booking-ticket {

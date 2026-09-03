@@ -35,6 +35,7 @@ export interface PublicDepositSettings {
 
 export interface SipapHoldResponse {
 	appointment_id?: number;
+	status?: string;
 	payment_status?: string;
 	deposit_amount?: number;
 	payment_expires_at?: string;
@@ -207,6 +208,27 @@ const unfreezeHoldCountdown = (root: ParentNode) => {
 	if (banner?.dataset.sipapHoldState === 'submitted') {
 		setHoldVisibleState(root, 'active');
 	}
+};
+
+// NEW-D: al aprobar en vivo hay que igualar el estado post-F5, donde el SSR ni siquiera
+// monta [data-reservation-deposit]. El layout manage aplana el panel con
+// `display: contents`, que le gana a `.hidden` si solo ocultamos el wrapper; por eso
+// también se oculta el panel interno y se retira la clase de grid de 2 columnas.
+const hideReservationDepositBlock = (root: ParentNode) => {
+	if (!(root instanceof Element)) return;
+	if (root.matches('[data-step-panel]')) {
+		root.classList.add('hidden');
+		root.setAttribute('hidden', '');
+	}
+	const wrapper = root.closest<HTMLElement>('[data-reservation-deposit]');
+	if (wrapper) {
+		wrapper.classList.add('hidden');
+		wrapper.setAttribute('hidden', '');
+		wrapper
+			.closest('.reservation-manage__dashboard')
+			?.classList.remove('reservation-manage__dashboard');
+	}
+	stopSipapHoldCountdown(root);
 };
 
 const lockReceiptDropzone = (root: ParentNode, locked: boolean) => {
@@ -478,7 +500,8 @@ export const fillSipapDepositPanel = (
 	// por ocr_status='MATCH' (aprobación automática). Antes solo se miraba ocr_status,
 	// por eso el RESUMEN quedaba en "Comprobante enviado" tras aprobar sin recargar.
 	const confirmed =
-		ocrStatus === 'MATCH' || isDepositConfirmed({ payment_status: hold.payment_status });
+		ocrStatus === 'MATCH' ||
+		isDepositConfirmed({ payment_status: hold.payment_status, status: hold.status });
 
 	if (confirmed) {
 		setSipapRejectAlert(root, false);
@@ -490,9 +513,7 @@ export const fillSipapDepositPanel = (
 		// dejar a la izquierda el mensaje de revisión y los controles del archivo.
 		resetSipapReceiptPreview(root);
 		setSipapReceiptStatus(root, null);
-		if (root instanceof Element) {
-			root.closest<HTMLElement>('[data-reservation-deposit]')?.classList.add('hidden');
-		}
+		hideReservationDepositBlock(root);
 		return;
 	}
 
@@ -672,6 +693,7 @@ export const setSipapReceiptStatus = (
 		banner?.classList.add('hidden');
 		lockSubmitAfterSend(root, SUBMIT_CONFIRMED_LABEL);
 		if (fileInput) fileInput.disabled = true;
+		hideReservationDepositBlock(root);
 		return;
 	}
 	banner?.classList.remove('hidden');
