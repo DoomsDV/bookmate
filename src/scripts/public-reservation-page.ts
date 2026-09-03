@@ -1480,6 +1480,12 @@ export const initializePublicReservationPage = () => {
 		reservation.loc_id_location = updated.loc_id_location || reservation.loc_id_location;
 		reservation.location_name = updated.location_name || reservation.location_name;
 		reservation.location_address = updated.location_address || reservation.location_address;
+		reservation.payment_status = updated.payment_status ?? reservation.payment_status;
+		reservation.ocr_status = updated.ocr_status ?? reservation.ocr_status;
+		reservation.receipt_rejected = updated.receipt_rejected === true;
+		reservation.reject_reason = updated.reject_reason ?? reservation.reject_reason;
+		reservation.payment_reference = updated.payment_reference ?? reservation.payment_reference;
+		reservation.payment_expires_at = updated.payment_expires_at ?? reservation.payment_expires_at;
 
 		const nextStart = parseApiDateTime(updated.start_time);
 		if (!nextStart) return false;
@@ -1501,11 +1507,11 @@ export const initializePublicReservationPage = () => {
 		return true;
 	};
 
-	// Seña pendiente: permite subir/resubir el comprobante SIPAP sin salir de esta
-	// página (evita que el cliente tenga que escribir por WhatsApp ante un rechazo).
-	const depositRoot = root.querySelector<HTMLElement>('[data-reservation-deposit]');
-	const sipapPanel = depositRoot?.querySelector<HTMLElement>('[data-step-panel]') ?? null;
-	if (depositRoot && sipapPanel) {
+	const refreshSipapDepositPanel = () => {
+		const depositRoot = root.querySelector<HTMLElement>('[data-reservation-deposit]');
+		const sipapPanel = depositRoot?.querySelector<HTMLElement>('[data-step-panel]') ?? null;
+		if (!depositRoot || !sipapPanel) return;
+
 		sipapPanel.classList.remove('hidden');
 		fillSipapDepositPanel(
 			sipapPanel,
@@ -1529,13 +1535,74 @@ export const initializePublicReservationPage = () => {
 				depositAmount: reservation.deposit_amount ?? undefined,
 			}
 		);
+	};
+
+	const shouldPollDepositStatus = () => {
+		const paymentStatus = String(reservation.payment_status || '').toUpperCase();
+		if (paymentStatus !== 'PENDING') return false;
+		if (reservation.receipt_rejected === true) return false;
+		if (String(reservation.ocr_status || '').toUpperCase() === 'MATCH') return false;
+		return Boolean(root.querySelector('[data-reservation-deposit] [data-step-panel]'));
+	};
+
+	const refreshReservationAndDeposit = async () => {
+		const ok = await refreshReservationSummary();
+		if (!ok) return false;
+		refreshSipapDepositPanel();
+		return true;
+	};
+
+	let depositPollTimer: number | null = null;
+
+	const stopDepositPolling = () => {
+		if (depositPollTimer == null) return;
+		window.clearInterval(depositPollTimer);
+		depositPollTimer = null;
+	};
+
+	const startDepositPolling = () => {
+		stopDepositPolling();
+		if (!shouldPollDepositStatus()) return;
+		depositPollTimer = window.setInterval(() => {
+			void refreshReservationAndDeposit().then((ok) => {
+				if (!ok || !shouldPollDepositStatus()) stopDepositPolling();
+			});
+		}, 20_000);
+	};
+
+	// Seña pendiente: permite subir/resubir el comprobante SIPAP sin salir de esta
+	// página (evita que el cliente tenga que escribir por WhatsApp ante un rechazo).
+	const depositRoot = root.querySelector<HTMLElement>('[data-reservation-deposit]');
+	const sipapPanel = depositRoot?.querySelector<HTMLElement>('[data-step-panel]') ?? null;
+	if (depositRoot && sipapPanel) {
+		refreshSipapDepositPanel();
 		bindSipapCopyButtons(depositRoot);
 		bindSipapReceiptUpload(sipapPanel, {
 			onResult: () => {
-				void refreshReservationSummary();
+				void refreshReservationAndDeposit().then(() => {
+					startDepositPolling();
+				});
 			},
 			onError: (message) => showToast(message, 'error'),
 		});
+
+		document.addEventListener('visibilitychange', () => {
+			if (document.visibilityState !== 'visible') return;
+			if (!shouldPollDepositStatus()) {
+				stopDepositPolling();
+				return;
+			}
+			void refreshReservationAndDeposit().then(() => {
+				if (!shouldPollDepositStatus()) {
+					stopDepositPolling();
+					return;
+				}
+				startDepositPolling();
+			});
+		});
+
+		startDepositPolling();
+		window.addEventListener('pagehide', stopDepositPolling, { once: true });
 	}
 
 	const handleRescheduleNext = async () => {

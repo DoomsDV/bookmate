@@ -176,7 +176,9 @@ const openItem = (item: InboxItem) => {
 	}
 
 	if (item.ntype === 'PAYMENT') {
-		window.location.assign(buildCobrosFocusUrl(Number(item.appointment_id || 0)));
+		window.location.assign(
+			buildCobrosFocusUrl(Number(item.appointment_id || 0), item.action_url)
+		);
 		return;
 	}
 
