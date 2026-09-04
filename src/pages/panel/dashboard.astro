@@ -3856,20 +3856,20 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
 			gap: var(--dashboard-floor-gap);
 			min-height: 0;
-			align-items: start;
+			align-items: stretch;
 		}
 
 		.dashboard-floor--action .dashboard-report-shell.dashboard-floor__panel {
-			align-self: start;
-			height: auto;
+			align-self: stretch;
+			height: 100%;
 			max-height: min(34rem, calc(100dvh - 10rem));
 		}
 
 		.dashboard-floor--action .dashboard-alerts-shell {
 			position: sticky;
 			top: 1.25rem;
-			align-self: start;
-			height: auto;
+			align-self: stretch;
+			height: 100%;
 			padding: 1.15rem;
 			border-radius: 1.25rem;
 			background: var(--surface-bright);
