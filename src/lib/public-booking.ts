@@ -249,7 +249,6 @@ export interface PublicReservationDetail {
 	service_image_url?: string;
 	duration_minutes: number;
 	customer_name: string;
-	customer_phone: string;
 	status: string;
 	start_time: string;
 	end_time: string;
@@ -926,7 +925,7 @@ const normalizeReservationDetail = (value: unknown): PublicReservationDetail | n
 		service_image_url: String(source.service_image_url || '').trim() || undefined,
 		duration_minutes: durationMinutes,
 		customer_name: String(source.customer_name || '').trim(),
-		customer_phone: String(source.customer_phone || '').trim(),
+		// customer_phone se omite a propósito: last-4 de disputa se valida en backend.
 		status: String(source.status || '').trim().toUpperCase(),
 		start_time: startTime,
 		end_time: endTime,

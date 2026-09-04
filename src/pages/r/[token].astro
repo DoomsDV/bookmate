@@ -45,6 +45,8 @@ const serializedReservation = reservation
 				last_recommendations: _recs,
 				...manageReservation
 			} = reservation;
+			// Defensa: last-4 de disputa no debe viajar en el HTML aunque el GET lo mande.
+			delete (manageReservation as { customer_phone?: string }).customer_phone;
 			return manageReservation;
 		})()).replace(/</g, '\\u003c').replace(/-->/g, '--\\>')
 	: '';
