@@ -458,6 +458,14 @@ dialog[data-ai-summary-modal][open]::backdrop,
 	will-change: opacity;
 }
 
+/* Tras la animación de apertura: soltar el layer GPU para que el texto no quede pixelado. */
+dialog[open].is-settled,
+dialog[open].is-settled::backdrop,
+[data-settings-modal][open].is-settled,
+[data-settings-modal][open].is-settled::backdrop {
+	will-change: auto;
+}
+
 /* Keyframes globales reutilizables para drawers (siguiente unificación). */
 @keyframes panel-drawer-in {
 	from {

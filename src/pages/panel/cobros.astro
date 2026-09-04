@@ -650,15 +650,15 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 							</div>
 							<div class="cobros-ocr-row hidden" data-cobros-ocr-block>
 								<div class="cobros-detail-field">
-									<span class="cobros-detail-field__label">Monto OCR</span>
+									<span class="cobros-detail-field__label">Monto leído</span>
 									<strong class="cobros-detail-field__value tabular-nums" data-cobros-modal-ocr-amount>—</strong>
 								</div>
 								<div class="cobros-detail-field cobros-detail-field--wide">
-									<span class="cobros-detail-field__label">Referencia OCR</span>
+									<span class="cobros-detail-field__label">Código leído</span>
 									<strong class="cobros-detail-field__value cobros-detail-field__value--mono" data-cobros-modal-ocr-reference>—</strong>
 								</div>
 								<div class="cobros-detail-field">
-									<span class="cobros-detail-field__label">Confianza OCR</span>
+									<span class="cobros-detail-field__label">Calidad de lectura</span>
 									<strong class="cobros-detail-field__value" data-cobros-modal-ocr-confidence>—</strong>
 								</div>
 							</div>
@@ -678,7 +678,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 						</section>
 					</div>
 
-					<footer class="cobros-modal-footer z-20 mt-auto shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-5 py-4">
+					<footer class="cobros-modal-footer is-empty hidden z-20 mt-auto shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-5 py-4" data-cobros-modal-footer hidden>
 						<div class="hidden" data-cobros-modal-actions>
 							<div class="cobros-reject-reveal" data-cobros-reject-wrap>
 								<div class="cobros-reject-alert" role="status">
@@ -884,6 +884,10 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 	[data-cobros-cards].hidden,
 	[data-cobros-results].hidden,
 	.cobros-loading.hidden,
+	[data-cobros-modal-footer].is-empty,
+	[data-cobros-modal-footer].hidden,
+	[data-cobros-modal-footer][hidden],
+	[data-cobros-modal-actions].hidden,
 	[data-cobros-refund-actions].hidden,
 	[data-cobros-refund-block].hidden,
 	.cobros-refund-panel.hidden,
@@ -1707,6 +1711,12 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
 	}
 
+	.cobros-modal-footer.is-empty,
+	.cobros-modal-footer.hidden,
+	.cobros-modal-footer[hidden] {
+		display: none !important;
+	}
+
 	.cobros-reject-reveal {
 		max-height: 0;
 		opacity: 0;
@@ -1777,9 +1787,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 
 	.cobros-detail-receipt {
 		width: 100%;
-		opacity: 0;
-		transform: translateY(8px);
-		animation: cobros-detail-in 520ms var(--cobros-detail-ease) forwards;
+		animation: cobros-detail-in 520ms var(--cobros-detail-ease) backwards;
 	}
 
 	.cobros-detail-receipt__inner {
@@ -1878,9 +1886,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 
 	.cobros-detail-sheet {
 		overflow: visible;
-		opacity: 0;
-		transform: translateY(10px);
-		animation: cobros-detail-in 560ms var(--cobros-detail-ease) 60ms forwards;
+		animation: cobros-detail-in 560ms var(--cobros-detail-ease) 60ms backwards;
 	}
 
 	.cobros-detail-sheet__hero {
@@ -1893,7 +1899,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		font-size: clamp(1.45rem, 4.8vw, 1.72rem);
 		font-weight: 800;
 		line-height: 1.08;
-		letter-spacing: -0.035em;
+		letter-spacing: -0.02em;
 		color: var(--on-surface);
 	}
 
@@ -1980,9 +1986,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 	.cobros-refund-panel:not(.hidden) {
 		display: grid;
 		gap: 0.65rem;
-		opacity: 0;
-		transform: translateY(10px);
-		animation: cobros-detail-in 560ms var(--cobros-detail-ease) 120ms forwards;
+		animation: cobros-detail-in 560ms var(--cobros-detail-ease) 120ms backwards;
 	}
 
 	.cobros-refund-panel__inner {
@@ -2077,9 +2081,13 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 	}
 
 	@keyframes cobros-detail-in {
+		from {
+			opacity: 0;
+			transform: translateY(10px);
+		}
 		to {
 			opacity: 1;
-			transform: translateY(0);
+			transform: none;
 		}
 	}
 
@@ -2396,6 +2404,22 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		justify-content: flex-end;
 	}
 
+	/* Windows 125%/150%: sin esto el texto extra-bold del drawer se ve dentado. */
+	.cobros-modal__panel {
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+	}
+
+	dialog[data-cobros-modal][open].is-settled:not(.is-closing) {
+		animation: none;
+		transform: none;
+		will-change: auto;
+	}
+
+	dialog[data-cobros-modal][open].is-settled:not(.is-closing)::backdrop {
+		will-change: auto;
+	}
+
 	dialog[data-cobros-modal]::backdrop {
 		background: var(--modal-backdrop-scrim);
 		backdrop-filter: blur(var(--modal-backdrop-blur));
@@ -2418,7 +2442,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		}
 		to {
 			opacity: 1;
-			transform: translateY(0);
+			transform: none;
 		}
 	}
 
@@ -2493,7 +2517,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		}
 		to {
 			opacity: 1;
-			transform: translateX(0);
+			transform: none;
 		}
 	}
 

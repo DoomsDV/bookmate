@@ -761,6 +761,33 @@ export const initCobrosPage = () => {
 		if (!canUpload) disputeDropzone?.reset();
 	};
 
+	const syncModalFooter = () => {
+		if (!modal) return;
+		const footer = modal.querySelector<HTMLElement>('[data-cobros-modal-footer]');
+		if (!footer) return;
+
+		const isEffectivelyHidden = (el: HTMLElement | null) => {
+			if (!el) return true;
+			return el.hidden || el.classList.contains('hidden') || el.classList.contains('is-empty');
+		};
+
+		const hasVisibleButton = Array.from(footer.querySelectorAll('button')).some((btn) => {
+			if (isEffectivelyHidden(btn)) return false;
+			let node: HTMLElement | null = btn.parentElement;
+			while (node && node !== footer) {
+				if (isEffectivelyHidden(node)) return false;
+				node = node.parentElement;
+			}
+			return true;
+		});
+
+		const statusEl = modal.querySelector<HTMLElement>('[data-cobros-modal-status]');
+		const empty = !hasVisibleButton && !statusEl?.textContent?.trim();
+		footer.classList.toggle('is-empty', empty);
+		footer.classList.toggle('hidden', empty);
+		footer.hidden = empty;
+	};
+
 	const openModal = (item: CobroItem) => {
 		selected = item;
 		if (!modal) return;
@@ -897,12 +924,48 @@ export const initCobrosPage = () => {
 		setApproveBusy(false);
 		setRefundSentBusy(false);
 		setDisputeUploadBusy(false);
+		syncModalFooter();
 
 		modal.classList.remove('is-closing');
-		if (!modal.open) openPanelModal(modal);
+		if (modal.open) {
+			modal.classList.add('is-settled');
+			return;
+		}
+		modal.classList.remove('is-settled');
+		openPanelModal(modal);
+		scheduleModalSettle();
 	};
 
 	let closeTimer: number | null = null;
+	let settleTimer: number | null = null;
+	let settleOpenHandler: ((event: AnimationEvent) => void) | null = null;
+
+	const clearModalSettle = () => {
+		if (settleTimer !== null) {
+			window.clearTimeout(settleTimer);
+			settleTimer = null;
+		}
+		if (settleOpenHandler && modal) {
+			modal.removeEventListener('animationend', settleOpenHandler);
+			settleOpenHandler = null;
+		}
+	};
+
+	const settleModal = () => {
+		modal?.classList.add('is-settled');
+		clearModalSettle();
+	};
+
+	const scheduleModalSettle = () => {
+		if (!modal) return;
+		clearModalSettle();
+		settleOpenHandler = (event: AnimationEvent) => {
+			if (event.target !== modal) return;
+			settleModal();
+		};
+		modal.addEventListener('animationend', settleOpenHandler);
+		settleTimer = window.setTimeout(settleModal, 220);
+	};
 
 	const closeModal = () => {
 		fileViewer?.close();
@@ -915,6 +978,8 @@ export const initCobrosPage = () => {
 		}
 		setRejectMode(false);
 		resetWaiveUi();
+		clearModalSettle();
+		modal.classList.remove('is-settled');
 		modal.classList.add('is-closing');
 		if (closeTimer !== null) window.clearTimeout(closeTimer);
 		closeTimer = window.setTimeout(() => {
@@ -1316,7 +1381,7 @@ export const initCobrosPage = () => {
 			const message =
 				String(payload.message || '').trim() ||
 				(outcome === 'review'
-					? 'Comprobante recibido. Queda en revisión; el OCR no acredita la transferencia.'
+					? 'Comprobante recibido. Queda en revisión; esto no acredita que el dinero se haya enviado.'
 					: 'No se pudo validar el comprobante.');
 			if (outcome === 'review') {
 				selected = {

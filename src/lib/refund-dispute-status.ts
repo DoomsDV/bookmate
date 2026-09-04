@@ -37,10 +37,10 @@ export const cobrosDisputeNote = (status: string) => {
 		return 'El cliente abrió una disputa. Adjuntá la prueba de transferencia antes del vencimiento. Subir una prueba no acredita el envío.';
 	}
 	if (value === 'PROOF_RECEIVED' || value === 'EVIDENCE_PROCESSING') {
-		return 'Comprobante recibido. El OCR no acredita la transferencia; el caso queda en revisión.';
+		return 'Comprobante recibido. El caso queda en revisión; esto no acredita que el dinero se haya enviado.';
 	}
 	if (DISPUTE_UNDER_REVIEW.has(value)) {
-		return 'En revisión. El OCR no liquida el caso: el cliente puede confirmar que recibió el dinero, o Operaciones Hasel lo cierra.';
+		return 'En revisión. El cliente puede confirmar que recibió el dinero, o Operaciones Hasel lo cierra.';
 	}
 	if (DISPUTE_SETTLED.has(value)) {
 		return 'El cliente confirmó que recibió el reembolso. El caso está liquidado.';

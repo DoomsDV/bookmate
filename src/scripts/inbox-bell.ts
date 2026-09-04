@@ -285,7 +285,16 @@ const dismissItem = async (id: number) => {
 };
 
 const dismissAll = async () => {
-	if (!window.confirm('¿Borrar todas las notificaciones?')) return;
+	const confirmed = window.BookmateAlert?.confirm
+		? await window.BookmateAlert.confirm({
+				type: 'warning',
+				title: '¿Borrar todas las notificaciones?',
+				message: 'Se van a quitar todas las notificaciones de este listado.',
+				confirmText: 'Borrar todas',
+				cancelText: 'Cancelar',
+			})
+		: false;
+	if (!confirmed) return;
 	const state = getState();
 	state.items = [];
 	state.unreadCount = 0;
@@ -402,6 +411,8 @@ export const initInboxBell = () => {
 			return;
 		}
 
+		if (target.closest('[data-app-alert-dialog]')) return;
+
 		if (target.matches('[data-inbox-sheet]')) {
 			closeInboxMenus();
 			return;
@@ -413,7 +424,9 @@ export const initInboxBell = () => {
 	});
 
 	document.addEventListener('keydown', (event) => {
-		if (event.key === 'Escape') closeInboxMenus();
+		if (event.key !== 'Escape') return;
+		if (document.querySelector('[data-app-alert-dialog][open]')) return;
+		closeInboxMenus();
 	});
 
 	document.addEventListener('hasel:inbox-changed', () => {

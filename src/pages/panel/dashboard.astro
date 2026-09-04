@@ -30,6 +30,7 @@ let dashboard: DashboardMainData = {
 		today_appointments: 0,
 		today_completed_appointments: 0,
 		pending_appointments: 0,
+		unconfirmed_appointments: 0,
 		my_customers: 2,
 		total_customers: 6,
 	},
@@ -112,6 +113,7 @@ const greetingNamePieces = greetingNameWords.map((word, wordIndex) => {
 const todayTotal = dashboard.kpis.today_appointments;
 const todayCompleted = Math.min(todayTotal, dashboard.kpis.today_completed_appointments || 0);
 const todayRemaining = Math.max(0, todayTotal - todayCompleted);
+const unconfirmedTotal = Math.max(0, dashboard.kpis.unconfirmed_appointments || 0);
 const dayProgressPct =
 	todayTotal > 0 ? Math.min(100, Math.round((todayCompleted / todayTotal) * 100)) : 0;
 
@@ -358,125 +360,70 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 									<div class="dashboard-carousel">
 									<div class="dashboard-profit-metrics-track">
-										<article class="dashboard-profit-card" data-profit-accent="emerald">
-											<div class="dashboard-profit-card__head">
-												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">payments</span>
-												<p class="dashboard-profit-label">Ingresos a la fecha</p>
-											</div>
-											<div class="dashboard-profit-card__hero">
-												<p class="dashboard-profit-value" data-profit-month-revenue>&nbsp;</p>
-												<div class="dashboard-profit-compare" data-profit-compare hidden aria-hidden="true">
-													<p class="dashboard-profit-compare__delta" data-profit-mom></p>
-													<p class="dashboard-profit-compare__caption">Mismo período mes anterior</p>
-												</div>
-											</div>
-											<ul class="dashboard-profit-stats">
-												<li class="dashboard-profit-stat">
-													<span class="dashboard-profit-stat__label">Mismo período mes anterior</span>
-													<span class="dashboard-profit-stat__value" data-profit-last-month>&nbsp;</span>
-												</li>
-												<li class="dashboard-profit-stat">
-													<span class="dashboard-profit-stat__label">Ticket promedio</span>
-													<span class="dashboard-profit-stat__value" data-profit-avg-ticket>&nbsp;</span>
-												</li>
-												<li class="dashboard-profit-stat">
-													<span class="dashboard-profit-stat__label">Reservas cobradas</span>
-													<span class="dashboard-profit-stat__value" data-profit-month-count>&nbsp;</span>
-												</li>
-											</ul>
+										<a
+											class="dashboard-profit-card dashboard-profit-card--simple"
+											data-profit-accent="brand"
+											href="/panel/calendar"
+										>
+											<span class="dashboard-profit-card__head">
+												<span class="dashboard-profit-icon" aria-hidden="true">
+													<span class="material-symbols-rounded">today</span>
+												</span>
+												<p class="dashboard-profit-label">Hoy</p>
+												<span class="dashboard-profit-card__go material-symbols-rounded" aria-hidden="true">arrow_outward</span>
+											</span>
+											<p class="dashboard-profit-value dashboard-profit-value--static">{todayTotal}</p>
+											<p class="dashboard-profit-caption">{todayTotal === 1 ? 'turno' : 'turnos'}</p>
+										</a>
+										<a
+											class:list={[
+												'dashboard-profit-card dashboard-profit-card--simple',
+												unconfirmedTotal > 0 && 'is-alert',
+											]}
+											data-profit-accent="amber"
+											href="#dashboard-upcoming-appointments"
+										>
+											<span class="dashboard-profit-card__head">
+												<span class="dashboard-profit-icon" aria-hidden="true">
+													<span class="material-symbols-rounded">hourglass_top</span>
+												</span>
+												<p class="dashboard-profit-label">Por confirmar</p>
+												<span class="dashboard-profit-card__go material-symbols-rounded" aria-hidden="true">arrow_outward</span>
+											</span>
+											<p class="dashboard-profit-value dashboard-profit-value--static">{unconfirmedTotal}</p>
+											<p class="dashboard-profit-caption">
+												{unconfirmedTotal === 0
+													? 'Nada pendiente'
+													: unconfirmedTotal === 1
+														? 'Cita por confirmar'
+														: 'Citas por confirmar'}
+											</p>
+										</a>
+										<article class="dashboard-profit-card dashboard-profit-card--simple" data-profit-accent="emerald">
+											<span class="dashboard-profit-card__head">
+												<span class="dashboard-profit-icon" aria-hidden="true">
+													<span class="material-symbols-rounded">payments</span>
+												</span>
+												<p class="dashboard-profit-label">Este mes</p>
+											</span>
+											<p class="dashboard-profit-value" data-profit-month-revenue>&nbsp;</p>
+											<p class="dashboard-profit-caption">Estimado por servicios</p>
 										</article>
-										<article class="dashboard-profit-card" data-profit-accent="brand">
-											<div class="dashboard-profit-card__head">
-												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">today</span>
-												<p class="dashboard-profit-label">Agenda de hoy</p>
-											</div>
-											<div class="dashboard-profit-card__hero">
-												<div class="dashboard-profit-hero-copy">
-													<p class="dashboard-profit-value dashboard-profit-value--static">{todayTotal}</p>
-													<span class="dashboard-profit-unit">turnos</span>
-												</div>
-												{todayTotal > 0 ? (
-													<div
-														class="dashboard-profit-viz dashboard-profit-viz--split"
-														role="img"
-														aria-label={`${todayCompleted} completados, ${todayRemaining} por atender, de ${todayTotal} turnos hoy`}
-													>
-														<span class="dashboard-profit-split">
-															{todayCompleted > 0 && (
-																<span class="dashboard-profit-split__seg is-done" style={`flex: ${todayCompleted} 1 0`}></span>
-															)}
-															{todayRemaining > 0 && (
-																<span class="dashboard-profit-split__seg is-left" style={`flex: ${todayRemaining} 1 0`}></span>
-															)}
-														</span>
-													</div>
-												) : (
-													<p class="dashboard-profit-empty">Sin turnos para hoy</p>
-												)}
-											</div>
-											<ul class="dashboard-profit-stats">
-												<li class="dashboard-profit-stat">
-													<span class="dashboard-profit-stat__label">Completados</span>
-													<span class="dashboard-profit-stat__value dashboard-profit-value--static">{todayCompleted}</span>
-												</li>
-												<li class="dashboard-profit-stat">
-													<span class="dashboard-profit-stat__label">Total de hoy</span>
-													<span class="dashboard-profit-stat__value dashboard-profit-value--static">{todayTotal}</span>
-												</li>
-												<li class="dashboard-profit-stat">
-													<span class="dashboard-profit-stat__label">Por atender</span>
-													<span class="dashboard-profit-stat__value dashboard-profit-value--static">{todayRemaining}</span>
-												</li>
-											</ul>
-										</article>
-										<article class="dashboard-profit-card" data-profit-accent="amber">
-											<div class="dashboard-profit-card__head">
-												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">schedule</span>
-												<p class="dashboard-profit-label">Esperado</p>
-											</div>
-											<div class="dashboard-profit-card__hero dashboard-profit-card__hero--stack">
-												<div class="dashboard-profit-pair">
-													<div class="dashboard-profit-pair__item">
-														<p class="dashboard-profit-value" data-profit-pending>&nbsp;</p>
-														<span class="dashboard-profit-pair__label">Pendiente</span>
-													</div>
-													<div class="dashboard-profit-pair__item">
-														<p class="dashboard-profit-value" data-profit-projection>&nbsp;</p>
-														<span class="dashboard-profit-pair__label">Proyección</span>
-													</div>
-												</div>
-												<p class="dashboard-profit-hint dashboard-profit-value--static" data-profit-vs-projection>Realizado: —% de la proyección</p>
-											</div>
-											<ul class="dashboard-profit-stats">
-												<li class="dashboard-profit-stat">
-													<span class="dashboard-profit-stat__label">Citas por realizar este mes</span>
-													<span class="dashboard-profit-stat__value" data-profit-pending-count>&nbsp;</span>
-												</li>
-											</ul>
-										</article>
-										<article class="dashboard-profit-card" data-profit-accent="violet">
-											<div class="dashboard-profit-card__head">
-												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">groups</span>
-												<p class="dashboard-profit-label">Clientes</p>
-											</div>
-											<div class="dashboard-profit-card__hero dashboard-profit-card__hero--stack">
-												<p class="dashboard-profit-value" data-profit-total-clients>&nbsp;</p>
-												<ul class="dashboard-profit-chips">
-													<li class="dashboard-profit-chip">
-														<span class="dashboard-profit-chip__value" data-profit-new-clients>&nbsp;</span>
-														<span class="dashboard-profit-chip__label">Nuevos este mes</span>
-													</li>
-													<li class="dashboard-profit-chip">
-														<span class="dashboard-profit-chip__value" data-profit-active-clients>&nbsp;</span>
-														<span class="dashboard-profit-chip__label">Activos este mes</span>
-													</li>
-													<li class="dashboard-profit-chip">
-														<span class="dashboard-profit-chip__value" data-profit-upcoming-clients>&nbsp;</span>
-														<span class="dashboard-profit-chip__label">Con cita 7d</span>
-													</li>
-												</ul>
-											</div>
-										</article>
+										<a
+											class="dashboard-profit-card dashboard-profit-card--simple"
+											data-profit-accent="violet"
+											href="/panel/customers"
+										>
+											<span class="dashboard-profit-card__head">
+												<span class="dashboard-profit-icon" aria-hidden="true">
+													<span class="material-symbols-rounded">person_add</span>
+												</span>
+												<p class="dashboard-profit-label">Nuevos</p>
+												<span class="dashboard-profit-card__go material-symbols-rounded" aria-hidden="true">arrow_outward</span>
+											</span>
+											<p class="dashboard-profit-value" data-profit-new-clients>&nbsp;</p>
+											<p class="dashboard-profit-caption">Clientes este mes</p>
+										</a>
 									</div>
 									</div>
 								</section>
@@ -808,7 +755,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 															<p class="dashboard-alert-title" data-dashboard-cobros-alert-title>Comprobantes por validar</p>
 															<p class="dashboard-alert-meta" data-dashboard-cobros-alert-meta>Cargando…</p>
 														</div>
-														<a href="/panel/cobros?status=pending" class="dashboard-alert-action">Validar</a>
+														<a href="/panel/cobros?status=pending" class="dashboard-alert-action" data-dashboard-cobros-alert-action>Validar</a>
 													</li>
 												</ul>
 
@@ -1840,14 +1787,22 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 		try {
 			const { fetchCobrosPendingCount } = await import('../../scripts/cobros-pending-badge');
-			const count = await fetchCobrosPendingCount(options);
+			const [count, pendingPayload] = await Promise.all([
+				fetchCobrosPendingCount(options),
+				fetch('/api/cobros?status=pending&date_preset=all&page=1&limit=1', {
+					headers: { Accept: 'application/json' },
+				})
+					.then((response) => response.json())
+					.catch(() => null),
+			]);
 			if (count === null) {
 				slot.hidden = true;
 				syncDashboardAlertsEmpty();
 				return;
 			}
 
-			if (count <= 0) {
+			const receiptCount = Number(pendingPayload?.meta?.total ?? 0) || 0;
+			if (receiptCount <= 0 && count <= 0) {
 				slot.hidden = true;
 				syncDashboardAlertsEmpty();
 				return;
@@ -1855,12 +1810,31 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 			const title = slot.querySelector<HTMLElement>('[data-dashboard-cobros-alert-title]');
 			const meta = slot.querySelector<HTMLElement>('[data-dashboard-cobros-alert-meta]');
-			if (title) {
-				title.textContent =
-					count === 1 ? '1 comprobante por validar' : `${count} comprobantes por validar`;
-			}
-			if (meta) {
-				meta.textContent = 'Señas SIPAP pendientes de revisión.';
+			const action = slot.querySelector<HTMLAnchorElement>('[data-dashboard-cobros-alert-action]');
+			if (receiptCount > 0) {
+				if (title) {
+					title.textContent =
+						receiptCount === 1
+							? '1 comprobante por validar'
+							: `${receiptCount} comprobantes por validar`;
+				}
+				if (meta) meta.textContent = 'Señas SIPAP pendientes de revisión.';
+				if (action) {
+					action.textContent = 'Validar';
+					action.href = '/panel/cobros?status=pending';
+				}
+			} else {
+				if (title) {
+					title.textContent =
+						count === 1 ? '1 reembolso por revisar' : `${count} reembolsos por revisar`;
+				}
+				if (meta) {
+					meta.textContent = 'Hay devoluciones o disputas que requieren tu atención.';
+				}
+				if (action) {
+					action.textContent = 'Revisar';
+					action.href = '/panel/cobros?status=refunded';
+				}
 			}
 			slot.hidden = false;
 			slot.classList.remove('dashboard-alert-item--loading');
@@ -1913,55 +1887,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			};
 
 			setText('[data-profit-month-revenue]', formatGs(data.month_revenue));
-			setText('[data-profit-pending]', formatGs(data.pending_expected_revenue));
-			setText('[data-profit-pending-count]', String(Number(data.pending_appointments_month ?? 0)));
-			setText('[data-profit-total-clients]', String(Number(data.total_clients ?? 0)));
 			setText('[data-profit-new-clients]', String(Number(data.new_clients_month ?? 0)));
-			setText('[data-profit-active-clients]', String(Number(data.active_clients_month ?? 0)));
-			setText('[data-profit-upcoming-clients]', String(Number(data.upcoming_clients_7d ?? 0)));
-			setText('[data-profit-last-month]', formatGs(data.last_month_revenue));
-			setText('[data-profit-avg-ticket]', formatGs(data.month_avg_ticket));
-			setText('[data-profit-month-count]', String(Number(data.month_completed_count ?? 0)));
-
-			const monthRevenue = Math.max(0, Number(data.month_revenue) || 0);
-			const pendingRevenue = Math.max(0, Number(data.pending_expected_revenue) || 0);
-
-			// Proyección mensual = cobrado a la fecha + citas restantes de este mes.
-			const pipelineTotal = monthRevenue + pendingRevenue;
-			const projectionPct = pipelineTotal > 0 ? Math.round((monthRevenue / pipelineTotal) * 100) : 0;
-			setText('[data-profit-projection]', formatGs(pipelineTotal));
-			setText('[data-profit-vs-projection]', `Realizado: ${projectionPct}% de la proyección`);
-
-			const compare = panel.querySelector<HTMLElement>('[data-profit-compare]');
-			const momNode = panel.querySelector<HTMLElement>('[data-profit-mom]');
-			if (compare && momNode) {
-				const mom = data.mom_delta_pct;
-				if (mom === null || mom === undefined || !Number.isFinite(Number(mom))) {
-					compare.hidden = true;
-					compare.setAttribute('aria-hidden', 'true');
-					momNode.replaceChildren();
-				} else {
-					const value = Number(mom);
-					const sign = value > 0 ? '+' : '';
-					compare.hidden = false;
-					compare.removeAttribute('aria-hidden');
-					momNode.className =
-						value > 0
-							? 'dashboard-profit-compare__delta is-up'
-							: value < 0
-								? 'dashboard-profit-compare__delta is-down'
-								: 'dashboard-profit-compare__delta';
-					momNode.replaceChildren();
-					if (value !== 0) {
-						const arrow = document.createElement('span');
-						arrow.className = 'material-symbols-rounded dashboard-profit-stat__arrow';
-						arrow.setAttribute('aria-hidden', 'true');
-						arrow.textContent = value > 0 ? 'arrow_upward' : 'arrow_downward';
-						momNode.appendChild(arrow);
-					}
-					momNode.appendChild(document.createTextNode(`${sign}${value}%`));
-				}
-			}
 
 			panel.hidden = false;
 			panel.classList.remove('hidden', 'is-dismissed', 'is-loading');
@@ -4568,10 +4494,21 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			0 1px 0 color-mix(in srgb, var(--on-surface) 4%, transparent),
 			0 12px 28px color-mix(in srgb, #1e293b 6%, transparent);
 		overflow: hidden;
+		color: inherit;
+		text-decoration: none;
 		transition:
 			transform 320ms cubic-bezier(0.32, 0.72, 0, 1),
 			border-color 320ms cubic-bezier(0.32, 0.72, 0, 1),
 			box-shadow 320ms cubic-bezier(0.32, 0.72, 0, 1);
+	}
+
+	a.dashboard-profit-card {
+		cursor: pointer;
+	}
+
+	a.dashboard-profit-card:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--profit-accent) 70%, #fff 30%);
+		outline-offset: 2px;
 	}
 
 	.dashboard-profit-card:hover {
@@ -4709,6 +4646,108 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		flex-direction: column;
 		align-items: stretch;
 		gap: 0.45rem;
+	}
+
+	.dashboard-profit-card--simple {
+		align-items: stretch;
+		justify-content: flex-start;
+		gap: 0.5rem;
+		padding: 1rem 1.05rem 0.95rem;
+		min-height: 0;
+		text-align: left;
+		background:
+			radial-gradient(18rem 12rem at 0% -28%, color-mix(in srgb, var(--profit-accent) 16%, transparent), transparent 68%),
+			#ffffff;
+	}
+
+	.dashboard-profit-card--simple .dashboard-profit-card__head {
+		display: flex;
+		align-items: center;
+		gap: 0.65rem;
+		min-width: 0;
+	}
+
+	.dashboard-profit-card--simple .dashboard-profit-card__hero {
+		display: none;
+	}
+
+	.dashboard-profit-card--simple .dashboard-profit-icon {
+		width: 2.15rem;
+		height: 2.15rem;
+		border-radius: 0.78rem;
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+	}
+
+	.dashboard-profit-card--simple .dashboard-profit-icon .material-symbols-rounded {
+		font-size: 1.15rem;
+		line-height: 1;
+		font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+	}
+
+	.dashboard-profit-card__go {
+		margin-left: auto;
+		flex-shrink: 0;
+		font-size: 0.98rem;
+		line-height: 1;
+		color: var(--on-surface-variant);
+		opacity: 0.42;
+		transition: opacity 200ms ease, transform 200ms ease, color 200ms ease;
+	}
+
+	a.dashboard-profit-card--simple:hover .dashboard-profit-card__go {
+		opacity: 0.95;
+		color: var(--profit-accent);
+		transform: translate(1px, -1px);
+	}
+
+	.dashboard-profit-card--simple .dashboard-profit-label {
+		flex: 1 1 auto;
+		min-width: 0;
+		font-size: 0.88rem;
+		font-weight: 750;
+		letter-spacing: -0.02em;
+		line-height: 1.2;
+		color: var(--on-surface);
+	}
+
+	.dashboard-profit-card--simple .dashboard-profit-value {
+		margin: 0;
+		padding-left: 2.8rem;
+		font-size: clamp(1.7rem, 2.4vw, 2.05rem);
+		font-weight: 800;
+		letter-spacing: -0.045em;
+		line-height: 0.95;
+		text-wrap: balance;
+	}
+
+	.dashboard-profit-card--simple .dashboard-profit-caption {
+		margin: 0.08rem 0 0;
+		padding-left: 2.8rem;
+		max-width: none;
+	}
+
+	.dashboard-profit-card--simple.is-alert {
+		border-color: color-mix(in srgb, var(--profit-accent) 38%, transparent);
+	}
+
+	html[data-theme='dark'] .dashboard-profit-card--simple {
+		background:
+			radial-gradient(20rem 14rem at 4% -36%, color-mix(in srgb, var(--profit-accent) 22%, transparent), transparent 66%),
+			color-mix(in srgb, var(--surface-container-high, #1c1d22) 92%, #0e1014 8%);
+	}
+
+	html[data-theme='dark'] .dashboard-profit-card--simple .dashboard-profit-icon {
+		background: color-mix(in srgb, var(--profit-accent) 18%, #1a1c21);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+		color: color-mix(in srgb, var(--profit-accent) 72%, white 28%);
+	}
+
+	.dashboard-profit-caption {
+		margin: 0;
+		font-size: 0.75rem;
+		font-weight: 650;
+		letter-spacing: -0.01em;
+		color: color-mix(in srgb, var(--on-surface-variant) 88%, var(--on-surface) 12%);
 	}
 
 	.dashboard-profit-hero-copy {
@@ -5505,6 +5544,11 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 		.dashboard-profit-card {
 			padding: 0.75rem 0.85rem 0.35rem;
+		}
+
+		.dashboard-profit-card.dashboard-profit-card--simple {
+			padding: 0.88rem 0.9rem 0.82rem;
+			min-height: 0;
 		}
 
 		.dashboard-day-progress__inner {

@@ -323,7 +323,7 @@ export const initializePublicReservationPage = () => {
 			if (titleEl) titleEl.textContent = 'Confirmar que recibiste el dinero';
 			if (copyEl) {
 				copyEl.textContent =
-					'Ingresá los últimos 4 dígitos del teléfono de la reserva para liquidar el caso. El OCR no acredita la transferencia.';
+					'Ingresá los últimos 4 dígitos del teléfono de la reserva para liquidar el caso. El comprobante del comercio no acredita por sí solo que hayas recibido el dinero.';
 			}
 			confirmWrap?.classList.remove('hidden');
 			primaryBtn?.classList.add('hidden');
