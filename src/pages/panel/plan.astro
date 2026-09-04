@@ -3239,9 +3239,18 @@ const defaultCardHint = defaultCard
 	.plan-invoice-credit { display: block; margin-top: 0.2rem; color: var(--primary); font-weight: 600; }
 	.plan-invoice-amount { font-weight: 800; white-space: nowrap; }
 	.plan-history-cards {
-		display: grid;
 		gap: 0.9rem;
 		min-width: 0;
+	}
+	@media (max-width: 767px) {
+		.plan-history-cards {
+			display: grid;
+		}
+	}
+	@media (min-width: 768px) {
+		.plan-history-cards {
+			display: none;
+		}
 	}
 	.plan-invoice-card {
 		display: grid;
