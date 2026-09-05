@@ -1,5 +1,6 @@
 ---
 import AppAlert from '../../components/AppAlert.astro';
+import CuerpoWorkspacePanel from '../../components/clinical-ficha/CuerpoWorkspacePanel.astro';
 import AppPagination from '../../components/AppPagination.astro';
 import FileViewer from '../../components/FileViewer.astro';
 import FlashMessage from '../../components/FlashMessage.astro';
@@ -336,18 +337,16 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 					</button>
 					<button
 						type="button"
-						class="customer-profile-tab customer-profile-tab--odontogram"
+						class="customer-profile-tab customer-profile-tab--clinica"
 						role="tab"
-						id="customer-profile-tab-odontogram"
+						id="customer-profile-tab-clinica"
 						aria-selected="false"
-						aria-controls="customer-profile-panel-odontogram"
-						data-customer-profile-tab="odontogram"
+						aria-controls="customer-profile-panel-clinica"
+						data-customer-profile-tab="clinica"
 						tabindex="-1"
 						hidden
 					>
-						<span class="customer-profile-tab__label-full">Odontograma</span>
-						<span class="customer-profile-tab__label-short">Odonto</span>
-						<span class="customer-profile-tab__badge" aria-hidden="true">Nuevo</span>
+						Clínica
 					</button>
 				</div>
 			</div>
@@ -614,11 +613,48 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 					<div
 						class="customer-profile-tab-panel hidden grid gap-4"
 						role="tabpanel"
-						id="customer-profile-panel-odontogram"
-						aria-labelledby="customer-profile-tab-odontogram"
-						data-customer-profile-tab-panel="odontogram"
+						id="customer-profile-panel-clinica"
+						aria-labelledby="customer-profile-tab-clinica"
+						data-customer-profile-tab-panel="clinica"
 						hidden
 					>
+						<div class="clinical-ficha-hub grid gap-4" data-clinical-ficha-hub>
+							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">
+								Complementos clínicos activos para esta organización.
+							</p>
+							<div class="clinical-ficha-cards" data-clinical-ficha-cards role="list"></div>
+							<p
+								class="clinical-ficha-empty hidden text-[0.9rem] font-medium text-(--on-surface-variant)"
+								data-clinical-ficha-empty
+								role="status"
+							>
+								No hay fichas clínicas disponibles para tu especialidad.
+							</p>
+						</div>
+
+						<div
+							class="clinical-workspace hidden"
+							data-clinical-workspace
+							hidden
+						>
+							<header class="clinical-workspace__header">
+								<button
+									type="button"
+									class="clinical-workspace__back"
+									data-clinical-workspace-back
+									aria-label="Volver a Clínica"
+								>
+									<span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
+									<span>Clínica</span>
+								</button>
+								<h3 class="clinical-workspace__title" data-clinical-workspace-title>Clínica</h3>
+							</header>
+
+							<div
+								class="clinical-workspace-panel"
+								data-clinical-workspace-panel="odontogram"
+								hidden
+							>
 						<div
 							class="customer-odontogram-lock hidden rounded-2xl border border-(--shell-border) bg-(--surface-bright)"
 							data-customer-odontogram-lock
@@ -973,8 +1009,12 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 							</div>
 						</div>
 					</div>
+							</div>
+
+							<CuerpoWorkspacePanel />
+						</div>
+					</div>
 				</div>
-			</div>
 
 			<div
 				class="customer-profile-modal-footer shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-4 py-4 sm:px-7"
@@ -1611,6 +1651,8 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		}
 	}
 
+	dialog[data-customer-profile-modal].is-clinical-workspace[open] .customer-profile-modal__panel,
+	.customer-profile-modal__panel.is-clinical-workspace,
 	dialog[data-customer-profile-modal].is-odontogram-workspace[open] .customer-profile-modal__panel,
 	.customer-profile-modal__panel.is-odontogram-workspace {
 		height: 90dvh;
@@ -1660,7 +1702,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 	}
 
 	dialog[data-customer-profile-modal].is-odontogram-workspace
-		.customer-profile-tab-panel[data-customer-profile-tab-panel='odontogram']:not([hidden]) {
+		.customer-profile-tab-panel[data-customer-profile-tab-panel='clinica']:not([hidden]) {
 		flex: 1 1 auto;
 		min-height: 0;
 		height: 100%;
@@ -1679,7 +1721,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		}
 
 		dialog[data-customer-profile-modal].is-odontogram-workspace
-			.customer-profile-tab-panel[data-customer-profile-tab-panel='odontogram']:not([hidden]) {
+			.customer-profile-tab-panel[data-customer-profile-tab-panel='clinica']:not([hidden]) {
 			flex: 1 1 auto;
 			min-height: 0;
 			height: auto;
@@ -2836,13 +2878,13 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		}
 	}
 
-	.customer-profile-tab-panel[data-customer-profile-tab-panel='odontogram']:not([hidden]) {
+	.customer-profile-tab-panel[data-customer-profile-tab-panel='clinica']:not([hidden]) {
 		min-height: 0;
 		align-content: start;
 	}
 
 	@media (min-width: 1024px) {
-		.customer-profile-tab-panel[data-customer-profile-tab-panel='odontogram']:not([hidden]) {
+		.customer-profile-tab-panel[data-customer-profile-tab-panel='clinica']:not([hidden]) {
 			min-height: 100%;
 		}
 	}
@@ -4072,5 +4114,321 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		justify-content: flex-end;
 		gap: 0.5rem;
 		margin-top: 1.05rem;
+	}
+
+	.clinical-ficha-cards {
+		display: grid;
+		gap: 0.85rem;
+	}
+
+	@media (min-width: 640px) {
+		.clinical-ficha-cards {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	.clinical-ficha-card {
+		display: grid;
+		gap: 0.55rem;
+		padding: 1rem 1.05rem;
+		border-radius: 1rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		text-align: left;
+		transition: border-color 0.15s ease, box-shadow 0.15s ease;
+	}
+
+	.clinical-ficha-card:not(:disabled):hover {
+		border-color: color-mix(in srgb, var(--primary) 35%, var(--shell-border));
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+	}
+
+	.clinical-ficha-card:disabled {
+		opacity: 0.72;
+		cursor: not-allowed;
+	}
+
+	.clinical-ficha-card__head {
+		display: flex;
+		align-items: center;
+		gap: 0.65rem;
+	}
+
+	.clinical-ficha-card__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.4rem;
+		height: 2.4rem;
+		border-radius: 0.75rem;
+		background: color-mix(in srgb, var(--primary) 12%, var(--surface-bright));
+		color: var(--primary);
+	}
+
+	.clinical-ficha-card__title {
+		font-size: 1rem;
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+
+	.clinical-ficha-card__copy {
+		font-size: 0.86rem;
+		font-weight: 600;
+		line-height: 1.45;
+		color: var(--on-surface-variant);
+	}
+
+	.clinical-ficha-card__lock {
+		font-size: 0.78rem;
+		font-weight: 800;
+		color: var(--primary);
+	}
+
+	.clinical-workspace {
+		display: flex;
+		flex-direction: column;
+		min-height: 0;
+		flex: 1 1 auto;
+		height: 100%;
+	}
+
+	.clinical-workspace__header {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.75rem 1rem;
+		border-bottom: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+	}
+
+	.clinical-workspace__back {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 0.45rem 0.7rem;
+		border-radius: 999px;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		font-size: 0.86rem;
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+
+	.clinical-workspace__title {
+		font-size: 1rem;
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+
+	.clinical-workspace-panel {
+		flex: 1 1 auto;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.cuerpo-draft-banner {
+		padding: 0.55rem 1rem;
+		font-size: 0.8rem;
+		font-weight: 700;
+		color: var(--on-surface-variant);
+		background: color-mix(in srgb, var(--primary) 8%, var(--surface-bright));
+		border-bottom: 1px solid var(--shell-border);
+	}
+
+	.cuerpo-workspace__layout {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1rem;
+		padding: 1rem;
+		min-height: 0;
+		flex: 1 1 auto;
+	}
+
+	@media (min-width: 900px) {
+		.cuerpo-workspace__layout {
+			grid-template-columns: minmax(0, 1.2fr) minmax(16rem, 0.8fr);
+			align-items: start;
+		}
+	}
+
+	.cuerpo-toolbar {
+		display: grid;
+		gap: 0.55rem;
+		margin-bottom: 0.75rem;
+	}
+
+	.cuerpo-toolbar__views,
+	.cuerpo-toolbar__lenses,
+	.cuerpo-mark-kinds,
+	.cuerpo-silhouette-toggle {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+	}
+
+	.cuerpo-pill,
+	.cuerpo-mark-kind {
+		padding: 0.38rem 0.72rem;
+		border-radius: 999px;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		font-size: 0.78rem;
+		font-weight: 800;
+		color: var(--on-surface-variant);
+	}
+
+	.cuerpo-pill.is-active,
+	.cuerpo-mark-kind.is-active {
+		border-color: color-mix(in srgb, var(--primary) 45%, var(--shell-border));
+		background: color-mix(in srgb, var(--primary) 10%, var(--surface-bright));
+		color: var(--primary);
+	}
+
+	.cuerpo-map-stage {
+		display: flex;
+		justify-content: center;
+		padding: 0.5rem;
+		border-radius: 1rem;
+		border: 1px solid var(--shell-border);
+		background: color-mix(in srgb, var(--surface) 70%, var(--surface-bright));
+		min-height: 16rem;
+	}
+
+	.cuerpo-map-svg {
+		width: min(100%, 14rem);
+		height: auto;
+		color: color-mix(in srgb, var(--on-surface) 55%, transparent);
+		cursor: crosshair;
+	}
+
+	.cuerpo-map-svg--compare {
+		width: min(100%, 10rem);
+		margin-top: 0.5rem;
+	}
+
+	.cuerpo-intensity {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin-top: 0.75rem;
+		flex-wrap: wrap;
+	}
+
+	.cuerpo-intensity__label {
+		font-size: 0.82rem;
+		font-weight: 800;
+		color: var(--on-surface-variant);
+	}
+
+	.cuerpo-intensity__value {
+		min-width: 1.5rem;
+		text-align: center;
+		font-weight: 800;
+	}
+
+	.cuerpo-intensity__slider {
+		flex: 1 1 8rem;
+		accent-color: var(--primary);
+	}
+
+	.cuerpo-stepper-btn {
+		width: 2rem;
+		height: 2rem;
+		border-radius: 999px;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		font-weight: 800;
+	}
+
+	.cuerpo-workspace__side {
+		display: grid;
+		gap: 0.85rem;
+		align-content: start;
+	}
+
+	.cuerpo-session-label {
+		font-size: 0.92rem;
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+
+	.cuerpo-marks-list {
+		display: grid;
+		gap: 0.45rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.cuerpo-mark-item {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.84rem;
+		font-weight: 600;
+		color: var(--on-surface);
+	}
+
+	.cuerpo-mark-item__dot {
+		width: 0.65rem;
+		height: 0.65rem;
+		border-radius: 999px;
+		flex-shrink: 0;
+	}
+
+	.cuerpo-side-actions {
+		display: grid;
+		gap: 0.5rem;
+	}
+
+	.cuerpo-rom-field {
+		display: grid;
+		gap: 0.25rem;
+		font-size: 0.82rem;
+		font-weight: 700;
+	}
+
+	.cuerpo-rom-field__input {
+		width: 100%;
+		padding: 0.45rem 0.6rem;
+		border-radius: 0.65rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+	}
+
+	.cuerpo-test-row {
+		display: grid;
+		gap: 0.35rem;
+		margin-bottom: 0.45rem;
+	}
+
+	.cuerpo-test-row__actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.35rem;
+	}
+
+	.cuerpo-test-chip {
+		padding: 0.25rem 0.55rem;
+		border-radius: 999px;
+		border: 1px solid var(--shell-border);
+		font-size: 0.72rem;
+		font-weight: 800;
+		text-transform: uppercase;
+	}
+
+	.cuerpo-test-chip.is-active.cuerpo-test-chip--ok {
+		background: color-mix(in srgb, #16a34a 14%, var(--surface-bright));
+		color: #15803d;
+	}
+
+	.cuerpo-test-chip.is-active.cuerpo-test-chip--bad {
+		background: color-mix(in srgb, #dc2626 14%, var(--surface-bright));
+		color: #b91c1c;
+	}
+
+	.cuerpo-test-chip.is-active.cuerpo-test-chip--muted {
+		background: color-mix(in srgb, var(--on-surface-variant) 12%, var(--surface-bright));
 	}
 </style>

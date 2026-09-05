@@ -43,6 +43,7 @@ const toBool = (value: unknown): boolean => value === true || value === 1 || val
 
 const ADDON_COPY: Record<string, string> = {
 	ODONTOGRAM_3D: 'Ficha clínica interactiva 3D y evolución de tratamientos.',
+	BODY_MAP: 'Mapa corporal, zoom de articulación y evolución por sesión.',
 };
 
 const ODONTOGRAM_PREVIEW_SRC =

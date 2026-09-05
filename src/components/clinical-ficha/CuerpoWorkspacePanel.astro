@@ -1,0 +1,101 @@
+---
+interface Props {
+	rootClass?: string;
+	panelClass?: string;
+	embedded?: boolean;
+}
+
+const { rootClass = '', panelClass = '', embedded = false } = Astro.props;
+---
+
+<div
+	class:list={['clinical-workspace-panel cuerpo-workspace', panelClass]}
+	data-clinical-workspace-panel="cuerpo"
+	hidden={embedded ? undefined : true}
+>
+	<div class="cuerpo-draft-banner" data-cuerpo-draft-banner role="status">
+		Borrador local — todavía no se guarda en el servidor.
+	</div>
+	<div class:list={['cuerpo-workspace__layout', rootClass]} data-cuerpo-workspace>
+		<div class="cuerpo-workspace__map-col">
+			<div class="cuerpo-toolbar">
+				<div class="cuerpo-toolbar__views" role="toolbar" aria-label="Vista del cuerpo">
+					<button type="button" class="cuerpo-pill is-active" data-cuerpo-view="FRONT" aria-pressed="true">Frente</button>
+					<button type="button" class="cuerpo-pill" data-cuerpo-view="BACK" aria-pressed="false">Espalda</button>
+					<button type="button" class="cuerpo-pill" data-cuerpo-view="SIDE" aria-pressed="false">Lado</button>
+				</div>
+				<div class="cuerpo-toolbar__lenses" role="toolbar" aria-label="Zoom de articulación">
+					<button type="button" class="cuerpo-pill is-active" data-cuerpo-lens="BODY" aria-pressed="true">Cuerpo</button>
+					<button type="button" class="cuerpo-pill" data-cuerpo-lens="SHOULDER">Hombro</button>
+					<button type="button" class="cuerpo-pill" data-cuerpo-lens="HIP">Cadera</button>
+					<button type="button" class="cuerpo-pill" data-cuerpo-lens="KNEE">Rodilla</button>
+					<button type="button" class="cuerpo-pill" data-cuerpo-lens="ANKLE">Tobillo</button>
+				</div>
+			</div>
+			<div class="cuerpo-map-stage">
+				<svg
+					class="cuerpo-map-svg"
+					data-cuerpo-map-svg
+					viewBox="0 0 100 130"
+					role="img"
+					aria-label="Silueta corporal"
+				>
+					<g data-cuerpo-map-marks></g>
+				</svg>
+			</div>
+			<div class="cuerpo-intensity">
+				<span class="cuerpo-intensity__label">Intensidad</span>
+				<button type="button" class="cuerpo-stepper-btn" data-cuerpo-intensity-dec aria-label="Menos intensidad">−</button>
+				<span class="cuerpo-intensity__value" data-cuerpo-intensity-value>7</span>
+				<button type="button" class="cuerpo-stepper-btn" data-cuerpo-intensity-inc aria-label="Más intensidad">+</button>
+				<input type="range" min="0" max="10" value="7" class="cuerpo-intensity__slider" data-cuerpo-intensity-slider aria-label="Intensidad 0 a 10" />
+			</div>
+			<div class="cuerpo-mark-kinds" role="toolbar" aria-label="Tipo de marca">
+				<button type="button" class="cuerpo-mark-kind is-active" data-cuerpo-mark-kind="PAIN">Dolor</button>
+				<button type="button" class="cuerpo-mark-kind" data-cuerpo-mark-kind="TENSION">Tensión</button>
+				<button type="button" class="cuerpo-mark-kind" data-cuerpo-mark-kind="WORK">Trabajo</button>
+				<button type="button" class="cuerpo-mark-kind" data-cuerpo-mark-kind="SCAR">Cicatriz</button>
+				<button type="button" class="cuerpo-mark-kind" data-cuerpo-mark-kind="EDEMA">Edema</button>
+			</div>
+		</div>
+		<aside class="cuerpo-workspace__side">
+			<p class="cuerpo-session-label" data-cuerpo-session-label>Hoy · Sesión</p>
+			<div class="cuerpo-silhouette-toggle" role="group" aria-label="Silueta">
+				<button type="button" class="cuerpo-pill is-active" data-cuerpo-silhouette="NEUTRAL">Neutra</button>
+				<button type="button" class="cuerpo-pill" data-cuerpo-silhouette="FEMALE">F</button>
+				<button type="button" class="cuerpo-pill" data-cuerpo-silhouette="MALE">M</button>
+			</div>
+			<section class="cuerpo-side-section">
+				<h4 class="customer-profile-section-title">Marcas de hoy</h4>
+				<ul class="cuerpo-marks-list" data-cuerpo-marks-list></ul>
+				<p class="cuerpo-marks-empty hidden" data-cuerpo-marks-empty>Sin marcas en esta sesión.</p>
+				<button type="button" class="modal-action-primary w-full" data-cuerpo-add-mark>
+					<span class="material-symbols-rounded" aria-hidden="true">add</span>
+					Añadir marca
+				</button>
+			</section>
+			<section class="cuerpo-joint-panel hidden" data-cuerpo-joint-panel hidden>
+				<h4 class="customer-profile-section-title">ROM</h4>
+				<div class="cuerpo-rom-fields" data-cuerpo-rom-fields></div>
+				<h4 class="customer-profile-section-title mt-3">EVA (dolor)</h4>
+				<input type="range" min="0" max="10" value="0" class="cuerpo-intensity__slider" data-cuerpo-eva aria-label="EVA 0 a 10" />
+				<h4 class="customer-profile-section-title mt-3">Pruebas</h4>
+				<div class="cuerpo-tests" data-cuerpo-tests></div>
+			</section>
+			<div class="cuerpo-side-actions">
+				<button type="button" class="modal-action-secondary w-full" data-cuerpo-compare>Comparar con anterior</button>
+				<button type="button" class="modal-action-secondary w-full" data-cuerpo-pdf>
+					<span class="material-symbols-rounded" aria-hidden="true">picture_as_pdf</span>
+					PDF
+				</button>
+			</div>
+			<div class="cuerpo-compare-wrap hidden" data-cuerpo-compare-wrap>
+				<h4 class="customer-profile-section-title">Sesión anterior</h4>
+				<p class="cuerpo-marks-empty hidden" data-cuerpo-compare-empty>Sin sesión anterior para comparar.</p>
+				<svg class="cuerpo-map-svg cuerpo-map-svg--compare" data-cuerpo-compare-svg viewBox="0 0 100 130" aria-hidden="true">
+					<g data-cuerpo-compare-marks></g>
+				</svg>
+			</div>
+		</aside>
+	</div>
+</div>

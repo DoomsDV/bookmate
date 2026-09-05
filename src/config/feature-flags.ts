@@ -65,6 +65,7 @@ export type PlanFeature = (typeof PLAN_FEATURES)[keyof typeof PLAN_FEATURES];
  */
 export const ADDON_FEATURES = {
 	ODONTOGRAM_3D: 'ODONTOGRAM_3D',
+	BODY_MAP: 'BODY_MAP',
 } as const;
 
 export type AddonFeature = (typeof ADDON_FEATURES)[keyof typeof ADDON_FEATURES];

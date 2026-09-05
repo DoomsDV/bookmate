@@ -30,6 +30,13 @@ import {
 	isScheduleMisalignedFlag,
 	normalizeScheduleMisalignedReason,
 } from '../../lib/schedule-misaligned';
+import { ADDON_FEATURES } from '../../config/feature-flags';
+import { canOpenClinicalModule, canShowBodyMapCard } from '../../lib/clinical-ficha/addon-entitlement';
+import {
+	OPEN_CLINICAL_WORKSPACE_EVENT,
+	type OpenClinicalWorkspaceDetail,
+} from '../../lib/clinical-ficha/events';
+import { CuerpoWorkspace } from '../clinical-ficha/cuerpo-workspace';
 import {
 	destroySearchableSelect,
 	ensureSearchableSelect,
@@ -240,6 +247,11 @@ class AppointmentModal extends HTMLElement {
 	currentAttachments: AppointmentAttachment[] = [];
 	isUploadingAttachment = false;
 	fileViewer: FileViewerHandle | null = null;
+	bodyMapWrap: HTMLElement | null = null;
+	bodyMapButton: HTMLButtonElement | null = null;
+	bodyMapHint: HTMLElement | null = null;
+	bodyMapOverlay: HTMLElement | null = null;
+	cuerpoWorkspace: CuerpoWorkspace | null = null;
 	modalProfessionalWrap: HTMLElement | null = null;
 	modalProfessional: HTMLSelectElement | null = null;
 	modalLocation: HTMLSelectElement | null = null;
@@ -360,6 +372,16 @@ class AppointmentModal extends HTMLElement {
 			this.form?.querySelector<HTMLElement>('[data-appointment-dropzone]') ?? null;
 		this.notesEditWrap =
 			this.form?.querySelector<HTMLElement>('[data-appointment-notes-edit-wrap]') ?? null;
+		this.bodyMapWrap =
+			this.form?.querySelector<HTMLElement>('[data-appointment-body-map-wrap]') ?? null;
+		this.bodyMapButton =
+			this.form?.querySelector<HTMLButtonElement>('[data-appointment-open-body-map]') ?? null;
+		this.bodyMapHint =
+			this.form?.querySelector<HTMLElement>('[data-appointment-body-map-hint]') ?? null;
+		this.bodyMapOverlay =
+			this.querySelector<HTMLElement>('[data-appointment-body-map-overlay]') ?? null;
+		const cuerpoRoot = this.bodyMapOverlay?.querySelector<HTMLElement>('[data-cuerpo-workspace]');
+		if (cuerpoRoot) this.cuerpoWorkspace = new CuerpoWorkspace(cuerpoRoot);
 		this.sessionConsultationReasonInput =
 			this.form?.querySelector<HTMLTextAreaElement>(
 				'[data-appointment-session-consultation-reason]'
@@ -472,6 +494,15 @@ class AppointmentModal extends HTMLElement {
 			{ signal }
 		);
 		requiredNodes.modal.addEventListener('click', this.handleBackdropClick, { signal });
+		this.bodyMapButton?.addEventListener('click', this.handleOpenBodyMapClick, { signal });
+		this.querySelector('[data-appointment-body-map-back]')?.addEventListener(
+			'click',
+			this.closeBodyMapWorkspace,
+			{ signal }
+		);
+		document.addEventListener(OPEN_CLINICAL_WORKSPACE_EVENT, this.handleOpenClinicalWorkspaceEvent, {
+			signal,
+		});
 		for (const closeButton of this.closeModalButtons ?? []) {
 			closeButton.addEventListener('click', this.closeModal, { signal });
 		}
@@ -1400,6 +1431,7 @@ class AppointmentModal extends HTMLElement {
 		this.setUploadingAttachment(false);
 		if (this.attachmentInput) this.attachmentInput.value = '';
 		this.dropzone?.classList.remove('is-dragover');
+		this.syncBodyMapUi();
 	}
 
 	private clearAttachmentError() {
@@ -1488,6 +1520,7 @@ class AppointmentModal extends HTMLElement {
 			: [];
 		this.renderAttachments();
 		this.syncNotesLockState();
+		this.syncBodyMapUi();
 	}
 
 	handleStatusChange = () => {
@@ -1504,6 +1537,7 @@ class AppointmentModal extends HTMLElement {
 			this.notesReadonlyWrap?.classList.add('hidden');
 		}
 		this.syncNotesLockState();
+		this.syncBodyMapUi();
 	};
 
 	private hasRefundToGuide(): boolean {
@@ -1892,7 +1926,94 @@ class AppointmentModal extends HTMLElement {
 		panel.style.maxHeight = '';
 	}
 
+	private syncBodyMapUi() {
+		const wrap = this.bodyMapWrap;
+		const button = this.bodyMapButton;
+		const hint = this.bodyMapHint;
+		if (!wrap || !button) return;
+
+		const eligible = canShowBodyMapCard();
+		const canOpen = canOpenClinicalModule(ADDON_FEATURES.BODY_MAP);
+		const customerId = toPositiveInt(this.customerIdInput?.value, 0);
+		const appointmentId = this.editingAppointmentId;
+		const status = this.getCurrentAppointmentStatus();
+		const isCreate = appointmentId <= 0;
+		const isCancelled = status === 'CANCELADO';
+		const isCompleted = status === 'COMPLETADO';
+		const show = eligible && canOpen && this.historyEnabled && !isCreate;
+
+		if (!show) {
+			wrap.setAttribute('hidden', '');
+			wrap.classList.add('hidden');
+			this.closeBodyMapWorkspace();
+			return;
+		}
+
+		wrap.removeAttribute('hidden');
+		wrap.classList.remove('hidden');
+
+		const disabled = customerId <= 0 || isCancelled;
+		button.disabled = disabled;
+		button.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+
+		if (hint) {
+			if (customerId <= 0) {
+				hint.textContent = 'Guardá la reserva con un cliente para abrir el mapa corporal.';
+			} else if (isCancelled) {
+				hint.textContent = 'No disponible en citas canceladas.';
+			} else if (isCompleted) {
+				hint.textContent = 'Sesión completada: mapa en solo lectura y PDF.';
+			} else {
+				hint.textContent = 'Marcá dolor, tensión y evolución de esta sesión.';
+			}
+		}
+	}
+
+	handleOpenBodyMapClick = () => {
+		if (this.bodyMapButton?.disabled) return;
+		const customerId = toPositiveInt(this.customerIdInput?.value, 0);
+		const appointmentId = this.editingAppointmentId;
+		if (customerId <= 0 || appointmentId <= 0) return;
+		this.openBodyMapWorkspace({
+			customerId,
+			appointmentId,
+			workspace: 'cuerpo',
+			customerName: this.customerNameInput?.value || '',
+			readOnly: this.getCurrentAppointmentStatus() === 'COMPLETADO' || this.isImmutableReadOnly,
+		});
+	};
+
+	openBodyMapWorkspace(detail: OpenClinicalWorkspaceDetail) {
+		if (!this.bodyMapOverlay || !this.cuerpoWorkspace || !this.modal) return;
+		this.bodyMapOverlay.removeAttribute('hidden');
+		this.bodyMapOverlay.classList.remove('hidden');
+		this.modal.classList.add('is-body-map-workspace');
+		this.cuerpoWorkspace.setContext({
+			customerId: detail.customerId,
+			appointmentId: detail.appointmentId ?? this.editingAppointmentId,
+			customerName: detail.customerName || this.customerNameInput?.value || '',
+			readOnly: detail.readOnly === true,
+			sessionLabel: detail.sessionLabel,
+		});
+	}
+
+	closeBodyMapWorkspace = () => {
+		this.bodyMapOverlay?.setAttribute('hidden', '');
+		this.bodyMapOverlay?.classList.add('hidden');
+		this.modal?.classList.remove('is-body-map-workspace');
+		this.cuerpoWorkspace?.setContext(null);
+	};
+
+	private handleOpenClinicalWorkspaceEvent = (event: Event) => {
+		const detail = (event as CustomEvent<OpenClinicalWorkspaceDetail>).detail;
+		if (!detail || detail.workspace !== 'cuerpo' || !this.modal?.open) return;
+		if (detail.appointmentId && detail.appointmentId !== this.editingAppointmentId) return;
+		if (detail.customerId !== toPositiveInt(this.customerIdInput?.value, 0)) return;
+		this.openBodyMapWorkspace(detail);
+	};
+
 	closeModal = () => {
+		this.closeBodyMapWorkspace();
 		this.fileViewer?.close();
 		const requiredNodes = this.getRequiredNodes();
 		if (!requiredNodes || !requiredNodes.modal.open) return;

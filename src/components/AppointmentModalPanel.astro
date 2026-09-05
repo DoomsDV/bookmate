@@ -1,7 +1,9 @@
 ---
 import FileViewer from './FileViewer.astro';
+import CuerpoWorkspacePanel from './clinical-ficha/CuerpoWorkspacePanel.astro';
 import { FEATURE_FLAGS } from '../config/feature-flags';
 import '../styles/appointment-modal.css';
+import '../styles/cuerpo-workspace.css';
 
 interface Props {
 	showVoiceButton?: boolean;
@@ -570,6 +572,21 @@ const { showVoiceButton = false }: Props = Astro.props;
 									class="resize-y rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.92rem] font-medium leading-snug outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
 								></textarea>
 							</label>
+
+							<div class="grid gap-2 hidden" data-appointment-body-map-wrap hidden>
+								<button
+									type="button"
+									class="modal-action-secondary w-full sm:w-auto"
+									data-appointment-open-body-map
+								>
+									<span class="material-symbols-rounded mr-1 align-[-0.2em] text-[1.1rem]" aria-hidden="true">accessibility_new</span>
+									Mapa corporal
+								</button>
+								<p
+									class="m-0 text-[0.8rem] font-semibold text-(--on-surface-variant)"
+									data-appointment-body-map-hint
+								></p>
+							</div>
 						</div>
 
 						<div class="hidden grid gap-3" data-appointment-notes-readonly-wrap hidden>
@@ -656,6 +673,25 @@ const { showVoiceButton = false }: Props = Astro.props;
 					</div>
 				</div>
 				</div>
+				</div>
+
+				<div
+					class="appointment-body-map-overlay hidden"
+					data-appointment-body-map-overlay
+					hidden
+				>
+					<header class="appointment-body-map-overlay__header">
+						<button
+							type="button"
+							class="appointment-body-map-overlay__back"
+							data-appointment-body-map-back
+						>
+							<span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
+							Volver a la cita
+						</button>
+						<h3 class="appointment-body-map-overlay__title">Mapa corporal</h3>
+					</header>
+					<CuerpoWorkspacePanel embedded panelClass="cuerpo-workspace-panel--appointment" />
 				</div>
 
 				<div

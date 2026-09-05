@@ -16,6 +16,19 @@ import {
 import { destroyActiveBookmateTour } from '../lib/product-tour';
 import { openPanelModal } from '../lib/panel-scroll-lock';
 import { showOdontogramTour } from '../lib/odontogram-tour';
+import { canShowClinicalTab, canShowOdontogramCard } from '../lib/clinical-ficha/addon-entitlement';
+import {
+	buildFichaAddonCards,
+	canOpenFichaCard,
+} from '../lib/clinical-ficha/ficha-cards';
+import {
+	OPEN_CLINICAL_WORKSPACE_EVENT,
+	parseClinicalDeepLink,
+	type OpenClinicalWorkspaceDetail,
+} from '../lib/clinical-ficha/events';
+import type { ClinicalWorkspaceCode } from '../lib/clinical-ficha/types';
+import { ClinicalWorkspaceHost } from './clinical-ficha/clinical-workspace-host';
+import { CuerpoWorkspace } from './clinical-ficha/cuerpo-workspace';
 import {
 	clinicalPhaseSwatchClass,
 	defaultClinicalPhaseForFinding,
@@ -178,9 +191,19 @@ class CustomerManager extends HTMLElement {
 	private profileHistoryEmpty: HTMLElement | null = null;
 	private profileTabButtons: NodeListOf<HTMLButtonElement> | null = null;
 	private profileTabPanels: NodeListOf<HTMLElement> | null = null;
-	private activeProfileTab: 'summary' | 'history' | 'odontogram' = 'summary';
+	private activeProfileTab: 'summary' | 'history' | 'clinica' = 'summary';
 	private currentProfileHistoryEnabled = false;
 	private fileViewer: FileViewerHandle | null = null;
+	private clinicalFichaCards: HTMLElement | null = null;
+	private clinicalFichaEmpty: HTMLElement | null = null;
+	private clinicalFichaHub: HTMLElement | null = null;
+	private clinicalWorkspaceRoot: HTMLElement | null = null;
+	private clinicalWorkspaceHost: ClinicalWorkspaceHost | null = null;
+	private cuerpoWorkspace: CuerpoWorkspace | null = null;
+	private activeBodyAppointmentId = 0;
+	private pendingClinicalOpen: OpenClinicalWorkspaceDetail | null = null;
+	private lastClinicalOpenOptions: Partial<OpenClinicalWorkspaceDetail> | null = null;
+	private activeProfileStats: CustomerProfile['stats'] | null = null;
 
 	private odontogramLock: HTMLElement | null = null;
 	private odontogramLockAction: HTMLElement | null = null;
@@ -352,6 +375,21 @@ class CustomerManager extends HTMLElement {
 		this.profileTabPanels = this.querySelectorAll<HTMLElement>(
 			'[data-customer-profile-tab-panel]'
 		);
+		this.clinicalFichaHub = this.querySelector<HTMLElement>('[data-clinical-ficha-hub]');
+		this.clinicalFichaCards = this.querySelector<HTMLElement>('[data-clinical-ficha-cards]');
+		this.clinicalFichaEmpty = this.querySelector<HTMLElement>('[data-clinical-ficha-empty]');
+		this.clinicalWorkspaceRoot = this.querySelector<HTMLElement>('[data-clinical-workspace]');
+		this.clinicalWorkspaceHost = new ClinicalWorkspaceHost({
+			modal: this.profileModal,
+			panel: this.profilePanel,
+			hub: this.clinicalFichaHub,
+			workspaceRoot: this.clinicalWorkspaceRoot,
+			workspaceTitle: this.querySelector('[data-clinical-workspace-title]'),
+			onWorkspaceOpen: (code) => this.handleClinicalWorkspaceOpen(code),
+			onWorkspaceClose: () => this.handleClinicalWorkspaceClose(),
+		});
+		const cuerpoRoot = this.querySelector<HTMLElement>('[data-cuerpo-workspace]');
+		if (cuerpoRoot) this.cuerpoWorkspace = new CuerpoWorkspace(cuerpoRoot);
 
 		this.odontogramLock = this.querySelector<HTMLElement>('[data-customer-odontogram-lock]');
 		this.odontogramLockAction = this.querySelector<HTMLElement>(
@@ -502,7 +540,25 @@ class CustomerManager extends HTMLElement {
 			tab.addEventListener('click', this.handleProfileTabClick, { signal });
 		}
 		document.addEventListener('hasel:subscription', this.handleSubscriptionChange, { signal });
-		this.syncOdontogramTabVisibility();
+		document.addEventListener(OPEN_CLINICAL_WORKSPACE_EVENT, this.handleOpenClinicalWorkspaceEvent, {
+			signal,
+		});
+		this.querySelector('[data-clinical-workspace-back]')?.addEventListener(
+			'click',
+			this.handleClinicalWorkspaceBack,
+			{ signal }
+		);
+		this.syncClinicalTabVisibility();
+
+		const deepLink = parseClinicalDeepLink();
+		if (deepLink?.customerId && deepLink.workspace) {
+			this.pendingClinicalOpen = {
+				customerId: deepLink.customerId,
+				workspace: deepLink.workspace,
+				appointmentId: deepLink.appointmentId,
+			};
+			void this.openCustomerProfile(deepLink.customerId);
+		}
 
 		this.odontogramToolbar?.addEventListener('click', this.handleOdontogramToolbarClick, { signal });
 		this.odontogramCam?.addEventListener('click', this.handleOdontogramCamClick, { signal });
@@ -889,6 +945,7 @@ class CustomerManager extends HTMLElement {
 
 	private handleProfileModalCancel = (event: Event) => {
 		event.preventDefault();
+		if (this.clinicalWorkspaceHost?.handleEscape()) return;
 		if (this.isOdontogramPopoverOpen()) {
 			this.closeOdontogramPopover();
 			return;
@@ -979,7 +1036,7 @@ class CustomerManager extends HTMLElement {
 		this.exitProfileEditMode();
 		this.fileViewer?.close();
 		this.closeOdontogramPopover();
-		this.setOdontogramWorkspace(false);
+		this.clinicalWorkspaceHost?.close();
 		this.disposeOdontogram3d();
 		if (!this.profileModal?.open) return;
 		this.profileModal.classList.add('is-closing');
@@ -1319,37 +1376,198 @@ class CustomerManager extends HTMLElement {
 	private handleProfileTabClick = (event: Event) => {
 		const button = event.currentTarget as HTMLButtonElement | null;
 		const tab = button?.dataset.customerProfileTab;
-		if (tab !== 'summary' && tab !== 'history' && tab !== 'odontogram') return;
+		if (tab !== 'summary' && tab !== 'history' && tab !== 'clinica') return;
 		if (this.isEditingProfile && tab !== 'summary') return;
-		if (tab === 'odontogram' && !this.isOdontogramRubroAvailable()) return;
+		if (tab === 'clinica' && !canShowClinicalTab()) return;
 		this.setActiveProfileTab(tab);
 	};
 
 	private handleSubscriptionChange = () => {
-		this.syncOdontogramTabVisibility();
+		this.syncClinicalTabVisibility();
+		this.renderClinicalFichaCards();
 	};
 
-	private isOdontogramRubroAvailable() {
-		const code = window.HaselSubscription?.orgSpecialtyCode;
-		return String(code ?? '').trim().toUpperCase() === 'DENTAL';
+	private handleClinicalWorkspaceBack = () => {
+		this.clinicalWorkspaceHost?.close();
+	};
+
+	private handleClinicalFichaCardClick = (event: Event) => {
+		const target = event.target;
+		if (!(target instanceof Element)) return;
+		const button = target.closest<HTMLButtonElement>('[data-clinical-ficha-card]');
+		if (!button || button.disabled || !this.clinicalFichaCards?.contains(button)) return;
+		const code = button.dataset.clinicalFichaCard;
+		if (code !== 'odontogram' && code !== 'cuerpo') return;
+		this.openClinicalWorkspace(code);
+	};
+
+	private handleOpenClinicalWorkspaceEvent = (event: Event) => {
+		const detail = (event as CustomEvent<OpenClinicalWorkspaceDetail>).detail;
+		if (!detail?.customerId || (detail.workspace !== 'odontogram' && detail.workspace !== 'cuerpo')) {
+			return;
+		}
+		this.pendingClinicalOpen = detail;
+		if (this.activeProfileCustomerId === detail.customerId && this.profileModal?.open) {
+			this.fulfillPendingClinicalOpen();
+			return;
+		}
+		void this.openCustomerProfile(detail.customerId);
+	};
+
+	private fulfillPendingClinicalOpen() {
+		const pending = this.pendingClinicalOpen;
+		if (!pending) return;
+		this.pendingClinicalOpen = null;
+		if (pending.appointmentId && pending.appointmentId > 0) {
+			this.activeBodyAppointmentId = pending.appointmentId;
+		}
+		this.setActiveProfileTab('clinica');
+		this.openClinicalWorkspace(pending.workspace, pending);
 	}
 
-	private syncOdontogramTabVisibility() {
+	private openClinicalWorkspace(
+		code: ClinicalWorkspaceCode,
+		options?: Partial<OpenClinicalWorkspaceDetail>
+	) {
+		if (code === 'cuerpo' && options?.appointmentId && options.appointmentId > 0) {
+			this.activeBodyAppointmentId = options.appointmentId;
+		}
+		this.lastClinicalOpenOptions = options ?? null;
+		this.setActiveProfileTab('clinica');
+		this.clinicalWorkspaceHost?.open(code);
+	}
+
+	private handleClinicalWorkspaceOpen = (code: ClinicalWorkspaceCode) => {
+		if (code === 'odontogram') {
+			this.updateOdontogramLockUi();
+			if (this.activeProfileCustomerId > 0) {
+				void this.loadOdontogram(this.activeProfileCustomerId);
+			}
+			this.setOdontogramSideCollapsed(true);
+			this.maybeMountOdontogram3d();
+			window.requestAnimationFrame(() => {
+				this.odontogram3d?.resize();
+				window.requestAnimationFrame(() => this.odontogram3d?.resize());
+			});
+		} else if (code === 'cuerpo') {
+			this.mountCuerpoWorkspace(this.lastClinicalOpenOptions ?? undefined);
+			this.lastClinicalOpenOptions = null;
+		}
+		this.syncOdontogramTourHelpVisibility();
+	};
+
+	private handleClinicalWorkspaceClose = () => {
+		this.cuerpoWorkspace?.setContext(null);
+		this.syncOdontogramTourHelpVisibility();
+	};
+
+	private mountCuerpoWorkspace(detail?: Partial<OpenClinicalWorkspaceDetail>) {
+		const customerId = this.activeProfileCustomerId;
+		const appointmentId = this.resolveBodyAppointmentId(detail?.appointmentId);
+		const customerName = detail?.customerName || this.activeProfileFullName || '';
+		if (customerId <= 0 || appointmentId <= 0) {
+			this.cuerpoWorkspace?.setContext(null);
+			return;
+		}
+		this.cuerpoWorkspace?.setContext({
+			customerId,
+			appointmentId,
+			customerName,
+			readOnly: detail?.readOnly === true,
+			sessionLabel: detail?.sessionLabel,
+		});
+	}
+
+	private resolveBodyAppointmentId(explicitId?: number): number {
+		if (explicitId && explicitId > 0) return explicitId;
+		if (this.activeBodyAppointmentId > 0) return this.activeBodyAppointmentId;
+		const stats = this.activeProfileStats;
+		const nextId = stats?.next_appointment?.id_appointment;
+		if (nextId && nextId > 0) return nextId;
+		for (const apt of stats?.pending_appointments ?? []) {
+			if (apt.id_appointment && apt.id_appointment > 0) return apt.id_appointment;
+		}
+		for (const apt of stats?.appointment_history ?? []) {
+			if (apt.id_appointment && apt.id_appointment > 0) return apt.id_appointment;
+		}
+		return 0;
+	}
+
+	private syncClinicalTabVisibility() {
 		const tab =
-			this.activeProfileTab === 'odontogram' && !this.isOdontogramRubroAvailable()
+			this.activeProfileTab === 'clinica' && !canShowClinicalTab()
 				? 'summary'
 				: this.activeProfileTab;
 		this.setActiveProfileTab(tab);
 	}
 
-	private setActiveProfileTab(tab: 'summary' | 'history' | 'odontogram') {
-		if (tab === 'odontogram' && !this.isOdontogramRubroAvailable()) {
+	private renderClinicalFichaCards() {
+		if (!this.clinicalFichaCards || !this.clinicalFichaEmpty) return;
+
+		const cards = buildFichaAddonCards();
+		this.clearNode(this.clinicalFichaCards);
+
+		if (cards.length === 0) {
+			this.clinicalFichaEmpty.classList.remove('hidden');
+			this.clinicalFichaEmpty.removeAttribute('hidden');
+			return;
+		}
+
+		this.clinicalFichaEmpty.classList.add('hidden');
+		this.clinicalFichaEmpty.setAttribute('hidden', '');
+
+		for (const card of cards) {
+			const button = document.createElement('button');
+			button.type = 'button';
+			button.className = 'clinical-ficha-card';
+			button.dataset.clinicalFichaCard = card.code;
+			button.setAttribute('role', 'listitem');
+			button.disabled = !canOpenFichaCard(card);
+
+			const head = document.createElement('div');
+			head.className = 'clinical-ficha-card__head';
+
+			const icon = document.createElement('span');
+			icon.className = 'material-symbols-rounded clinical-ficha-card__icon';
+			icon.setAttribute('aria-hidden', 'true');
+			icon.textContent = card.icon;
+
+			const title = document.createElement('span');
+			title.className = 'clinical-ficha-card__title';
+			title.textContent = card.title;
+
+			head.appendChild(icon);
+			head.appendChild(title);
+
+			const copy = document.createElement('p');
+			copy.className = 'clinical-ficha-card__copy';
+			copy.textContent = card.description;
+
+			button.appendChild(head);
+			button.appendChild(copy);
+
+			if (card.locked) {
+				const lock = document.createElement('span');
+				lock.className = 'clinical-ficha-card__lock';
+				lock.textContent = 'Activalo en Complementos';
+				button.appendChild(lock);
+			}
+
+			this.clinicalFichaCards.appendChild(button);
+		}
+	}
+
+	private setActiveProfileTab(tab: 'summary' | 'history' | 'clinica') {
+		if (tab === 'clinica' && !canShowClinicalTab()) {
 			tab = 'summary';
+		}
+		if (tab !== 'clinica' && this.clinicalWorkspaceHost?.isOpen()) {
+			this.clinicalWorkspaceHost.close();
 		}
 		this.activeProfileTab = tab;
 		for (const button of this.profileTabButtons ?? []) {
-			const isOdontogramTab = button.dataset.customerProfileTab === 'odontogram';
-			const available = !isOdontogramTab || this.isOdontogramRubroAvailable();
+			const isClinicaTab = button.dataset.customerProfileTab === 'clinica';
+			const available = !isClinicaTab || canShowClinicalTab();
 			button.hidden = !available;
 			if (!available) {
 				button.classList.remove('is-active');
@@ -1363,10 +1581,7 @@ class CustomerManager extends HTMLElement {
 			button.tabIndex = isActive ? 0 : -1;
 		}
 		for (const panel of this.profileTabPanels ?? []) {
-			const isOdontogramPanel = panel.dataset.customerProfileTabPanel === 'odontogram';
-			const isActive =
-				panel.dataset.customerProfileTabPanel === tab &&
-				(!isOdontogramPanel || this.isOdontogramRubroAvailable());
+			const isActive = panel.dataset.customerProfileTabPanel === tab;
 			panel.classList.toggle('hidden', !isActive);
 			if (isActive) panel.removeAttribute('hidden');
 			else panel.setAttribute('hidden', '');
@@ -1377,14 +1592,8 @@ class CustomerManager extends HTMLElement {
 		);
 		activeTab?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
 
-		this.setOdontogramWorkspace(tab === 'odontogram');
-
-		if (tab === 'odontogram') {
-			this.updateOdontogramLockUi();
-			if (this.activeProfileCustomerId > 0) {
-				void this.loadOdontogram(this.activeProfileCustomerId);
-			}
-			this.maybeMountOdontogram3d();
+		if (tab === 'clinica') {
+			this.renderClinicalFichaCards();
 		} else {
 			this.syncOdontogramTourHelpVisibility();
 		}
@@ -1464,7 +1673,7 @@ class CustomerManager extends HTMLElement {
 		const helpBtn = this.querySelector<HTMLButtonElement>('[data-customer-odontogram-tour-help]');
 		if (!helpBtn) return;
 		const contentVisible =
-			this.activeProfileTab === 'odontogram' &&
+			this.clinicalWorkspaceHost?.getActive() === 'odontogram' &&
 			!this.isOdontogramLoading &&
 			!this.odontogramContent?.classList.contains('hidden');
 		helpBtn.hidden = !contentVisible;
@@ -1480,17 +1689,6 @@ class CustomerManager extends HTMLElement {
 			this.updateOdontogramLockUi();
 			this.maybeMountOdontogram3d();
 		}
-	}
-
-	private setOdontogramWorkspace(active: boolean) {
-		this.profileModal?.classList.toggle('is-odontogram-workspace', active);
-		this.profilePanel?.classList.toggle('is-odontogram-workspace', active);
-		if (!active) return;
-		this.setOdontogramSideCollapsed(true);
-		window.requestAnimationFrame(() => {
-			this.odontogram3d?.resize();
-			window.requestAnimationFrame(() => this.odontogram3d?.resize());
-		});
 	}
 
 	private setOdontogramViewerStatus(message: string | null) {
@@ -1524,7 +1722,7 @@ class CustomerManager extends HTMLElement {
 	}
 
 	private maybeMountOdontogram3d() {
-		if (this.activeProfileTab !== 'odontogram') return;
+		if (this.clinicalWorkspaceHost?.getActive() !== 'odontogram') return;
 		if (this.isOdontogramLoading) return;
 		if (this.odontogramApiEntitled !== true) return;
 		if (this.odontogramContent?.classList.contains('hidden')) return;
@@ -1852,7 +2050,8 @@ class CustomerManager extends HTMLElement {
 
 	private async loadOdontogram(customerId: number) {
 		if (customerId <= 0) return;
-		if (!this.isOdontogramRubroAvailable()) return;
+		if (this.clinicalWorkspaceHost?.getActive() !== 'odontogram') return;
+		if (!canShowOdontogramCard()) return;
 
 		const requestId = ++this.odontogramLoadRequestId;
 		this.setOdontogramLoading(true);
@@ -3310,12 +3509,16 @@ class CustomerManager extends HTMLElement {
 		this.renderTopServices(stats.top_services);
 		this.renderProfitability(stats);
 		this.renderAppointmentHistory(stats.appointment_history ?? [], stats.history_enabled === true);
+		this.activeProfileStats = stats;
+		this.activeBodyAppointmentId = 0;
 		this.resetOdontogramState();
 		this.updateOdontogramLockUi();
+		this.renderClinicalFichaCards();
+		this.syncClinicalTabVisibility();
 		this.setActiveProfileTab('summary');
-		void this.loadOdontogram(profile.id_customer);
 
 		if (this.profileBodyNode) this.profileBodyNode.classList.remove('hidden');
+		this.fulfillPendingClinicalOpen();
 	}
 
 	private async openCustomerProfile(customerId: number) {
