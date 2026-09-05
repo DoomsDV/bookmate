@@ -263,7 +263,17 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 			<div class="panel-modal-header panel-modal-header--shadow">
 				<div class="panel-modal-header__row">
 					<div class="panel-modal-header__leading">
-						<div class="panel-modal-header__icon">
+						<button
+							type="button"
+							class="clinical-workspace__back hidden"
+							data-customer-profile-clinica-back
+							aria-label="Volver"
+							hidden
+						>
+							<span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
+							<span data-customer-profile-clinica-back-label>Perfil</span>
+						</button>
+						<div class="panel-modal-header__icon" data-customer-profile-header-icon-wrap>
 							<span
 								class="material-symbols-rounded"
 								aria-hidden="true"
@@ -1914,8 +1924,23 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 	}
 
 	.customer-profile-tabs[hidden],
-	.customer-profile-tabs.hidden {
+	.customer-profile-tabs.hidden,
+	dialog[data-customer-profile-modal].is-clinical-workspace .customer-profile-tabs,
+	dialog[data-customer-profile-modal].is-odontogram-workspace .customer-profile-tabs,
+	dialog[data-customer-profile-modal]:has(
+			[data-customer-profile-tab-panel='clinica']:not([hidden])
+		)
+		.customer-profile-tabs {
 		display: none !important;
+	}
+
+	.panel-modal-header__icon[hidden],
+	.panel-modal-header__icon.hidden {
+		display: none !important;
+	}
+
+	.panel-modal-header [data-customer-profile-clinica-back] {
+		flex-shrink: 0;
 	}
 
 	.customer-profile-tablist {
@@ -4201,12 +4226,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 	}
 
 	.clinical-workspace__header {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		padding: 0.75rem 1rem;
-		border-bottom: 1px solid var(--shell-border);
-		background: var(--surface-bright);
+		display: none;
 	}
 
 	.clinical-workspace__back {
@@ -4220,6 +4240,11 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		font-size: 0.86rem;
 		font-weight: 800;
 		color: var(--on-surface);
+		cursor: pointer;
+	}
+
+	.clinical-workspace__back:hover {
+		background: color-mix(in srgb, var(--surface-container) 70%, var(--surface-bright) 30%);
 	}
 
 	.clinical-workspace__title {

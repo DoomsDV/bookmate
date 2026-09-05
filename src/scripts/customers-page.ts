@@ -167,6 +167,9 @@ class CustomerManager extends HTMLElement {
 	private profileEditToggleBtn: HTMLButtonElement | null = null;
 	private profileModalTitle: HTMLElement | null = null;
 	private profileHeaderIcon: HTMLElement | null = null;
+	private profileHeaderIconWrap: HTMLElement | null = null;
+	private profileClinicaBackBtn: HTMLButtonElement | null = null;
+	private profileClinicaBackLabel: HTMLElement | null = null;
 	private profileSaveBtn: HTMLButtonElement | null = null;
 	private profileCancelBtn: HTMLButtonElement | null = null;
 	private isEditingProfile = false;
@@ -193,6 +196,7 @@ class CustomerManager extends HTMLElement {
 	private profileHistoryEmpty: HTMLElement | null = null;
 	private profileTabButtons: NodeListOf<HTMLButtonElement> | null = null;
 	private profileTabPanels: NodeListOf<HTMLElement> | null = null;
+	private profileTabsEl: HTMLElement | null = null;
 	private activeProfileTab: 'summary' | 'history' | 'clinica' = 'summary';
 	private currentProfileHistoryEnabled = false;
 	private fileViewer: FileViewerHandle | null = null;
@@ -329,6 +333,15 @@ class CustomerManager extends HTMLElement {
 		);
 		this.profileModalTitle = this.querySelector<HTMLElement>('[data-customer-profile-modal-title]');
 		this.profileHeaderIcon = this.querySelector<HTMLElement>('[data-customer-profile-header-icon]');
+		this.profileHeaderIconWrap = this.querySelector<HTMLElement>(
+			'[data-customer-profile-header-icon-wrap]'
+		);
+		this.profileClinicaBackBtn = this.querySelector<HTMLButtonElement>(
+			'[data-customer-profile-clinica-back]'
+		);
+		this.profileClinicaBackLabel = this.querySelector<HTMLElement>(
+			'[data-customer-profile-clinica-back-label]'
+		);
 		this.profileSaveBtn = this.querySelector<HTMLButtonElement>(
 			'[data-save-customer-profile-edit]'
 		);
@@ -379,6 +392,7 @@ class CustomerManager extends HTMLElement {
 		this.profileTabPanels = this.querySelectorAll<HTMLElement>(
 			'[data-customer-profile-tab-panel]'
 		);
+		this.profileTabsEl = this.querySelector<HTMLElement>('[data-customer-profile-tabs]');
 		this.clinicalFichaHub = this.querySelector<HTMLElement>('[data-clinical-ficha-hub]');
 		this.clinicalFichaCards = this.querySelector<HTMLElement>('[data-clinical-ficha-cards]');
 		this.clinicalFichaEmpty = this.querySelector<HTMLElement>('[data-clinical-ficha-empty]');
@@ -555,6 +569,7 @@ class CustomerManager extends HTMLElement {
 			this.handleClinicalWorkspaceBack,
 			{ signal }
 		);
+		this.profileClinicaBackBtn?.addEventListener('click', this.handleClinicaHeaderBack, { signal });
 		this.syncClinicalTabVisibility();
 
 		const deepLink = parseClinicalDeepLink();
@@ -1400,6 +1415,14 @@ class CustomerManager extends HTMLElement {
 		this.clinicalWorkspaceHost?.close();
 	};
 
+	private handleClinicaHeaderBack = () => {
+		if (this.clinicalWorkspaceHost?.isOpen()) {
+			this.clinicalWorkspaceHost.close();
+			return;
+		}
+		this.setActiveProfileTab('summary');
+	};
+
 	private handleClinicalFichaCardClick = (event: Event) => {
 		const target = event.target;
 		if (!(target instanceof Element)) return;
@@ -1463,11 +1486,13 @@ class CustomerManager extends HTMLElement {
 			this.lastClinicalOpenOptions = null;
 		}
 		this.syncOdontogramTourHelpVisibility();
+		this.syncProfileHeaderChrome();
 	};
 
 	private handleClinicalWorkspaceClose = () => {
 		this.cuerpoWorkspace?.setContext(null);
 		this.syncOdontogramTourHelpVisibility();
+		this.syncProfileHeaderChrome();
 	};
 
 	private mountCuerpoWorkspace(detail?: Partial<OpenClinicalWorkspaceDetail>) {
@@ -1611,13 +1636,43 @@ class CustomerManager extends HTMLElement {
 
 	private syncProfileHeaderChrome() {
 		const isClinica = this.activeProfileTab === 'clinica';
+		const workspace = this.clinicalWorkspaceHost?.getActive() ?? null;
+		const workspaceTitle =
+			workspace === 'cuerpo'
+				? 'Mapa corporal'
+				: workspace === 'odontogram'
+					? 'Odontograma 3D'
+					: null;
 		if (this.profileModalTitle) {
-			this.profileModalTitle.textContent = isClinica ? 'Clínica add-ons' : 'Perfil del cliente';
+			this.profileModalTitle.textContent = workspaceTitle
+				? workspaceTitle
+				: isClinica
+					? 'Clínica add-ons'
+					: 'Perfil del cliente';
 		}
 		if (this.profileHeaderIcon) {
 			this.profileHeaderIcon.textContent = isClinica ? 'extension' : 'person';
 		}
+		if (this.profileHeaderIconWrap) {
+			this.profileHeaderIconWrap.hidden = isClinica;
+			this.profileHeaderIconWrap.classList.toggle('hidden', isClinica);
+		}
+		if (this.profileClinicaBackBtn) {
+			this.profileClinicaBackBtn.hidden = !isClinica;
+			this.profileClinicaBackBtn.classList.toggle('hidden', !isClinica);
+		}
+		if (this.profileClinicaBackLabel) {
+			this.profileClinicaBackLabel.textContent = workspace ? 'Clínica' : 'Perfil';
+		}
+		this.syncProfileTabsVisibility();
 		this.syncProfileEditToggleVisibility();
+	}
+
+	private syncProfileTabsVisibility() {
+		if (!this.profileTabsEl) return;
+		const hide = this.activeProfileTab === 'clinica';
+		this.profileTabsEl.hidden = hide;
+		this.profileTabsEl.classList.toggle('hidden', hide);
 	}
 
 	private syncProfileEditToggleVisibility() {
