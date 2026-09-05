@@ -2,7 +2,7 @@ export type BodyMarkKind = 'PAIN' | 'TENSION' | 'WORK' | 'SCAR' | 'EDEMA';
 export type BodyView = 'FRONT' | 'BACK' | 'SIDE';
 export type JointCode = 'SHOULDER' | 'HIP' | 'KNEE' | 'ANKLE';
 export type TestResult = 'POS' | 'NEG' | 'NT';
-export type BodySilhouette = 'NEUTRAL' | 'FEMALE' | 'MALE';
+export type BodySilhouette = 'NEUTRAL' | 'FEMALE' | 'MALE' | 'CHILD';
 export type ClinicalWorkspaceCode = 'odontogram' | 'cuerpo';
 
 export type BodyMark = {

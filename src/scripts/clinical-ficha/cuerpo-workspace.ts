@@ -1,13 +1,18 @@
 import {
-	BODY_MARK_KINDS,
 	BODY_VIEWS,
-	JOINT_LENSES,
 	JOINT_ROM,
 	JOINT_TESTS,
 	markKindMeta,
 	formatTestResult,
 } from '../../lib/clinical-ficha/body-catalog';
 import { downloadBodyMapPdf } from '../../lib/clinical-ficha/body-pdf';
+import {
+	BODY_VIEWBOX,
+	getBodyOutline,
+	markToViewCoords,
+	resolveBodyRegion,
+	SILHOUETTE_LABELS,
+} from '../../lib/clinical-ficha/body-silhouettes';
 import {
 	getBodySnapshot,
 	getPreviousBodySnapshot,
@@ -25,15 +30,6 @@ import type {
 } from '../../lib/clinical-ficha/types';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-
-const BODY_OUTLINE: Record<BodyView, string> = {
-	FRONT:
-		'M50 8 C58 8 64 14 64 24 L64 38 C70 40 74 48 74 58 L74 92 C74 98 70 102 64 102 L58 102 L58 118 L42 118 L42 102 L36 102 C30 102 26 98 26 92 L26 58 C26 48 30 40 36 38 L36 24 C36 14 42 8 50 8 Z',
-	BACK:
-		'M50 8 C58 8 64 14 64 24 L64 38 C70 40 74 48 74 58 L74 92 C74 98 70 102 64 102 L58 102 L58 118 L42 118 L42 102 L36 102 C30 102 26 98 26 92 L26 58 C26 48 30 40 36 38 L36 24 C36 14 42 8 50 8 Z',
-	SIDE:
-		'M44 8 C52 8 58 16 58 26 L58 40 C64 44 68 52 68 62 L68 96 C68 102 64 106 58 106 L54 106 L54 118 L46 118 L46 106 L42 106 C36 106 32 102 32 96 L32 62 C32 52 36 44 42 40 L42 26 C42 16 36 8 44 8 Z',
-};
 
 export type CuerpoWorkspaceContext = {
 	customerId: number;
@@ -56,6 +52,7 @@ export class CuerpoWorkspace {
 
 	private mapSvg: SVGSVGElement | null = null;
 	private mapLayer: SVGGElement | null = null;
+	private outlineLayer: SVGGElement | null = null;
 	private compareSvg: SVGSVGElement | null = null;
 	private compareLayer: SVGGElement | null = null;
 
@@ -85,6 +82,10 @@ export class CuerpoWorkspace {
 			} satisfies BodySessionSnapshot);
 		this.silhouette = this.snapshot.silhouette;
 		this.renderSessionHeader();
+		this.syncViewButtons();
+		this.syncSilhouetteButtons();
+		this.syncMarkKindButtons();
+		this.syncIntensity();
 		this.renderMap();
 		this.renderSidebar();
 		this.renderJointPanel();
@@ -100,6 +101,7 @@ export class CuerpoWorkspace {
 				this.view = (viewBtn.dataset.cuerpoView as BodyView) || 'FRONT';
 				this.syncViewButtons();
 				this.renderMap();
+				if (this.compareMode) this.renderCompareMap();
 				return;
 			}
 
@@ -137,6 +139,9 @@ export class CuerpoWorkspace {
 					this.silhouette = value;
 					this.persist();
 					this.syncSilhouetteButtons();
+					this.syncMapAriaLabel();
+					this.renderMap();
+					if (this.compareMode) this.renderCompareMap();
 				}
 				return;
 			}
@@ -209,12 +214,12 @@ export class CuerpoWorkspace {
 	private renderMap(): void {
 		this.mapSvg = this.root.querySelector('[data-cuerpo-map-svg]');
 		this.mapLayer = this.root.querySelector('[data-cuerpo-map-marks]');
-		if (!this.mapSvg || !this.mapLayer) return;
-		this.drawOutline(this.mapSvg);
-		this.renderMarks(this.mapLayer, this.snapshot?.marks ?? [], (nx, ny) => {
-			if (this.context?.readOnly) return;
-			this.addMark(nx, ny);
-		});
+		this.outlineLayer = this.root.querySelector('[data-cuerpo-map-outline]');
+		if (!this.mapSvg || !this.mapLayer || !this.outlineLayer) return;
+		this.ensureSvgNamespace(this.mapSvg);
+		this.drawOutline(this.mapSvg, this.outlineLayer, { interactive: true });
+		this.renderMarks(this.mapLayer, this.snapshot?.marks ?? []);
+		this.syncMapAriaLabel();
 	}
 
 	private renderCompareMap(): void {
@@ -230,42 +235,67 @@ export class CuerpoWorkspace {
 			return;
 		}
 		empty?.classList.add('hidden');
-		this.drawOutline(this.compareSvg);
-		this.renderMarks(this.compareLayer, previous.marks, () => undefined);
+		const compareOutline = this.compareSvg.querySelector('[data-cuerpo-map-outline]');
+		if (!(compareOutline instanceof SVGGElement)) return;
+		this.ensureSvgNamespace(this.compareSvg);
+		this.drawOutline(this.compareSvg, compareOutline, { interactive: false });
+		this.renderMarks(this.compareLayer, previous.marks);
 	}
 
-	private drawOutline(svg: SVGSVGElement): void {
-		const existing = svg.querySelector('[data-cuerpo-outline]');
-		if (existing) existing.remove();
+	private ensureSvgNamespace(svg: SVGSVGElement): void {
+		if (!svg.getAttribute('xmlns')) {
+			svg.setAttribute('xmlns', SVG_NS);
+		}
+	}
+
+	private drawOutline(
+		svg: SVGSVGElement,
+		layer: SVGGElement,
+		options: { interactive: boolean }
+	): void {
+		layer.replaceChildren();
 		const path = document.createElementNS(SVG_NS, 'path');
-		path.setAttribute('d', BODY_OUTLINE[this.view]);
-		path.setAttribute('fill', 'none');
+		path.setAttribute('d', getBodyOutline(this.silhouette, this.view));
+		path.setAttribute('fill', 'currentColor');
+		path.setAttribute('fill-opacity', '0.1');
 		path.setAttribute('stroke', 'currentColor');
 		path.setAttribute('stroke-width', '1.2');
 		path.setAttribute('data-cuerpo-outline', '1');
 		path.setAttribute('vector-effect', 'non-scaling-stroke');
-		svg.appendChild(path);
+		layer.appendChild(path);
 
-		svg.onclick = (event) => {
-			if (this.context?.readOnly) return;
-			const rect = svg.getBoundingClientRect();
-			const nx = (event.clientX - rect.left) / rect.width;
-			const ny = (event.clientY - rect.top) / rect.height;
-			if (nx < 0 || nx > 1 || ny < 0 || ny > 1) return;
-			this.addMark(nx, ny);
-		};
+		if (options.interactive) {
+			svg.onclick = (event) => {
+				if (this.context?.readOnly) return;
+				const rect = svg.getBoundingClientRect();
+				const nx = (event.clientX - rect.left) / rect.width;
+				const ny = (event.clientY - rect.top) / rect.height;
+				if (nx < 0 || nx > 1 || ny < 0 || ny > 1) return;
+				if (!this.isPointOnBody(path, nx, ny)) return;
+				this.addMark(nx, ny);
+			};
+		} else {
+			svg.onclick = null;
+		}
 	}
 
-	private renderMarks(
-		layer: SVGGElement,
-		marks: BodyMark[],
-		onPlace: (nx: number, ny: number) => void
-	): void {
+	private isPointOnBody(path: SVGPathElement, nx: number, ny: number): boolean {
+		const { x, y } = markToViewCoords(nx, ny);
+		const svg = path.ownerSVGElement;
+		if (!svg || typeof path.isPointInFill !== 'function') return true;
+		const point = svg.createSVGPoint();
+		point.x = x;
+		point.y = y;
+		return path.isPointInFill(point);
+	}
+
+	private renderMarks(layer: SVGGElement, marks: BodyMark[]): void {
 		layer.replaceChildren();
 		for (const mark of marks.filter((m) => m.view === this.view)) {
 			const meta = markKindMeta(mark.kind);
+			const { x, y } = markToViewCoords(mark.nx, mark.ny);
 			const g = document.createElementNS(SVG_NS, 'g');
-			g.setAttribute('transform', `translate(${mark.nx * 100}, ${mark.ny * 100})`);
+			g.setAttribute('transform', `translate(${x}, ${y})`);
 
 			const halo = document.createElementNS(SVG_NS, 'circle');
 			halo.setAttribute('r', String(2 + mark.intensity * 0.35));
@@ -276,14 +306,11 @@ export class CuerpoWorkspace {
 			const dot = document.createElementNS(SVG_NS, 'circle');
 			dot.setAttribute('r', '1.6');
 			dot.setAttribute('fill', meta.color);
-			dot.setAttribute('role', 'button');
-			dot.setAttribute('tabindex', '0');
-			dot.setAttribute('aria-label', `${meta.label}${mark.intensity ? ` ${mark.intensity}/10` : ''}`);
+			dot.setAttribute('aria-hidden', 'true');
 			g.appendChild(dot);
 
 			layer.appendChild(g);
 		}
-		layer.dataset.clickable = onPlace ? '1' : '0';
 	}
 
 	private addMarkAtCenter(): void {
@@ -292,15 +319,16 @@ export class CuerpoWorkspace {
 
 	private addMark(nx: number, ny: number): void {
 		if (!this.snapshot || !this.context) return;
+		const region = resolveBodyRegion(this.view, nx, ny);
 		const mark: BodyMark = {
-			id: `m_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+			id: `m_${crypto.randomUUID()}`,
 			kind: this.activeMarkKind,
 			intensity: this.activeMarkKind === 'SCAR' ? 0 : this.intensity,
 			view: this.view,
-			regionCode: `${this.view}_GENERIC`,
+			regionCode: region.regionCode,
 			nx,
 			ny,
-			side: null,
+			side: region.side,
 			note: '',
 			createdAt: new Date().toISOString(),
 		};
@@ -502,8 +530,19 @@ export class CuerpoWorkspace {
 
 	private syncSilhouetteButtons(): void {
 		for (const btn of this.root.querySelectorAll<HTMLButtonElement>('[data-cuerpo-silhouette]')) {
-			btn.classList.toggle('is-active', btn.dataset.cuerpoSilhouette === this.silhouette);
+			const active = btn.dataset.cuerpoSilhouette === this.silhouette;
+			btn.classList.toggle('is-active', active);
+			btn.setAttribute('aria-pressed', active ? 'true' : 'false');
 		}
+	}
+
+	private syncMapAriaLabel(): void {
+		if (!this.mapSvg) return;
+		const viewLabel = BODY_VIEWS.find((item) => item.code === this.view)?.label ?? this.view;
+		this.mapSvg.setAttribute(
+			'aria-label',
+			`${SILHOUETTE_LABELS[this.silhouette]}, vista ${viewLabel.toLowerCase()}`
+		);
 	}
 
 	private async exportPdf(): Promise<void> {
@@ -511,8 +550,16 @@ export class CuerpoWorkspace {
 		let mapImage: string | null = null;
 		if (this.mapSvg) {
 			try {
+				this.ensureSvgNamespace(this.mapSvg);
+				const clone = this.mapSvg.cloneNode(true) as SVGSVGElement;
+				for (const node of clone.querySelectorAll('[stroke="currentColor"]')) {
+					node.setAttribute('stroke', '#5c6570');
+				}
+				for (const node of clone.querySelectorAll('[fill="currentColor"]')) {
+					node.setAttribute('fill', '#5c6570');
+				}
 				const serializer = new XMLSerializer();
-				const source = serializer.serializeToString(this.mapSvg);
+				const source = serializer.serializeToString(clone);
 				const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
 				const url = URL.createObjectURL(blob);
 				const img = new Image();

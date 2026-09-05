@@ -5,7 +5,7 @@ export const BODY_MARK_KINDS: { code: BodyMarkKind; label: string; color: string
 	{ code: 'TENSION', label: 'Tensión', color: '#E07A2F' },
 	{ code: 'WORK', label: 'Trabajo', color: '#1F7A6B' },
 	{ code: 'SCAR', label: 'Cicatriz', color: '#6B4C9A' },
-	{ code: 'EDEMA', label: 'Edema', color: '#6B4C9A' },
+	{ code: 'EDEMA', label: 'Edema', color: '#4A6FA5' },
 ];
 
 export const BODY_VIEWS: { code: BodyView; label: string }[] = [

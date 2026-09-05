@@ -37,9 +37,11 @@ const { rootClass = '', panelClass = '', embedded = false } = Astro.props;
 					class="cuerpo-map-svg"
 					data-cuerpo-map-svg
 					viewBox="0 0 100 130"
+					xmlns="http://www.w3.org/2000/svg"
 					role="img"
-					aria-label="Silueta corporal"
+					aria-label="Silueta corporal, vista frontal"
 				>
+					<g data-cuerpo-map-outline></g>
 					<g data-cuerpo-map-marks></g>
 				</svg>
 			</div>
@@ -61,9 +63,10 @@ const { rootClass = '', panelClass = '', embedded = false } = Astro.props;
 		<aside class="cuerpo-workspace__side">
 			<p class="cuerpo-session-label" data-cuerpo-session-label>Hoy · Sesión</p>
 			<div class="cuerpo-silhouette-toggle" role="group" aria-label="Silueta">
-				<button type="button" class="cuerpo-pill is-active" data-cuerpo-silhouette="NEUTRAL">Neutra</button>
-				<button type="button" class="cuerpo-pill" data-cuerpo-silhouette="FEMALE">F</button>
-				<button type="button" class="cuerpo-pill" data-cuerpo-silhouette="MALE">M</button>
+				<button type="button" class="cuerpo-pill is-active" data-cuerpo-silhouette="NEUTRAL" aria-pressed="true">Neutra</button>
+				<button type="button" class="cuerpo-pill" data-cuerpo-silhouette="FEMALE" aria-label="Femenina" aria-pressed="false">F</button>
+				<button type="button" class="cuerpo-pill" data-cuerpo-silhouette="MALE" aria-label="Masculina" aria-pressed="false">M</button>
+				<button type="button" class="cuerpo-pill" data-cuerpo-silhouette="CHILD" aria-label="Infantil" aria-pressed="false">Niño</button>
 			</div>
 			<section class="cuerpo-side-section">
 				<h4 class="customer-profile-section-title">Marcas de hoy</h4>
@@ -92,7 +95,8 @@ const { rootClass = '', panelClass = '', embedded = false } = Astro.props;
 			<div class="cuerpo-compare-wrap hidden" data-cuerpo-compare-wrap>
 				<h4 class="customer-profile-section-title">Sesión anterior</h4>
 				<p class="cuerpo-marks-empty hidden" data-cuerpo-compare-empty>Sin sesión anterior para comparar.</p>
-				<svg class="cuerpo-map-svg cuerpo-map-svg--compare" data-cuerpo-compare-svg viewBox="0 0 100 130" aria-hidden="true">
+				<svg class="cuerpo-map-svg cuerpo-map-svg--compare" data-cuerpo-compare-svg viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+					<g data-cuerpo-map-outline></g>
 					<g data-cuerpo-compare-marks></g>
 				</svg>
 			</div>
