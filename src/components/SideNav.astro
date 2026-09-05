@@ -49,7 +49,8 @@ const isItemActive = (item: NavItem) => {
 	return normalizePath(item.href) === activePath;
 };
 
-/** Rutas con shell SSR liviano (datos en cliente). Prefetch al tap/click, no en viewport. */
+/** Rutas con shell SSR liviano (datos en cliente). Prefetch al tap/click, no en viewport.
+ *  /panel/plan NO entra: es SSR pesado (4 llamadas ORDS) y usa data-astro-reload. */
 const prefetchTapPaths = new Set([
 	"/panel/dashboard",
 	"/panel/calendar",
@@ -343,6 +344,8 @@ if (showPlanFooter) {
 					showPlanFooter ? (
 						<a
 							href="/panel/plan"
+							data-astro-reload
+							data-astro-prefetch="false"
 							data-side-nav-close
 							class:list={[
 								"more-sheet__link",
@@ -548,6 +551,8 @@ if (showPlanFooter) {
 				<div class="mt-auto grid gap-1" data-sidebar-account-footer>
 					<a
 						href="/panel/plan"
+						data-astro-reload
+						data-astro-prefetch="false"
 						data-sidebar-item
 						data-sidebar-footer
 						class:list={[

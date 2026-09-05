@@ -328,7 +328,7 @@ const { isAdmin = false } = Astro.props;
 			banner.setAttribute('role', 'status');
 			const ctaHtml =
 				this.isAdmin && ctaLabel
-					? `<a href="/panel/plan">${ctaLabel}</a>`
+					? `<a href="/panel/plan" data-astro-reload data-astro-prefetch="false">${ctaLabel}</a>`
 					: '';
 			banner.innerHTML =
 				`<span class="material-symbols-rounded">${icon}</span>` +

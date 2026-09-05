@@ -221,7 +221,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 							</p>
 							{
 								isAdmin && isSubscriptionBillingUiEnabled() ? (
-									<a href="/panel/plan" class="mt-4 inline-flex h-11 items-center rounded-full bg-(--primary) px-5 text-sm font-semibold text-(--on-primary) no-underline">
+									<a href="/panel/plan" data-astro-reload data-astro-prefetch="false" class="mt-4 inline-flex h-11 items-center rounded-full bg-(--primary) px-5 text-sm font-semibold text-(--on-primary) no-underline">
 										Ver planes
 									</a>
 								) : !isAdmin ? (

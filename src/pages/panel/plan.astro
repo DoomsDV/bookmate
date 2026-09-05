@@ -39,23 +39,34 @@ let loadError = '';
 if (!token) {
 	loadError = 'No hay sesion valida para consultar tu plan.';
 } else {
+	// ClientRouter deja la página anterior (p. ej. Calendario) hasta que este SSR
+	// termine. Sin timeout, un ORDS colgado congela el panel con la URL ya en /plan.
+	const ssrOrdsSignal =
+		typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
+			? AbortSignal.timeout(12_000)
+			: undefined;
+	const isAbortError = (error: unknown) =>
+		(error instanceof Error && error.name === 'AbortError') ||
+		(typeof error === 'object' && error !== null && 'name' in error && error.name === 'AbortError');
+
 	// Las 4 llamadas son independientes entre sí: se resuelven en paralelo en vez
 	// de una tras otra (cada catch preserva el mismo fallback que tenía secuencialmente).
-	const catalogPromise = getPlansWithOrds(token).catch((error) => {
-		loadError =
-			error instanceof SubscriptionApiError
+	const catalogPromise = getPlansWithOrds(token, { signal: ssrOrdsSignal }).catch((error) => {
+		loadError = isAbortError(error)
+			? 'La consulta del plan tardó demasiado. Recargá la página.'
+			: error instanceof SubscriptionApiError
 				? error.message
 				: 'No fue posible cargar la información de tu plan.';
 		return null;
 	});
 	// Tarjetas/perfil de facturación: solo admin (para el cobro recurrente).
 	const cardsPromise: Promise<PaymentCard[]> = isAdmin
-		? listCardsWithOrds(token).catch(() => [])
+		? listCardsWithOrds(token, { signal: ssrOrdsSignal }).catch(() => [])
 		: Promise.resolve([]);
 	const billingProfilePromise: Promise<BillingProfileData | null> = isAdmin
-		? getBillingProfileWithOrds(token).catch(() => null)
+		? getBillingProfileWithOrds(token, { signal: ssrOrdsSignal }).catch(() => null)
 		: Promise.resolve(null);
-	const billingPromise = listInvoicesWithOrds(token).catch(() => null);
+	const billingPromise = listInvoicesWithOrds(token, { signal: ssrOrdsSignal }).catch(() => null);
 
 	[catalog, cards, billingProfile, billing] = await Promise.all([
 		catalogPromise,

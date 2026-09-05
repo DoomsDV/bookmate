@@ -73,7 +73,10 @@ const normalizeProfile = (raw: any): BillingProfileData => {
 	};
 };
 
-export const getBillingProfileWithOrds = async (token: string): Promise<BillingProfileData> => {
+export const getBillingProfileWithOrds = async (
+	token: string,
+	init?: { signal?: AbortSignal }
+): Promise<BillingProfileData> => {
 	const url = String(BILLING_PROFILE_URL || '').trim();
 	if (!url) {
 		throw new BillingProfileApiError('Falta configurar ORDS_BILLING_PROFILE_URL.', 500);
@@ -85,6 +88,7 @@ export const getBillingProfileWithOrds = async (token: string): Promise<BillingP
 			Accept: 'application/json',
 			Authorization: `Bearer ${token}`,
 		},
+		signal: init?.signal,
 	});
 
 	const data = await parseResponse(response, 'No fue posible cargar los datos de facturación.');

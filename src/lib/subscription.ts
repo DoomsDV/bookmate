@@ -578,11 +578,15 @@ const normalizeInvoiceStatus = (value: unknown): InvoiceStatus => {
 	};
 };
 
-export const getPlansWithOrds = async (token: string): Promise<PlansCatalog> => {
+export const getPlansWithOrds = async (
+	token: string,
+	init?: { signal?: AbortSignal }
+): Promise<PlansCatalog> => {
 	if (!token) throw new SubscriptionApiError('Token de acceso requerido.', 401);
 	const response = await fetch(PLANS_URL, {
 		method: 'GET',
 		headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+		signal: init?.signal,
 	});
 	return parseOrdsData(response, normalizePlansCatalog);
 };
@@ -781,11 +785,15 @@ const normalizeInvoiceKudeDownload = (value: unknown): InvoiceKudeDownloadInfo =
 	};
 };
 
-export const listInvoicesWithOrds = async (token: string): Promise<BillingHistory> => {
+export const listInvoicesWithOrds = async (
+	token: string,
+	init?: { signal?: AbortSignal }
+): Promise<BillingHistory> => {
 	if (!token) throw new SubscriptionApiError('Token de acceso requerido.', 401);
 	const response = await fetch(SUBSCRIPTION_INVOICES_URL, {
 		method: 'GET',
 		headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+		signal: init?.signal,
 	});
 	return parseOrdsData(response, normalizeBillingHistory);
 };
@@ -923,11 +931,15 @@ export const confirmCardWithOrds = async (token: string): Promise<PaymentCard[]>
 	return parseOrdsData(response, normalizeCards);
 };
 
-export const listCardsWithOrds = async (token: string): Promise<PaymentCard[]> => {
+export const listCardsWithOrds = async (
+	token: string,
+	init?: { signal?: AbortSignal }
+): Promise<PaymentCard[]> => {
 	if (!token) throw new SubscriptionApiError('Token de acceso requerido.', 401);
 	const response = await fetch(SUBSCRIPTION_CARDS_URL, {
 		method: 'GET',
 		headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+		signal: init?.signal,
 	});
 	return parseOrdsData(response, normalizeCards);
 };
