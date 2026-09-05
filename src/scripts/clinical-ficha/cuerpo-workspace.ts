@@ -1,5 +1,6 @@
 import {
 	BODY_VIEWS,
+	formatMarkSummary,
 	JOINT_ROM,
 	JOINT_TESTS,
 	markKindMeta,
@@ -235,11 +236,13 @@ export class CuerpoWorkspace {
 			}
 
 			if (target.closest('[data-cuerpo-intensity-dec]')) {
+				this.captureIntensityFromControls();
 				this.intensity = Math.max(0, this.intensity - 1);
 				this.syncIntensity();
 				return;
 			}
 			if (target.closest('[data-cuerpo-intensity-inc]')) {
+				this.captureIntensityFromControls();
 				this.intensity = Math.min(10, this.intensity + 1);
 				this.syncIntensity();
 				return;
@@ -303,9 +306,8 @@ export class CuerpoWorkspace {
 			const target = event.target;
 			if (!(target instanceof HTMLInputElement)) return;
 			if (target.matches('[data-cuerpo-intensity-slider]')) {
-				if (this.isReadOnly()) return;
-				this.intensity = Math.max(0, Math.min(10, Number(target.value) || 0));
-				this.syncIntensity(false);
+				this.handleIntensityControlChange(target);
+				return;
 			}
 			if (target.matches('[data-cuerpo-eva]')) {
 				if (this.isReadOnly()) return;
@@ -316,6 +318,37 @@ export class CuerpoWorkspace {
 				this.persistRomFromDom();
 			}
 		});
+
+		this.root.addEventListener('change', (event) => {
+			const target = event.target;
+			if (!(target instanceof HTMLInputElement)) return;
+			if (target.matches('[data-cuerpo-intensity-slider]')) {
+				this.handleIntensityControlChange(target);
+			}
+		});
+	}
+
+	private captureIntensityFromControls(): number {
+		const slider = this.root.querySelector<HTMLInputElement>('[data-cuerpo-intensity-slider]');
+		if (slider) {
+			const parsed = Number(slider.value);
+			if (Number.isFinite(parsed)) {
+				this.intensity = Math.max(0, Math.min(10, Math.round(parsed)));
+				return this.intensity;
+			}
+		}
+		const valueEl = this.root.querySelector('[data-cuerpo-intensity-value]');
+		const parsedLabel = Number(String(valueEl?.textContent || '').trim());
+		if (Number.isFinite(parsedLabel)) {
+			this.intensity = Math.max(0, Math.min(10, Math.round(parsedLabel)));
+		}
+		return this.intensity;
+	}
+
+	private handleIntensityControlChange(target: HTMLInputElement): void {
+		if (this.isReadOnly()) return;
+		this.intensity = Math.max(0, Math.min(10, Number(target.value) || 0));
+		this.syncIntensity(false);
 	}
 
 	private renderEmptyState(): void {
@@ -443,11 +476,12 @@ export class CuerpoWorkspace {
 
 	private addMark(nx: number, ny: number): void {
 		if (!this.snapshot || !this.context || this.isReadOnly()) return;
+		const intensity = this.activeMarkKind === 'SCAR' ? 0 : this.captureIntensityFromControls();
 		const region = resolveBodyRegion(this.view, nx, ny);
 		const mark: BodyMark = {
 			id: `m_${crypto.randomUUID()}`,
 			kind: this.activeMarkKind,
-			intensity: this.activeMarkKind === 'SCAR' ? 0 : this.intensity,
+			intensity,
 			view: this.view,
 			regionCode: region.regionCode,
 			nx,
@@ -494,7 +528,7 @@ export class CuerpoWorkspace {
 			title.className = 'cuerpo-mark-item__dot';
 			title.style.backgroundColor = meta.color;
 			const text = document.createElement('span');
-			text.textContent = `${meta.label}${mark.intensity ? ` ${mark.intensity}/10` : ''} · ${mark.view}`;
+			text.textContent = formatMarkSummary(mark);
 			li.append(title, text);
 			list.appendChild(li);
 		}
@@ -523,6 +557,8 @@ export class CuerpoWorkspace {
 				label.className = 'cuerpo-rom-field';
 				const span = document.createElement('span');
 				span.textContent = def.label;
+				const inputWrap = document.createElement('div');
+				inputWrap.className = 'cuerpo-rom-field__input-wrap';
 				const input = document.createElement('input');
 				input.type = 'number';
 				input.className = 'cuerpo-rom-field__input';
@@ -530,7 +566,11 @@ export class CuerpoWorkspace {
 				input.dataset.cuerpoJoint = joint;
 				input.dataset.cuerpoRomCode = def.code;
 				input.value = String(assessment.rom[def.code] ?? '');
-				label.append(span, input, document.createTextNode(def.unit));
+				const unit = document.createElement('span');
+				unit.className = 'cuerpo-rom-field__unit';
+				unit.textContent = def.unit;
+				inputWrap.append(input, unit);
+				label.append(span, inputWrap);
 				romWrap.appendChild(label);
 			}
 		}

@@ -59,7 +59,7 @@ export const JOINT_ROM: Record<JointCode, JointRomDef[]> = {
 	SHOULDER: [
 		{ code: 'flexion', label: 'Flexión', unit: '°' },
 		{ code: 'abduction', label: 'Abducción', unit: '°' },
-		{ code: 'rotation_ext', label: 'Rot. ext.', unit: '°' },
+		{ code: 'rotation_ext', label: 'Rotación ext.', unit: '°' },
 	],
 	HIP: [
 		{ code: 'flexion', label: 'Flexión', unit: '°' },
@@ -69,7 +69,7 @@ export const JOINT_ROM: Record<JointCode, JointRomDef[]> = {
 	KNEE: [
 		{ code: 'flexion', label: 'Flexión', unit: '°' },
 		{ code: 'extension', label: 'Extensión', unit: '°' },
-		{ code: 'rotation_int', label: 'Rot. interna', unit: '°' },
+		{ code: 'rotation_int', label: 'Rotación int.', unit: '°' },
 	],
 	ANKLE: [
 		{ code: 'dorsiflexion', label: 'Dorsiflexión', unit: '°' },
@@ -78,11 +78,27 @@ export const JOINT_ROM: Record<JointCode, JointRomDef[]> = {
 	],
 };
 
+export const bodyViewLabel = (view: BodyView): string =>
+	BODY_VIEWS.find((item) => item.code === view)?.label ?? view;
+
+export const formatMarkSummary = (mark: {
+	kind: BodyMarkKind;
+	intensity: number;
+	view: BodyView;
+	note?: string;
+}): string => {
+	const meta = markKindMeta(mark.kind);
+	const intensity = mark.intensity > 0 ? ` ${mark.intensity}/10` : '';
+	const view = bodyViewLabel(mark.view);
+	const note = mark.note?.trim() ? ` — ${mark.note.trim()}` : '';
+	return `${meta.label}${intensity} · ${view}${note}`;
+};
+
 export const markKindMeta = (kind: BodyMarkKind) =>
 	BODY_MARK_KINDS.find((item) => item.code === kind) ?? BODY_MARK_KINDS[0];
 
 export const formatTestResult = (result: TestResult): { label: string; tone: 'ok' | 'bad' | 'muted' } => {
-	if (result === 'POS') return { label: 'pos', tone: 'bad' };
-	if (result === 'NEG') return { label: 'neg', tone: 'ok' };
-	return { label: 'nt', tone: 'muted' };
+	if (result === 'POS') return { label: 'Pos.', tone: 'bad' };
+	if (result === 'NEG') return { label: 'Neg.', tone: 'ok' };
+	return { label: 'N/E', tone: 'muted' };
 };

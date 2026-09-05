@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import { markKindMeta } from './body-catalog';
+import { formatMarkSummary } from './body-catalog';
 import type { BodySessionSnapshot } from './types';
 
 const PAGE_MARGIN = 14;
@@ -54,8 +54,7 @@ export const downloadBodyMapPdf = (input: BodyPdfInput): void => {
 		doc.text('Sin marcas registradas.', PAGE_MARGIN, y);
 	} else {
 		for (const mark of input.snapshot.marks) {
-			const meta = markKindMeta(mark.kind);
-			const line = `${meta.label}${mark.intensity > 0 ? ` ${mark.intensity}/10` : ''} · ${mark.view}${mark.note ? ` — ${mark.note}` : ''}`;
+			const line = formatMarkSummary(mark);
 			const lines = doc.splitTextToSize(line, 180);
 			doc.setTextColor(...INK);
 			doc.text(lines, PAGE_MARGIN, y);
