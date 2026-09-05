@@ -14,69 +14,126 @@
 	border-bottom: 1px solid var(--shell-border);
 }
 
+.cuerpo-draft-banner.hidden {
+	display: none;
+}
+
 .cuerpo-workspace__layout {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr);
-	gap: 1rem;
-	padding: 1rem;
+	gap: 1.25rem;
+	padding: 1rem 1.1rem 1.25rem;
 	min-height: 0;
 	flex: 1 1 auto;
 }
 
 @media (min-width: 900px) {
 	.cuerpo-workspace__layout {
-		grid-template-columns: minmax(0, 1.2fr) minmax(16rem, 0.8fr);
+		grid-template-columns: minmax(0, 1.25fr) minmax(17rem, 0.75fr);
 		align-items: start;
 	}
 }
 
-.cuerpo-toolbar {
+.cuerpo-workspace__map-col {
 	display: grid;
-	gap: 0.55rem;
-	margin-bottom: 0.75rem;
+	gap: 0.85rem;
+	min-width: 0;
 }
 
-.cuerpo-toolbar__views,
-.cuerpo-toolbar__lenses,
-.cuerpo-mark-kinds,
-.cuerpo-silhouette-toggle {
+.cuerpo-toolbar {
+	display: grid;
+	gap: 0.65rem;
+}
+
+/* Segment controls — una sola superficie, sin borde por botón */
+.cuerpo-segment {
+	display: grid;
+	gap: 0.35rem;
+}
+
+.cuerpo-segment--inline {
+	grid-template-columns: auto minmax(0, 1fr);
+	align-items: center;
+	gap: 0.65rem;
+}
+
+.cuerpo-segment--silhouette {
+	margin-top: -0.15rem;
+}
+
+.cuerpo-segment__label {
+	font-size: 0.68rem;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: color-mix(in srgb, var(--on-surface-variant) 88%, transparent);
+}
+
+.cuerpo-segment__track {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 0.4rem;
+	gap: 0.12rem;
+	padding: 0.18rem;
+	border-radius: 0.8rem;
+	background: color-mix(in srgb, var(--on-surface) 5%, var(--surface));
 }
 
 .cuerpo-pill,
 .cuerpo-mark-kind {
-	padding: 0.38rem 0.72rem;
-	border-radius: 999px;
-	border: 1px solid var(--shell-border);
-	background: var(--surface-bright);
+	padding: 0.42rem 0.78rem;
+	border: none;
+	border-radius: 0.62rem;
+	background: transparent;
 	font-size: 0.78rem;
-	font-weight: 800;
+	font-weight: 700;
 	color: var(--on-surface-variant);
+	transition:
+		background 160ms ease,
+		color 160ms ease,
+		box-shadow 160ms ease,
+		transform 120ms ease;
+}
+
+.cuerpo-pill:hover:not(.is-active),
+.cuerpo-mark-kind:hover:not(.is-active) {
+	background: color-mix(in srgb, var(--on-surface) 6%, transparent);
+	color: var(--on-surface);
+}
+
+.cuerpo-pill:active:not(:disabled),
+.cuerpo-mark-kind:active:not(:disabled) {
+	transform: scale(0.98);
 }
 
 .cuerpo-pill.is-active,
 .cuerpo-mark-kind.is-active {
-	border-color: color-mix(in srgb, var(--primary) 45%, var(--shell-border));
-	background: color-mix(in srgb, var(--primary) 10%, var(--surface-bright));
+	background: var(--surface-bright);
 	color: var(--primary);
+	box-shadow: 0 1px 2px color-mix(in srgb, var(--on-surface) 10%, transparent);
+}
+
+.cuerpo-pill:focus-visible,
+.cuerpo-mark-kind:focus-visible,
+.cuerpo-stepper-btn:focus-visible,
+.cuerpo-session-picker__select:focus-visible {
+	outline: 2px solid color-mix(in srgb, var(--primary) 55%, transparent);
+	outline-offset: 2px;
 }
 
 .cuerpo-map-stage {
 	display: flex;
 	justify-content: center;
-	padding: 0.5rem;
-	border-radius: 1rem;
-	border: 1px solid var(--shell-border);
-	background: color-mix(in srgb, var(--surface) 70%, var(--surface-bright));
-	min-height: 16rem;
+	align-items: center;
+	padding: 1rem 0.75rem;
+	border-radius: 1.15rem;
+	background: color-mix(in srgb, var(--primary) 5%, var(--surface));
+	min-height: 17rem;
 }
 
 .cuerpo-map-svg {
-	width: min(100%, 14rem);
+	width: min(100%, 15rem);
 	height: auto;
-	color: color-mix(in srgb, var(--on-surface) 55%, transparent);
+	color: color-mix(in srgb, var(--on-surface) 52%, transparent);
 	cursor: crosshair;
 }
 
@@ -86,50 +143,85 @@
 	pointer-events: none;
 }
 
+.cuerpo-controls-dock {
+	display: grid;
+	gap: 0.7rem;
+	padding: 0.75rem 0.85rem;
+	border-radius: 0.9rem;
+	background: color-mix(in srgb, var(--on-surface) 4%, var(--surface-bright));
+}
+
 .cuerpo-intensity {
-	display: flex;
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	gap: 0.55rem 0.85rem;
 	align-items: center;
-	gap: 0.5rem;
-	margin-top: 0.75rem;
-	flex-wrap: wrap;
 }
 
 .cuerpo-intensity__label {
-	font-size: 0.82rem;
-	font-weight: 800;
-	color: var(--on-surface-variant);
+	font-size: 0.68rem;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: color-mix(in srgb, var(--on-surface-variant) 88%, transparent);
+}
+
+.cuerpo-intensity__controls {
+	display: flex;
+	align-items: center;
+	gap: 0.45rem;
+	min-width: 0;
 }
 
 .cuerpo-intensity__value {
-	min-width: 1.5rem;
+	min-width: 1.35rem;
 	text-align: center;
 	font-weight: 800;
+	font-variant-numeric: tabular-nums;
+	color: var(--on-surface);
 }
 
 .cuerpo-intensity__slider {
-	flex: 1 1 8rem;
+	flex: 1 1 6rem;
+	min-width: 0;
+	height: 0.35rem;
 	accent-color: var(--primary);
 }
 
 .cuerpo-stepper-btn {
-	width: 2rem;
-	height: 2rem;
-	border-radius: 999px;
-	border: 1px solid var(--shell-border);
-	background: var(--surface-bright);
+	width: 1.85rem;
+	height: 1.85rem;
+	border: none;
+	border-radius: 0.55rem;
+	background: color-mix(in srgb, var(--on-surface) 7%, var(--surface-bright));
 	font-weight: 800;
+	font-size: 1rem;
+	line-height: 1;
+	color: var(--on-surface);
+	transition: background 160ms ease, transform 120ms ease;
+}
+
+.cuerpo-stepper-btn:hover {
+	background: color-mix(in srgb, var(--on-surface) 11%, var(--surface-bright));
 }
 
 .cuerpo-workspace__side {
 	display: grid;
-	gap: 0.85rem;
+	gap: 0.9rem;
 	align-content: start;
+	min-width: 0;
 }
 
-.cuerpo-session-label {
-	font-size: 0.92rem;
-	font-weight: 800;
-	color: var(--on-surface);
+.cuerpo-session-card {
+	display: grid;
+	gap: 0.35rem;
+	padding: 0.7rem 0.8rem;
+	border-radius: 0.85rem;
+	background: color-mix(in srgb, var(--on-surface) 4%, var(--surface-bright));
+}
+
+.cuerpo-session-card:has(.cuerpo-session-picker:not(.hidden)) .cuerpo-session-label {
+	display: none;
 }
 
 .cuerpo-session-picker {
@@ -138,29 +230,68 @@
 }
 
 .cuerpo-session-picker__label {
-	font-size: 0.78rem;
-	font-weight: 800;
+	font-size: 0.68rem;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: color-mix(in srgb, var(--on-surface-variant) 88%, transparent);
+}
+
+.cuerpo-session-picker__field {
+	position: relative;
+}
+
+.cuerpo-session-picker__field::after {
+	content: 'expand_more';
+	font-family: 'Material Symbols Rounded', sans-serif;
+	position: absolute;
+	right: 0.55rem;
+	top: 50%;
+	transform: translateY(-50%);
+	pointer-events: none;
+	font-size: 1.15rem;
 	color: var(--on-surface-variant);
 }
 
 .cuerpo-session-picker__select {
 	width: 100%;
-	padding: 0.45rem 0.6rem;
-	border-radius: 0.65rem;
-	border: 1px solid var(--shell-border);
-	background: var(--surface-bright);
+	padding: 0.52rem 2.1rem 0.52rem 0.65rem;
+	border: none;
+	border-radius: 0.62rem;
+	background: color-mix(in srgb, var(--on-surface) 6%, var(--surface));
 	font-size: 0.84rem;
 	font-weight: 600;
 	color: var(--on-surface);
+	appearance: none;
+	cursor: pointer;
+	transition: background 160ms ease;
 }
 
-.cuerpo-draft-banner.hidden {
-	display: none;
+.cuerpo-session-picker__select:hover {
+	background: color-mix(in srgb, var(--on-surface) 9%, var(--surface));
+}
+
+.cuerpo-session-label {
+	margin: 0;
+	font-size: 0.88rem;
+	font-weight: 700;
+	line-height: 1.35;
+	color: var(--on-surface);
+	text-wrap: pretty;
+}
+
+.cuerpo-side-section {
+	display: grid;
+	gap: 0.85rem;
+}
+
+.cuerpo-side-section .customer-profile-section-title {
+	margin: 0;
 }
 
 .cuerpo-marks-list {
 	display: grid;
-	gap: 0.45rem;
+	gap: 0.6rem;
 	margin: 0;
 	padding: 0;
 	list-style: none;
@@ -169,10 +300,21 @@
 .cuerpo-mark-item {
 	display: flex;
 	align-items: center;
-	gap: 0.5rem;
+	gap: 0.65rem;
+	padding: 0.5rem 0.6rem;
+	border-radius: 0.6rem;
+	background: color-mix(in srgb, var(--on-surface) 3%, var(--surface-bright));
 	font-size: 0.84rem;
 	font-weight: 600;
 	color: var(--on-surface);
+}
+
+.cuerpo-marks-empty {
+	margin: 0;
+}
+
+.cuerpo-side-section [data-cuerpo-add-mark] {
+	margin-top: 0.25rem;
 }
 
 .cuerpo-mark-item__dot {
@@ -198,8 +340,8 @@
 	width: 100%;
 	padding: 0.45rem 0.6rem;
 	border-radius: 0.65rem;
-	border: 1px solid var(--shell-border);
-	background: var(--surface-bright);
+	border: none;
+	background: color-mix(in srgb, var(--on-surface) 5%, var(--surface-bright));
 }
 
 .cuerpo-test-row {
@@ -216,8 +358,9 @@
 
 .cuerpo-test-chip {
 	padding: 0.25rem 0.55rem;
-	border-radius: 999px;
-	border: 1px solid var(--shell-border);
+	border-radius: 0.45rem;
+	border: none;
+	background: color-mix(in srgb, var(--on-surface) 6%, var(--surface-bright));
 	font-size: 0.72rem;
 	font-weight: 800;
 	text-transform: uppercase;
@@ -261,11 +404,16 @@
 	gap: 0.35rem;
 	padding: 0.45rem 0.7rem;
 	border-radius: 999px;
-	border: 1px solid var(--shell-border);
-	background: var(--surface-bright);
+	border: none;
+	background: color-mix(in srgb, var(--on-surface) 5%, var(--surface-bright));
 	font-size: 0.86rem;
 	font-weight: 800;
 	color: var(--on-surface);
+	transition: background 160ms ease;
+}
+
+.appointment-body-map-overlay__back:hover {
+	background: color-mix(in srgb, var(--on-surface) 9%, var(--surface-bright));
 }
 
 .appointment-body-map-overlay__title {
@@ -279,6 +427,42 @@
 	flex: 1 1 auto;
 }
 
+dialog[data-appointment-modal].is-body-map-workspace[open] {
+	justify-content: stretch !important;
+	align-items: stretch !important;
+}
+
 dialog[data-appointment-modal].is-body-map-workspace .appointment-modal__panel {
+	width: 100vw;
+	max-width: 100vw;
+	height: 100dvh;
+	max-height: 100dvh;
+	border-radius: 0;
+	border: 0;
+	box-shadow: none;
 	overflow: hidden;
+}
+
+dialog[data-appointment-modal].is-body-map-workspace .panel-modal-header,
+dialog[data-appointment-modal].is-body-map-workspace [data-appointment-modal-footer-wrap] {
+	display: none !important;
+}
+
+dialog[data-appointment-modal].is-body-map-workspace [data-appointment-form] {
+	flex: 1 1 auto;
+	min-height: 0;
+}
+
+dialog[data-appointment-modal].is-body-map-workspace .appointment-body-map-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 100;
+	width: 100vw;
+	height: 100dvh;
+	max-height: 100dvh;
+	overflow: hidden;
+}
+
+dialog[data-appointment-modal].is-body-map-workspace .appointment-body-map-overlay .cuerpo-workspace__layout {
+	min-height: 0;
 }

@@ -19,17 +19,23 @@ const { rootClass = '', panelClass = '', embedded = false } = Astro.props;
 	<div class:list={['cuerpo-workspace__layout', rootClass]} data-cuerpo-workspace>
 		<div class="cuerpo-workspace__map-col">
 			<div class="cuerpo-toolbar">
-				<div class="cuerpo-toolbar__views" role="toolbar" aria-label="Vista del cuerpo">
-					<button type="button" class="cuerpo-pill is-active" data-cuerpo-view="FRONT" aria-pressed="true">Frente</button>
-					<button type="button" class="cuerpo-pill" data-cuerpo-view="BACK" aria-pressed="false">Espalda</button>
-					<button type="button" class="cuerpo-pill" data-cuerpo-view="SIDE" aria-pressed="false">Lado</button>
+				<div class="cuerpo-segment" role="toolbar" aria-label="Vista del cuerpo">
+					<span class="cuerpo-segment__label">Vista</span>
+					<div class="cuerpo-segment__track">
+						<button type="button" class="cuerpo-pill is-active" data-cuerpo-view="FRONT" aria-pressed="true">Frente</button>
+						<button type="button" class="cuerpo-pill" data-cuerpo-view="BACK" aria-pressed="false">Espalda</button>
+						<button type="button" class="cuerpo-pill" data-cuerpo-view="SIDE" aria-pressed="false">Lado</button>
+					</div>
 				</div>
-				<div class="cuerpo-toolbar__lenses" role="toolbar" aria-label="Zoom de articulación">
-					<button type="button" class="cuerpo-pill is-active" data-cuerpo-lens="BODY" aria-pressed="true">Cuerpo</button>
-					<button type="button" class="cuerpo-pill" data-cuerpo-lens="SHOULDER">Hombro</button>
-					<button type="button" class="cuerpo-pill" data-cuerpo-lens="HIP">Cadera</button>
-					<button type="button" class="cuerpo-pill" data-cuerpo-lens="KNEE">Rodilla</button>
-					<button type="button" class="cuerpo-pill" data-cuerpo-lens="ANKLE">Tobillo</button>
+				<div class="cuerpo-segment" role="toolbar" aria-label="Zona del cuerpo">
+					<span class="cuerpo-segment__label">Zona</span>
+					<div class="cuerpo-segment__track">
+						<button type="button" class="cuerpo-pill is-active" data-cuerpo-lens="BODY" aria-pressed="true">Cuerpo</button>
+						<button type="button" class="cuerpo-pill" data-cuerpo-lens="SHOULDER">Hombro</button>
+						<button type="button" class="cuerpo-pill" data-cuerpo-lens="HIP">Cadera</button>
+						<button type="button" class="cuerpo-pill" data-cuerpo-lens="KNEE">Rodilla</button>
+						<button type="button" class="cuerpo-pill" data-cuerpo-lens="ANKLE">Tobillo</button>
+					</div>
 				</div>
 			</div>
 			<div class="cuerpo-map-stage">
@@ -45,32 +51,45 @@ const { rootClass = '', panelClass = '', embedded = false } = Astro.props;
 					<g data-cuerpo-map-marks></g>
 				</svg>
 			</div>
-			<div class="cuerpo-intensity">
-				<span class="cuerpo-intensity__label">Intensidad</span>
-				<button type="button" class="cuerpo-stepper-btn" data-cuerpo-intensity-dec aria-label="Menos intensidad">−</button>
-				<span class="cuerpo-intensity__value" data-cuerpo-intensity-value>7</span>
-				<button type="button" class="cuerpo-stepper-btn" data-cuerpo-intensity-inc aria-label="Más intensidad">+</button>
-				<input type="range" min="0" max="10" value="7" class="cuerpo-intensity__slider" data-cuerpo-intensity-slider aria-label="Intensidad 0 a 10" />
-			</div>
-			<div class="cuerpo-mark-kinds" role="toolbar" aria-label="Tipo de marca">
-				<button type="button" class="cuerpo-mark-kind is-active" data-cuerpo-mark-kind="PAIN">Dolor</button>
-				<button type="button" class="cuerpo-mark-kind" data-cuerpo-mark-kind="TENSION">Tensión</button>
-				<button type="button" class="cuerpo-mark-kind" data-cuerpo-mark-kind="WORK">Trabajo</button>
-				<button type="button" class="cuerpo-mark-kind" data-cuerpo-mark-kind="SCAR">Cicatriz</button>
-				<button type="button" class="cuerpo-mark-kind" data-cuerpo-mark-kind="EDEMA">Edema</button>
+			<div class="cuerpo-controls-dock">
+				<div class="cuerpo-intensity">
+					<span class="cuerpo-intensity__label">Intensidad</span>
+					<div class="cuerpo-intensity__controls">
+						<button type="button" class="cuerpo-stepper-btn" data-cuerpo-intensity-dec aria-label="Menos intensidad">−</button>
+						<span class="cuerpo-intensity__value" data-cuerpo-intensity-value>7</span>
+						<button type="button" class="cuerpo-stepper-btn" data-cuerpo-intensity-inc aria-label="Más intensidad">+</button>
+						<input type="range" min="0" max="10" value="7" class="cuerpo-intensity__slider" data-cuerpo-intensity-slider aria-label="Intensidad 0 a 10" />
+					</div>
+				</div>
+				<div class="cuerpo-segment cuerpo-segment--inline" role="toolbar" aria-label="Tipo de marca">
+					<span class="cuerpo-segment__label">Tipo</span>
+					<div class="cuerpo-segment__track">
+						<button type="button" class="cuerpo-mark-kind is-active" data-cuerpo-mark-kind="PAIN">Dolor</button>
+						<button type="button" class="cuerpo-mark-kind" data-cuerpo-mark-kind="TENSION">Tensión</button>
+						<button type="button" class="cuerpo-mark-kind" data-cuerpo-mark-kind="WORK">Trabajo</button>
+						<button type="button" class="cuerpo-mark-kind" data-cuerpo-mark-kind="SCAR">Cicatriz</button>
+						<button type="button" class="cuerpo-mark-kind" data-cuerpo-mark-kind="EDEMA">Edema</button>
+					</div>
+				</div>
 			</div>
 		</div>
 		<aside class="cuerpo-workspace__side">
-			<div class="cuerpo-session-picker hidden" data-cuerpo-session-picker-wrap hidden={embedded ? true : undefined}>
-				<label class="cuerpo-session-picker__label" for="cuerpo-session-picker">Sesión</label>
-				<select class="cuerpo-session-picker__select" data-cuerpo-session-picker id="cuerpo-session-picker"></select>
+			<div class="cuerpo-session-card">
+				<div class="cuerpo-session-picker hidden" data-cuerpo-session-picker-wrap hidden={embedded ? true : undefined}>
+					<label class="cuerpo-session-picker__label" for="cuerpo-session-picker">Sesión</label>
+					<div class="cuerpo-session-picker__field">
+						<select class="cuerpo-session-picker__select" data-cuerpo-session-picker id="cuerpo-session-picker"></select>
+					</div>
+				</div>
+				<p class="cuerpo-session-label" data-cuerpo-session-label>Hoy · Sesión</p>
 			</div>
-			<p class="cuerpo-session-label" data-cuerpo-session-label>Hoy · Sesión</p>
-			<div class="cuerpo-silhouette-toggle" role="group" aria-label="Silueta">
-				<button type="button" class="cuerpo-pill is-active" data-cuerpo-silhouette="NEUTRAL" aria-pressed="true">Neutra</button>
-				<button type="button" class="cuerpo-pill" data-cuerpo-silhouette="FEMALE" aria-label="Femenina" aria-pressed="false">F</button>
-				<button type="button" class="cuerpo-pill" data-cuerpo-silhouette="MALE" aria-label="Masculina" aria-pressed="false">M</button>
-				<button type="button" class="cuerpo-pill" data-cuerpo-silhouette="CHILD" aria-label="Infantil" aria-pressed="false">Niño</button>
+			<div class="cuerpo-segment cuerpo-segment--silhouette" role="group" aria-label="Silueta">
+				<span class="cuerpo-segment__label">Silueta</span>
+				<div class="cuerpo-segment__track">
+					<button type="button" class="cuerpo-pill is-active" data-cuerpo-silhouette="FEMALE" aria-pressed="true">Femenino</button>
+					<button type="button" class="cuerpo-pill" data-cuerpo-silhouette="MALE" aria-pressed="false">Masculino</button>
+					<button type="button" class="cuerpo-pill" data-cuerpo-silhouette="CHILD" aria-pressed="false">Niño</button>
+				</div>
 			</div>
 			<section class="cuerpo-side-section">
 				<h4 class="customer-profile-section-title">Marcas de hoy</h4>

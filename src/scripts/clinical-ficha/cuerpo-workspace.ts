@@ -32,6 +32,9 @@ import type {
 	TestResult,
 } from '../../lib/clinical-ficha/types';
 
+const normalizeSilhouette = (value: BodySilhouette | undefined): BodySilhouette =>
+	!value || value === 'NEUTRAL' ? 'FEMALE' : value;
+
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 export type CuerpoWorkspaceContext = {
@@ -50,7 +53,7 @@ export class CuerpoWorkspace {
 	private lens: 'BODY' | JointCode = 'BODY';
 	private activeMarkKind: BodyMarkKind = 'PAIN';
 	private intensity = 7;
-	private silhouette: BodySilhouette = 'NEUTRAL';
+	private silhouette: BodySilhouette = 'FEMALE';
 	private compareMode = false;
 	private snapshot: BodySessionSnapshot | null = null;
 	private dirty = false;
@@ -116,7 +119,10 @@ export class CuerpoWorkspace {
 				(await fetchLatestBodySnapshot(context.customerId));
 			if (token !== this.loadToken) return;
 			this.snapshot = latest ? { ...latest } : null;
-			this.silhouette = this.snapshot?.silhouette ?? this.silhouette;
+			this.silhouette = normalizeSilhouette(this.snapshot?.silhouette);
+			if (this.snapshot && this.snapshot.silhouette !== this.silhouette) {
+				this.snapshot = { ...this.snapshot, silhouette: this.silhouette };
+			}
 			this.renderSessionHeader();
 			this.syncViewButtons();
 			this.syncSilhouetteButtons();
@@ -152,7 +158,10 @@ export class CuerpoWorkspace {
 			this.persisted = true;
 		}
 
-		this.silhouette = this.snapshot.silhouette;
+		this.silhouette = normalizeSilhouette(this.snapshot.silhouette);
+		if (this.snapshot.silhouette !== this.silhouette) {
+			this.snapshot = { ...this.snapshot, silhouette: this.silhouette };
+		}
 		this.renderSessionHeader();
 		this.syncViewButtons();
 		this.syncSilhouetteButtons();
@@ -240,7 +249,7 @@ export class CuerpoWorkspace {
 				if (this.isReadOnly()) return;
 				const value = target.closest<HTMLButtonElement>('[data-cuerpo-silhouette]')?.dataset
 					.cuerpoSilhouette as BodySilhouette;
-				if (value) {
+				if (value && value !== 'NEUTRAL') {
 					this.silhouette = value;
 					this.persist();
 					this.syncSilhouetteButtons();
