@@ -14,7 +14,7 @@ const { rootClass = '', panelClass = '', embedded = false } = Astro.props;
 	hidden={embedded ? undefined : true}
 >
 	<div class="cuerpo-draft-banner hidden" data-cuerpo-draft-banner role="status">
-		Cambios sin guardar — usá «Guardar ficha» en la cita para persistir en el servidor.
+		Cambios sin guardar en esta sesión.
 	</div>
 	<div class:list={['cuerpo-workspace__layout', rootClass]} data-cuerpo-workspace>
 		<div class="cuerpo-workspace__map-col">
@@ -38,6 +38,7 @@ const { rootClass = '', panelClass = '', embedded = false } = Astro.props;
 					</div>
 				</div>
 			</div>
+			<p class="cuerpo-map-zoom-label hidden" data-cuerpo-zoom-label aria-live="polite"></p>
 			<div class="cuerpo-map-stage">
 				<svg
 					class="cuerpo-map-svg"
@@ -52,6 +53,13 @@ const { rootClass = '', panelClass = '', embedded = false } = Astro.props;
 				</svg>
 			</div>
 			<div class="cuerpo-controls-dock">
+				<div class="cuerpo-segment cuerpo-segment--inline" role="group" aria-label="Lado del cuerpo">
+					<span class="cuerpo-segment__label">Lado</span>
+					<div class="cuerpo-segment__track">
+						<button type="button" class="cuerpo-pill" data-cuerpo-mark-side="L" aria-pressed="false">Izq.</button>
+						<button type="button" class="cuerpo-pill is-active" data-cuerpo-mark-side="R" aria-pressed="true">Der.</button>
+					</div>
+				</div>
 				<div class="cuerpo-intensity">
 					<span class="cuerpo-intensity__label">Intensidad</span>
 					<div class="cuerpo-intensity__controls">
@@ -76,12 +84,16 @@ const { rootClass = '', panelClass = '', embedded = false } = Astro.props;
 		<aside class="cuerpo-workspace__side">
 			<div class="cuerpo-session-card">
 				<div class="cuerpo-session-picker hidden" data-cuerpo-session-picker-wrap hidden={embedded ? true : undefined}>
-					<label class="cuerpo-session-picker__label" for="cuerpo-session-picker">Sesión</label>
+					<label class="cuerpo-session-picker__label" for="cuerpo-session-picker">Cita</label>
 					<div class="cuerpo-session-picker__field">
 						<select class="cuerpo-session-picker__select" data-cuerpo-session-picker id="cuerpo-session-picker"></select>
 					</div>
 				</div>
-				<p class="cuerpo-session-label" data-cuerpo-session-label>Hoy · Sesión</p>
+				<div class="cuerpo-session-chip hidden" data-cuerpo-session-chip-wrap hidden={embedded ? undefined : true}>
+					<span class="cuerpo-session-chip__label">Cita</span>
+					<span class="cuerpo-session-chip__value" data-cuerpo-session-chip>Sin cita</span>
+				</div>
+				<p class="cuerpo-session-label hidden" data-cuerpo-session-label aria-hidden="true"></p>
 			</div>
 			<div class="cuerpo-segment cuerpo-segment--silhouette" role="group" aria-label="Silueta">
 				<span class="cuerpo-segment__label">Silueta</span>
@@ -95,6 +107,9 @@ const { rootClass = '', panelClass = '', embedded = false } = Astro.props;
 				<h4 class="customer-profile-section-title">Marcas de hoy</h4>
 				<ul class="cuerpo-marks-list" data-cuerpo-marks-list></ul>
 				<p class="cuerpo-marks-empty hidden" data-cuerpo-marks-empty>Sin marcas en esta sesión.</p>
+				<p class="cuerpo-marks-view-hint hidden" data-cuerpo-marks-view-hint>
+					Hay marcas en otra vista. Cambiá Frente/Espalda/Lado para verlas en el mapa.
+				</p>
 				<button type="button" class="modal-action-primary w-full" data-cuerpo-add-mark>
 					<span class="material-symbols-rounded" aria-hidden="true">add</span>
 					Añadir marca
@@ -109,6 +124,10 @@ const { rootClass = '', panelClass = '', embedded = false } = Astro.props;
 				<div class="cuerpo-tests" data-cuerpo-tests></div>
 			</section>
 			<div class="cuerpo-side-actions">
+				<button type="button" class="modal-action-primary w-full hidden" data-cuerpo-save-session>
+					<span class="material-symbols-rounded" aria-hidden="true">save</span>
+					Guardar sesión
+				</button>
 				<button type="button" class="modal-action-secondary w-full" data-cuerpo-compare>Comparar con anterior</button>
 				<button type="button" class="modal-action-secondary w-full" data-cuerpo-pdf>
 					<span class="material-symbols-rounded" aria-hidden="true">picture_as_pdf</span>
@@ -118,6 +137,7 @@ const { rootClass = '', panelClass = '', embedded = false } = Astro.props;
 			<div class="cuerpo-compare-wrap hidden" data-cuerpo-compare-wrap>
 				<h4 class="customer-profile-section-title">Sesión anterior</h4>
 				<p class="cuerpo-marks-empty hidden" data-cuerpo-compare-empty>Sin sesión anterior para comparar.</p>
+				<p class="cuerpo-compare-loading hidden" data-cuerpo-compare-loading>Cargando comparación…</p>
 				<svg class="cuerpo-map-svg cuerpo-map-svg--compare" data-cuerpo-compare-svg viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
 					<g data-cuerpo-map-outline></g>
 					<g data-cuerpo-compare-marks></g>
@@ -125,4 +145,40 @@ const { rootClass = '', panelClass = '', embedded = false } = Astro.props;
 			</div>
 		</aside>
 	</div>
+	<dialog class="cuerpo-mark-editor" data-cuerpo-mark-editor aria-labelledby="cuerpo-mark-editor-title">
+		<form method="dialog" class="cuerpo-mark-editor__form" data-cuerpo-mark-editor-form>
+			<header class="cuerpo-mark-editor__header">
+				<h3 id="cuerpo-mark-editor-title" class="cuerpo-mark-editor__title">Editar marca</h3>
+				<button type="button" class="cuerpo-mark-editor__close" data-cuerpo-mark-editor-close aria-label="Cerrar">
+					<span class="material-symbols-rounded" aria-hidden="true">close</span>
+				</button>
+			</header>
+			<div class="cuerpo-mark-editor__body">
+				<label class="cuerpo-mark-editor__field">
+					<span>Tipo</span>
+					<select data-cuerpo-mark-editor-kind></select>
+				</label>
+				<label class="cuerpo-mark-editor__field">
+					<span>Intensidad</span>
+					<input type="range" min="0" max="10" value="5" data-cuerpo-mark-editor-intensity />
+					<span data-cuerpo-mark-editor-intensity-value>5/10</span>
+				</label>
+				<div class="cuerpo-mark-editor__field">
+					<span>Lado</span>
+					<div class="cuerpo-segment__track">
+						<button type="button" class="cuerpo-pill" data-cuerpo-mark-editor-side="L">Izq.</button>
+						<button type="button" class="cuerpo-pill is-active" data-cuerpo-mark-editor-side="R">Der.</button>
+					</div>
+				</div>
+				<label class="cuerpo-mark-editor__field">
+					<span>Nota</span>
+					<input type="text" maxlength="120" placeholder="Opcional" data-cuerpo-mark-editor-note />
+				</label>
+			</div>
+			<footer class="cuerpo-mark-editor__footer">
+				<button type="button" class="modal-action-danger" data-cuerpo-mark-editor-delete>Eliminar</button>
+				<button type="submit" class="modal-action-primary">Guardar</button>
+			</footer>
+		</form>
+	</dialog>
 </div>

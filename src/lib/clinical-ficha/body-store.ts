@@ -1,10 +1,24 @@
-import type { BodySessionSnapshot } from './clinical-ficha/types';
+import type { BodySessionSnapshot } from './types';
 
 const snapshotsByCustomer = new Map<number, BodySessionSnapshot[]>();
 const loadPromises = new Map<string, Promise<BodySessionSnapshot | null>>();
+const dirtySnapshots = new Set<string>();
 
 const cacheKey = (customerId: number, appointmentId: number) =>
 	`${customerId}:${appointmentId}`;
+
+export const isBodySnapshotDirty = (customerId: number, appointmentId: number): boolean =>
+	dirtySnapshots.has(cacheKey(customerId, appointmentId));
+
+export const markBodySnapshotDirty = (customerId: number, appointmentId: number): void => {
+	if (customerId > 0 && appointmentId > 0) {
+		dirtySnapshots.add(cacheKey(customerId, appointmentId));
+	}
+};
+
+export const markBodySnapshotClean = (customerId: number, appointmentId: number): void => {
+	dirtySnapshots.delete(cacheKey(customerId, appointmentId));
+};
 
 export const listBodySnapshots = (customerId: number): BodySessionSnapshot[] => {
 	const list = snapshotsByCustomer.get(customerId) ?? [];
@@ -46,12 +60,16 @@ export const clearBodySnapshotCache = (customerId?: number): void => {
 	if (customerId && customerId > 0) {
 		snapshotsByCustomer.delete(customerId);
 		for (const key of loadPromises.keys()) {
-			if (key.startsWith(`${customerId}:`)) loadPromises.delete(key);
+			if (key.startsWith(`${customerId}:`)) {
+				loadPromises.delete(key);
+				dirtySnapshots.delete(key);
+			}
 		}
 		return;
 	}
 	snapshotsByCustomer.clear();
 	loadPromises.clear();
+	dirtySnapshots.clear();
 };
 
 export const fetchBodySnapshot = async (
@@ -106,6 +124,7 @@ export const persistBodySnapshot = async (snapshot: BodySessionSnapshot): Promis
 		throw new Error(String((body as { message?: string }).message || 'No fue posible guardar el mapa.'));
 	}
 	saveBodySnapshot(snapshot);
+	markBodySnapshotClean(snapshot.customerId, snapshot.appointmentId);
 };
 
 export const prefetchBodySnapshotsForCustomer = async (customerId: number): Promise<void> => {

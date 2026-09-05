@@ -81,17 +81,33 @@ export const JOINT_ROM: Record<JointCode, JointRomDef[]> = {
 export const bodyViewLabel = (view: BodyView): string =>
 	BODY_VIEWS.find((item) => item.code === view)?.label ?? view;
 
+export const bodySideLabel = (side: 'L' | 'R' | null | undefined): string => {
+	if (side === 'L') return 'Izq.';
+	if (side === 'R') return 'Der.';
+	return '';
+};
+
 export const formatMarkSummary = (mark: {
 	kind: BodyMarkKind;
 	intensity: number;
 	view: BodyView;
+	side?: 'L' | 'R' | null;
 	note?: string;
 }): string => {
 	const meta = markKindMeta(mark.kind);
 	const intensity = mark.intensity > 0 ? ` ${mark.intensity}/10` : '';
 	const view = bodyViewLabel(mark.view);
+	const side = bodySideLabel(mark.side);
+	const sidePart = side ? ` · ${side}` : '';
 	const note = mark.note?.trim() ? ` — ${mark.note.trim()}` : '';
-	return `${meta.label}${intensity} · ${view}${note}`;
+	return `${meta.label}${intensity} · ${view}${sidePart}${note}`;
+};
+
+export const JOINT_PREFERRED_VIEW: Record<JointCode, BodyView> = {
+	SHOULDER: 'FRONT',
+	HIP: 'BACK',
+	KNEE: 'FRONT',
+	ANKLE: 'SIDE',
 };
 
 export const markKindMeta = (kind: BodyMarkKind) =>

@@ -337,13 +337,73 @@
 .cuerpo-mark-item {
 	display: flex;
 	align-items: center;
-	gap: 0.65rem;
-	padding: 0.5rem 0.6rem;
+	gap: 0.45rem;
+	padding: 0.35rem 0.45rem;
 	border-radius: 0.6rem;
 	background: color-mix(in srgb, var(--on-surface) 3%, var(--surface-bright));
 	font-size: 0.84rem;
 	font-weight: 600;
 	color: var(--on-surface);
+}
+
+.cuerpo-mark-item__open {
+	display: flex;
+	align-items: center;
+	gap: 0.65rem;
+	flex: 1 1 auto;
+	min-width: 0;
+	padding: 0.15rem 0.35rem;
+	border: 0;
+	border-radius: 0.45rem;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+
+.cuerpo-mark-item__open:hover,
+.cuerpo-mark-item__open.is-selected {
+	background: color-mix(in srgb, var(--primary) 8%, var(--surface-bright));
+}
+
+.cuerpo-mark-item__text {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.cuerpo-mark-item__remove {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: 1.75rem;
+	height: 1.75rem;
+	margin: -0.15rem -0.1rem -0.15rem 0;
+	padding: 0;
+	border: 0;
+	border-radius: 0.5rem;
+	background: transparent;
+	color: var(--on-surface-variant);
+	cursor: pointer;
+	transition:
+		background-color 140ms ease,
+		color 140ms ease;
+}
+
+.cuerpo-mark-item__remove .material-symbols-rounded {
+	font-size: 1.05rem;
+}
+
+.cuerpo-mark-item__remove:hover,
+.cuerpo-mark-item__remove:focus-visible {
+	background: color-mix(in srgb, #ef4444 12%, transparent);
+	color: #ef4444;
+}
+
+.cuerpo-mark-item__remove:focus-visible {
+	outline: 2px solid color-mix(in srgb, #ef4444 35%, transparent);
+	outline-offset: 1px;
 }
 
 .cuerpo-marks-empty {
@@ -515,4 +575,152 @@ dialog[data-appointment-modal].is-body-map-workspace .appointment-body-map-overl
 
 dialog[data-appointment-modal].is-body-map-workspace .appointment-body-map-overlay .cuerpo-workspace__layout {
 	min-height: 0;
+}
+
+.cuerpo-map-zoom-label {
+	margin: 0;
+	padding: 0 0.15rem;
+	font-size: 0.78rem;
+	font-weight: 700;
+	color: var(--primary);
+}
+
+.cuerpo-map-zoom-label.hidden {
+	display: none;
+}
+
+.cuerpo-session-chip {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.65rem;
+	padding: 0.55rem 0.7rem;
+	border-radius: 0.75rem;
+	background: color-mix(in srgb, var(--on-surface) 4%, var(--surface-bright));
+	border: 1px solid var(--shell-border);
+}
+
+.cuerpo-session-chip.hidden {
+	display: none;
+}
+
+.cuerpo-session-chip__label {
+	font-size: 0.68rem;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--on-surface-variant);
+}
+
+.cuerpo-session-chip__value {
+	font-size: 0.84rem;
+	font-weight: 700;
+	color: var(--on-surface);
+	text-align: right;
+}
+
+.cuerpo-marks-view-hint {
+	margin: 0;
+	font-size: 0.78rem;
+	font-weight: 600;
+	color: var(--on-surface-variant);
+}
+
+.cuerpo-marks-view-hint.hidden {
+	display: none;
+}
+
+.cuerpo-compare-loading {
+	margin: 0;
+	font-size: 0.82rem;
+	font-weight: 600;
+	color: var(--on-surface-variant);
+}
+
+.cuerpo-compare-loading.hidden {
+	display: none;
+}
+
+.cuerpo-mark-editor {
+	padding: 0;
+	border: 0;
+	border-radius: 1rem;
+	background: var(--surface-bright);
+	color: var(--on-surface);
+	max-width: min(24rem, calc(100vw - 2rem));
+}
+
+.cuerpo-mark-editor::backdrop {
+	background: color-mix(in srgb, var(--on-surface) 45%, transparent);
+}
+
+.cuerpo-mark-editor__form {
+	display: grid;
+	gap: 0;
+}
+
+.cuerpo-mark-editor__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	padding: 1rem 1rem 0.5rem;
+}
+
+.cuerpo-mark-editor__title {
+	margin: 0;
+	font-size: 1rem;
+	font-weight: 800;
+}
+
+.cuerpo-mark-editor__close {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 2rem;
+	height: 2rem;
+	border: 0;
+	border-radius: 999px;
+	background: transparent;
+	color: var(--on-surface-variant);
+	cursor: pointer;
+}
+
+.cuerpo-mark-editor__body {
+	display: grid;
+	gap: 0.85rem;
+	padding: 0.5rem 1rem 1rem;
+}
+
+.cuerpo-mark-editor__field {
+	display: grid;
+	gap: 0.35rem;
+	font-size: 0.82rem;
+	font-weight: 700;
+}
+
+.cuerpo-mark-editor__field select,
+.cuerpo-mark-editor__field input[type='text'] {
+	width: 100%;
+	padding: 0.55rem 0.65rem;
+	border-radius: 0.65rem;
+	border: 1px solid var(--shell-border);
+	background: var(--surface-bright);
+	color: var(--on-surface);
+	font: inherit;
+}
+
+.cuerpo-mark-editor__footer {
+	display: flex;
+	justify-content: space-between;
+	gap: 0.65rem;
+	padding: 0 1rem 1rem;
+}
+
+.cuerpo-side-actions [data-cuerpo-save-session].hidden {
+	display: none;
+}
+
+.cuerpo-side-actions [data-cuerpo-save-session]:disabled {
+	opacity: 0.55;
 }

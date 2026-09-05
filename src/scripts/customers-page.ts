@@ -407,7 +407,9 @@ class CustomerManager extends HTMLElement {
 			onWorkspaceOpen: (code) => this.handleClinicalWorkspaceOpen(code),
 			onWorkspaceClose: () => this.handleClinicalWorkspaceClose(),
 		});
-		const cuerpoRoot = this.querySelector<HTMLElement>('[data-cuerpo-workspace]');
+		const cuerpoRoot = this.clinicalWorkspaceRoot?.querySelector<HTMLElement>(
+			'[data-clinical-workspace-panel="cuerpo"]'
+		);
 		if (cuerpoRoot) this.cuerpoWorkspace = new CuerpoWorkspace(cuerpoRoot);
 
 		this.odontogramLock = this.querySelector<HTMLElement>('[data-customer-odontogram-lock]');
@@ -1491,7 +1493,7 @@ class CustomerManager extends HTMLElement {
 	};
 
 	private handleClinicalWorkspaceClose = () => {
-		this.cuerpoWorkspace?.setContext(null);
+		this.cuerpoWorkspace?.clearContext();
 		this.syncOdontogramTourHelpVisibility();
 		this.syncProfileHeaderChrome();
 	};
@@ -1504,7 +1506,7 @@ class CustomerManager extends HTMLElement {
 				: this.resolveBodyAppointmentId(detail?.appointmentId);
 		const customerName = detail?.customerName || this.activeProfileFullName || '';
 		if (customerId <= 0) {
-			this.cuerpoWorkspace?.setContext(null);
+			this.cuerpoWorkspace?.clearContext();
 			return;
 		}
 		this.renderCuerpoSessionPicker(appointmentId);
@@ -1514,6 +1516,7 @@ class CustomerManager extends HTMLElement {
 			customerName,
 			readOnly: detail?.readOnly === true || appointmentId <= 0,
 			sessionLabel: detail?.sessionLabel ?? this.buildBodySessionLabel(appointmentId),
+			embedded: false,
 		});
 	}
 

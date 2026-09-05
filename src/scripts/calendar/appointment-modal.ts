@@ -388,7 +388,9 @@ class AppointmentModal extends HTMLElement {
 			this.form?.querySelector<HTMLButtonElement>('[data-appointment-open-odontogram]') ?? null;
 		this.odontogramHint =
 			this.form?.querySelector<HTMLElement>('[data-appointment-odontogram-hint]') ?? null;
-		const cuerpoRoot = this.bodyMapOverlay?.querySelector<HTMLElement>('[data-cuerpo-workspace]');
+		const cuerpoRoot = this.bodyMapOverlay?.querySelector<HTMLElement>(
+			'[data-clinical-workspace-panel="cuerpo"]'
+		);
 		if (cuerpoRoot) this.cuerpoWorkspace = new CuerpoWorkspace(cuerpoRoot);
 		this.sessionConsultationReasonInput =
 			this.form?.querySelector<HTMLTextAreaElement>(
@@ -2079,6 +2081,7 @@ class AppointmentModal extends HTMLElement {
 			customerName: detail.customerName || this.customerNameInput?.value || '',
 			readOnly: detail.readOnly === true,
 			sessionLabel: detail.sessionLabel,
+			embedded: true,
 		});
 	}
 
@@ -2086,7 +2089,6 @@ class AppointmentModal extends HTMLElement {
 		this.bodyMapOverlay?.setAttribute('hidden', '');
 		this.bodyMapOverlay?.classList.add('hidden');
 		this.modal?.classList.remove('is-body-map-workspace');
-		this.cuerpoWorkspace?.setContext(null);
 	};
 
 	private handleOpenClinicalWorkspaceEvent = (event: Event) => {
@@ -2120,6 +2122,7 @@ class AppointmentModal extends HTMLElement {
 			this.resetFormValues();
 			this.mode = 'create';
 			this.editingAppointmentId = 0;
+			this.cuerpoWorkspace?.clearContext();
 			this.syncDeleteButtonVisibility();
 		}, 140);
 	};
@@ -3073,11 +3076,7 @@ class AppointmentModal extends HTMLElement {
 		this.setSubmittingState(true, this.mode === 'edit' ? 'Guardando...' : 'Creando...');
 
 		try {
-			if (
-				this.mode === 'edit' &&
-				this.activeTab === 'notes' &&
-				this.cuerpoWorkspace?.hasPendingSnapshot()
-			) {
+			if (this.mode === 'edit' && this.cuerpoWorkspace?.hasPendingSnapshot()) {
 				try {
 					await this.cuerpoWorkspace.flushSnapshotToServer();
 				} catch (snapshotError) {

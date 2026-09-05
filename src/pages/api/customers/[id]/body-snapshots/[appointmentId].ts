@@ -3,6 +3,7 @@ import type { APIRoute } from 'astro';
 import {
 	BodyMapApiError,
 	getBodySnapshotWithOrds,
+	normalizeBodySessionSnapshot,
 	saveBodySnapshotWithOrds,
 } from '../../../../../lib/body-map';
 import type { BodySessionSnapshot } from '../../../../../lib/clinical-ficha/types';
@@ -36,23 +37,11 @@ const parseSnapshotPayload = (
 	if (!source || typeof source !== 'object') {
 		throw new BodyMapApiError('Cuerpo de solicitud inválido.', 400);
 	}
-	const body = source as Record<string, unknown>;
-	const marks = Array.isArray(body.marks) ? body.marks : [];
-	const joints = Array.isArray(body.joints) ? body.joints : [];
-	return {
-		customerId,
-		appointmentId,
-		capturedAt: String(body.capturedAt || body.captured_at || new Date().toISOString()).trim(),
-		silhouette: String(body.silhouette || 'NEUTRAL').trim().toUpperCase() as BodySessionSnapshot['silhouette'],
-		marks: marks as BodySessionSnapshot['marks'],
-		joints: joints as BodySessionSnapshot['joints'],
-		sessionLabel:
-			typeof body.sessionLabel === 'string'
-				? body.sessionLabel
-				: typeof body.session_label === 'string'
-					? body.session_label
-					: undefined,
-	};
+	const normalized = normalizeBodySessionSnapshot(customerId, appointmentId, source);
+	if (!normalized) {
+		throw new BodyMapApiError('Snapshot de mapa corporal inválido.', 400);
+	}
+	return normalized;
 };
 
 export const GET: APIRoute = async ({ locals, params }) => {

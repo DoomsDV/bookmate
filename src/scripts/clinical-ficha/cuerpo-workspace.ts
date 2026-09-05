@@ -1,6 +1,9 @@
 import {
+	BODY_MARK_KINDS,
 	BODY_VIEWS,
 	formatMarkSummary,
+	isAllowedBodyRegion,
+	JOINT_PREFERRED_VIEW,
 	JOINT_ROM,
 	JOINT_TESTS,
 	markKindMeta,
@@ -9,7 +12,9 @@ import {
 import { downloadBodyMapPdf } from '../../lib/clinical-ficha/body-pdf';
 import {
 	BODY_VIEWBOX,
+	getActiveMapViewBox,
 	getBodyOutline,
+	JOINT_VIEWPORTS,
 	markToViewCoords,
 	resolveBodyRegion,
 	SILHOUETTE_LABELS,
@@ -20,6 +25,11 @@ import {
 	getBodySnapshot,
 	getLatestBodySnapshot,
 	getPreviousBodySnapshot,
+	isBodySnapshotDirty,
+	markBodySnapshotClean,
+	markBodySnapshotDirty,
+	persistBodySnapshot,
+	prefetchBodySnapshotsForCustomer,
 	saveBodySnapshot,
 } from '../../lib/clinical-ficha/body-store';
 import type {
@@ -45,6 +55,7 @@ export type CuerpoWorkspaceContext = {
 	customerName: string;
 	readOnly?: boolean;
 	sessionLabel?: string;
+	embedded?: boolean;
 };
 
 export class CuerpoWorkspace {
@@ -53,6 +64,7 @@ export class CuerpoWorkspace {
 	private view: BodyView = 'FRONT';
 	private lens: 'BODY' | JointCode = 'BODY';
 	private activeMarkKind: BodyMarkKind = 'PAIN';
+	private activeMarkSide: 'L' | 'R' = 'R';
 	private intensity = 7;
 	private silhouette: BodySilhouette = 'FEMALE';
 	private compareMode = false;
@@ -60,6 +72,9 @@ export class CuerpoWorkspace {
 	private dirty = false;
 	private persisted = false;
 	private loadToken = 0;
+	private editingMarkId: string | null = null;
+	private selectedMarkId: string | null = null;
+	private saving = false;
 
 	private mapSvg: SVGSVGElement | null = null;
 	private mapLayer: SVGGElement | null = null;
@@ -73,17 +88,39 @@ export class CuerpoWorkspace {
 	}
 
 	setContext(context: CuerpoWorkspaceContext | null): void {
-		this.context = context;
 		if (!context || context.customerId <= 0) {
-			this.snapshot = null;
-			this.dirty = false;
-			this.persisted = false;
-			this.renderEmptyState();
-			this.syncDraftBanner();
-			this.syncReadOnlyUi();
+			this.clearContext();
 			return;
 		}
+
+		const sameSession =
+			this.context?.customerId === context.customerId &&
+			this.context?.appointmentId === context.appointmentId &&
+			Boolean(this.snapshot);
+
+		this.context = context;
+		if (sameSession) {
+			this.renderSessionHeader();
+			this.syncReadOnlyUi();
+			this.syncDraftBanner();
+			this.syncSaveButton();
+			return;
+		}
+
 		void this.applyContext(context);
+	}
+
+	clearContext(): void {
+		this.context = null;
+		this.snapshot = null;
+		this.dirty = false;
+		this.persisted = false;
+		this.editingMarkId = null;
+		this.selectedMarkId = null;
+		this.renderEmptyState();
+		this.syncDraftBanner();
+		this.syncReadOnlyUi();
+		this.syncSaveButton();
 	}
 
 	getSnapshot(): BodySessionSnapshot | null {
@@ -94,13 +131,39 @@ export class CuerpoWorkspace {
 		return Boolean(this.snapshot && this.dirty && this.context && this.context.appointmentId > 0);
 	}
 
+	async saveSession(): Promise<void> {
+		if (this.saving || this.isReadOnly()) return;
+		try {
+			await this.flushSnapshotToServer();
+		} catch (error) {
+			const banner = this.root.querySelector('[data-cuerpo-draft-banner]');
+			if (banner) {
+				banner.textContent =
+					error instanceof Error
+						? error.message
+						: 'No fue posible guardar el mapa corporal.';
+				banner.classList.remove('hidden');
+				banner.removeAttribute('hidden');
+			}
+			throw error;
+		}
+	}
+
 	async flushSnapshotToServer(): Promise<void> {
 		if (!this.snapshot || !this.context || this.context.appointmentId <= 0) return;
-		const { persistBodySnapshot } = await import('../../lib/clinical-ficha/body-store');
-		await persistBodySnapshot(this.snapshot);
-		this.dirty = false;
-		this.persisted = true;
-		this.syncDraftBanner();
+		this.saving = true;
+		this.syncSaveButton();
+		try {
+			await persistBodySnapshot(this.snapshot);
+			this.dirty = false;
+			this.persisted = true;
+			markBodySnapshotClean(this.context.customerId, this.context.appointmentId);
+			this.syncDraftBanner();
+			this.syncSaveButton();
+		} finally {
+			this.saving = false;
+			this.syncSaveButton();
+		}
 	}
 
 	private isReadOnly(): boolean {
@@ -111,35 +174,31 @@ export class CuerpoWorkspace {
 
 	private async applyContext(context: CuerpoWorkspaceContext): Promise<void> {
 		const token = ++this.loadToken;
-		this.dirty = false;
-		this.persisted = false;
+		this.lens = 'BODY';
+		this.syncLensButtons();
+		this.syncZoomLabel();
 
 		if (context.appointmentId <= 0) {
+			this.dirty = false;
+			this.persisted = false;
 			const latest =
 				getLatestBodySnapshot(context.customerId) ??
 				(await fetchLatestBodySnapshot(context.customerId));
 			if (token !== this.loadToken) return;
 			this.snapshot = latest ? { ...latest } : null;
-			this.silhouette = normalizeSilhouette(this.snapshot?.silhouette);
-			if (this.snapshot && this.snapshot.silhouette !== this.silhouette) {
-				this.snapshot = { ...this.snapshot, silhouette: this.silhouette };
-			}
-			this.renderSessionHeader();
-			this.syncViewButtons();
-			this.syncSilhouetteButtons();
-			this.syncMarkKindButtons();
-			this.syncIntensity();
-			this.renderMap();
-			this.renderSidebar();
-			this.renderJointPanel();
-			this.syncDraftBanner();
-			this.syncReadOnlyUi();
+			this.hydrateFromSnapshot();
 			return;
 		}
 
-		let snapshot =
-			getBodySnapshot(context.customerId, context.appointmentId) ??
-			(await fetchBodySnapshot(context.customerId, context.appointmentId));
+		void prefetchBodySnapshotsForCustomer(context.customerId);
+
+		const cached = getBodySnapshot(context.customerId, context.appointmentId);
+		const localDirty = isBodySnapshotDirty(context.customerId, context.appointmentId);
+		let snapshot = cached;
+
+		if (!cached) {
+			snapshot = await fetchBodySnapshot(context.customerId, context.appointmentId);
+		}
 
 		if (token !== this.loadToken) return;
 
@@ -155,24 +214,28 @@ export class CuerpoWorkspace {
 				sessionLabel: context.sessionLabel,
 			} satisfies BodySessionSnapshot);
 
-		if (snapshot) {
-			this.persisted = true;
-		}
+		this.dirty = Boolean(cached && localDirty);
+		this.persisted = Boolean(snapshot && !this.dirty);
+		this.hydrateFromSnapshot();
+	}
 
-		this.silhouette = normalizeSilhouette(this.snapshot.silhouette);
-		if (this.snapshot.silhouette !== this.silhouette) {
+	private hydrateFromSnapshot(): void {
+		this.silhouette = normalizeSilhouette(this.snapshot?.silhouette);
+		if (this.snapshot && this.snapshot.silhouette !== this.silhouette) {
 			this.snapshot = { ...this.snapshot, silhouette: this.silhouette };
 		}
 		this.renderSessionHeader();
 		this.syncViewButtons();
 		this.syncSilhouetteButtons();
 		this.syncMarkKindButtons();
+		this.syncMarkSideButtons();
 		this.syncIntensity();
 		this.renderMap();
 		this.renderSidebar();
 		this.renderJointPanel();
 		this.syncDraftBanner();
 		this.syncReadOnlyUi();
+		this.syncSaveButton();
 	}
 
 	private syncDraftBanner(): void {
@@ -180,25 +243,53 @@ export class CuerpoWorkspace {
 		if (!banner) return;
 		const show = Boolean(this.snapshot && this.dirty && !this.persisted && !this.isReadOnly());
 		banner.classList.toggle('hidden', !show);
-		if (show) banner.removeAttribute('hidden');
-		else banner.setAttribute('hidden', '');
+		if (show) {
+			banner.textContent = 'Cambios sin guardar en esta sesión.';
+			banner.removeAttribute('hidden');
+		} else {
+			banner.setAttribute('hidden', '');
+		}
+	}
+
+	private syncSaveButton(): void {
+		const button = this.root.querySelector<HTMLButtonElement>('[data-cuerpo-save-session]');
+		if (!button) return;
+		const readOnly = this.isReadOnly();
+		const show = !readOnly && this.context && this.context.appointmentId > 0;
+		button.classList.toggle('hidden', !show);
+		if (!show) {
+			button.disabled = true;
+			return;
+		}
+		button.disabled = this.saving || !this.dirty;
+		if (this.saving) {
+			button.textContent = 'Guardando…';
+		} else if (this.dirty) {
+			button.innerHTML =
+				'<span class="material-symbols-rounded" aria-hidden="true">save</span> Guardar sesión';
+		} else {
+			button.innerHTML =
+				'<span class="material-symbols-rounded" aria-hidden="true">check</span> Sesión guardada';
+		}
 	}
 
 	private syncReadOnlyUi(): void {
 		const readOnly = this.isReadOnly();
 		for (const selector of [
 			'[data-cuerpo-add-mark]',
+			'[data-cuerpo-save-session]',
 			'[data-cuerpo-intensity-dec]',
 			'[data-cuerpo-intensity-inc]',
 			'[data-cuerpo-intensity-slider]',
 			'[data-cuerpo-mark-kind]',
+			'[data-cuerpo-mark-side]',
 			'[data-cuerpo-silhouette]',
 			'[data-cuerpo-rom]',
 			'[data-cuerpo-eva]',
 			'[data-cuerpo-test]',
 		]) {
 			for (const el of this.root.querySelectorAll<HTMLElement>(selector)) {
-				if (el instanceof HTMLButtonElement || el instanceof HTMLInputElement) {
+				if (el instanceof HTMLButtonElement || el instanceof HTMLInputElement || el instanceof HTMLSelectElement) {
 					el.disabled = readOnly;
 				}
 			}
@@ -215,7 +306,8 @@ export class CuerpoWorkspace {
 				this.view = (viewBtn.dataset.cuerpoView as BodyView) || 'FRONT';
 				this.syncViewButtons();
 				this.renderMap();
-				if (this.compareMode) this.renderCompareMap();
+				this.renderSidebar();
+				if (this.compareMode) void this.renderCompareMap();
 				return;
 			}
 
@@ -223,8 +315,28 @@ export class CuerpoWorkspace {
 			if (lensBtn) {
 				const lens = lensBtn.dataset.cuerpoLens;
 				this.lens = lens === 'BODY' ? 'BODY' : (lens as JointCode);
+				if (this.lens !== 'BODY') {
+					const preferred = JOINT_PREFERRED_VIEW[this.lens];
+					if (this.view !== preferred) {
+						this.view = preferred;
+						this.syncViewButtons();
+					}
+				}
 				this.syncLensButtons();
+				this.syncZoomLabel();
+				this.renderMap();
 				this.renderJointPanel();
+				return;
+			}
+
+			const sideBtn = target.closest<HTMLButtonElement>('[data-cuerpo-mark-side]');
+			if (sideBtn) {
+				if (this.isReadOnly()) return;
+				const side = sideBtn.dataset.cuerpoMarkSide;
+				if (side === 'L' || side === 'R') {
+					this.activeMarkSide = side;
+					this.syncMarkSideButtons();
+				}
 				return;
 			}
 
@@ -258,7 +370,7 @@ export class CuerpoWorkspace {
 					this.syncSilhouetteButtons();
 					this.syncMapAriaLabel();
 					this.renderMap();
-					if (this.compareMode) this.renderCompareMap();
+					if (this.compareMode) void this.renderCompareMap();
 				}
 				return;
 			}
@@ -266,7 +378,7 @@ export class CuerpoWorkspace {
 			if (target.closest('[data-cuerpo-compare]')) {
 				this.compareMode = !this.compareMode;
 				this.root.querySelector('[data-cuerpo-compare-wrap]')?.classList.toggle('hidden', !this.compareMode);
-				if (this.compareMode) this.renderCompareMap();
+				if (this.compareMode) void this.renderCompareMap();
 				return;
 			}
 
@@ -275,9 +387,53 @@ export class CuerpoWorkspace {
 				return;
 			}
 
+			if (target.closest('[data-cuerpo-save-session]')) {
+				void this.saveSession();
+				return;
+			}
+
 			if (target.closest('[data-cuerpo-add-mark]')) {
 				if (this.isReadOnly()) return;
 				this.addMarkAtCenter();
+				return;
+			}
+
+			const removeMarkBtn = target.closest<HTMLButtonElement>('[data-cuerpo-mark-remove]');
+			if (removeMarkBtn) {
+				if (this.isReadOnly()) return;
+				const markId = removeMarkBtn.dataset.cuerpoMarkRemove;
+				if (markId) this.removeMark(markId);
+				return;
+			}
+
+			const markItem = target.closest<HTMLButtonElement>('[data-cuerpo-mark-item]');
+			if (markItem) {
+				const markId = markItem.dataset.cuerpoMarkItem;
+				if (markId) this.openMarkEditor(markId);
+				return;
+			}
+
+			const mapMark = target.closest<SVGElement>('[data-cuerpo-map-mark]');
+			if (mapMark) {
+				const markId = mapMark.getAttribute('data-mark-id');
+				if (markId && !this.isReadOnly()) this.openMarkEditor(markId);
+				return;
+			}
+
+			if (target.closest('[data-cuerpo-mark-editor-close]')) {
+				this.closeMarkEditor();
+				return;
+			}
+
+			if (target.closest('[data-cuerpo-mark-editor-delete]')) {
+				if (this.editingMarkId) this.removeMark(this.editingMarkId);
+				this.closeMarkEditor();
+				return;
+			}
+
+			const editorSideBtn = target.closest<HTMLButtonElement>('[data-cuerpo-mark-editor-side]');
+			if (editorSideBtn) {
+				this.syncMarkEditorSideButtons(editorSideBtn.dataset.cuerpoMarkEditorSide as 'L' | 'R');
 				return;
 			}
 
@@ -290,16 +446,11 @@ export class CuerpoWorkspace {
 				this.updateJointTest(joint, testCode, result);
 				return;
 			}
+		});
 
-			const romInput = target.closest<HTMLInputElement>('input[data-cuerpo-rom]');
-			if (romInput && this.snapshot) {
-				romInput.addEventListener('change', () => this.persistRomFromDom(), { once: true });
-			}
-
-			const evaInput = target.closest<HTMLInputElement>('input[data-cuerpo-eva]');
-			if (evaInput && this.snapshot) {
-				evaInput.addEventListener('change', () => this.persistEvaFromDom(), { once: true });
-			}
+		this.root.querySelector('[data-cuerpo-mark-editor-form]')?.addEventListener('submit', (event) => {
+			event.preventDefault();
+			this.saveMarkFromEditor();
 		});
 
 		this.root.addEventListener('input', (event) => {
@@ -307,6 +458,11 @@ export class CuerpoWorkspace {
 			if (!(target instanceof HTMLInputElement)) return;
 			if (target.matches('[data-cuerpo-intensity-slider]')) {
 				this.handleIntensityControlChange(target);
+				return;
+			}
+			if (target.matches('[data-cuerpo-mark-editor-intensity]')) {
+				const valueEl = this.root.querySelector('[data-cuerpo-mark-editor-intensity-value]');
+				if (valueEl) valueEl.textContent = `${target.value}/10`;
 				return;
 			}
 			if (target.matches('[data-cuerpo-eva]')) {
@@ -351,20 +507,62 @@ export class CuerpoWorkspace {
 		this.syncIntensity(false);
 	}
 
+	private resolveMarkSide(regionSide: 'L' | 'R' | null, nx: number): 'L' | 'R' {
+		if (regionSide === 'L' || regionSide === 'R') return regionSide;
+		if (this.view === 'FRONT' || this.view === 'BACK') {
+			return nx < 0.5 ? 'L' : 'R';
+		}
+		return this.activeMarkSide;
+	}
+
 	private renderEmptyState(): void {
-		const sessionEl = this.root.querySelector('[data-cuerpo-session-label]');
-		if (sessionEl) sessionEl.textContent = 'Elegí una sesión o abrí el estado actual.';
+		const chip = this.root.querySelector('[data-cuerpo-session-chip]');
+		if (chip) chip.textContent = 'Sin cita';
 	}
 
 	private renderSessionHeader(): void {
+		const chipWrap = this.root.querySelector('[data-cuerpo-session-chip-wrap]');
+		const chip = this.root.querySelector('[data-cuerpo-session-chip]');
 		const sessionEl = this.root.querySelector('[data-cuerpo-session-label]');
-		if (!sessionEl || !this.context) return;
-		if (this.context.appointmentId <= 0) {
-			sessionEl.textContent = 'Estado actual · solo lectura';
+		if (!this.context) return;
+
+		const embedded = this.context.embedded === true;
+		chipWrap?.classList.toggle('hidden', !embedded);
+		if (embedded && chip) {
+			if (this.context.appointmentId <= 0) {
+				chip.textContent = 'Estado actual · solo lectura';
+			} else {
+				chip.textContent =
+					this.context.sessionLabel || `Cita #${this.context.appointmentId}`;
+			}
+		}
+
+		if (sessionEl && !embedded) {
+			if (this.context.appointmentId <= 0) {
+				sessionEl.textContent = 'Estado actual · solo lectura';
+			} else {
+				sessionEl.textContent =
+					this.context.sessionLabel || `Cita #${this.context.appointmentId}`;
+			}
+		}
+	}
+
+	private syncZoomLabel(): void {
+		const label = this.root.querySelector('[data-cuerpo-zoom-label]');
+		if (!label) return;
+		if (this.lens === 'BODY') {
+			label.classList.add('hidden');
+			label.textContent = '';
 			return;
 		}
-		const label = this.context.sessionLabel || `Sesión · Cita #${this.context.appointmentId}`;
-		sessionEl.textContent = label;
+		const viewport = JOINT_VIEWPORTS[this.lens];
+		label.classList.remove('hidden');
+		label.textContent = `Zoom: ${viewport.label}`;
+	}
+
+	private applyMapViewBox(svg: SVGSVGElement): void {
+		const box = getActiveMapViewBox(this.lens, this.view);
+		svg.setAttribute('viewBox', `${box.x} ${box.y} ${box.width} ${box.height}`);
 	}
 
 	private renderMap(): void {
@@ -373,18 +571,30 @@ export class CuerpoWorkspace {
 		this.outlineLayer = this.root.querySelector('[data-cuerpo-map-outline]');
 		if (!this.mapSvg || !this.mapLayer || !this.outlineLayer) return;
 		this.ensureSvgNamespace(this.mapSvg);
+		this.applyMapViewBox(this.mapSvg);
 		this.drawOutline(this.mapSvg, this.outlineLayer, { interactive: true });
-		this.renderMarks(this.mapLayer, this.snapshot?.marks ?? []);
+		this.renderMarks(this.mapLayer, this.snapshot?.marks ?? [], { interactive: true });
 		this.syncMapAriaLabel();
+		this.syncZoomLabel();
 	}
 
-	private renderCompareMap(): void {
+	private async renderCompareMap(): Promise<void> {
 		if (!this.context || this.context.appointmentId <= 0) return;
-		const previous = getPreviousBodySnapshot(this.context.customerId, this.context.appointmentId);
 		this.compareSvg = this.root.querySelector('[data-cuerpo-compare-svg]');
 		this.compareLayer = this.root.querySelector('[data-cuerpo-compare-marks]');
 		const empty = this.root.querySelector('[data-cuerpo-compare-empty]');
+		const loading = this.root.querySelector('[data-cuerpo-compare-loading]');
 		if (!this.compareSvg || !this.compareLayer) return;
+
+		let previous = getPreviousBodySnapshot(this.context.customerId, this.context.appointmentId);
+		if (!previous) {
+			loading?.classList.remove('hidden');
+			empty?.classList.add('hidden');
+			await prefetchBodySnapshotsForCustomer(this.context.customerId);
+			previous = getPreviousBodySnapshot(this.context.customerId, this.context.appointmentId);
+			loading?.classList.add('hidden');
+		}
+
 		if (!previous) {
 			empty?.classList.remove('hidden');
 			this.compareLayer.replaceChildren();
@@ -394,8 +604,9 @@ export class CuerpoWorkspace {
 		const compareOutline = this.compareSvg.querySelector('[data-cuerpo-map-outline]');
 		if (!(compareOutline instanceof SVGGElement)) return;
 		this.ensureSvgNamespace(this.compareSvg);
+		this.applyMapViewBox(this.compareSvg);
 		this.drawOutline(this.compareSvg, compareOutline, { interactive: false });
-		this.renderMarks(this.compareLayer, previous.marks);
+		this.renderMarks(this.compareLayer, previous.marks, { interactive: false });
 	}
 
 	private ensureSvgNamespace(svg: SVGSVGElement): void {
@@ -423,10 +634,9 @@ export class CuerpoWorkspace {
 
 		if (options.interactive) {
 			svg.onclick = (event) => {
-				if (this.context?.readOnly) return;
-				const rect = svg.getBoundingClientRect();
-				const nx = (event.clientX - rect.left) / rect.width;
-				const ny = (event.clientY - rect.top) / rect.height;
+				if (this.isReadOnly()) return;
+				if ((event.target as Element | null)?.closest('[data-cuerpo-map-mark]')) return;
+				const { nx, ny } = this.pointerToNormalizedCoords(svg, event.clientX, event.clientY);
 				if (nx < 0 || nx > 1 || ny < 0 || ny > 1) return;
 				if (!this.isPointOnBody(path, nx, ny)) return;
 				this.addMark(nx, ny);
@@ -434,6 +644,23 @@ export class CuerpoWorkspace {
 		} else {
 			svg.onclick = null;
 		}
+	}
+
+	private pointerToNormalizedCoords(
+		svg: SVGSVGElement,
+		clientX: number,
+		clientY: number
+	): { nx: number; ny: number } {
+		const rect = svg.getBoundingClientRect();
+		const box = getActiveMapViewBox(this.lens, this.view);
+		const relX = rect.width > 0 ? (clientX - rect.left) / rect.width : 0;
+		const relY = rect.height > 0 ? (clientY - rect.top) / rect.height : 0;
+		const x = box.x + relX * box.width;
+		const y = box.y + relY * box.height;
+		return {
+			nx: x / BODY_VIEWBOX.width,
+			ny: y / BODY_VIEWBOX.height,
+		};
 	}
 
 	private isPointOnBody(path: SVGPathElement, nx: number, ny: number): boolean {
@@ -446,22 +673,31 @@ export class CuerpoWorkspace {
 		return path.isPointInFill(point);
 	}
 
-	private renderMarks(layer: SVGGElement, marks: BodyMark[]): void {
+	private renderMarks(
+		layer: SVGGElement,
+		marks: BodyMark[],
+		options: { interactive: boolean }
+	): void {
 		layer.replaceChildren();
 		for (const mark of marks.filter((m) => m.view === this.view)) {
 			const meta = markKindMeta(mark.kind);
 			const { x, y } = markToViewCoords(mark.nx, mark.ny);
 			const g = document.createElementNS(SVG_NS, 'g');
 			g.setAttribute('transform', `translate(${x}, ${y})`);
+			if (options.interactive) {
+				g.setAttribute('data-cuerpo-map-mark', '1');
+				g.setAttribute('data-mark-id', mark.id);
+				g.style.cursor = this.isReadOnly() ? 'default' : 'pointer';
+			}
 
 			const halo = document.createElementNS(SVG_NS, 'circle');
 			halo.setAttribute('r', String(2 + mark.intensity * 0.35));
 			halo.setAttribute('fill', meta.color);
-			halo.setAttribute('opacity', '0.28');
+			halo.setAttribute('opacity', mark.id === this.selectedMarkId ? '0.45' : '0.28');
 			g.appendChild(halo);
 
 			const dot = document.createElementNS(SVG_NS, 'circle');
-			dot.setAttribute('r', '1.6');
+			dot.setAttribute('r', mark.id === this.selectedMarkId ? '2.1' : '1.6');
 			dot.setAttribute('fill', meta.color);
 			dot.setAttribute('aria-hidden', 'true');
 			g.appendChild(dot);
@@ -478,6 +714,8 @@ export class CuerpoWorkspace {
 		if (!this.snapshot || !this.context || this.isReadOnly()) return;
 		const intensity = this.activeMarkKind === 'SCAR' ? 0 : this.captureIntensityFromControls();
 		const region = resolveBodyRegion(this.view, nx, ny);
+		if (!isAllowedBodyRegion(region.regionCode)) return;
+		const side = this.resolveMarkSide(region.side, nx);
 		const mark: BodyMark = {
 			id: `m_${crypto.randomUUID()}`,
 			kind: this.activeMarkKind,
@@ -486,52 +724,189 @@ export class CuerpoWorkspace {
 			regionCode: region.regionCode,
 			nx,
 			ny,
-			side: region.side,
+			side,
 			note: '',
 			createdAt: new Date().toISOString(),
 		};
+		this.activeMarkSide = side;
+		this.syncMarkSideButtons();
 		this.snapshot = { ...this.snapshot, marks: [...this.snapshot.marks, mark] };
 		this.persist();
 		this.renderMap();
 		this.renderSidebar();
+		if (this.compareMode) void this.renderCompareMap();
+	}
+
+	private removeMark(markId: string): void {
+		if (!this.snapshot || !this.context || this.isReadOnly()) return;
+		const nextMarks = this.snapshot.marks.filter((mark) => mark.id !== markId);
+		if (nextMarks.length === this.snapshot.marks.length) return;
+		this.snapshot = { ...this.snapshot, marks: nextMarks };
+		if (this.selectedMarkId === markId) this.selectedMarkId = null;
+		if (this.editingMarkId === markId) this.editingMarkId = null;
+		this.persist();
+		this.renderMap();
+		this.renderSidebar();
+		if (this.compareMode) void this.renderCompareMap();
+	}
+
+	private updateMark(markId: string, patch: Partial<BodyMark>): void {
+		if (!this.snapshot || this.isReadOnly()) return;
+		this.snapshot = {
+			...this.snapshot,
+			marks: this.snapshot.marks.map((mark) =>
+				mark.id === markId ? { ...mark, ...patch } : mark
+			),
+		};
+		this.persist();
+		this.renderMap();
+		this.renderSidebar();
+		if (this.compareMode) void this.renderCompareMap();
 	}
 
 	private persist(): void {
-		if (!this.snapshot || this.isReadOnly()) return;
+		if (!this.snapshot || this.isReadOnly() || !this.context) return;
 		this.snapshot = {
 			...this.snapshot,
 			silhouette: this.silhouette,
 			capturedAt: new Date().toISOString(),
 		};
 		saveBodySnapshot(this.snapshot);
+		markBodySnapshotDirty(this.context.customerId, this.context.appointmentId);
 		this.dirty = true;
 		this.persisted = false;
 		this.syncDraftBanner();
+		this.syncSaveButton();
 	}
 
 	private renderSidebar(): void {
 		const list = this.root.querySelector('[data-cuerpo-marks-list]');
 		const empty = this.root.querySelector('[data-cuerpo-marks-empty]');
+		const viewHint = this.root.querySelector('[data-cuerpo-marks-view-hint]');
 		if (!list) return;
 		list.replaceChildren();
 		const marks = this.snapshot?.marks ?? [];
+		const marksInView = marks.filter((mark) => mark.view === this.view);
+
 		if (!marks.length) {
 			empty?.classList.remove('hidden');
+			viewHint?.classList.add('hidden');
 			return;
 		}
 		empty?.classList.add('hidden');
+		viewHint?.classList.toggle('hidden', !(marks.length > 0 && marksInView.length === 0));
+
+		const readOnly = this.isReadOnly();
 		for (const mark of [...marks].reverse()) {
 			const meta = markKindMeta(mark.kind);
 			const li = document.createElement('li');
 			li.className = 'cuerpo-mark-item';
+
+			const openBtn = document.createElement('button');
+			openBtn.type = 'button';
+			openBtn.className = 'cuerpo-mark-item__open';
+			openBtn.dataset.cuerpoMarkItem = mark.id;
+			if (mark.id === this.selectedMarkId) openBtn.classList.add('is-selected');
+			openBtn.setAttribute('aria-label', `Editar ${formatMarkSummary(mark)}`);
+
 			const title = document.createElement('span');
 			title.className = 'cuerpo-mark-item__dot';
 			title.style.backgroundColor = meta.color;
 			const text = document.createElement('span');
+			text.className = 'cuerpo-mark-item__text';
 			text.textContent = formatMarkSummary(mark);
-			li.append(title, text);
+			openBtn.append(title, text);
+
+			li.appendChild(openBtn);
+			if (!readOnly) {
+				const removeBtn = document.createElement('button');
+				removeBtn.type = 'button';
+				removeBtn.className = 'cuerpo-mark-item__remove';
+				removeBtn.dataset.cuerpoMarkRemove = mark.id;
+				removeBtn.setAttribute('aria-label', `Eliminar ${formatMarkSummary(mark)}`);
+				const removeIcon = document.createElement('span');
+				removeIcon.className = 'material-symbols-rounded';
+				removeIcon.setAttribute('aria-hidden', 'true');
+				removeIcon.textContent = 'delete';
+				removeBtn.appendChild(removeIcon);
+				li.appendChild(removeBtn);
+			}
 			list.appendChild(li);
 		}
+	}
+
+	private openMarkEditor(markId: string): void {
+		if (this.isReadOnly() || !this.snapshot) return;
+		const mark = this.snapshot.marks.find((item) => item.id === markId);
+		if (!mark) return;
+		this.editingMarkId = markId;
+		this.selectedMarkId = markId;
+		this.renderMap();
+		this.renderSidebar();
+
+		const dialog = this.root.querySelector<HTMLDialogElement>('[data-cuerpo-mark-editor]');
+		const kindSelect = this.root.querySelector<HTMLSelectElement>('[data-cuerpo-mark-editor-kind]');
+		const intensityInput = this.root.querySelector<HTMLInputElement>('[data-cuerpo-mark-editor-intensity]');
+		const intensityValue = this.root.querySelector('[data-cuerpo-mark-editor-intensity-value]');
+		const noteInput = this.root.querySelector<HTMLInputElement>('[data-cuerpo-mark-editor-note]');
+
+		if (kindSelect) {
+			kindSelect.replaceChildren();
+			for (const item of BODY_MARK_KINDS) {
+				const option = document.createElement('option');
+				option.value = item.code;
+				option.textContent = item.label;
+				option.selected = item.code === mark.kind;
+				kindSelect.appendChild(option);
+			}
+		}
+		if (intensityInput) {
+			intensityInput.value = String(mark.intensity);
+			intensityInput.disabled = mark.kind === 'SCAR';
+		}
+		if (intensityValue) intensityValue.textContent = `${mark.intensity}/10`;
+		if (noteInput) noteInput.value = mark.note || '';
+		this.syncMarkEditorSideButtons(mark.side || 'R');
+		dialog?.showModal();
+	}
+
+	private closeMarkEditor(): void {
+		this.root.querySelector<HTMLDialogElement>('[data-cuerpo-mark-editor]')?.close();
+		this.editingMarkId = null;
+	}
+
+	private getMarkEditorSide(): 'L' | 'R' {
+		const active = this.root.querySelector<HTMLButtonElement>(
+			'[data-cuerpo-mark-editor-side].is-active'
+		);
+		return active?.dataset.cuerpoMarkEditorSide === 'L' ? 'L' : 'R';
+	}
+
+	private syncMarkEditorSideButtons(side: 'L' | 'R'): void {
+		for (const btn of this.root.querySelectorAll<HTMLButtonElement>('[data-cuerpo-mark-editor-side]')) {
+			const active = btn.dataset.cuerpoMarkEditorSide === side;
+			btn.classList.toggle('is-active', active);
+			btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+		}
+	}
+
+	private saveMarkFromEditor(): void {
+		if (!this.editingMarkId || !this.snapshot) return;
+		const kind =
+			(this.root.querySelector<HTMLSelectElement>('[data-cuerpo-mark-editor-kind]')?.value as BodyMarkKind) ||
+			'PAIN';
+		const intensityRaw = Number(
+			this.root.querySelector<HTMLInputElement>('[data-cuerpo-mark-editor-intensity]')?.value || 0
+		);
+		const intensity = kind === 'SCAR' ? 0 : Math.max(0, Math.min(10, Math.round(intensityRaw)));
+		const note = String(this.root.querySelector<HTMLInputElement>('[data-cuerpo-mark-editor-note]')?.value || '').trim();
+		this.updateMark(this.editingMarkId, {
+			kind,
+			intensity,
+			side: this.getMarkEditorSide(),
+			note,
+		});
+		this.closeMarkEditor();
 	}
 
 	private renderJointPanel(): void {
@@ -545,7 +920,7 @@ export class CuerpoWorkspace {
 		panel.classList.remove('hidden');
 		panel.removeAttribute('hidden');
 		const joint = this.lens;
-		const assessment = this.getOrCreateJoint(joint);
+		const assessment = this.getJointAssessment(joint);
 		const romDefs = JOINT_ROM[joint];
 		const tests = JOINT_TESTS[joint];
 
@@ -565,7 +940,7 @@ export class CuerpoWorkspace {
 				input.dataset.cuerpoRom = '1';
 				input.dataset.cuerpoJoint = joint;
 				input.dataset.cuerpoRomCode = def.code;
-				input.value = String(assessment.rom[def.code] ?? '');
+				input.value = String(assessment?.rom[def.code] ?? '');
 				const unit = document.createElement('span');
 				unit.className = 'cuerpo-rom-field__unit';
 				unit.textContent = def.unit;
@@ -594,8 +969,8 @@ export class CuerpoWorkspace {
 					btn.dataset.cuerpoResult = result;
 					const formatted = formatTestResult(result);
 					btn.textContent = formatted.label;
-					btn.classList.toggle('is-active', assessment.tests.find((t) => t.code === test.code)?.result === result);
-					btn.classList.toggle(`cuerpo-test-chip--${formatted.tone}`, assessment.tests.find((t) => t.code === test.code)?.result === result);
+					btn.classList.toggle('is-active', assessment?.tests.find((t) => t.code === test.code)?.result === result);
+					btn.classList.toggle(`cuerpo-test-chip--${formatted.tone}`, assessment?.tests.find((t) => t.code === test.code)?.result === result);
 					actions.appendChild(btn);
 				}
 				row.append(name, actions);
@@ -604,44 +979,45 @@ export class CuerpoWorkspace {
 		}
 
 		const evaInput = panel.querySelector<HTMLInputElement>('[data-cuerpo-eva]');
-		if (evaInput) evaInput.value = String(assessment.eva);
+		if (evaInput) evaInput.value = String(assessment?.eva ?? 0);
 	}
 
-	private getOrCreateJoint(joint: JointCode): JointAssessment {
+	private getJointAssessment(joint: JointCode): JointAssessment | null {
+		return this.snapshot?.joints.find((j) => j.joint === joint) ?? null;
+	}
+
+	private ensureJointAssessment(joint: JointCode): JointAssessment {
 		if (!this.snapshot) {
-			return { joint, side: 'R', rom: {}, tests: [], eva: 0 };
+			return { joint, side: this.activeMarkSide, rom: {}, tests: [], eva: 0 };
 		}
 		let assessment = this.snapshot.joints.find((j) => j.joint === joint);
 		if (!assessment) {
-			if (this.isReadOnly()) {
-				return { joint, side: 'R', rom: {}, tests: [], eva: 0 };
-			}
-			assessment = { joint, side: 'R', rom: {}, tests: [], eva: 0 };
+			assessment = { joint, side: this.activeMarkSide, rom: {}, tests: [], eva: 0 };
 			this.snapshot = { ...this.snapshot, joints: [...this.snapshot.joints, assessment] };
-			this.persist();
 		}
 		return assessment;
 	}
 
 	private updateJointTest(joint: JointCode, testCode: string, result: TestResult): void {
 		if (!this.snapshot || this.isReadOnly()) return;
-		const assessment = this.getOrCreateJoint(joint);
+		const assessment = this.ensureJointAssessment(joint);
 		const tests = assessment.tests.filter((t) => t.code !== testCode);
 		tests.push({ code: testCode, result });
 		this.snapshot = {
 			...this.snapshot,
 			joints: this.snapshot.joints.map((j) =>
-				j.joint === joint ? { ...j, tests } : j
+				j.joint === joint ? { ...j, tests, side: this.activeMarkSide } : j
 			),
 		};
 		this.persist();
 		this.renderJointPanel();
+		if (this.compareMode) void this.renderCompareMap();
 	}
 
 	private persistRomFromDom(): void {
 		if (!this.snapshot || this.lens === 'BODY' || this.isReadOnly()) return;
 		const joint = this.lens;
-		const assessment = this.getOrCreateJoint(joint);
+		const assessment = this.ensureJointAssessment(joint);
 		const rom: Record<string, number> = { ...assessment.rom };
 		for (const input of this.root.querySelectorAll<HTMLInputElement>(
 			`input[data-cuerpo-rom][data-cuerpo-joint="${joint}"]`
@@ -652,9 +1028,12 @@ export class CuerpoWorkspace {
 		}
 		this.snapshot = {
 			...this.snapshot,
-			joints: this.snapshot.joints.map((j) => (j.joint === joint ? { ...j, rom } : j)),
+			joints: this.snapshot.joints.map((j) =>
+				j.joint === joint ? { ...j, rom, side: this.activeMarkSide } : j
+			),
 		};
 		this.persist();
+		if (this.compareMode) void this.renderCompareMap();
 	}
 
 	private persistEvaFromDom(): void {
@@ -662,11 +1041,15 @@ export class CuerpoWorkspace {
 		const joint = this.lens;
 		const input = this.root.querySelector<HTMLInputElement>('[data-cuerpo-eva]');
 		const eva = Math.max(0, Math.min(10, Number(input?.value) || 0));
+		this.ensureJointAssessment(joint);
 		this.snapshot = {
 			...this.snapshot,
-			joints: this.snapshot.joints.map((j) => (j.joint === joint ? { ...j, eva } : j)),
+			joints: this.snapshot.joints.map((j) =>
+				j.joint === joint ? { ...j, eva, side: this.activeMarkSide } : j
+			),
 		};
 		this.persist();
+		if (this.compareMode) void this.renderCompareMap();
 	}
 
 	private syncViewButtons(): void {
@@ -691,6 +1074,14 @@ export class CuerpoWorkspace {
 		}
 	}
 
+	private syncMarkSideButtons(): void {
+		for (const btn of this.root.querySelectorAll<HTMLButtonElement>('[data-cuerpo-mark-side]')) {
+			const active = btn.dataset.cuerpoMarkSide === this.activeMarkSide;
+			btn.classList.toggle('is-active', active);
+			btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+		}
+	}
+
 	private syncIntensity(updateSlider = true): void {
 		const valueEl = this.root.querySelector('[data-cuerpo-intensity-value]');
 		if (valueEl) valueEl.textContent = String(this.intensity);
@@ -709,9 +1100,11 @@ export class CuerpoWorkspace {
 	private syncMapAriaLabel(): void {
 		if (!this.mapSvg) return;
 		const viewLabel = BODY_VIEWS.find((item) => item.code === this.view)?.label ?? this.view;
+		const zoom =
+			this.lens === 'BODY' ? '' : `, zoom ${JOINT_VIEWPORTS[this.lens].label.toLowerCase()}`;
 		this.mapSvg.setAttribute(
 			'aria-label',
-			`${SILHOUETTE_LABELS[this.silhouette]}, vista ${viewLabel.toLowerCase()}`
+			`${SILHOUETTE_LABELS[this.silhouette]}, vista ${viewLabel.toLowerCase()}${zoom}`
 		);
 	}
 

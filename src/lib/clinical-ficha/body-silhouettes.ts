@@ -1,4 +1,4 @@
-import type { BodySilhouette, BodyView } from './types';
+import type { BodySilhouette, BodyView, JointCode } from './types';
 
 /** Coordenadas normalizadas del mapa (vista del paciente: izquierda en pantalla = lado izquierdo del paciente). */
 export const BODY_VIEWBOX = { width: 100, height: 130 } as const;
@@ -75,9 +75,34 @@ export const BODY_REGION_HITS: BodyRegionHit[] = [
 	{ code: 'FRONT_KNEE_R', view: 'FRONT', cx: 58, cy: 108, rx: 9, ry: 10, side: 'R' },
 	{ code: 'BACK_HIP_L', view: 'BACK', cx: 38, cy: 92, rx: 10, ry: 9, side: 'L' },
 	{ code: 'BACK_HIP_R', view: 'BACK', cx: 62, cy: 92, rx: 10, ry: 9, side: 'R' },
-	{ code: 'SIDE_ANKLE_L', view: 'SIDE', cx: 52, cy: 118, rx: 8, ry: 7, side: 'L' },
-	{ code: 'SIDE_ANKLE_R', view: 'SIDE', cx: 52, cy: 118, rx: 8, ry: 7, side: 'R' },
+	{ code: 'SIDE_ANKLE_L', view: 'SIDE', cx: 46, cy: 118, rx: 8, ry: 7, side: 'L' },
+	{ code: 'SIDE_ANKLE_R', view: 'SIDE', cx: 58, cy: 118, rx: 8, ry: 7, side: 'R' },
 ];
+
+export type JointViewport = {
+	view: BodyView;
+	viewBox: { x: number; y: number; width: number; height: number };
+	label: string;
+};
+
+export const JOINT_VIEWPORTS: Record<JointCode, JointViewport> = {
+	SHOULDER: { view: 'FRONT', viewBox: { x: 6, y: 18, width: 88, height: 42 }, label: 'Hombro' },
+	HIP: { view: 'BACK', viewBox: { x: 18, y: 68, width: 64, height: 42 }, label: 'Cadera' },
+	KNEE: { view: 'FRONT', viewBox: { x: 24, y: 84, width: 52, height: 46 }, label: 'Rodilla' },
+	ANKLE: { view: 'SIDE', viewBox: { x: 28, y: 92, width: 48, height: 38 }, label: 'Tobillo' },
+};
+
+export const getActiveMapViewBox = (
+	lens: 'BODY' | JointCode,
+	view: BodyView
+): { x: number; y: number; width: number; height: number } => {
+	if (lens === 'BODY') {
+		return { x: 0, y: 0, width: BODY_VIEWBOX.width, height: BODY_VIEWBOX.height };
+	}
+	const viewport = JOINT_VIEWPORTS[lens];
+	if (viewport.view === view) return viewport.viewBox;
+	return { x: 0, y: 0, width: BODY_VIEWBOX.width, height: BODY_VIEWBOX.height };
+};
 
 export const getBodyOutline = (silhouette: BodySilhouette, view: BodyView): string =>
 	BODY_OUTLINES[silhouette]?.[view] ?? BODY_OUTLINES.NEUTRAL[view];
