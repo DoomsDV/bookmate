@@ -816,7 +816,7 @@ const defaultCardHint = defaultCard
 															</span>
 															{line.cancel_credit_amount > 0 ? (
 																<span class="text-[0.78rem] font-medium text-(--on-surface-variant)">
-																	Al cancelar: crédito estimado {formatGs(line.cancel_credit_amount)}
+																	Al cancelar: {line.cancel_refund_type === 'nce' ? 'nota de crédito estimada' : 'crédito estimado'} {formatGs(line.cancel_credit_amount)}
 																</span>
 															) : null}
 														</div>
@@ -828,6 +828,7 @@ const defaultCardHint = defaultCard
 																data-addon-code={line.code}
 																data-addon-name={line.name}
 																data-addon-credit={String(line.cancel_credit_amount)}
+																data-addon-refund-type={line.cancel_refund_type || 'credit'}
 															>
 																Cancelar
 															</button>

@@ -919,10 +919,13 @@ export function initPlanPage() {
 		const code = btn.dataset.addonCode || '';
 		const name = btn.dataset.addonName || code;
 		const credit = Number(btn.dataset.addonCredit || '0');
+		const refundType = btn.dataset.addonRefundType || 'credit';
 		const message =
-			credit > 0
-				? `Al cancelar ${name} se acreditarán ${formatGs(credit)} a favor por el tiempo no utilizado. El espacio deja de estar disponible de inmediato.`
-				: `Vas a cancelar ${name}. El espacio deja de estar disponible de inmediato.`;
+			refundType === 'nce' && credit > 0
+				? `Al cancelar ${name} se emitirá una nota de crédito por ${formatGs(credit)} (tiempo no usado). El espacio deja de estar disponible de inmediato.`
+				: credit > 0
+					? `Al cancelar ${name} se acreditarán ${formatGs(credit)} a favor por el tiempo no utilizado. El espacio deja de estar disponible de inmediato.`
+					: `Vas a cancelar ${name}. El espacio deja de estar disponible de inmediato.`;
 		const confirmed = window.BookmateAlert?.confirm
 			? await window.BookmateAlert.confirm({
 					type: 'warning',
@@ -948,10 +951,14 @@ export function initPlanPage() {
 				throw new Error(data?.message || 'No fue posible cancelar el almacenamiento.');
 			}
 			const granted = Number(data?.data?.credit_granted || 0);
+			const nceAmount = Number(data?.data?.nce_amount || 0);
+			const nceQueued = Number(data?.data?.nce_queued || 0) === 1;
 			flash(
-				granted > 0
-					? `Cancelado. Se acreditaron ${formatGs(granted)} a favor.`
-					: 'Almacenamiento cancelado.',
+				nceQueued && nceAmount > 0
+					? `Cancelado. Se emitirá nota de crédito por ${formatGs(nceAmount)}.`
+					: granted > 0
+						? `Cancelado. Se acreditaron ${formatGs(granted)} a favor.`
+						: 'Almacenamiento cancelado.',
 				'success'
 			);
 			setTimeout(() => window.location.reload(), 900);

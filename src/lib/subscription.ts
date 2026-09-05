@@ -288,6 +288,7 @@ export interface StorageAddonItem {
 	price_amount: number;
 	prorate_amount: number;
 	cancel_credit_amount: number;
+	cancel_refund_type?: 'nce' | 'credit';
 	days_remaining: number;
 	period_days: number;
 	currency: string;
@@ -302,6 +303,7 @@ export interface ActiveStorageAddonLine {
 	line_total: number;
 	extra_bytes: number;
 	cancel_credit_amount: number;
+	cancel_refund_type?: 'nce' | 'credit';
 	cancelable: boolean;
 }
 
@@ -504,6 +506,8 @@ const normalizePlansCatalog = (value: unknown): PlansCatalog => {
 					line_total: toNumber(a.line_total, 0),
 					extra_bytes: toNumber(a.extra_bytes, 0),
 					cancel_credit_amount: toNumber(a.cancel_credit_amount, 0),
+					cancel_refund_type:
+						String(a.cancel_refund_type || 'credit').trim() === 'nce' ? 'nce' : 'credit',
 					cancelable: a.cancelable === undefined ? true : toBool(a.cancelable),
 				};
 			}),
@@ -538,6 +542,8 @@ const normalizePlansCatalog = (value: unknown): PlansCatalog => {
 				price_amount: full,
 				prorate_amount: toNumber(a.prorate_amount, full),
 				cancel_credit_amount: toNumber(a.cancel_credit_amount, 0),
+				cancel_refund_type:
+					String(a.cancel_refund_type || 'credit').trim() === 'nce' ? 'nce' : 'credit',
 				days_remaining: toNumber(a.days_remaining, 0),
 				period_days: toNumber(a.period_days, 30),
 				currency: String(a.currency || 'PYG').trim(),
