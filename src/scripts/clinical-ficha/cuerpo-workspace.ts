@@ -262,6 +262,7 @@ export class CuerpoWorkspace {
 		path.setAttribute('stroke-width', '1.2');
 		path.setAttribute('data-cuerpo-outline', '1');
 		path.setAttribute('vector-effect', 'non-scaling-stroke');
+		path.setAttribute('shape-rendering', 'geometricPrecision');
 		layer.appendChild(path);
 
 		if (options.interactive) {
