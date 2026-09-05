@@ -63,6 +63,7 @@ const { isAdmin = false } = Astro.props;
 	interface SubscriptionState {
 		features: string[];
 		addonFeatures: string[];
+		eligibleAddonFeatures: string[];
 		effectiveStatus: EffectiveStatus;
 		canWrite: boolean;
 		planName: string;
@@ -137,14 +138,23 @@ const { isAdmin = false } = Astro.props;
 		connectedCallback() {
 			this.isAdmin = this.dataset.isAdmin === 'true';
 			this.observeDynamicWriteGates();
+			document.addEventListener('hasel:subscription-invalidate', this.handleInvalidate);
 			void this.load();
 		}
 
 		disconnectedCallback() {
+			document.removeEventListener('hasel:subscription-invalidate', this.handleInvalidate);
 			this._writeObserver?.disconnect();
 			this._writeObserver = null;
 			if (this._gateRaf) cancelAnimationFrame(this._gateRaf);
 		}
+
+		private handleInvalidate = () => {
+			const state = getSubFetchState();
+			state.cachedData = null;
+			state.cachedAt = 0;
+			void this.load();
+		};
 
 		private async load() {
 			const data = await fetchSubscriptionData();
@@ -157,6 +167,11 @@ const { isAdmin = false } = Astro.props;
 			const state: SubscriptionState = {
 				features: Array.isArray(data.features) ? data.features : [],
 				addonFeatures: Array.isArray(data.addon_features) ? data.addon_features : [],
+				eligibleAddonFeatures: Array.isArray(data.eligible_addon_features)
+					? data.eligible_addon_features
+					: Array.isArray(data.addon_features)
+						? data.addon_features
+						: [],
 				effectiveStatus: (sub.effective_status || 'NONE') as EffectiveStatus,
 				canWrite: sub.can_write === true || sub.can_write === 1,
 				planName: String(plan.name || plan.code || 'Plan'),
@@ -237,6 +252,7 @@ const { isAdmin = false } = Astro.props;
 					this.applyEntitlementGates({
 						features: sub.features,
 						addonFeatures: sub.addonFeatures,
+						eligibleAddonFeatures: sub.eligibleAddonFeatures,
 						effectiveStatus: sub.effectiveStatus,
 						canWrite: sub.canWrite,
 						planName: sub.planName,

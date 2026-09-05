@@ -158,6 +158,16 @@ const normalizeWorkspaceSettings = (value: unknown): WorkspaceSettingsData | nul
 		id_organization: idOrganization,
 		name: String(source.name || '').trim(),
 		id_org_specialty: toOptionalPositiveInt(source.id_org_specialty),
+		id_org_specialties: (() => {
+			const raw = source.id_org_specialties;
+			if (!Array.isArray(raw)) {
+				const single = toOptionalPositiveInt(source.id_org_specialty);
+				return single ? [single] : [];
+			}
+			return raw
+				.map((item) => toOptionalPositiveInt(item))
+				.filter((item): item is number => typeof item === 'number' && item > 0);
+		})(),
 		profile_slug: String(source.profile_slug || '').trim(),
 		description: String(source.description || '').trim(),
 		public_whatsapp: String(source.public_whatsapp || '').trim(),

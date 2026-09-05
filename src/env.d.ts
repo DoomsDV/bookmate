@@ -46,7 +46,10 @@ interface Window {
     };
     HaselSubscription?: {
         features: string[];
+        addonFeatures: string[];
+        eligibleAddonFeatures: string[];
         hasFeature: (code: string) => boolean;
+        hasAddon: (code: string) => boolean;
         [key: string]: unknown;
     };
 }

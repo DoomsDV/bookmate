@@ -26,6 +26,7 @@ export interface WorkspaceSettingsData {
 	id_organization: number;
 	name: string;
 	id_org_specialty: number | null;
+	id_org_specialties: number[];
 	profile_slug: string;
 	description: string;
 	public_whatsapp: string;
@@ -54,6 +55,7 @@ export interface WorkspaceSettingsData {
 export interface UpdateWorkspacePayload {
 	name?: string;
 	id_org_specialty?: number;
+	id_org_specialties?: number[];
 	profile_slug?: string;
 	description?: string;
 	public_whatsapp?: string;

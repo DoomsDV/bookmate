@@ -84,6 +84,15 @@ const parseUpdatePayload = (source: any): UpdateWorkspacePayload => {
 		}
 	}
 
+	if (Object.prototype.hasOwnProperty.call(source ?? {}, 'id_org_specialties')) {
+		const raw = source?.id_org_specialties;
+		if (Array.isArray(raw)) {
+			payload.id_org_specialties = raw
+				.map((item) => Number(item))
+				.filter((item) => Number.isInteger(item) && item > 0);
+		}
+	}
+
 	if (Object.prototype.hasOwnProperty.call(source ?? {}, 'profile_slug')) {
 		payload.profile_slug = String(source?.profile_slug ?? '').trim();
 	}
