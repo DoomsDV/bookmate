@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 
 import {
+	callEsignInternalCreditNoteOrds,
 	callEsignInternalOrds,
 	createEsignDocument,
 	EsignApiError,
@@ -12,11 +13,15 @@ import {
 
 export const prerender = false;
 
-// Webhook interno PL/SQL -> Astro: outbox FE (pr_dispatch_einvoice_outbox) hace POST aquí
-// despues de confirmar PAID. Body armado en Oracle (fn_build_einvoice_payload).
+// Webhook interno PL/SQL -> Astro: outbox FE/NCE (pr_dispatch_*_outbox) hace POST aquí.
+// Body armado en Oracle (fn_build_einvoice_payload / fn_build_nce_payload).
 interface EmitInvoiceWebhookBody {
-	invoice_id: number;
+	invoice_id?: number;
+	credit_note_id?: number;
 	emission_key?: string;
+	tipo?: 'fe' | 'nce' | 'nde';
+	cdcRef?: string;
+	motivo?: number;
 	datos_operacion?: { establecimiento?: string; punto_expedicion?: string };
 	receptor?: EsignReceptor;
 	moneda?: string;
@@ -45,22 +50,65 @@ const requireServiceToken = (request: Request) => {
 const DEFAULT_AFECTACION_IVA = 1;
 const DEFAULT_TASA_IVA = 10;
 
-const buildDocumentPayload = (body: EmitInvoiceWebhookBody): CreateEsignDocumentPayload => {
-	const monto = Number(body.monto || 0);
-	const descripcion = String(body.descripcion || 'Suscripción Hasel').trim() || 'Suscripción Hasel';
-	const receptor = body.receptor ? { ...body.receptor } : undefined;
-
-	// RUC contribuyente: operación B2B (iTiOpe=1). No forzar jurídica si Oracle ya envió el tipo.
-	if (receptor && String(receptor.tipo || '').toLowerCase() === 'ruc') {
-		receptor.tipoOperacion = receptor.tipoOperacion || 1;
-		if (!receptor.tipoContribuyente) {
-			const name = String(receptor.nombre || '').toUpperCase();
-			receptor.tipoContribuyente = /(S\.?\s*R\.?\s*L\.?)|(S\.?\s*A\.?)|EAS|LTDA|CIA\.?|COOP|SOCIEDAD/.test(
+const normalizeReceptor = (receptor?: EsignReceptor) => {
+	if (!receptor) return undefined;
+	const normalized = { ...receptor };
+	if (String(normalized.tipo || '').toLowerCase() === 'ruc') {
+		normalized.tipoOperacion = normalized.tipoOperacion || 1;
+		if (!normalized.tipoContribuyente) {
+			const name = String(normalized.nombre || '').toUpperCase();
+			normalized.tipoContribuyente = /(S\.?\s*R\.?\s*L\.?)|(S\.?\s*A\.?)|EAS|LTDA|CIA\.?|COOP|SOCIEDAD/.test(
 				name
 			)
 				? 2
 				: 1;
 		}
+	}
+	return normalized;
+};
+
+const buildDocumentPayload = (body: EmitInvoiceWebhookBody): CreateEsignDocumentPayload => {
+	const monto = Number(body.monto || 0);
+	const descripcion = String(body.descripcion || 'Suscripción Hasel').trim() || 'Suscripción Hasel';
+	const receptor = normalizeReceptor(body.receptor);
+	const tipo = String(body.tipo || 'fe').toLowerCase() as 'fe' | 'nce' | 'nde';
+	const datosOperacion = {
+		establecimiento: body.datos_operacion?.establecimiento || '001',
+		punto_expedicion: body.datos_operacion?.punto_expedicion || '001',
+	};
+
+	const items = [
+		{
+			codigo: tipo === 'nce' ? 'HASEL-NCE' : 'HASEL-SUB',
+			descripcion,
+			cantidad: 1,
+			precioUnitario: monto,
+			afectacionIVA: DEFAULT_AFECTACION_IVA,
+			tasaIVA: DEFAULT_TASA_IVA,
+			unidadMedida: 77,
+			desUnidadMedida: 'UNI',
+		},
+	];
+
+	if (tipo === 'nce' || tipo === 'nde') {
+		const cdcRef = String(body.cdcRef || '').trim();
+		if (!cdcRef) {
+			throw new EsignApiError('NCE/NDE requiere cdcRef.', 400, 'MISSING_CDC_REF');
+		}
+		return {
+			tipo,
+			condicion: 'contado',
+			datos_operacion: datosOperacion,
+			receptor,
+			moneda: String(body.moneda || 'PYG'),
+			tipoTransaccion: body.tipoTransaccion || 2,
+			desTipoTransaccion: body.desTipoTransaccion || 'Prestación de servicios',
+			indPres: body.indPres || 2,
+			desIndPres: body.desIndPres || 'Operación electrónica',
+			cdcRef,
+			motivo: Number(body.motivo || 2),
+			items,
+		};
 	}
 
 	const medioPago = Number(body.medioPago || 0);
@@ -69,10 +117,7 @@ const buildDocumentPayload = (body: EmitInvoiceWebhookBody): CreateEsignDocument
 	return {
 		tipo: 'fe',
 		condicion: body.condicion === 'credito' ? 'credito' : 'contado',
-		datos_operacion: {
-			establecimiento: body.datos_operacion?.establecimiento || '001',
-			punto_expedicion: body.datos_operacion?.punto_expedicion || '001',
-		},
+		datos_operacion: datosOperacion,
 		receptor,
 		moneda: String(body.moneda || 'PYG'),
 		tipoTransaccion: body.tipoTransaccion || 2,
@@ -83,22 +128,11 @@ const buildDocumentPayload = (body: EmitInvoiceWebhookBody): CreateEsignDocument
 		...(medioPago > 0
 			? { medioPago, desMedioPago: desMedioPago || undefined }
 			: {}),
-		items: [
-			{
-				codigo: 'HASEL-SUB',
-				descripcion,
-				cantidad: 1,
-				precioUnitario: monto,
-				afectacionIVA: DEFAULT_AFECTACION_IVA,
-				tasaIVA: DEFAULT_TASA_IVA,
-				unidadMedida: 77,
-				desUnidadMedida: 'UNI',
-			},
-		],
+		items,
 	};
 };
 
-const persistOrdsResult = async (
+const persistFeOrdsResult = async (
 	invoiceId: number,
 	result: EsignDocumentResult,
 	mensaje?: string
@@ -111,6 +145,23 @@ const persistOrdsResult = async (
 			codRes: result.codRes,
 			protAut: result.protAut,
 			ambiente: result.ambiente,
+			...(mensaje ? { mensaje: mensaje.slice(0, 400) } : {}),
+		},
+	});
+};
+
+const persistNceOrdsResult = async (
+	creditNoteId: number,
+	result: EsignDocumentResult,
+	mensaje?: string
+) => {
+	await callEsignInternalCreditNoteOrds(`/${creditNoteId}/nce`, {
+		method: 'POST',
+		body: {
+			cdc: result.cdc,
+			estado: result.estado,
+			codRes: result.codRes,
+			protAut: result.protAut,
 			...(mensaje ? { mensaje: mensaje.slice(0, 400) } : {}),
 		},
 	});
@@ -129,24 +180,30 @@ export const POST: APIRoute = async ({ request }) => {
 		);
 	}
 
-	const invoiceId = Number(body?.invoice_id || 0);
-	if (!invoiceId) {
+	const tipo = String(body?.tipo || 'fe').toLowerCase();
+	const isNce = tipo === 'nce' || tipo === 'nde';
+	const invoiceId = Number(body.invoice_id || 0);
+	const creditNoteId = Number(body.credit_note_id || 0);
+
+	if (isNce) {
+		if (!creditNoteId) {
+			return Response.json({ status: 'error', message: 'Falta credit_note_id.' }, { status: 400 });
+		}
+	} else if (!invoiceId) {
 		return Response.json({ status: 'error', message: 'Falta invoice_id.' }, { status: 400 });
 	}
 
 	const emissionKey =
 		String(body.emission_key || request.headers.get('idempotency-key') || '').trim() ||
-		`INV-${invoiceId}`;
+		(isNce ? `NCE-${invoiceId || creditNoteId}` : `INV-${invoiceId}`);
 
 	if (!isEsignConfigured()) {
-		// NO devolver 200: cerraría la outbox sin CDC. Oracle reintenta con 503.
 		return Response.json(
 			{ status: 'error', message: 'Firmador no configurado; emisión omitida.' },
 			{ status: 503 }
 		);
 	}
 
-	// Guardrail: solo sk_test_ / api-staging en este camino de suscripciones.
 	const apiKey = String(import.meta.env.ESIGN_API_KEY || '').trim();
 	const apiBase = String(import.meta.env.ESIGN_API_BASE_URL || 'https://api-staging.etick.uno');
 	if (apiKey.startsWith('sk_prod_')) {
@@ -163,15 +220,18 @@ export const POST: APIRoute = async ({ request }) => {
 	}
 
 	let emitted: EsignDocumentResult | null = null;
+	const docLabel = isNce ? 'Nota de Crédito Electrónica' : 'Factura Electrónica';
 	try {
 		const documentPayload = buildDocumentPayload(body);
 		emitted = await createEsignDocument(documentPayload, { idempotencyKey: emissionKey });
 
 		try {
-			await persistOrdsResult(invoiceId, emitted);
+			if (isNce) {
+				await persistNceOrdsResult(creditNoteId, emitted);
+			} else {
+				await persistFeOrdsResult(invoiceId, emitted);
+			}
 		} catch (ordsError) {
-			// SIFEN ya emitió: NO reportar ERROR (borraria/evitaría CDC). Devolver CDC
-			// para que Oracle reconcilie; el cron/callback puede reintentar ORDS.
 			const ordsMsg =
 				ordsError instanceof Error ? ordsError.message : 'Callback ORDS falló tras emisión.';
 			return Response.json(
@@ -187,12 +247,15 @@ export const POST: APIRoute = async ({ request }) => {
 		return Response.json({ status: 'success', data: emitted }, { status: 200 });
 	} catch (error) {
 		const message =
-			error instanceof Error ? error.message : 'Error desconocido emitiendo la Factura Electrónica.';
+			error instanceof Error ? error.message : `Error desconocido emitiendo la ${docLabel}.`;
 
-		// Si ya hay CDC emitido en este request, reconciliar — nunca ERROR que lo borre.
 		if (emitted?.cdc) {
 			try {
-				await persistOrdsResult(invoiceId, emitted, message);
+				if (isNce) {
+					await persistNceOrdsResult(creditNoteId, emitted, message);
+				} else {
+					await persistFeOrdsResult(invoiceId, emitted, message);
+				}
 			} catch {
 				/* best-effort */
 			}
@@ -203,18 +266,31 @@ export const POST: APIRoute = async ({ request }) => {
 		}
 
 		try {
-			await callEsignInternalOrds(`/${invoiceId}/einvoice`, {
-				method: 'POST',
-				body: {
-					cdc: null,
-					estado: 'ERROR',
-					codRes: null,
-					protAut: null,
-					mensaje: message.slice(0, 400),
-				},
-			});
+			if (isNce) {
+				await callEsignInternalCreditNoteOrds(`/${creditNoteId}/nce`, {
+					method: 'POST',
+					body: {
+						cdc: null,
+						estado: 'ERROR',
+						codRes: null,
+						protAut: null,
+						mensaje: message.slice(0, 400),
+					},
+				});
+			} else {
+				await callEsignInternalOrds(`/${invoiceId}/einvoice`, {
+					method: 'POST',
+					body: {
+						cdc: null,
+						estado: 'ERROR',
+						codRes: null,
+						protAut: null,
+						mensaje: message.slice(0, 400),
+					},
+				});
+			}
 		} catch {
-			// Si tambien falla el callback a ORDS, queda en PENDING y se ve en aox_api_log.
+			// Si también falla el callback a ORDS, queda en PENDING y se ve en aox_api_log.
 		}
 
 		const status = error instanceof EsignApiError ? error.status : 502;

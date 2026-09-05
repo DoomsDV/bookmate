@@ -22,6 +22,12 @@ export const ESIGN_INTERNAL_INVOICES_URL = resolveOrdsApiUrl(
 	'/internal/subscription-invoices'
 );
 
+export const ESIGN_INTERNAL_CREDIT_NOTES_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_ESIGN_INTERNAL_CREDIT_NOTES_URL,
+	'ORDS_ESIGN_INTERNAL_CREDIT_NOTES_URL',
+	'/internal/subscription-credit-notes'
+);
+
 export class EsignApiError extends Error {
 	status: number;
 	code?: string;
@@ -196,6 +202,66 @@ export const callEsignInternalOrds = async <T = unknown>(
 	}
 
 	const url = `${ESIGN_INTERNAL_INVOICES_URL}${path}`;
+	const response = await fetch(url, {
+		method: init.method || 'GET',
+		headers: {
+			Accept: 'application/json',
+			'Content-Type': 'application/json',
+			'X-Service-Token': serviceToken,
+		},
+		body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
+	});
+
+	let payload: unknown = null;
+	try {
+		payload = (await response.json()) as unknown;
+	} catch {
+		payload = null;
+	}
+	const envelope = isOrdsInternalEnvelope(payload) ? payload : null;
+
+	if (!response.ok) {
+		throw new EsignApiError(
+			ordsMessage(envelope, `ORDS respondió HTTP ${response.status} en ${path}.`),
+			response.status,
+			ordsCode(envelope) || 'ORDS_INTERNAL_ERROR',
+			payload
+		);
+	}
+
+	if (!envelope) {
+		throw new EsignApiError(
+			`ORDS devolvió una envoltura inválida en ${path}.`,
+			502,
+			'ORDS_INTERNAL_INVALID_ENVELOPE',
+			payload
+		);
+	}
+
+	if (envelope.status !== 'success') {
+		const code = ordsCode(envelope);
+		const message = ordsMessage(envelope, 'Sin detalle.');
+		throw new EsignApiError(
+			`ORDS devolvió status "${envelope.status}"${code ? ` (${code})` : ''} en ${path}: ${message}`,
+			502,
+			code || 'ORDS_INTERNAL_LOGICAL_ERROR',
+			payload
+		);
+	}
+
+	return envelope.data as T;
+};
+
+export const callEsignInternalCreditNoteOrds = async <T = unknown>(
+	path: string,
+	init: { method?: 'GET' | 'POST'; body?: unknown } = {}
+): Promise<T> => {
+	const serviceToken = String(import.meta.env.ESIGN_CALLBACK_SERVICE_TOKEN || '').trim();
+	if (!serviceToken) {
+		throw new EsignApiError('ESIGN_CALLBACK_SERVICE_TOKEN no configurado.', 500, 'ESIGN_TOKEN_NOT_CONFIGURED');
+	}
+
+	const url = `${ESIGN_INTERNAL_CREDIT_NOTES_URL}${path}`;
 	const response = await fetch(url, {
 		method: init.method || 'GET',
 		headers: {
