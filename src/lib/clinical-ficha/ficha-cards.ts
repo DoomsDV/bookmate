@@ -1,9 +1,5 @@
 import { ADDON_FEATURES } from '../../config/feature-flags';
-import {
-	canShowClinicalModule,
-	hasAddonFeature,
-	isAddonEligible,
-} from './addon-entitlement';
+import { canOpenClinicalModule } from './addon-entitlement';
 import type { FichaAddonCard } from './types';
 
 const FICHA_CATALOG: Array<{
@@ -29,11 +25,10 @@ const FICHA_CATALOG: Array<{
 	},
 ];
 
+/** Solo módulos activos — la compra vive en Complementos, no en Ficha clínica. */
 export const buildFichaAddonCards = (): FichaAddonCard[] =>
 	FICHA_CATALOG.flatMap((item) => {
-		if (!canShowClinicalModule(item.featureCode)) return [];
-		const active = hasAddonFeature(item.featureCode);
-		const eligible = isAddonEligible(item.featureCode) || active;
+		if (!canOpenClinicalModule(item.featureCode)) return [];
 		return [
 			{
 				code: item.code,
@@ -41,16 +36,9 @@ export const buildFichaAddonCards = (): FichaAddonCard[] =>
 				title: item.title,
 				description: item.description,
 				icon: item.icon,
-				eligible,
-				active,
-				locked: eligible && !active,
 			},
 		];
 	});
 
-export const canOpenFichaCard = (card: FichaAddonCard): boolean => card.eligible && card.active;
-
-export const isFichaCardVisible = (code: FichaAddonCard['code']): boolean => {
-	const card = buildFichaAddonCards().find((item) => item.code === code);
-	return Boolean(card);
-};
+export const isFichaCardVisible = (code: FichaAddonCard['code']): boolean =>
+	buildFichaAddonCards().some((item) => item.code === code);

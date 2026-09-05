@@ -46,6 +46,7 @@ export interface CustomerAppointmentSummary {
 	id_appointment?: number;
 	has_history_notes?: boolean;
 	attachment_count?: number;
+	body_mark_count?: number;
 	has_history?: boolean;
 	consultation_reason?: string | null;
 	procedure_notes?: string | null;
@@ -332,10 +333,12 @@ const normalizeAppointmentSummary = (value: unknown): CustomerAppointmentSummary
 			0,
 			Math.floor(toNumber(source.attachment_count, attachments?.length ?? 0))
 		),
+		body_mark_count: Math.max(0, Math.floor(toNumber(source.body_mark_count, 0))),
 		has_history:
 			source.has_history === true ||
 			hasAnySessionNote(sessionNotes) ||
-			(attachments !== undefined && attachments.length > 0),
+			(attachments !== undefined && attachments.length > 0) ||
+			toNumber(source.body_mark_count, 0) > 0,
 		...(sessionNotes.consultation_reason !== null
 			? { consultation_reason: sessionNotes.consultation_reason }
 			: {}),

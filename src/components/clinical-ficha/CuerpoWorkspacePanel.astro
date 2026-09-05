@@ -13,8 +13,8 @@ const { rootClass = '', panelClass = '', embedded = false } = Astro.props;
 	data-clinical-workspace-panel="cuerpo"
 	hidden={embedded ? undefined : true}
 >
-	<div class="cuerpo-draft-banner" data-cuerpo-draft-banner role="status">
-		Borrador local — todavía no se guarda en el servidor.
+	<div class="cuerpo-draft-banner hidden" data-cuerpo-draft-banner role="status">
+		Cambios sin guardar — usá «Guardar ficha» en la cita para persistir en el servidor.
 	</div>
 	<div class:list={['cuerpo-workspace__layout', rootClass]} data-cuerpo-workspace>
 		<div class="cuerpo-workspace__map-col">
@@ -61,6 +61,10 @@ const { rootClass = '', panelClass = '', embedded = false } = Astro.props;
 			</div>
 		</div>
 		<aside class="cuerpo-workspace__side">
+			<div class="cuerpo-session-picker hidden" data-cuerpo-session-picker-wrap hidden={embedded ? true : undefined}>
+				<label class="cuerpo-session-picker__label" for="cuerpo-session-picker">Sesión</label>
+				<select class="cuerpo-session-picker__select" data-cuerpo-session-picker id="cuerpo-session-picker"></select>
+			</div>
 			<p class="cuerpo-session-label" data-cuerpo-session-label>Hoy · Sesión</p>
 			<div class="cuerpo-silhouette-toggle" role="group" aria-label="Silueta">
 				<button type="button" class="cuerpo-pill is-active" data-cuerpo-silhouette="NEUTRAL" aria-pressed="true">Neutra</button>

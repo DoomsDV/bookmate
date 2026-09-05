@@ -19,7 +19,7 @@ import { showOdontogramTour } from '../lib/odontogram-tour';
 import { canShowClinicalTab, canShowOdontogramCard } from '../lib/clinical-ficha/addon-entitlement';
 import {
 	buildFichaAddonCards,
-	canOpenFichaCard,
+	isFichaCardVisible,
 } from '../lib/clinical-ficha/ficha-cards';
 import {
 	OPEN_CLINICAL_WORKSPACE_EVENT,
@@ -29,6 +29,7 @@ import {
 import type { ClinicalWorkspaceCode } from '../lib/clinical-ficha/types';
 import { ClinicalWorkspaceHost } from './clinical-ficha/clinical-workspace-host';
 import { CuerpoWorkspace } from './clinical-ficha/cuerpo-workspace';
+import { prefetchBodySnapshotsForCustomer } from '../lib/clinical-ficha/body-store';
 import {
 	clinicalPhaseSwatchClass,
 	defaultClinicalPhaseForFinding,
@@ -1497,25 +1498,95 @@ class CustomerManager extends HTMLElement {
 
 	private mountCuerpoWorkspace(detail?: Partial<OpenClinicalWorkspaceDetail>) {
 		const customerId = this.activeProfileCustomerId;
-		const appointmentId = this.resolveBodyAppointmentId(detail?.appointmentId);
+		const appointmentId =
+			detail?.appointmentId !== undefined
+				? detail.appointmentId
+				: this.resolveBodyAppointmentId(detail?.appointmentId);
 		const customerName = detail?.customerName || this.activeProfileFullName || '';
-		if (customerId <= 0 || appointmentId <= 0) {
+		if (customerId <= 0) {
 			this.cuerpoWorkspace?.setContext(null);
 			return;
 		}
+		this.renderCuerpoSessionPicker(appointmentId);
 		this.cuerpoWorkspace?.setContext({
 			customerId,
 			appointmentId,
 			customerName,
-			readOnly: detail?.readOnly === true,
-			sessionLabel: detail?.sessionLabel,
+			readOnly: detail?.readOnly === true || appointmentId <= 0,
+			sessionLabel: detail?.sessionLabel ?? this.buildBodySessionLabel(appointmentId),
 		});
+	}
+
+	private buildBodySessionLabel(appointmentId: number): string | undefined {
+		if (appointmentId <= 0) return undefined;
+		const stats = this.activeProfileStats;
+		const candidates = [
+			stats?.last_appointment,
+			...(stats?.pending_appointments ?? []),
+			stats?.next_appointment,
+			...(stats?.appointment_history ?? []),
+		].filter(Boolean) as CustomerAppointmentSummary[];
+		const match = candidates.find((apt) => apt.id_appointment === appointmentId);
+		if (!match) return `Sesión · Cita #${appointmentId}`;
+		const when = this.formatTimelineWhen(match.start_time);
+		return `Cita #${appointmentId} · ${match.service_name || 'Servicio'}${when ? ` · ${when}` : ''}`;
+	}
+
+	private renderCuerpoSessionPicker(selectedId: number) {
+		const wrap = this.clinicalWorkspaceRoot?.querySelector<HTMLElement>(
+			'[data-cuerpo-session-picker-wrap]'
+		);
+		const select = this.clinicalWorkspaceRoot?.querySelector<HTMLSelectElement>(
+			'[data-cuerpo-session-picker]'
+		);
+		if (!wrap || !select) return;
+
+		wrap.classList.remove('hidden');
+		wrap.removeAttribute('hidden');
+		select.replaceChildren();
+
+		const addOption = (value: string, label: string, selected: boolean) => {
+			const option = document.createElement('option');
+			option.value = value;
+			option.textContent = label;
+			option.selected = selected;
+			select.appendChild(option);
+		};
+
+		addOption('0', 'Estado actual (solo lectura)', selectedId <= 0);
+
+		const stats = this.activeProfileStats;
+		const seen = new Set<number>();
+		const pushAppointment = (apt: CustomerAppointmentSummary | null | undefined) => {
+			if (!apt?.id_appointment || seen.has(apt.id_appointment)) return;
+			seen.add(apt.id_appointment);
+			const when = this.formatTimelineWhen(apt.start_time);
+			const label = `${apt.service_name || 'Servicio'}${when ? ` · ${when}` : ''} · #${apt.id_appointment}`;
+			addOption(String(apt.id_appointment), label, apt.id_appointment === selectedId);
+		};
+
+		pushAppointment(stats?.last_appointment);
+		pushAppointment(stats?.next_appointment);
+		for (const apt of stats?.pending_appointments ?? []) pushAppointment(apt);
+		for (const apt of stats?.appointment_history ?? []) pushAppointment(apt);
+
+		if (!select.dataset.bound) {
+			select.dataset.bound = '1';
+			select.addEventListener('change', () => {
+				const value = Number(select.value);
+				const nextId = Number.isInteger(value) && value >= 0 ? value : 0;
+				this.activeBodyAppointmentId = nextId;
+				this.mountCuerpoWorkspace({ appointmentId: nextId });
+			});
+		}
 	}
 
 	private resolveBodyAppointmentId(explicitId?: number): number {
 		if (explicitId && explicitId > 0) return explicitId;
 		if (this.activeBodyAppointmentId > 0) return this.activeBodyAppointmentId;
 		const stats = this.activeProfileStats;
+		const lastId = stats?.last_appointment?.id_appointment;
+		if (lastId && lastId > 0) return lastId;
 		const nextId = stats?.next_appointment?.id_appointment;
 		if (nextId && nextId > 0) return nextId;
 		for (const apt of stats?.pending_appointments ?? []) {
@@ -1533,6 +1604,13 @@ class CustomerManager extends HTMLElement {
 				? 'summary'
 				: this.activeProfileTab;
 		this.setActiveProfileTab(tab);
+	}
+
+	private openBodyMapFromHistory(appointmentId: number) {
+		if (appointmentId <= 0) return;
+		this.activeBodyAppointmentId = appointmentId;
+		this.setActiveProfileTab('clinica');
+		this.openClinicalWorkspace('cuerpo', { appointmentId });
 	}
 
 	private renderClinicalFichaCards() {
@@ -1556,7 +1634,6 @@ class CustomerManager extends HTMLElement {
 			button.className = 'clinical-ficha-card';
 			button.dataset.clinicalFichaCard = card.code;
 			button.setAttribute('role', 'listitem');
-			button.disabled = !canOpenFichaCard(card);
 
 			const head = document.createElement('div');
 			head.className = 'clinical-ficha-card__head';
@@ -1579,13 +1656,6 @@ class CustomerManager extends HTMLElement {
 
 			button.appendChild(head);
 			button.appendChild(copy);
-
-			if (card.locked) {
-				const lock = document.createElement('span');
-				lock.className = 'clinical-ficha-card__lock';
-				lock.textContent = 'Activalo en Complementos';
-				button.appendChild(lock);
-			}
 
 			this.clinicalFichaCards.appendChild(button);
 		}
@@ -1647,11 +1717,11 @@ class CustomerManager extends HTMLElement {
 			this.profileModalTitle.textContent = workspaceTitle
 				? workspaceTitle
 				: isClinica
-					? 'Clínica add-ons'
+					? 'Ficha clínica'
 					: 'Perfil del cliente';
 		}
 		if (this.profileHeaderIcon) {
-			this.profileHeaderIcon.textContent = isClinica ? 'extension' : 'person';
+			this.profileHeaderIcon.textContent = isClinica ? 'medical_services' : 'person';
 		}
 		if (this.profileHeaderIconWrap) {
 			this.profileHeaderIconWrap.hidden = isClinica;
@@ -1724,21 +1794,9 @@ class CustomerManager extends HTMLElement {
 		if (!this.odontogramLockAction) return;
 		this.clearNode(this.odontogramLockAction);
 
-		if (this.roleId === ROLES.ADMIN) {
-			const link = document.createElement('a');
-			link.href = '/panel/complementos';
-			link.className = 'customer-odontogram-lock__link';
-			link.textContent = 'Ver complementos';
-			const wrap = document.createElement('div');
-			wrap.className = 'customer-odontogram-lock__action';
-			wrap.appendChild(link);
-			this.odontogramLockAction.appendChild(wrap);
-			return;
-		}
-
 		const hint = document.createElement('p');
 		hint.className = 'customer-odontogram-lock__hint';
-		hint.textContent = 'Pedile al administrador que active Complementos.';
+		hint.textContent = 'Consultá con el administrador de la organización.';
 		this.odontogramLockAction.appendChild(hint);
 	}
 
@@ -3059,6 +3117,19 @@ class CustomerManager extends HTMLElement {
 		}
 		body.appendChild(notesBlock);
 
+		const bodyMarkCount = Math.max(0, Math.floor(Number(appointment.body_mark_count || 0)));
+		if (bodyMarkCount > 0 && appointment.id_appointment) {
+			const mapChip = document.createElement('button');
+			mapChip.type = 'button';
+			mapChip.className = 'customer-profile-body-map-chip';
+			mapChip.textContent =
+				bodyMarkCount === 1 ? 'Mapa · 1 marca' : `Mapa · ${bodyMarkCount} marcas`;
+			mapChip.addEventListener('click', () => {
+				this.openBodyMapFromHistory(appointment.id_appointment!);
+			});
+			body.appendChild(mapChip);
+		}
+
 		const filesBlock = document.createElement('div');
 		filesBlock.className = 'customer-profile-history-block';
 		const filesTitle = document.createElement('p');
@@ -3136,7 +3207,8 @@ class CustomerManager extends HTMLElement {
 
 		const hasNotes = appointment.has_history_notes === true;
 		const attachmentCount = Math.max(0, Math.floor(Number(appointment.attachment_count || 0)));
-		if (hasNotes || attachmentCount > 0) {
+		const bodyMarkCount = Math.max(0, Math.floor(Number(appointment.body_mark_count || 0)));
+		if (hasNotes || attachmentCount > 0 || bodyMarkCount > 0) {
 			const marks = document.createElement('span');
 			marks.className = 'customer-profile-timeline__marks';
 			if (hasNotes) {
@@ -3155,6 +3227,15 @@ class CustomerManager extends HTMLElement {
 				fileIcon.setAttribute('aria-hidden', 'true');
 				fileIcon.textContent = 'attach_file';
 				marks.appendChild(fileIcon);
+			}
+			if (bodyMarkCount > 0) {
+				const mapBadge = document.createElement('span');
+				mapBadge.className = 'customer-profile-timeline__body-map-badge';
+				mapBadge.title =
+					bodyMarkCount === 1 ? 'Mapa · 1 marca' : `Mapa · ${bodyMarkCount} marcas`;
+				mapBadge.textContent =
+					bodyMarkCount === 1 ? 'Mapa · 1' : `Mapa · ${bodyMarkCount}`;
+				marks.appendChild(mapBadge);
 			}
 			titleRow.appendChild(marks);
 		}
@@ -3592,6 +3673,7 @@ class CustomerManager extends HTMLElement {
 		this.renderAppointmentHistory(stats.appointment_history ?? [], stats.history_enabled === true);
 		this.activeProfileStats = stats;
 		this.activeBodyAppointmentId = 0;
+		void prefetchBodySnapshotsForCustomer(profile.id_customer);
 		this.resetOdontogramState();
 		this.updateOdontogramLockUi();
 		this.renderClinicalFichaCards();

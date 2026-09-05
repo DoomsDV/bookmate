@@ -39,9 +39,20 @@ export const canOpenClinicalModule = (featureCode: AddonFeature | string): boole
 	isAddonActive(featureCode);
 
 export const canShowClinicalTab = (): boolean =>
-	[...CLINICAL_FEATURE_CODES].some((code) => canShowClinicalModule(code));
+	[...CLINICAL_FEATURE_CODES].some((code) => canOpenClinicalModule(code));
 
 export const canShowOdontogramCard = (): boolean =>
-	canShowClinicalModule(ADDON_FEATURES.ODONTOGRAM_3D);
+	canOpenClinicalModule(ADDON_FEATURES.ODONTOGRAM_3D);
 
-export const canShowBodyMapCard = (): boolean => canShowClinicalModule(ADDON_FEATURES.BODY_MAP);
+export const canShowBodyMapCard = (): boolean => canOpenClinicalModule(ADDON_FEATURES.BODY_MAP);
+
+/** Cita/reserva dental: org con rubro DENTAL (sin especialidad por servicio aún). */
+export const isOrgDentalSpecialty = (): boolean => {
+	const code = String(window.HaselSubscription?.orgSpecialtyCode || '')
+		.trim()
+		.toUpperCase();
+	return code === 'DENTAL';
+};
+
+export const canShowOdontogramInAppointment = (): boolean =>
+	canOpenClinicalModule(ADDON_FEATURES.ODONTOGRAM_3D) && isOrgDentalSpecialty();

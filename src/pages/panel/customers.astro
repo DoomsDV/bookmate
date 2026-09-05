@@ -639,7 +639,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 					>
 						<div class="clinical-ficha-hub grid gap-4" data-clinical-ficha-hub>
 							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">
-								Complementos clínicos activos para esta organización.
+								Estado e historial de este paciente.
 							</p>
 							<div class="clinical-ficha-cards" data-clinical-ficha-cards role="list"></div>
 							<p
@@ -683,8 +683,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 							</div>
 							<p class="customer-odontogram-lock__title">Odontograma</p>
 							<p class="customer-odontogram-lock__copy">
-								Llevá tu clínica al siguiente nivel con el odontograma. Activá el complemento para
-								registrar caries, restauraciones y extracciones por pieza.
+								El odontograma 3D no está disponible para esta organización.
 							</p>
 							<div data-customer-odontogram-lock-action></div>
 						</div>
@@ -2394,6 +2393,35 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 	.customer-profile-timeline__marks .material-symbols-rounded {
 		font-size: 0.95rem;
 		line-height: 1;
+	}
+
+	.customer-profile-timeline__body-map-badge {
+		font-size: 0.72rem;
+		font-weight: 800;
+		padding: 0.12rem 0.45rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--primary) 12%, transparent);
+		color: var(--primary);
+	}
+
+	.customer-profile-body-map-chip {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: fit-content;
+		margin: 0.35rem 0 0.85rem;
+		padding: 0.45rem 0.85rem;
+		border-radius: 999px;
+		border: 1px solid color-mix(in srgb, var(--primary) 25%, var(--shell-border));
+		background: color-mix(in srgb, var(--primary) 8%, var(--surface-bright));
+		color: var(--primary);
+		font-size: 0.82rem;
+		font-weight: 800;
+		cursor: pointer;
+	}
+
+	.customer-profile-body-map-chip:hover {
+		background: color-mix(in srgb, var(--primary) 14%, var(--surface-bright));
 	}
 
 	.customer-profile-timeline__chevron {

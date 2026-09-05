@@ -587,6 +587,21 @@ const { showVoiceButton = false }: Props = Astro.props;
 									data-appointment-body-map-hint
 								></p>
 							</div>
+
+							<div class="grid gap-2 hidden" data-appointment-odontogram-wrap hidden>
+								<button
+									type="button"
+									class="modal-action-secondary w-full sm:w-auto"
+									data-appointment-open-odontogram
+								>
+									<span class="material-symbols-rounded mr-1 align-[-0.2em] text-[1.1rem]" aria-hidden="true">dentistry</span>
+									Odontograma 3D
+								</button>
+								<p
+									class="m-0 text-[0.8rem] font-semibold text-(--on-surface-variant)"
+									data-appointment-odontogram-hint
+								></p>
+							</div>
 						</div>
 
 						<div class="hidden grid gap-3" data-appointment-notes-readonly-wrap hidden>

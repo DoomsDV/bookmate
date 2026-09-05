@@ -42,7 +42,4 @@ export type FichaAddonCard = {
 	title: string;
 	description: string;
 	icon: string;
-	eligible: boolean;
-	active: boolean;
-	locked: boolean;
 };

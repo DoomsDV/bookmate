@@ -30,8 +30,7 @@ import {
 	isScheduleMisalignedFlag,
 	normalizeScheduleMisalignedReason,
 } from '../../lib/schedule-misaligned';
-import { ADDON_FEATURES } from '../../config/feature-flags';
-import { canOpenClinicalModule, canShowBodyMapCard } from '../../lib/clinical-ficha/addon-entitlement';
+import { canShowBodyMapCard, canShowOdontogramInAppointment } from '../../lib/clinical-ficha/addon-entitlement';
 import {
 	OPEN_CLINICAL_WORKSPACE_EVENT,
 	type OpenClinicalWorkspaceDetail,
@@ -251,6 +250,9 @@ class AppointmentModal extends HTMLElement {
 	bodyMapButton: HTMLButtonElement | null = null;
 	bodyMapHint: HTMLElement | null = null;
 	bodyMapOverlay: HTMLElement | null = null;
+	odontogramWrap: HTMLElement | null = null;
+	odontogramButton: HTMLButtonElement | null = null;
+	odontogramHint: HTMLElement | null = null;
 	cuerpoWorkspace: CuerpoWorkspace | null = null;
 	modalProfessionalWrap: HTMLElement | null = null;
 	modalProfessional: HTMLSelectElement | null = null;
@@ -380,6 +382,12 @@ class AppointmentModal extends HTMLElement {
 			this.form?.querySelector<HTMLElement>('[data-appointment-body-map-hint]') ?? null;
 		this.bodyMapOverlay =
 			this.querySelector<HTMLElement>('[data-appointment-body-map-overlay]') ?? null;
+		this.odontogramWrap =
+			this.form?.querySelector<HTMLElement>('[data-appointment-odontogram-wrap]') ?? null;
+		this.odontogramButton =
+			this.form?.querySelector<HTMLButtonElement>('[data-appointment-open-odontogram]') ?? null;
+		this.odontogramHint =
+			this.form?.querySelector<HTMLElement>('[data-appointment-odontogram-hint]') ?? null;
 		const cuerpoRoot = this.bodyMapOverlay?.querySelector<HTMLElement>('[data-cuerpo-workspace]');
 		if (cuerpoRoot) this.cuerpoWorkspace = new CuerpoWorkspace(cuerpoRoot);
 		this.sessionConsultationReasonInput =
@@ -495,6 +503,7 @@ class AppointmentModal extends HTMLElement {
 		);
 		requiredNodes.modal.addEventListener('click', this.handleBackdropClick, { signal });
 		this.bodyMapButton?.addEventListener('click', this.handleOpenBodyMapClick, { signal });
+		this.odontogramButton?.addEventListener('click', this.handleOpenOdontogramClick, { signal });
 		this.querySelector('[data-appointment-body-map-back]')?.addEventListener(
 			'click',
 			this.closeBodyMapWorkspace,
@@ -1432,6 +1441,7 @@ class AppointmentModal extends HTMLElement {
 		if (this.attachmentInput) this.attachmentInput.value = '';
 		this.dropzone?.classList.remove('is-dragover');
 		this.syncBodyMapUi();
+		this.syncOdontogramUi();
 	}
 
 	private clearAttachmentError() {
@@ -1521,6 +1531,7 @@ class AppointmentModal extends HTMLElement {
 		this.renderAttachments();
 		this.syncNotesLockState();
 		this.syncBodyMapUi();
+		this.syncOdontogramUi();
 	}
 
 	handleStatusChange = () => {
@@ -1538,6 +1549,7 @@ class AppointmentModal extends HTMLElement {
 		}
 		this.syncNotesLockState();
 		this.syncBodyMapUi();
+		this.syncOdontogramUi();
 	};
 
 	private hasRefundToGuide(): boolean {
@@ -1932,15 +1944,14 @@ class AppointmentModal extends HTMLElement {
 		const hint = this.bodyMapHint;
 		if (!wrap || !button) return;
 
-		const eligible = canShowBodyMapCard();
-		const canOpen = canOpenClinicalModule(ADDON_FEATURES.BODY_MAP);
+		const canOpen = canShowBodyMapCard();
 		const customerId = toPositiveInt(this.customerIdInput?.value, 0);
 		const appointmentId = this.editingAppointmentId;
 		const status = this.getCurrentAppointmentStatus();
 		const isCreate = appointmentId <= 0;
 		const isCancelled = status === 'CANCELADO';
 		const isCompleted = status === 'COMPLETADO';
-		const show = eligible && canOpen && this.historyEnabled && !isCreate;
+		const show = canOpen && !isCreate;
 
 		if (!show) {
 			wrap.setAttribute('hidden', '');
@@ -1969,6 +1980,79 @@ class AppointmentModal extends HTMLElement {
 		}
 	}
 
+	private syncOdontogramUi() {
+		const wrap = this.odontogramWrap;
+		const button = this.odontogramButton;
+		const hint = this.odontogramHint;
+		if (!wrap || !button) return;
+
+		const canOpen = canShowOdontogramInAppointment();
+		const customerId = toPositiveInt(this.customerIdInput?.value, 0);
+		const appointmentId = this.editingAppointmentId;
+		const status = this.getCurrentAppointmentStatus();
+		const isCreate = appointmentId <= 0;
+		const isCancelled = status === 'CANCELADO';
+		const show = canOpen && !isCreate;
+
+		if (!show) {
+			wrap.setAttribute('hidden', '');
+			wrap.classList.add('hidden');
+			return;
+		}
+
+		wrap.removeAttribute('hidden');
+		wrap.classList.remove('hidden');
+
+		const disabled = customerId <= 0 || isCancelled;
+		button.disabled = disabled;
+		button.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+
+		if (hint) {
+			if (customerId <= 0) {
+				hint.textContent = 'Guardá la reserva con un cliente para abrir el odontograma.';
+			} else if (isCancelled) {
+				hint.textContent = 'No disponible en citas canceladas.';
+			} else {
+				hint.textContent = 'Estado vivo de la boca de este paciente.';
+			}
+		}
+	}
+
+	private buildBodySessionLabel(): string {
+		const appointmentId = this.editingAppointmentId;
+		const serviceId = toPositiveInt(this.modalService?.value, 0);
+		const serviceName =
+			this.services.find((item) => item.id === serviceId)?.name ||
+			String(this.modalService?.selectedOptions?.[0]?.textContent || '').trim() ||
+			'Servicio';
+		const startRaw = this.startInput?.value || '';
+		let when = '';
+		if (startRaw) {
+			const parsed = new Date(startRaw);
+			if (!Number.isNaN(parsed.getTime())) {
+				when = parsed.toLocaleDateString('es-PY', {
+					day: 'numeric',
+					month: 'short',
+					year: 'numeric',
+				});
+			}
+		}
+		const parts = [`Cita #${appointmentId}`, serviceName, when].filter(Boolean);
+		return parts.join(' · ');
+	}
+
+	handleOpenOdontogramClick = () => {
+		if (this.odontogramButton?.disabled) return;
+		const customerId = toPositiveInt(this.customerIdInput?.value, 0);
+		if (customerId <= 0) return;
+		const params = new URLSearchParams({
+			customer: String(customerId),
+			workspace: 'odontogram',
+		});
+		this.closeModal();
+		window.location.assign(`/panel/customers?${params.toString()}`);
+	};
+
 	handleOpenBodyMapClick = () => {
 		if (this.bodyMapButton?.disabled) return;
 		const customerId = toPositiveInt(this.customerIdInput?.value, 0);
@@ -1980,6 +2064,7 @@ class AppointmentModal extends HTMLElement {
 			workspace: 'cuerpo',
 			customerName: this.customerNameInput?.value || '',
 			readOnly: this.getCurrentAppointmentStatus() === 'COMPLETADO' || this.isImmutableReadOnly,
+			sessionLabel: this.buildBodySessionLabel(),
 		});
 	};
 
@@ -2988,6 +3073,22 @@ class AppointmentModal extends HTMLElement {
 		this.setSubmittingState(true, this.mode === 'edit' ? 'Guardando...' : 'Creando...');
 
 		try {
+			if (
+				this.mode === 'edit' &&
+				this.activeTab === 'notes' &&
+				this.cuerpoWorkspace?.hasPendingSnapshot()
+			) {
+				try {
+					await this.cuerpoWorkspace.flushSnapshotToServer();
+				} catch (snapshotError) {
+					this.handleApiError(
+						snapshotError,
+						'No fue posible guardar el mapa corporal de esta sesión.'
+					);
+					return;
+				}
+			}
+
 			const response = await this.persistAppointment(payload);
 			if (!response) return;
 

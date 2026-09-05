@@ -132,6 +132,32 @@
 	color: var(--on-surface);
 }
 
+.cuerpo-session-picker {
+	display: grid;
+	gap: 0.35rem;
+}
+
+.cuerpo-session-picker__label {
+	font-size: 0.78rem;
+	font-weight: 800;
+	color: var(--on-surface-variant);
+}
+
+.cuerpo-session-picker__select {
+	width: 100%;
+	padding: 0.45rem 0.6rem;
+	border-radius: 0.65rem;
+	border: 1px solid var(--shell-border);
+	background: var(--surface-bright);
+	font-size: 0.84rem;
+	font-weight: 600;
+	color: var(--on-surface);
+}
+
+.cuerpo-draft-banner.hidden {
+	display: none;
+}
+
 .cuerpo-marks-list {
 	display: grid;
 	gap: 0.45rem;

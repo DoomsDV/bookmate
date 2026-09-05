@@ -14,7 +14,10 @@ import {
 	SILHOUETTE_LABELS,
 } from '../../lib/clinical-ficha/body-silhouettes';
 import {
+	fetchBodySnapshot,
+	fetchLatestBodySnapshot,
 	getBodySnapshot,
+	getLatestBodySnapshot,
 	getPreviousBodySnapshot,
 	saveBodySnapshot,
 } from '../../lib/clinical-ficha/body-store';
@@ -33,6 +36,7 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 
 export type CuerpoWorkspaceContext = {
 	customerId: number;
+	/** 0 = estado actual (solo lectura, último snapshot). */
 	appointmentId: number;
 	customerName: string;
 	readOnly?: boolean;
@@ -49,6 +53,9 @@ export class CuerpoWorkspace {
 	private silhouette: BodySilhouette = 'NEUTRAL';
 	private compareMode = false;
 	private snapshot: BodySessionSnapshot | null = null;
+	private dirty = false;
+	private persisted = false;
+	private loadToken = 0;
 
 	private mapSvg: SVGSVGElement | null = null;
 	private mapLayer: SVGGElement | null = null;
@@ -63,14 +70,74 @@ export class CuerpoWorkspace {
 
 	setContext(context: CuerpoWorkspaceContext | null): void {
 		this.context = context;
-		if (!context || context.customerId <= 0 || context.appointmentId <= 0) {
+		if (!context || context.customerId <= 0) {
 			this.snapshot = null;
+			this.dirty = false;
+			this.persisted = false;
 			this.renderEmptyState();
+			this.syncDraftBanner();
+			this.syncReadOnlyUi();
 			return;
 		}
-		const existing = getBodySnapshot(context.customerId, context.appointmentId);
+		void this.applyContext(context);
+	}
+
+	getSnapshot(): BodySessionSnapshot | null {
+		return this.snapshot ? { ...this.snapshot, marks: [...this.snapshot.marks], joints: [...this.snapshot.joints] } : null;
+	}
+
+	hasPendingSnapshot(): boolean {
+		return Boolean(this.snapshot && this.dirty && this.context && this.context.appointmentId > 0);
+	}
+
+	async flushSnapshotToServer(): Promise<void> {
+		if (!this.snapshot || !this.context || this.context.appointmentId <= 0) return;
+		const { persistBodySnapshot } = await import('../../lib/clinical-ficha/body-store');
+		await persistBodySnapshot(this.snapshot);
+		this.dirty = false;
+		this.persisted = true;
+		this.syncDraftBanner();
+	}
+
+	private isReadOnly(): boolean {
+		if (!this.context) return true;
+		if (this.context.appointmentId <= 0) return true;
+		return this.context.readOnly === true;
+	}
+
+	private async applyContext(context: CuerpoWorkspaceContext): Promise<void> {
+		const token = ++this.loadToken;
+		this.dirty = false;
+		this.persisted = false;
+
+		if (context.appointmentId <= 0) {
+			const latest =
+				getLatestBodySnapshot(context.customerId) ??
+				(await fetchLatestBodySnapshot(context.customerId));
+			if (token !== this.loadToken) return;
+			this.snapshot = latest ? { ...latest } : null;
+			this.silhouette = this.snapshot?.silhouette ?? this.silhouette;
+			this.renderSessionHeader();
+			this.syncViewButtons();
+			this.syncSilhouetteButtons();
+			this.syncMarkKindButtons();
+			this.syncIntensity();
+			this.renderMap();
+			this.renderSidebar();
+			this.renderJointPanel();
+			this.syncDraftBanner();
+			this.syncReadOnlyUi();
+			return;
+		}
+
+		let snapshot =
+			getBodySnapshot(context.customerId, context.appointmentId) ??
+			(await fetchBodySnapshot(context.customerId, context.appointmentId));
+
+		if (token !== this.loadToken) return;
+
 		this.snapshot =
-			existing ??
+			snapshot ??
 			({
 				customerId: context.customerId,
 				appointmentId: context.appointmentId,
@@ -80,6 +147,11 @@ export class CuerpoWorkspace {
 				joints: [],
 				sessionLabel: context.sessionLabel,
 			} satisfies BodySessionSnapshot);
+
+		if (snapshot) {
+			this.persisted = true;
+		}
+
 		this.silhouette = this.snapshot.silhouette;
 		this.renderSessionHeader();
 		this.syncViewButtons();
@@ -89,6 +161,38 @@ export class CuerpoWorkspace {
 		this.renderMap();
 		this.renderSidebar();
 		this.renderJointPanel();
+		this.syncDraftBanner();
+		this.syncReadOnlyUi();
+	}
+
+	private syncDraftBanner(): void {
+		const banner = this.root.querySelector('[data-cuerpo-draft-banner]');
+		if (!banner) return;
+		const show = Boolean(this.snapshot && this.dirty && !this.persisted && !this.isReadOnly());
+		banner.classList.toggle('hidden', !show);
+		if (show) banner.removeAttribute('hidden');
+		else banner.setAttribute('hidden', '');
+	}
+
+	private syncReadOnlyUi(): void {
+		const readOnly = this.isReadOnly();
+		for (const selector of [
+			'[data-cuerpo-add-mark]',
+			'[data-cuerpo-intensity-dec]',
+			'[data-cuerpo-intensity-inc]',
+			'[data-cuerpo-intensity-slider]',
+			'[data-cuerpo-mark-kind]',
+			'[data-cuerpo-silhouette]',
+			'[data-cuerpo-rom]',
+			'[data-cuerpo-eva]',
+			'[data-cuerpo-test]',
+		]) {
+			for (const el of this.root.querySelectorAll<HTMLElement>(selector)) {
+				if (el instanceof HTMLButtonElement || el instanceof HTMLInputElement) {
+					el.disabled = readOnly;
+				}
+			}
+		}
 	}
 
 	private bindUi(): void {
@@ -133,6 +237,7 @@ export class CuerpoWorkspace {
 			}
 
 			if (target.closest('[data-cuerpo-silhouette]')) {
+				if (this.isReadOnly()) return;
 				const value = target.closest<HTMLButtonElement>('[data-cuerpo-silhouette]')?.dataset
 					.cuerpoSilhouette as BodySilhouette;
 				if (value) {
@@ -159,12 +264,14 @@ export class CuerpoWorkspace {
 			}
 
 			if (target.closest('[data-cuerpo-add-mark]')) {
+				if (this.isReadOnly()) return;
 				this.addMarkAtCenter();
 				return;
 			}
 
 			const testBtn = target.closest<HTMLButtonElement>('[data-cuerpo-test]');
 			if (testBtn && this.snapshot) {
+				if (this.isReadOnly()) return;
 				const joint = testBtn.dataset.cuerpoJoint as JointCode;
 				const testCode = testBtn.dataset.cuerpoTest || '';
 				const result = (testBtn.dataset.cuerpoResult as TestResult) || 'NT';
@@ -187,13 +294,16 @@ export class CuerpoWorkspace {
 			const target = event.target;
 			if (!(target instanceof HTMLInputElement)) return;
 			if (target.matches('[data-cuerpo-intensity-slider]')) {
+				if (this.isReadOnly()) return;
 				this.intensity = Math.max(0, Math.min(10, Number(target.value) || 0));
 				this.syncIntensity(false);
 			}
 			if (target.matches('[data-cuerpo-eva]')) {
+				if (this.isReadOnly()) return;
 				this.persistEvaFromDom();
 			}
 			if (target.matches('[data-cuerpo-rom]')) {
+				if (this.isReadOnly()) return;
 				this.persistRomFromDom();
 			}
 		});
@@ -201,12 +311,16 @@ export class CuerpoWorkspace {
 
 	private renderEmptyState(): void {
 		const sessionEl = this.root.querySelector('[data-cuerpo-session-label]');
-		if (sessionEl) sessionEl.textContent = 'Seleccioná una cita para registrar el mapa.';
+		if (sessionEl) sessionEl.textContent = 'Elegí una sesión o abrí el estado actual.';
 	}
 
 	private renderSessionHeader(): void {
 		const sessionEl = this.root.querySelector('[data-cuerpo-session-label]');
 		if (!sessionEl || !this.context) return;
+		if (this.context.appointmentId <= 0) {
+			sessionEl.textContent = 'Estado actual · solo lectura';
+			return;
+		}
 		const label = this.context.sessionLabel || `Sesión · Cita #${this.context.appointmentId}`;
 		sessionEl.textContent = label;
 	}
@@ -223,7 +337,7 @@ export class CuerpoWorkspace {
 	}
 
 	private renderCompareMap(): void {
-		if (!this.context) return;
+		if (!this.context || this.context.appointmentId <= 0) return;
 		const previous = getPreviousBodySnapshot(this.context.customerId, this.context.appointmentId);
 		this.compareSvg = this.root.querySelector('[data-cuerpo-compare-svg]');
 		this.compareLayer = this.root.querySelector('[data-cuerpo-compare-marks]');
@@ -319,7 +433,7 @@ export class CuerpoWorkspace {
 	}
 
 	private addMark(nx: number, ny: number): void {
-		if (!this.snapshot || !this.context) return;
+		if (!this.snapshot || !this.context || this.isReadOnly()) return;
 		const region = resolveBodyRegion(this.view, nx, ny);
 		const mark: BodyMark = {
 			id: `m_${crypto.randomUUID()}`,
@@ -340,13 +454,16 @@ export class CuerpoWorkspace {
 	}
 
 	private persist(): void {
-		if (!this.snapshot) return;
+		if (!this.snapshot || this.isReadOnly()) return;
 		this.snapshot = {
 			...this.snapshot,
 			silhouette: this.silhouette,
 			capturedAt: new Date().toISOString(),
 		};
 		saveBodySnapshot(this.snapshot);
+		this.dirty = true;
+		this.persisted = false;
+		this.syncDraftBanner();
 	}
 
 	private renderSidebar(): void {
@@ -447,6 +564,9 @@ export class CuerpoWorkspace {
 		}
 		let assessment = this.snapshot.joints.find((j) => j.joint === joint);
 		if (!assessment) {
+			if (this.isReadOnly()) {
+				return { joint, side: 'R', rom: {}, tests: [], eva: 0 };
+			}
 			assessment = { joint, side: 'R', rom: {}, tests: [], eva: 0 };
 			this.snapshot = { ...this.snapshot, joints: [...this.snapshot.joints, assessment] };
 			this.persist();
@@ -455,7 +575,7 @@ export class CuerpoWorkspace {
 	}
 
 	private updateJointTest(joint: JointCode, testCode: string, result: TestResult): void {
-		if (!this.snapshot) return;
+		if (!this.snapshot || this.isReadOnly()) return;
 		const assessment = this.getOrCreateJoint(joint);
 		const tests = assessment.tests.filter((t) => t.code !== testCode);
 		tests.push({ code: testCode, result });
@@ -470,7 +590,7 @@ export class CuerpoWorkspace {
 	}
 
 	private persistRomFromDom(): void {
-		if (!this.snapshot || this.lens === 'BODY') return;
+		if (!this.snapshot || this.lens === 'BODY' || this.isReadOnly()) return;
 		const joint = this.lens;
 		const assessment = this.getOrCreateJoint(joint);
 		const rom: Record<string, number> = { ...assessment.rom };
@@ -489,7 +609,7 @@ export class CuerpoWorkspace {
 	}
 
 	private persistEvaFromDom(): void {
-		if (!this.snapshot || this.lens === 'BODY') return;
+		if (!this.snapshot || this.lens === 'BODY' || this.isReadOnly()) return;
 		const joint = this.lens;
 		const input = this.root.querySelector<HTMLInputElement>('[data-cuerpo-eva]');
 		const eva = Math.max(0, Math.min(10, Number(input?.value) || 0));
