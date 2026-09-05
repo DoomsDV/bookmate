@@ -28,6 +28,7 @@ export interface PaymentSettingsData {
 	deposits_suspended?: 0 | 1;
 	deposits_suspended_reason?: string | null;
 	deposits_suspended_at?: string | null;
+	refund_enforcement_level?: string | null;
 	max_refund_strikes?: number;
 	updated_at?: string;
 }
@@ -112,6 +113,7 @@ const normalizeSettings = (raw: any): PaymentSettingsData => {
 		deposits_suspended: Number(raw?.deposits_suspended) === 1 ? 1 : 0,
 		deposits_suspended_reason: String(raw?.deposits_suspended_reason || '').trim() || null,
 		deposits_suspended_at: String(raw?.deposits_suspended_at || '').trim() || null,
+		refund_enforcement_level: String(raw?.refund_enforcement_level || 'NONE').trim().toUpperCase() || 'NONE',
 		max_refund_strikes: Number(raw?.max_refund_strikes) || 3,
 		updated_at: String(raw?.updated_at || '').trim() || undefined,
 	};

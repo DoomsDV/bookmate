@@ -38,12 +38,14 @@ import {
 import {
 	clearSipapHold,
 	createDraftPersister,
+	patchSipapHold,
 	proBookingDraftKey,
 	proBookingHoldKey,
 	readPublicBookingDraft,
 	readSipapHold,
 	SLOT_UNAVAILABLE_RESTORE_MESSAGE,
 	writeSipapHold,
+	publicReservationPath,
 	type PublicBookingDraft,
 	type PublicBookingDraftStep,
 } from '../lib/public-booking-draft';
@@ -2895,15 +2897,7 @@ export const initializePublicBookingPage = () => {
 			const hold = await ensurePendingAppointment();
 			if (!hold) return;
 
-			fillSipapDepositPanel(root, hold, profile.deposit_settings, {
-				serviceName: selectedService?.name,
-				professionalName: profile.full_name,
-				depositAmount: calculateDepositAmount(selectedService),
-			});
-			populateSuccessTicket();
 			draftPersister.clear();
-			// Persistir el hold para que el paso "Transferí la seña" sobreviva a un F5
-			// o al cierre del navegador dentro de la ventana de pago.
 			writeSipapHold(holdStorageKey, hold as unknown as Record<string, unknown>, {
 				serviceId: selectedService?.id_service ?? 0,
 				serviceName: selectedService?.name,
@@ -2913,6 +2907,19 @@ export const initializePublicBookingPage = () => {
 				time: selectedTime,
 				locationId: selectedLocation?.id_location ?? null,
 			});
+			const managePath = publicReservationPath(String(hold.public_manage_token || ''));
+			if (managePath) {
+				window.location.assign(managePath);
+				return;
+			}
+			fillSipapDepositPanel(root, hold, profile.deposit_settings, {
+				serviceName: selectedService?.name,
+				professionalName: profile.full_name,
+				professionalImageUrl: profile.image_url,
+				specialty: profile.specialty,
+				depositAmount: calculateDepositAmount(selectedService),
+			});
+			populateSuccessTicket();
 			setStep(7);
 			showToast('Turno reservado. Completá la transferencia SIPAP.', 'success');
 		} catch (error) {
@@ -3070,10 +3077,13 @@ export const initializePublicBookingPage = () => {
 		signal,
 		onResult: (result) => {
 			const ocr = String(result.ocr_status || '').toUpperCase();
-			// Seña verificada: la cita quedó confirmada, ya no hace falta persistir el hold.
 			if (ocr === 'MATCH') {
 				clearSipapHold(holdStorageKey);
+				return;
 			}
+			patchSipapHold(holdStorageKey, {
+				ocr_status: result.ocr_status || 'MANUAL_REVIEW',
+			});
 		},
 		onError: (message) => showToast(message, 'error'),
 	});
@@ -3106,6 +3116,13 @@ export const initializePublicBookingPage = () => {
 		const stored = readSipapHold(holdStorageKey);
 		if (!stored) return false;
 
+		const hold = stored.hold as unknown as ReturnType<typeof unwrapSipapHold>;
+		const managePath = publicReservationPath(String((hold as { public_manage_token?: string }).public_manage_token || ''));
+		if (managePath) {
+			window.location.replace(managePath);
+			return true;
+		}
+
 		const service =
 			profile.services.find((item) => item.id_service === stored.context.serviceId) ?? null;
 		if (!service) {
@@ -3113,7 +3130,6 @@ export const initializePublicBookingPage = () => {
 			return false;
 		}
 
-		const hold = stored.hold as unknown as ReturnType<typeof unwrapSipapHold>;
 		selectedService = service;
 		selectedDate = stored.context.date || '';
 		selectedTime = stored.context.time || '';
@@ -3130,6 +3146,8 @@ export const initializePublicBookingPage = () => {
 		fillSipapDepositPanel(root, hold, profile.deposit_settings, {
 			serviceName: stored.context.serviceName ?? service.name,
 			professionalName: stored.context.professionalName ?? profile.full_name,
+			professionalImageUrl: profile.image_url,
+			specialty: profile.specialty,
 			depositAmount: stored.context.depositAmount ?? calculateDepositAmount(service),
 		});
 		fillPublicBookingSuccessTicket(root, {

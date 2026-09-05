@@ -62,24 +62,72 @@ export const buildClosurePrefillUrl = (hint: {
 	return `/panel/locations?${params.toString()}`;
 };
 
-export const buildAppointmentFocusUrl = (
-	appointmentId: number,
-	actionUrl?: string | null
-) => {
-	const fallback = '/panel/calendar';
-	if (!Number.isInteger(appointmentId) || appointmentId <= 0) return fallback;
+const PANEL_DEEP_LINK_BASE = 'https://hasel.app';
 
-	const raw = String(actionUrl || '').trim();
+const parsePanelDeepLink = (raw: string) => {
+	const trimmed = String(raw || '').trim();
+	if (!trimmed) return null;
 	try {
-		const parsed = new URL(raw || fallback, 'https://hasel.app');
-		const path = parsed.pathname.startsWith('/panel/calendar') ? parsed.pathname : fallback;
-		const params = parsed.pathname.startsWith('/panel/calendar')
-			? new URLSearchParams(parsed.search)
-			: new URLSearchParams();
-		params.set('appointment_id', String(appointmentId));
-		const query = params.toString();
-		return `${path}${query ? `?${query}` : ''}${parsed.hash}`;
+		return new URL(trimmed, PANEL_DEEP_LINK_BASE);
 	} catch {
-		return `${fallback}?appointment_id=${appointmentId}`;
+		return null;
 	}
 };
+
+const isCobrosPanelPath = (pathname: string) => pathname.startsWith('/panel/cobros');
+
+const isCalendarPanelPath = (pathname: string) => pathname.startsWith('/panel/calendar');
+
+export const buildCobrosFocusUrl = (
+	appointmentId?: number | null,
+	actionUrl?: string | null
+) => {
+	const parsed = parsePanelDeepLink(String(actionUrl || ''));
+	const params = parsed && isCobrosPanelPath(parsed.pathname)
+		? new URLSearchParams(parsed.search)
+		: new URLSearchParams();
+
+	if (Number.isInteger(appointmentId) && (appointmentId ?? 0) > 0) {
+		params.set('appointment', String(appointmentId));
+	}
+
+	const query = params.toString();
+	return `/panel/cobros${query ? `?${query}` : ''}`;
+};
+
+export const resolvePanelDeepLink = (
+	appointmentId?: number | null,
+	actionUrl?: string | null,
+	ntype?: InboxNtype | string | null
+) => {
+	const normalizedType = String(ntype || '').toUpperCase();
+	const parsed = parsePanelDeepLink(String(actionUrl || ''));
+	const aptId = Number.isInteger(appointmentId) && (appointmentId ?? 0) > 0 ? appointmentId : null;
+
+	if (normalizedType === 'PAYMENT' || (parsed && isCobrosPanelPath(parsed.pathname))) {
+		return buildCobrosFocusUrl(aptId, actionUrl);
+	}
+
+	const fallback = '/panel/calendar';
+	if (!aptId) {
+		if (parsed && (isCalendarPanelPath(parsed.pathname) || isCobrosPanelPath(parsed.pathname))) {
+			return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+		}
+		return fallback;
+	}
+
+	if (parsed && isCalendarPanelPath(parsed.pathname)) {
+		const params = new URLSearchParams(parsed.search);
+		params.set('appointment_id', String(aptId));
+		const query = params.toString();
+		return `${parsed.pathname}${query ? `?${query}` : ''}${parsed.hash}`;
+	}
+
+	return `${fallback}?appointment_id=${aptId}`;
+};
+
+export const buildAppointmentFocusUrl = (
+	appointmentId: number,
+	actionUrl?: string | null,
+	ntype?: InboxNtype | string | null
+) => resolvePanelDeepLink(appointmentId, actionUrl, ntype);

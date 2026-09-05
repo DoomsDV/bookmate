@@ -53,7 +53,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 		</div>
 
 		<dialog
-			class="m-0 mt-auto mb-0 w-screen max-w-none max-h-[80vh] open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:m-auto sm:w-[min(48rem,calc(100vw-2rem))] sm:max-w-[min(48rem,calc(100vw-2rem))] sm:max-h-[90vh] sm:rounded-[1.8rem] lg:m-0 lg:ml-auto lg:mr-0 lg:mt-0 lg:mb-0 lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[max(50vw,40rem)] lg:max-w-[max(50vw,40rem)] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
+			class="m-0 mt-auto mb-0 w-screen max-w-none max-h-[80vh] open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:m-0 sm:ml-auto sm:mr-0 sm:mt-0 sm:mb-0 sm:h-[100dvh] sm:max-h-[100dvh] sm:w-[max(50vw,40rem)] sm:max-w-[max(50vw,40rem)] sm:rounded-none sm:border-y-0 sm:border-r-0 sm:shadow-none"
 			data-location-modal
 		>
 			<div class="panel-modal-header">
@@ -283,6 +283,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 							type="button"
 							class="location-closures-add-btn"
 							data-add-closure-btn
+							data-requires-write
 						>
 							<span class="material-symbols-rounded text-[1.05rem]">add</span>
 							<span>Añadir cierre</span>
@@ -337,6 +338,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 							type="button"
 							class="hidden modal-action-danger"
 							data-delete-location
+							data-requires-write
 							aria-label="Eliminar sucursal"
 						>
 							<span
@@ -359,6 +361,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 								type="submit"
 								class="modal-action-primary"
 								data-submit-location
+								data-requires-write
 							>
 								<span
 									class="material-symbols-rounded text-[1.2rem]"
@@ -415,6 +418,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 					type="button"
 					class="location-closures-add-btn location-closures-add-btn--wide"
 					data-add-org-closure-btn
+					data-requires-write
 				>
 					<span class="material-symbols-rounded text-[1.05rem]">add</span>
 					<span>Nuevo cierre general</span>
@@ -590,6 +594,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 						type="submit"
 						class="modal-action-primary"
 						data-submit-closure
+						data-requires-write
 					>
 						<span class="material-symbols-rounded text-[1.2rem]" aria-hidden="true">save</span>
 						<span>Guardar cierre</span>
@@ -2089,42 +2094,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 		}
 	}
 
-	@media (min-width: 640px) and (max-width: 1023px) {
-		dialog[data-location-modal] {
-			inset: 0;
-			margin: auto;
-			width: min(48rem, calc(100vw - 2rem));
-			max-width: min(48rem, calc(100vw - 2rem));
-			max-height: 90vh;
-			height: auto;
-		}
-
-		@keyframes location-modal-in {
-			from {
-				opacity: 0;
-				transform: translateY(10px) scale(0.98);
-			}
-
-			to {
-				opacity: 1;
-				transform: translateY(0) scale(1);
-			}
-		}
-
-		@keyframes location-modal-out {
-			from {
-				opacity: 1;
-				transform: translateY(0) scale(1);
-			}
-
-			to {
-				opacity: 0;
-				transform: translateY(8px) scale(0.98);
-			}
-		}
-	}
-
-	@media (min-width: 1024px) {
+	@media (min-width: 640px) {
 		dialog[data-location-modal] {
 			inset: 0 0 0 auto;
 			height: 100dvh;
@@ -2337,31 +2307,32 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 		text-align: center;
 	}
 
-	/* --- Closure form dialog (centrado; no hereda el drawer lateral) --- */
+	/* --- Closure form: sheet móvil, drawer desde sm --- */
 	dialog.closure-form-dialog {
 		position: fixed;
-		inset: 0;
-		margin: auto;
-		width: min(30rem, calc(100vw - 2rem));
-		max-width: min(30rem, calc(100vw - 2rem));
-		max-height: min(90dvh, calc(100dvh - 2rem));
+		inset: auto 0 0 0;
+		top: auto;
+		margin: 0;
+		width: 100%;
+		max-width: none;
+		max-height: min(88dvh, calc(100dvh - env(safe-area-inset-bottom, 0px)));
 		height: fit-content;
 		border: 1px solid var(--shell-border);
-		border-radius: 1.4rem;
+		border-radius: 1.6rem 1.6rem 0 0;
 		background-color: var(--surface-bright);
 		background-image: none;
 		color: var(--on-surface);
 		padding: 0;
 		overflow: hidden;
 		box-shadow: var(--modal-shadow-dialog);
-		animation: closure-form-in 180ms var(--modal-easing, ease);
+		animation: closure-form-sheet-in 180ms var(--modal-easing, ease);
 	}
 
 	dialog.closure-form-dialog[open] {
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;
-		border-radius: 1.4rem;
+		border-radius: 1.6rem 1.6rem 0 0;
 	}
 
 	dialog.closure-form-dialog::backdrop {
@@ -2370,43 +2341,46 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 		-webkit-backdrop-filter: blur(var(--modal-backdrop-blur, 2px));
 	}
 
-	@keyframes closure-form-in {
+	@keyframes closure-form-sheet-in {
 		from {
 			opacity: 0;
-			transform: translateY(8px) scale(0.98);
+			transform: translateY(100%);
 		}
 		to {
 			opacity: 1;
-			transform: translateY(0) scale(1);
+			transform: translateY(0);
 		}
 	}
 
-	@media (max-width: 639px) {
+	@keyframes closure-form-drawer-in {
+		from {
+			opacity: 0;
+			transform: translateX(100%);
+		}
+		to {
+			opacity: 1;
+			transform: translateX(0);
+		}
+	}
+
+	@media (min-width: 640px) {
 		dialog.closure-form-dialog {
-			inset: auto 0 0 0;
-			top: auto;
+			inset: 0 0 0 auto;
+			top: 0;
 			margin: 0;
-			width: 100%;
-			max-width: none;
-			max-height: min(88dvh, calc(100dvh - env(safe-area-inset-bottom, 0px)));
-			border-radius: 1.6rem 1.6rem 0 0;
-			overflow: hidden;
-			animation-name: closure-form-sheet-in;
+			width: min(30rem, 100%);
+			max-width: min(30rem, 100%);
+			max-height: 100dvh;
+			height: 100dvh;
+			border-radius: 0;
+			border-top: 0;
+			border-right: 0;
+			border-bottom: 0;
+			animation-name: closure-form-drawer-in;
 		}
 
 		dialog.closure-form-dialog[open] {
-			border-radius: 1.6rem 1.6rem 0 0;
-		}
-
-		@keyframes closure-form-sheet-in {
-			from {
-				opacity: 0;
-				transform: translateY(100%);
-			}
-			to {
-				opacity: 1;
-				transform: translateY(0);
-			}
+			border-radius: 0;
 		}
 	}
 
@@ -2791,41 +2765,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 		}
 	}
 
-	@media (min-width: 640px) and (max-width: 1023px) {
-		dialog.closures-org-dialog {
-			inset: 0;
-			margin: auto;
-			width: min(32rem, calc(100vw - 2rem));
-			max-width: min(32rem, calc(100vw - 2rem));
-			max-height: 90vh;
-			height: auto;
-			border-radius: 1.8rem;
-		}
-
-		@keyframes closures-org-in {
-			from {
-				opacity: 0;
-				transform: translateY(10px) scale(0.98);
-			}
-			to {
-				opacity: 1;
-				transform: translateY(0) scale(1);
-			}
-		}
-
-		@keyframes closures-org-out {
-			from {
-				opacity: 1;
-				transform: translateY(0) scale(1);
-			}
-			to {
-				opacity: 0;
-				transform: translateY(8px) scale(0.98);
-			}
-		}
-	}
-
-	@media (min-width: 1024px) {
+	@media (min-width: 640px) {
 		dialog.closures-org-dialog {
 			inset: 0 0 0 auto;
 			height: 100dvh;

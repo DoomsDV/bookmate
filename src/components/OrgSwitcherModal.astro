@@ -263,35 +263,91 @@ const { currentOrgMemberId = 0 } = Astro.props;
 	/* is:global — las tarjetas se renderizan con JS y no reciben el scope de Astro */
 	.org-switcher-dialog {
 		position: fixed;
-		top: 50%;
-		left: 50%;
+		inset: auto 0 0 0;
 		z-index: 80;
 		margin: 0;
-		width: min(calc(100vw - 2rem), 32rem);
-		max-width: min(calc(100vw - 2rem), 32rem);
-		max-height: calc(100vh - 2rem);
+		width: 100%;
+		max-width: none;
+		max-height: min(88dvh, calc(100dvh - env(safe-area-inset-bottom, 0px)));
 		padding: 0;
 		border: 0;
-		border-radius: 1.5rem;
+		border-radius: 1.5rem 1.5rem 0 0;
 		background: transparent;
 		background-color: transparent;
 		box-shadow: none;
 		overflow: hidden;
 		outline: none;
-		transform: translate(-50%, -50%);
+		transform: none;
 		font-family: var(--font-body);
+		animation: org-switcher-sheet-in 180ms cubic-bezier(0.2, 0, 0, 1);
+	}
+
+	.org-switcher-dialog[open] {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.org-switcher-dialog::backdrop {
+		background: var(--modal-backdrop-scrim);
+		backdrop-filter: blur(var(--modal-backdrop-blur));
+		-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 	}
 
 	.org-switcher-panel {
 		position: relative;
 		display: flex;
 		flex-direction: column;
-		max-height: calc(100vh - 2rem);
+		height: 100%;
+		max-height: min(88dvh, calc(100dvh - env(safe-area-inset-bottom, 0px)));
 		border: 1px solid var(--shell-border);
-		border-radius: 1.5rem;
+		border-radius: 1.5rem 1.5rem 0 0;
 		background: var(--sidebar-surface);
 		box-shadow: var(--card-elevation-hover), 0 28px 70px rgba(15, 23, 42, 0.14);
 		overflow: hidden;
+	}
+
+	@keyframes org-switcher-sheet-in {
+		from {
+			opacity: 0;
+			transform: translateY(100%);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@keyframes org-switcher-drawer-in {
+		from {
+			opacity: 0;
+			transform: translateX(100%);
+		}
+		to {
+			opacity: 1;
+			transform: translateX(0);
+		}
+	}
+
+	@media (min-width: 640px) {
+		.org-switcher-dialog {
+			inset: 0 0 0 auto;
+			width: min(32rem, 100%);
+			max-width: min(32rem, 100%);
+			height: 100dvh;
+			max-height: 100dvh;
+			border-radius: 0;
+			animation-name: org-switcher-drawer-in;
+		}
+
+		.org-switcher-panel {
+			height: 100dvh;
+			max-height: 100dvh;
+			border-radius: 0;
+			border-top: 0;
+			border-right: 0;
+			border-bottom: 0;
+			box-shadow: none;
+		}
 	}
 
 	.org-switcher-close {

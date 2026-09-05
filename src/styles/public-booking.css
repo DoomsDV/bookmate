@@ -606,16 +606,18 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 
 /* Ticket físico compartido (Gestionar reserva + Success Screen) */
 .booking-ticket {
+	--ticket-pad-x: 1.15rem;
+	--ticket-notch-r: 0.625rem;
 	display: grid;
 	gap: 1rem;
-	padding: 1.15rem 1.15rem 1.25rem;
+	padding: 1.15rem var(--ticket-pad-x) 1.25rem;
 	border-radius: 1.5rem;
 	background: var(--ticket-surface, #27272a);
 	border: 0;
 	box-shadow:
 		0 10px 15px -3px rgb(0 0 0 / 0.5),
 		0 4px 6px -4px rgb(0 0 0 / 0.5);
-	overflow: hidden;
+	overflow: visible;
 	text-align: left;
 }
 
@@ -630,14 +632,15 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 	flex: 0 0 auto;
 	width: 2.75rem;
 	height: 2.75rem;
-	border-radius: 0.85rem;
+	border-radius: 50%;
 	object-fit: cover;
-	background: #2b2b2f;
+	background: transparent;
 }
 
 .booking-ticket__avatar--empty {
 	display: grid;
 	place-items: center;
+	background: color-mix(in srgb, var(--on-surface-variant) 12%, transparent);
 	color: var(--on-surface-variant);
 }
 
@@ -746,8 +749,9 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 
 .booking-ticket__tear {
 	position: relative;
+	z-index: 1;
 	height: 0;
-	margin: 0.15rem -1.15rem 0;
+	margin: 0.15rem calc(-1 * var(--ticket-pad-x)) 0;
 	border-top: 1px dashed color-mix(in srgb, var(--outline-variant) 85%, transparent);
 }
 
@@ -755,19 +759,22 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 .booking-ticket__tear::after {
 	content: '';
 	position: absolute;
-	top: -0.5rem;
-	width: 1rem;
-	height: 1rem;
+	top: 0;
+	width: calc(var(--ticket-notch-r) * 2 + 2px);
+	height: calc(var(--ticket-notch-r) * 2 + 2px);
 	border-radius: 50%;
 	background: var(--surface-background);
+	box-shadow: 0 0 0 1px var(--surface-background);
+	transform: translateY(-50%);
+	z-index: 2;
 }
 
 .booking-ticket__tear::before {
-	left: -0.5rem;
+	left: calc(-1 * var(--ticket-notch-r) - 1px);
 }
 
 .booking-ticket__tear::after {
-	right: -0.5rem;
+	right: calc(-1 * var(--ticket-notch-r) - 1px);
 }
 
 .booking-ticket__details {
@@ -879,8 +886,36 @@ html:has(.sipap-deposit-panel:not(.hidden)) body,
 	overflow: visible;
 }
 
-.public-booking-sheet:has([data-step-panel='7']:not(.hidden)) .public-booking-stepper {
+.public-booking-sheet:has([data-step-panel='7']:not(.hidden)) .public-booking-stepper,
+.public-booking-sheet:has([data-step-panel='7']:not(.hidden)) [data-booking-profile-header] {
 	display: none;
+}
+
+/* Paso seña: usar más ancho en tablet/PC. El wizard (pasos 1–6) sigue en 42/48/52rem. */
+.public-booking-shell:has(.sipap-deposit-panel:not(.hidden)) .public-booking-shell__canvas,
+.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile__inner {
+	max-width: min(56rem, 100%);
+}
+
+@media (min-width: 768px) {
+	.public-booking-shell:has(.sipap-deposit-panel:not(.hidden)) .public-booking-shell__canvas,
+	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile__inner {
+		max-width: min(64rem, 100%);
+	}
+}
+
+@media (min-width: 1024px) {
+	.public-booking-shell:has(.sipap-deposit-panel:not(.hidden)) .public-booking-shell__canvas,
+	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile__inner {
+		max-width: min(72rem, calc(100vw - 2.5rem));
+	}
+}
+
+@media (min-width: 1280px) {
+	.public-booking-shell:has(.sipap-deposit-panel:not(.hidden)) .public-booking-shell__canvas,
+	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile__inner {
+		max-width: min(76rem, calc(100vw - 3rem));
+	}
 }
 
 .public-booking-sheet:has([data-step-panel='7']:not(.hidden))
@@ -891,6 +926,13 @@ html:has(.sipap-deposit-panel:not(.hidden)) body,
 
 .public-booking-sheet:has([data-step-panel='7']:not(.hidden)) .public-booking-profile__card {
 	padding-bottom: 0.15rem;
+}
+
+@media (max-width: 959px) {
+	.public-booking-sheet:has([data-step-panel='7']:not(.hidden)) .public-booking-shell__canvas,
+	.public-booking-shell:has(.sipap-deposit-panel:not(.hidden)) .public-booking-shell__canvas {
+		padding-top: 1.75rem;
+	}
 }
 
 .public-booking-success {
@@ -2977,14 +3019,18 @@ html:has(.sipap-deposit-panel:not(.hidden)) body,
 	}
 
 	.public-booking-actions .public-booking-back-link {
+		align-self: center;
+		height: 3rem;
 		min-height: 3rem;
-		padding: 0.65rem 0.9rem 0.65rem 0.65rem;
+		padding: 0 1.1rem 0 0.85rem;
 		border: 1px solid var(--outline, #79747e);
 		background: transparent;
 		box-shadow: none;
 		border-radius: 999px;
 		white-space: nowrap;
-		font-size: 0.9rem;
+		font-size: 0.95rem;
+		font-weight: 650;
+		line-height: 1;
 	}
 
 	html[data-theme='dark'] .public-booking-actions .public-booking-back-link {
@@ -3031,13 +3077,14 @@ html:has(.sipap-deposit-panel:not(.hidden)) body,
 	}
 
 	.public-booking-actions [data-booking-primary-actions] .booking-primary-action {
+		height: 3rem;
 		min-height: 3rem;
-		height: auto;
 		width: 100%;
 		margin: 0;
-		padding: 0.7rem 1.1rem;
+		padding: 0 1.1rem;
 		font-size: 0.95rem;
 		font-weight: 650;
+		line-height: 1;
 		border-radius: 999px;
 	}
 }
@@ -3192,8 +3239,19 @@ html:has(.sipap-deposit-panel:not(.hidden)) body,
 
 	.public-booking-actions .public-booking-back-row {
 		display: flex;
+		align-items: center;
 		flex: 0 0 auto;
 		margin: 0;
+	}
+
+	.public-booking-actions .public-booking-back-link {
+		align-self: center;
+		height: 2.75rem;
+		min-height: 2.75rem;
+		padding: 0 1.25rem 0 0.85rem;
+		font-size: 0.9375rem;
+		font-weight: 650;
+		line-height: 1;
 	}
 
 	.public-booking-actions > .public-booking-continue,
@@ -3201,9 +3259,15 @@ html:has(.sipap-deposit-panel:not(.hidden)) body,
 	.public-booking-actions > .public-location-stack__continue,
 	.public-booking-actions > .public-slot-roulette__continue {
 		flex: 0 0 auto;
+		align-self: center;
 		width: fit-content;
 		min-width: 0;
+		height: 2.75rem;
+		min-height: 2.75rem;
 		margin: 0;
+		padding: 0 1.35rem;
+		font-size: 0.9375rem;
+		line-height: 1;
 	}
 
 	.public-booking-actions:has(.public-booking-back-row:not(.hidden)) > .public-booking-continue,
@@ -3217,14 +3281,21 @@ html:has(.sipap-deposit-panel:not(.hidden)) body,
 	.public-booking-actions > [data-booking-primary-actions] {
 		display: grid;
 		flex: 0 0 auto;
+		align-self: center;
 		width: fit-content;
 		max-width: 100%;
-		margin-inline: 0;
+		margin: 0 !important;
 	}
 
 	.public-booking-actions [data-booking-primary-actions] .booking-primary-action {
 		width: auto;
 		min-width: 13.5rem;
+		height: 2.75rem;
+		min-height: 2.75rem;
+		padding: 0 1.35rem;
+		font-size: 0.9375rem;
+		font-weight: 650;
+		line-height: 1;
 	}
 }
 

@@ -39,9 +39,10 @@ interface PreviewRowState {
 // Paraguay opera en -03:00 de forma permanente desde 2024.
 const ASUNCION_OFFSET = '-03:00';
 
-const PLACEHOLDER_SERVICE = 'Servicio';
-const PLACEHOLDER_PROFESSIONAL = 'Profesional';
+const PLACEHOLDER_SERVICE = 'Elegir servicio';
+const PLACEHOLDER_PROFESSIONAL = 'Asignar';
 const PLACEHOLDER_LOCATION = 'Sucursal';
+const MONTHS_SHORT = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
 
 const DEFAULT_THEMED_TRIGGER =
 	'panel-modal-select__trigger panel-themed-select__trigger schedule-themed-select__trigger';
@@ -113,7 +114,9 @@ const TIME_SLOTS = (() => {
 const formatDisplayDate = (iso: string) => {
 	const match = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
 	if (!match) return '';
-	return `${match[3]}/${match[2]}/${match[1]}`;
+	const month = MONTHS_SHORT[Number(match[2]) - 1];
+	if (!month) return `${match[3]}/${match[2]}/${match[1]}`;
+	return `${Number(match[3])} ${month} ${match[1]}`;
 };
 
 const parseIsoDate = (iso: string): Date | null => {
@@ -251,12 +254,13 @@ class AgendaScanPreview extends HTMLElement {
 			this.toggleDefaultsOpen();
 		}, { signal });
 		window.matchMedia('(max-width: 640px)').addEventListener('change', () => {
+			this.syncThemedSelectMode();
 			this.syncDefaultsCollapseA11y();
 			this.updateDefaultsSummary();
 		}, { signal });
 		this.setDefaultsOpen(false);
 
-		this.mountDefaultThemedSelects();
+		this.syncThemedSelectMode();
 		bindPanelThemedSelectRoot(this, signal);
 		this.addEventListener('click', (event) => {
 			const target = event.target;
@@ -289,8 +293,8 @@ class AgendaScanPreview extends HTMLElement {
 				row.row_confidence || row.confidence || (row.missing_fields?.length ? 'medium' : 'high');
 			return {
 				uid: uid(),
-				customer_name: String(row.customer_name || '').trim(),
-				customer_phone: String(row.customer_phone || '').trim(),
+				customer_name: String(row.customer_name || '').trim().slice(0, 100),
+				customer_phone: String(row.customer_phone || '').trim().slice(0, 11),
 				date,
 				time,
 				ser_id_service: toInt(row.ser_id_service),
@@ -305,6 +309,7 @@ class AgendaScanPreview extends HTMLElement {
 		this.setupImage(imageDataUrl);
 		this.applyDefaults(false);
 		this.setDefaultsOpen(false);
+		this.classList.toggle('agenda-preview--native-selects', this.isPreviewMobile());
 		this.renderRows();
 		this.setError('');
 
@@ -415,8 +420,12 @@ class AgendaScanPreview extends HTMLElement {
 			'[data-agenda-default-professional], [data-agenda-default-location], [data-agenda-default-service]'
 		);
 		let placeholder = PLACEHOLDER_SERVICE;
-		if (select.matches('[data-agenda-default-professional], [data-row-professional]')) {
+		if (select.matches('[data-row-professional]')) {
 			placeholder = PLACEHOLDER_PROFESSIONAL;
+		} else if (select.matches('[data-agenda-default-professional]')) {
+			placeholder = 'Profesional';
+		} else if (select.matches('[data-agenda-default-service]')) {
+			placeholder = 'Servicio';
 		} else if (select.matches('[data-agenda-default-location]')) {
 			placeholder = PLACEHOLDER_LOCATION;
 		}
@@ -428,8 +437,22 @@ class AgendaScanPreview extends HTMLElement {
 	}
 
 	private mountThemedSelect(select: HTMLSelectElement | null | undefined) {
-		if (!select) return;
+		if (!select || this.isPreviewMobile()) return;
 		ensurePanelThemedSelect(select, this.themedSelectOptions(select));
+	}
+
+	private syncThemedSelectMode() {
+		this.classList.toggle('agenda-preview--native-selects', this.isPreviewMobile());
+		if (this.isPreviewMobile()) {
+			closePanelThemedSelects(this);
+			this.destroyThemedSelects();
+		} else {
+			this.mountDefaultThemedSelects();
+			this.querySelectorAll<HTMLElement>('[data-agenda-preview-rows] .agenda-preview-row').forEach((rowEl) => {
+				this.mountRowThemedSelects(rowEl);
+			});
+		}
+		this.syncPlaceholderState(this);
 	}
 
 	private mountDefaultThemedSelects() {
@@ -475,7 +498,7 @@ class AgendaScanPreview extends HTMLElement {
 			proSelect.innerHTML = this.optionList(
 				this.#professionals.map((p) => ({ id: p.id_professional, name: p.name })),
 				this.#defaultProfessionalId,
-				PLACEHOLDER_PROFESSIONAL
+				'Profesional'
 			);
 		}
 		if (locSelect) {
@@ -489,7 +512,7 @@ class AgendaScanPreview extends HTMLElement {
 			serviceSelect.innerHTML = this.optionList(
 				this.#services.map((s) => ({ id: s.id_service, name: s.name })),
 				this.defaultServiceIdFromRows(),
-				PLACEHOLDER_SERVICE
+				'Servicio'
 			);
 		}
 		this.mountDefaultThemedSelects();
@@ -517,8 +540,12 @@ class AgendaScanPreview extends HTMLElement {
 		summary.hidden = isOpen || parts.length === 0;
 	}
 
-	private isDefaultsMobile() {
+	private isPreviewMobile() {
 		return window.matchMedia('(max-width: 640px)').matches;
+	}
+
+	private isDefaultsMobile() {
+		return this.isPreviewMobile();
 	}
 
 	private setDefaultsOpen(open: boolean) {
@@ -743,6 +770,13 @@ class AgendaScanPreview extends HTMLElement {
 			container.appendChild(this.buildRowElement(row));
 		}
 
+		if (!this.isPreviewMobile()) {
+			container.querySelectorAll<HTMLElement>('.agenda-preview-row').forEach((rowEl) => {
+				this.mountRowThemedSelects(rowEl);
+			});
+		}
+		this.syncPlaceholderState(container);
+
 		this.updateCounts();
 	}
 
@@ -793,13 +827,14 @@ class AgendaScanPreview extends HTMLElement {
 						value="${this.escape(row.customer_name)}"
 						placeholder="Nombre del cliente"
 						aria-label="Cliente"
+						maxlength="100"
 					/>
 				</div>
 				${field(
 					'phone',
 					'Teléfono (opcional)',
 					'call',
-					`<input type="tel" data-row-phone value="${this.escape(row.customer_phone)}" placeholder="Teléfono (opcional)" aria-label="Teléfono (opcional)" />`,
+					`<input type="tel" inputmode="tel" autocomplete="tel" data-row-phone value="${this.escape(row.customer_phone.slice(0, 11))}" placeholder="Teléfono pendiente" aria-label="Teléfono (opcional)" maxlength="11" />`,
 					'agenda-preview-row__field--compact agenda-preview-row__field--phone'
 				)}
 			</div>
@@ -808,14 +843,15 @@ class AgendaScanPreview extends HTMLElement {
 					'time',
 					'Hora',
 					'schedule',
-					`<input type="text" inputmode="numeric" autocomplete="off" spellcheck="false" class="agenda-preview-timeinput" data-row-time value="${this.escape(row.time)}" placeholder="hh:mm" aria-label="Hora" aria-autocomplete="list" aria-expanded="false" aria-controls="agenda-preview-times-list" />`,
+					`<input type="time" class="agenda-preview-timeinput" data-row-time value="${this.escape(row.time)}" min="06:00" max="22:00" step="900" aria-label="Hora" />`,
 					'agenda-preview-row__field--time'
 				)}
 				${field(
 					'date',
 					'Fecha',
 					'calendar_month',
-					`<button type="button" class="agenda-preview-datebtn${row.date ? '' : ' is-empty'}" data-row-date aria-haspopup="dialog" aria-label="Fecha">${this.escape(formatDisplayDate(row.date) || 'Elegir fecha')}</button>`
+					`<input type="date" class="agenda-preview-dateinput" data-row-date value="${this.escape(row.date)}" aria-label="Fecha" />`,
+					'agenda-preview-row__field--date'
 				)}
 			</div>
 			${field(
@@ -862,49 +898,36 @@ class AgendaScanPreview extends HTMLElement {
 			}, signal ? { signal } : undefined);
 		};
 
-		el.querySelector('[data-row-date]')?.addEventListener('click', (event) => {
-			event.preventDefault();
-			event.stopPropagation();
-			this.openCalendar(row, event.currentTarget as HTMLElement, el);
-		}, signal ? { signal } : undefined);
+		bind('[data-row-date]', (v) => {
+			row.date = v;
+		});
 
 		const timeInput = el.querySelector<HTMLInputElement>('[data-row-time]');
-		timeInput?.addEventListener('focus', () => {
-			this.openTimes(row, timeInput, el);
+		timeInput?.addEventListener('change', () => {
+			const snapped = snapTime(timeInput.value) || normalizeTime(timeInput.value) || '';
+			row.time = snapped;
+			if (snapped && timeInput.value !== snapped) {
+				timeInput.value = snapped;
+			}
+			this.refreshRowState(el, row);
 		}, signal ? { signal } : undefined);
 		timeInput?.addEventListener('input', () => {
-			this.renderTimeOptions(timeInput.value, row.time);
-		}, signal ? { signal } : undefined);
-		timeInput?.addEventListener('keydown', (event) => {
-			if (event.key === 'Enter') {
-				event.preventDefault();
-				this.commitTime(row, timeInput, el);
-				this.closePopovers();
+			if (!timeInput.value) {
+				row.time = '';
+				this.refreshRowState(el, row);
 			}
-			if (event.key === 'Escape') {
-				event.preventDefault();
-				this.closePopovers(true);
-			}
-		}, signal ? { signal } : undefined);
-		timeInput?.addEventListener('blur', () => {
-			window.setTimeout(() => {
-				if (this.#activeTimeInput !== timeInput) return;
-				this.commitTime(row, timeInput, el);
-				this.closePopovers();
-			}, 140);
 		}, signal ? { signal } : undefined);
 
 		bind('[data-row-name]', (v) => {
-			row.customer_name = v;
+			row.customer_name = v.slice(0, 100);
 			const avatar = el.querySelector<HTMLElement>('[data-row-avatar]');
-			if (avatar) avatar.textContent = this.clientInitial(v);
+			if (avatar) avatar.textContent = this.clientInitial(row.customer_name);
 		});
-		bind('[data-row-phone]', (v) => (row.customer_phone = v));
+		bind('[data-row-phone]', (v) => (row.customer_phone = v.slice(0, 11)));
 		bind('[data-row-service]', (v) => (row.ser_id_service = toInt(v)));
 		bind('[data-row-professional]', (v) => (row.pro_id_professional = toInt(v)));
 
 		el.querySelectorAll('.agenda-preview-row__check').forEach((node) => node.remove());
-		this.mountRowThemedSelects(el);
 		this.refreshRowState(el, row);
 		return el;
 	}
@@ -1134,10 +1157,9 @@ class AgendaScanPreview extends HTMLElement {
 
 		this.applyGlobalLocation();
 		const ready = this.isRowValid(row);
-		const dateBtn = el.querySelector<HTMLElement>('[data-row-date]');
-		if (dateBtn) {
-			dateBtn.textContent = formatDisplayDate(row.date) || 'Elegir fecha';
-			dateBtn.classList.toggle('is-empty', !row.date);
+		const dateInput = el.querySelector<HTMLInputElement>('[data-row-date]');
+		if (dateInput && dateInput.value !== row.date) {
+			dateInput.value = row.date;
 		}
 		el.classList.toggle('is-incomplete', !ready);
 		el.setAttribute('aria-label', ready ? 'Listo' : 'Datos faltantes');
@@ -1152,6 +1174,8 @@ class AgendaScanPreview extends HTMLElement {
 		const valid = hasLocation ? this.#rows.filter((row) => this.isRowValid(row)).length : 0;
 		const countNode = this.querySelector<HTMLElement>('[data-agenda-preview-count]');
 		if (countNode) countNode.textContent = String(total);
+		const pendingLabel = this.querySelector<HTMLElement>('[data-agenda-preview-pending-label]');
+		if (pendingLabel) pendingLabel.textContent = total === 1 ? 'pendiente' : 'pendientes';
 
 		const saveLabel = this.querySelector<HTMLElement>('[data-agenda-save-label]');
 		if (saveLabel) {

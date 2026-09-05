@@ -33,6 +33,7 @@ export const ROUTE_PERMISSIONS: readonly RoutePermission[] = [
 	{ path: '/panel/schedules', roles: [ROLES.ADMIN, ROLES.RECEPCIONISTA, ROLES.PROFESIONAL] },
 	{ path: '/panel/plan', roles: [ROLES.ADMIN] },
 	{ path: '/panel/complementos', roles: [ROLES.ADMIN] },
+	{ path: '/panel/ops', roles: ALL_ROLES },
 
 	{ path: '/api/appointments', roles: ALL_ROLES, match: 'prefix' },
 	{ path: '/api/addons', roles: [ROLES.ADMIN], match: 'prefix' },
@@ -44,6 +45,7 @@ export const ROUTE_PERMISSIONS: readonly RoutePermission[] = [
 	{ path: '/api/atc', roles: ALL_ROLES, match: 'prefix' },
 	{ path: '/api/customers', roles: CUSTOMER_ROLES, match: 'prefix' },
 	{ path: '/api/cobros', roles: MANAGER_ROLES, match: 'prefix' },
+	{ path: '/api/ops', roles: ALL_ROLES, match: 'prefix' },
 	{ path: '/api/inbox', roles: ALL_ROLES, match: 'prefix' },
 	{ path: '/api/schedules', roles: ALL_ROLES, match: 'prefix' },
 	{ path: '/api/services', roles: CUSTOMER_ROLES, match: 'prefix' },

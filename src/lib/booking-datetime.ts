@@ -165,6 +165,35 @@ export const formatReservationStatusLabel = (
 	return { label: capitalizeLabel(normalized.toLowerCase()) || '—', variant: 'confirmed' };
 };
 
+/**
+ * NEW-B / BUG-01: el ticket de la cita solo mostraba el estado de APPOINTMENT.STATUS;
+ * cuando hay una seña SIPAP pendiente de comprobante o en revisión, el cliente veía
+ * "Pendiente" sin ninguna pista de qué falta hasta que recargaba la página.
+ */
+export const formatReservationDepositLabel = (
+	params: {
+		status: string;
+		paymentStatus?: string | null;
+		ocrStatus?: string | null;
+		receiptRejected?: boolean;
+	},
+	options?: { isPast?: boolean }
+): { label: string; variant: ReservationStatusVariant } => {
+	const base = formatReservationStatusLabel(params.status, options);
+	if (String(params.paymentStatus || '').trim().toUpperCase() !== 'PENDING') return base;
+
+	if (params.receiptRejected) {
+		return { label: `${base.label} · Comprobante rechazado`, variant: 'pending' };
+	}
+
+	const ocr = String(params.ocrStatus || '').trim().toUpperCase();
+	if (ocr && ocr !== 'MATCH') {
+		return { label: `${base.label} · Comprobante en revisión`, variant: 'pending' };
+	}
+
+	return base;
+};
+
 export const isApiDateOnOrAfter = (date: Date, reference: Date) =>
 	toDateStart(date).getTime() >= toDateStart(reference).getTime();
 

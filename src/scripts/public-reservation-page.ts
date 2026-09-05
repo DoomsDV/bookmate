@@ -4,7 +4,7 @@ import {
 	formatApiTime,
 	formatFriendlyTime,
 	formatLongDateFromApiDate,
-	formatReservationStatusLabel,
+	formatReservationDepositLabel,
 	formatTicketDate,
 	getTodayStart,
 	isReservationPast,
@@ -15,12 +15,10 @@ import {
 	toDateStart,
 } from '../lib/booking-datetime';
 import { formatCustomerCancelNoRefundHint } from '../lib/public-reservation-refund';
+import { isDepositConfirmed } from '../lib/public-receipt-reconcile';
 import { parseSipapAlias, sanitizeSipapAliasInput, SIPAP_ALIAS_ERROR } from '../lib/sipap-alias';
 import { normalizePublicBookingLocations } from '../lib/public-booking-locations';
-import {
-	isMobileSlotRouletteViewport,
-	mountPublicSlotBranches,
-} from '../lib/public-booking-slots-ui';
+import { mountPublicSlotBranches } from '../lib/public-booking-slots-ui';
 import {
 	createBrandMarker,
 	createStadiaTransformRequest,
@@ -42,6 +40,8 @@ import {
 	bindSipapCopyButtons,
 	bindSipapReceiptUpload,
 	fillSipapDepositPanel,
+	isReceiptRejected,
+	isSipapReceiptUploading,
 	type PublicDepositSettings,
 } from './public-deposit-sipap';
 
@@ -67,6 +67,7 @@ type PublicReservationDetail = {
 	ser_id_service: number;
 	service_name?: string;
 	professional_name?: string;
+	professional_image_url?: string;
 	start_time: string;
 	end_time?: string;
 	status?: string;
@@ -76,6 +77,7 @@ type PublicReservationDetail = {
 	policy_code_snapshot?: string | null;
 	policy_label?: string | null;
 	ocr_status?: string | null;
+	receipt_rejected?: boolean;
 	reject_reason?: string | null;
 	payment_reference?: string | null;
 	payment_expires_at?: string | null;
@@ -92,27 +94,37 @@ type PublicReservationDetail = {
 	} | null;
 	can_claim_refund?: number | null;
 	refund_claim_open?: number | null;
+	refund_sent_at?: string | null;
+	refund_dispute?: {
+		status?: string | null;
+		can_open?: number | null;
+		wait_modal_required?: number | null;
+		has_viewable_proof?: number | null;
+		can_confirm_received?: number | null;
+		customer_insisted?: number | null;
+		proof_due_at?: string | null;
+		ops_review_due_at?: string | null;
+		public_whatsapp?: string | null;
+	} | null;
 };
 
 type Coordinates = { lat: number; lng: number };
 
-type RescheduleStep = 1 | 2 | 3 | 4;
+type RescheduleStep = 1 | 2 | 3;
 
 const RESCHEDULE_MODAL_TITLES: Record<RescheduleStep, string> = {
-	1: 'Elige una nueva fecha y horario',
-	2: '¿Dónde querés atenderte?',
-	3: 'Selecciona un horario',
-	4: 'Confirma tu reprogramación',
+	1: 'Elegí fecha y hora',
+	2: 'Elegí la sucursal',
+	3: 'Confirmá los cambios',
 };
 
 const RESCHEDULE_STEP_LABELS: Record<RescheduleStep, string> = {
-	1: 'Fecha',
+	1: 'Fecha y Hora',
 	2: 'Sucursal',
-	3: 'Horario',
-	4: 'Confirmar',
+	3: 'Confirmar',
 };
 
-const RESCHEDULE_STEP_COUNT = 4;
+const RESCHEDULE_STEP_COUNT = 3;
 
 const toPositiveInt = (value: unknown, fallback = 0) => {
 	const parsed = Number(value);
@@ -156,11 +168,22 @@ export const initializePublicReservationPage = () => {
 	const currentTime = root.querySelector<HTMLElement>('[data-current-time]');
 	const statusText = root.querySelector<HTMLElement>('[data-status-text]');
 
+	// NEW-B / BUG-01: se lee reservation.payment_status/ocr_status/receipt_rejected desde
+	// el closure para que el badge del ticket refleje la seña sin depender de un F5;
+	// refreshReservationSummary ya deja esos campos actualizados antes de llamar acá.
 	const applyTicketSummary = (start: Date, status: string, isPast: boolean) => {
 		if (currentDate) currentDate.textContent = formatTicketDate(start);
 		if (currentTime) currentTime.textContent = `${formatFriendlyTime(start)} hs`;
 		if (statusText) {
-			const meta = formatReservationStatusLabel(status, { isPast });
+			const meta = formatReservationDepositLabel(
+				{
+					status,
+					paymentStatus: reservation.payment_status,
+					ocrStatus: reservation.ocr_status,
+					receiptRejected: isReceiptRejected(reservation.receipt_rejected),
+				},
+				{ isPast }
+			);
 			statusText.textContent = meta.label;
 			statusText.dataset.status = meta.variant;
 		}
@@ -243,30 +266,151 @@ export const initializePublicReservationPage = () => {
 		return;
 	}
 
-	// Reembolso pendiente: reclamo si SLA vencido.
-	if (isCancelledReservation && refundStatus === 'PENDING') {
-		const claimBtn = root.querySelector<HTMLButtonElement>('[data-refund-claim-submit]');
-		const claimStatus = root.querySelector<HTMLElement>('[data-refund-claim-status]');
-		claimBtn?.addEventListener('click', async () => {
-			if (claimStatus) claimStatus.textContent = 'Registrando reclamo…';
-			claimBtn.disabled = true;
-			const response = await fetch(
-				`/api/public/reservations/${encodeURIComponent(token)}/refund-claim`,
-				{
-					method: 'POST',
-					headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-					body: JSON.stringify({ notes: 'Reclamo desde enlace de reserva' }),
-				}
-			);
+	if (
+		isCancelledReservation &&
+		(refundStatus === 'PENDING' || refundStatus === 'SENT')
+	) {
+		const dialog = root.querySelector<HTMLDialogElement>('[data-refund-dispute-dialog]');
+		const waitRequired = Number(dialog?.dataset.waitModal || 0) === 1;
+		const canOpen = Number(dialog?.dataset.canOpen || 0) === 1;
+		const last4Input = dialog?.querySelector<HTMLInputElement>('[data-refund-dialog-last4]');
+		const dialogStatus = dialog?.querySelector<HTMLElement>('[data-refund-dialog-status]');
+		const titleEl = dialog?.querySelector<HTMLElement>('[data-refund-dialog-title]');
+		const copyEl = dialog?.querySelector<HTMLElement>('[data-refund-dialog-copy]');
+		const primaryBtn = dialog?.querySelector<HTMLButtonElement>('[data-refund-dialog-primary]');
+		const openBtn = dialog?.querySelector<HTMLButtonElement>('[data-refund-dialog-open]');
+		const closeBtn = dialog?.querySelector<HTMLButtonElement>('[data-refund-dialog-close]');
+		const confirmWrap = dialog?.querySelector<HTMLElement>('[data-refund-dialog-confirm-wrap]');
+		const notReceivedBtn = root.querySelector<HTMLButtonElement>('[data-refund-not-received]');
+		const insistBtn = root.querySelector<HTMLButtonElement>('[data-refund-insist]');
+		const confirmReceivedBtn = root.querySelector<HTMLButtonElement>('[data-refund-confirm-received]');
+		const statusEl = root.querySelector<HTMLElement>('[data-refund-dispute-status]');
+		let dialogMode: 'wait' | 'open' | 'confirm-received' = 'wait';
+
+		const closeDialog = () => dialog?.close();
+		const showWaitStep = () => {
+			dialogMode = 'wait';
+			if (titleEl) titleEl.textContent = '¿No recibiste tu dinero?';
+			if (copyEl) {
+				copyEl.textContent =
+					'Las transferencias SIPAP pueden tardar hasta 48 horas hábiles en acreditarse. Si ya pasó ese plazo, podés abrir una disputa.';
+			}
+			confirmWrap?.classList.add('hidden');
+			if (primaryBtn) {
+				primaryBtn.classList.remove('hidden');
+				primaryBtn.textContent = 'Entendido, voy a esperar';
+			}
+			openBtn?.classList.add('hidden');
+			if (dialogStatus) dialogStatus.textContent = '';
+		};
+		const showOpenStep = () => {
+			dialogMode = 'open';
+			if (titleEl) titleEl.textContent = 'Confirmar disputa';
+			if (copyEl) {
+				copyEl.textContent =
+					'Para abrir la disputa, ingresá los últimos 4 dígitos del teléfono de la reserva. El comercio tendrá 48 horas hábiles para adjuntar el comprobante.';
+			}
+			confirmWrap?.classList.remove('hidden');
+			primaryBtn?.classList.add('hidden');
+			if (openBtn) {
+				openBtn.classList.remove('hidden');
+				openBtn.textContent = 'Confirmar y abrir disputa';
+			}
+			if (dialogStatus) dialogStatus.textContent = '';
+		};
+		const showConfirmReceivedStep = () => {
+			dialogMode = 'confirm-received';
+			if (titleEl) titleEl.textContent = 'Confirmar que recibiste el dinero';
+			if (copyEl) {
+				copyEl.textContent =
+					'Ingresá los últimos 4 dígitos del teléfono de la reserva para liquidar el caso. El comprobante del comercio no acredita por sí solo que hayas recibido el dinero.';
+			}
+			confirmWrap?.classList.remove('hidden');
+			primaryBtn?.classList.add('hidden');
+			if (openBtn) {
+				openBtn.classList.remove('hidden');
+				openBtn.textContent = 'Confirmar recepción';
+			}
+			if (dialogStatus) dialogStatus.textContent = '';
+		};
+
+		notReceivedBtn?.addEventListener('click', () => {
+			if (!dialog) return;
+			if (waitRequired && !canOpen) showWaitStep();
+			else showOpenStep();
+			if (!dialog.open) dialog.showModal();
+		});
+		confirmReceivedBtn?.addEventListener('click', () => {
+			if (!dialog) return;
+			showConfirmReceivedStep();
+			if (!dialog.open) dialog.showModal();
+		});
+		closeBtn?.addEventListener('click', closeDialog);
+		dialog?.addEventListener('click', (event) => {
+			if (event.target === dialog) closeDialog();
+		});
+		primaryBtn?.addEventListener('click', closeDialog);
+		openBtn?.addEventListener('click', async () => {
+			if (dialogMode === 'wait') {
+				closeDialog();
+				return;
+			}
+			const last4 = String(last4Input?.value || '').replace(/\D/g, '');
+			if (last4.length !== 4) {
+				if (dialogStatus) dialogStatus.textContent = 'Ingresá los 4 dígitos.';
+				return;
+			}
+			if (openBtn) openBtn.disabled = true;
+			const confirmingReceived = dialogMode === 'confirm-received';
+			if (dialogStatus) {
+				dialogStatus.textContent = confirmingReceived ? 'Confirmando…' : 'Abriendo disputa…';
+			}
+			const path = confirmingReceived
+				? `/api/public/reservations/${encodeURIComponent(token)}/refund-dispute/confirm-received`
+				: `/api/public/reservations/${encodeURIComponent(token)}/refund-dispute`;
+			const response = await fetch(path, {
+				method: 'POST',
+				headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+				body: JSON.stringify({ phone_last4: last4 }),
+			});
 			const data = await response.json().catch(() => ({}));
 			if (!response.ok) {
-				claimBtn.disabled = false;
-				if (claimStatus) claimStatus.textContent = '';
-				showToast(data.message || 'No fue posible registrar el reclamo.', 'error');
+				if (openBtn) openBtn.disabled = false;
+				if (dialogStatus) dialogStatus.textContent = '';
+				showToast(
+					data.message ||
+						(confirmingReceived
+							? 'No fue posible confirmar el reembolso.'
+							: 'No fue posible abrir la disputa.'),
+					'error'
+				);
 				return;
 			}
 			window.location.reload();
 		});
+
+		insistBtn?.addEventListener('click', async () => {
+			insistBtn.disabled = true;
+			const response = await fetch(
+				`/api/public/reservations/${encodeURIComponent(token)}/refund-dispute/insist`,
+				{
+					method: 'POST',
+					headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+					body: '{}',
+				}
+			);
+			const data = await response.json().catch(() => ({}));
+			if (!response.ok) {
+				insistBtn.disabled = false;
+				showToast(data.message || 'No fue posible registrar el seguimiento.', 'error');
+				return;
+			}
+			const wa = String(dialog?.dataset.whatsapp || '').trim();
+			if (wa) window.open(wa, '_blank', 'noopener');
+			showToast(data.message || 'Registramos que el dinero sigue sin aparecer.', 'success');
+			window.location.reload();
+		});
+		if (statusEl) statusEl.textContent = '';
 		return;
 	}
 
@@ -282,7 +426,7 @@ export const initializePublicReservationPage = () => {
 	const slotInput = root.querySelector<HTMLInputElement>('[data-reservation-slot]');
 	const locationInput = root.querySelector<HTMLInputElement>('[data-reservation-location]');
 	const slotsContainer = root.querySelector<HTMLElement>('[data-reservation-slots-container]');
-	const slotsPanel = root.querySelector<HTMLElement>('[data-reservation-slots-panel]');
+	const slotsHint = root.querySelector<HTMLElement>('[data-slots-hint]');
 	const slotsLoading = root.querySelector<HTMLElement>('[data-reservation-slots-loading]');
 	const noSlots = root.querySelector<HTMLElement>('[data-no-reservation-slots]');
 	const locationsGrid = root.querySelector<HTMLElement>('[data-reschedule-locations-grid]');
@@ -436,12 +580,19 @@ export const initializePublicReservationPage = () => {
 				selectedDate = prefer;
 				dateInput.value = prefer;
 				syncDateLabels(prefer);
+				void loadSlots(prefer);
 				return;
 			}
 			if (selectedDate.startsWith(ymPrefix) && selectedDate && !dates.has(selectedDate)) {
 				selectedDate = '';
 				dateInput.value = '';
 				syncDateLabels('');
+				selectedSlot = '';
+				slotInput.value = '';
+				availableSlotGroups = [];
+				slotsContainer.innerHTML = '';
+				slotsHint?.toggleAttribute('hidden', true);
+				noSlots.classList.add('hidden');
 			}
 		};
 
@@ -739,10 +890,8 @@ export const initializePublicReservationPage = () => {
 
 	const updateFooterButtons = () => {
 		const isStep1 = rescheduleStep === 1;
-		const isConfirmStep = rescheduleStep === 4;
+		const isConfirmStep = rescheduleStep === 3;
 		const hasLocations = availableSlotGroups.length > 0;
-		const selectedGroup = getSelectedLocationGroup();
-		const hasSlotsForLocation = Boolean(selectedGroup && selectedGroup.slots.length > 0);
 
 		rescheduleBackButton.classList.toggle('is-hidden', isStep1);
 		rescheduleBackButton.textContent = 'Volver';
@@ -754,19 +903,14 @@ export const initializePublicReservationPage = () => {
 			const month = visibleMonth.getMonth();
 			const isLoadingAvailability =
 				availableDatesLoadingKey === availableDatesMonthKey(year, month);
-			rescheduleNextButton.disabled = !selectedDate || isLoadingAvailability;
+			rescheduleNextButton.disabled =
+				!selectedDate || !selectedSlot || isLoadingSlots || isLoadingAvailability;
 			return;
 		}
 
 		if (rescheduleStep === 2) {
 			rescheduleNextButton.disabled =
-				isLoadingSlots || !hasLocations || selectedLocationId <= 0;
-			return;
-		}
-
-		if (rescheduleStep === 3) {
-			rescheduleNextButton.disabled =
-				isLoadingSlots || !selectedSlot || !hasSlotsForLocation;
+				isLoadingSlots || !hasLocations || selectedLocationId <= 0 || !selectedSlot;
 			return;
 		}
 
@@ -789,8 +933,11 @@ export const initializePublicReservationPage = () => {
 
 			if (itemStep === nextStep) {
 				item.classList.add('step-item-current');
+				item.setAttribute('aria-current', 'step');
 				continue;
 			}
+
+			item.removeAttribute('aria-current');
 
 			if (itemStep < nextStep) {
 				item.classList.add('step-item-done');
@@ -804,27 +951,14 @@ export const initializePublicReservationPage = () => {
 			rescheduleStepCompactLabel.textContent = `Paso ${nextStep} de ${RESCHEDULE_STEP_COUNT}: ${RESCHEDULE_STEP_LABELS[nextStep]}`;
 		}
 		if (rescheduleStepProgressBar) {
-			rescheduleStepProgressBar.style.width = `${(nextStep / RESCHEDULE_STEP_COUNT) * 100}%`;
+			rescheduleStepProgressBar.style.width = `${((nextStep - 1) / (RESCHEDULE_STEP_COUNT - 1)) * 100}%`;
 		}
 
-		if (nextStep === 3) {
-			const group = getSelectedLocationGroup();
-			const orderedSlots = group
-				? sortTimeSlotsChronologically(group.slots)
-				: [];
-			if (group && orderedSlots.length > 0) {
-				group.slots = orderedSlots;
-				// Empezar siempre por el primer horario disponible (más temprano).
-				if (!selectedSlot || !orderedSlots.includes(selectedSlot)) {
-					selectedSlot = orderedSlots[0];
-					slotInput.value = orderedSlots[0];
-					locationInput.value = String(group.location.id_location);
-				}
-			}
+		if (nextStep === 1 && selectedDate) {
 			renderSlotSections();
 		}
 
-		if (nextStep === 4) {
+		if (nextStep === 3) {
 			updateChangeSummary();
 		}
 
@@ -848,7 +982,7 @@ export const initializePublicReservationPage = () => {
 		locationsGrid.innerHTML = '';
 		noSlots.classList.add('hidden');
 		noLocations.classList.add('hidden');
-		if (slotsPanel) slotsPanel.classList.add('hidden');
+		slotsHint?.toggleAttribute('hidden', true);
 		slotsLoading.classList.add('hidden');
 		locationsLoading.classList.add('hidden');
 		syncDateLabels('');
@@ -873,7 +1007,7 @@ export const initializePublicReservationPage = () => {
 		resetRescheduleFlow({ loadAvailability: false });
 	};
 
-	const selectDate = (date: Date, options: { loadSlots?: boolean } = {}) => {
+	const selectDate = (date: Date) => {
 		const dateStart = toDateStart(date);
 		const dateKey = formatApiDate(dateStart);
 		if (dateStart.getTime() < today.getTime()) return;
@@ -891,7 +1025,7 @@ export const initializePublicReservationPage = () => {
 		locationsGrid.innerHTML = '';
 		renderCalendar();
 		updateFooterButtons();
-		if (options.loadSlots) void loadSlots(dateKey);
+		void loadSlots(dateKey);
 	};
 
 	const fetchAvailableSlotsForLocation = async (location: BookingLocation, targetDate: string) => {
@@ -946,8 +1080,20 @@ export const initializePublicReservationPage = () => {
 	const softSelectRescheduleLocation = (location: BookingLocation, stack?: HTMLElement | null) => {
 		selectedLocationId = location.id_location;
 		locationInput.value = String(location.id_location);
-		selectedSlot = '';
-		slotInput.value = '';
+		const group = availableSlotGroups.find(
+			(item) => item.location.id_location === location.id_location
+		);
+		const orderedSlots = group ? sortTimeSlotsChronologically(group.slots) : [];
+		if (group) group.slots = orderedSlots;
+		if (selectedSlot && orderedSlots.includes(selectedSlot)) {
+			slotInput.value = selectedSlot;
+		} else if (orderedSlots[0]) {
+			selectedSlot = orderedSlots[0];
+			slotInput.value = orderedSlots[0];
+		} else {
+			selectedSlot = '';
+			slotInput.value = '';
+		}
 		const rootEl = stack || locationsGrid;
 		for (const card of rootEl.querySelectorAll<HTMLElement>('.public-location-card')) {
 			const id = Number(card.dataset.locationId || 0);
@@ -1136,14 +1282,21 @@ export const initializePublicReservationPage = () => {
 	};
 
 	const renderSlotSections = () => {
+		if (!selectedDate) {
+			slotsLoading.classList.add('hidden');
+			slotsHint?.toggleAttribute('hidden', true);
+			noSlots.classList.add('hidden');
+			slotsContainer.innerHTML = '';
+			updateFooterButtons();
+			return;
+		}
+
 		slotsLoading.classList.toggle('hidden', !isLoadingSlots);
 
 		const selectedGroup = getSelectedLocationGroup();
 		const totalSlots = selectedGroup?.slots.length || 0;
+		slotsHint?.toggleAttribute('hidden', isLoadingSlots || totalSlots === 0);
 		noSlots.classList.toggle('hidden', isLoadingSlots || totalSlots > 0);
-		if (slotsPanel) {
-			slotsPanel.classList.toggle('hidden', isLoadingSlots);
-		}
 
 		if (isLoadingSlots) {
 			slotsContainer.innerHTML = '';
@@ -1162,7 +1315,7 @@ export const initializePublicReservationPage = () => {
 					]
 				: [],
 			selectedSlotKey: getSelectedSlotKey(),
-			useRoulette: isMobileSlotRouletteViewport(),
+			useRoulette: false,
 			showLocationHeader: false,
 			onSelect: (locationId, slot) => {
 				selectedSlot = slot;
@@ -1184,7 +1337,7 @@ export const initializePublicReservationPage = () => {
 		selectedSlot = '';
 		slotInput.value = '';
 		renderLocationsStep();
-		if (rescheduleStep === 3) renderSlotSections();
+		renderSlotSections();
 		updateFooterButtons();
 
 		try {
@@ -1251,7 +1404,7 @@ export const initializePublicReservationPage = () => {
 		} finally {
 			isLoadingSlots = false;
 			renderLocationsStep();
-			if (rescheduleStep === 3) renderSlotSections();
+			renderSlotSections();
 			updateFooterButtons();
 		}
 	};
@@ -1341,6 +1494,12 @@ export const initializePublicReservationPage = () => {
 		reservation.loc_id_location = updated.loc_id_location || reservation.loc_id_location;
 		reservation.location_name = updated.location_name || reservation.location_name;
 		reservation.location_address = updated.location_address || reservation.location_address;
+		reservation.payment_status = updated.payment_status ?? reservation.payment_status;
+		reservation.ocr_status = updated.ocr_status ?? reservation.ocr_status;
+		reservation.receipt_rejected = isReceiptRejected(updated.receipt_rejected);
+		reservation.reject_reason = updated.reject_reason ?? reservation.reject_reason;
+		reservation.payment_reference = updated.payment_reference ?? reservation.payment_reference;
+		reservation.payment_expires_at = updated.payment_expires_at ?? reservation.payment_expires_at;
 
 		const nextStart = parseApiDateTime(updated.start_time);
 		if (!nextStart) return false;
@@ -1362,12 +1521,17 @@ export const initializePublicReservationPage = () => {
 		return true;
 	};
 
-	// Seña pendiente: permite subir/resubir el comprobante SIPAP sin salir de esta
-	// página (evita que el cliente tenga que escribir por WhatsApp ante un rechazo).
-	const depositRoot = root.querySelector<HTMLElement>('[data-reservation-deposit]');
-	const sipapPanel = depositRoot?.querySelector<HTMLElement>('[data-step-panel]') ?? null;
-	if (depositRoot && sipapPanel) {
-		sipapPanel.classList.remove('hidden');
+	const refreshSipapDepositPanel = () => {
+		const depositRoot = root.querySelector<HTMLElement>('[data-reservation-deposit]');
+		const sipapPanel = depositRoot?.querySelector<HTMLElement>('[data-step-panel]') ?? null;
+		if (!depositRoot || !sipapPanel) return;
+
+		// NEW-D: una vez confirmada y ya oculta, no hay nada más que sincronizar; evita
+		// reabrir el panel (remove('hidden')) en cada poll o visibilitychange post-aprobación.
+		const confirmed = isDepositConfirmed(reservation);
+		if (confirmed && depositRoot.classList.contains('hidden')) return;
+
+		if (!confirmed) sipapPanel.classList.remove('hidden');
 		fillSipapDepositPanel(
 			sipapPanel,
 			{
@@ -1377,7 +1541,16 @@ export const initializePublicReservationPage = () => {
 				sipap: reservation.deposit_settings?.sipap ?? undefined,
 				refund_policy: reservation.policy_code_snapshot ?? undefined,
 				refund_policy_label: reservation.policy_label ?? undefined,
+				// NEW-B / BUG-01: sin payment_status, fillSipapDepositPanel no podía detectar
+				// una aprobación manual (sin ocr_status='MATCH') y el RESUMEN quedaba
+				// trabado en "Comprobante enviado" hasta que el cliente recargaba.
+				payment_status: reservation.payment_status ?? undefined,
+				// NEW-D: además del pago, la cita puede quedar CONFIRMADO por otra vía;
+				// sin esto fillSipapDepositPanel no detectaba esa aprobación y dejaba el
+				// bloque de seña visible con el CTA trabado en "Comprobante enviado".
+				status: reservation.status,
 				ocr_status: reservation.ocr_status ?? undefined,
+				receipt_rejected: isReceiptRejected(reservation.receipt_rejected),
 				reject_reason: reservation.reject_reason ?? undefined,
 				public_manage_token: token,
 			},
@@ -1385,17 +1558,101 @@ export const initializePublicReservationPage = () => {
 			{
 				serviceName: reservation.service_name,
 				professionalName: reservation.professional_name,
+				professionalImageUrl: reservation.professional_image_url,
 				depositAmount: reservation.deposit_amount ?? undefined,
 			}
 		);
+	};
+
+	const shouldPollDepositStatus = () => {
+		// NEW-D: si la cita ya quedó confirmada (aunque payment_status no lo refleje),
+		// no tiene sentido seguir sondeando el estado de la seña.
+		if (isDepositConfirmed(reservation)) return false;
+		const paymentStatus = String(reservation.payment_status || '').toUpperCase();
+		if (paymentStatus !== 'PENDING') return false;
+		// NEW-B: un rechazo también hay que seguir sondeándolo (countdown extendido tras
+		// rechazo, nuevo comprobante); antes se dejaba de sondear justo en ese caso.
+		if (String(reservation.ocr_status || '').toUpperCase() === 'MATCH') return false;
+		return Boolean(root.querySelector('[data-reservation-deposit] [data-step-panel]'));
+	};
+
+	const refreshReservationAndDeposit = async () => {
+		const ok = await refreshReservationSummary();
+		if (!ok) return false;
+		refreshSipapDepositPanel();
+		return true;
+	};
+
+	const DEPOSIT_POLL_SLOW_MS = 20_000;
+	const DEPOSIT_POLL_FAST_MS = 5_000;
+	const DEPOSIT_POLL_FAST_WINDOW_MS = 60_000;
+
+	let depositPollTimer: number | null = null;
+	let depositFastPollUntil = 0;
+
+	const stopDepositPolling = () => {
+		if (depositPollTimer == null) return;
+		window.clearInterval(depositPollTimer);
+		depositPollTimer = null;
+	};
+
+	const startDepositPolling = () => {
+		stopDepositPolling();
+		if (!shouldPollDepositStatus()) return;
+		const fast = Date.now() < depositFastPollUntil;
+		depositPollTimer = window.setInterval(() => {
+			// NEW-A: no pisar el estado mientras el POST del comprobante sigue en curso.
+			if (sipapPanel && isSipapReceiptUploading(sipapPanel)) return;
+			void refreshReservationAndDeposit().then((ok) => {
+				if (!ok || !shouldPollDepositStatus()) {
+					stopDepositPolling();
+					return;
+				}
+				if (fast && Date.now() >= depositFastPollUntil) {
+					startDepositPolling();
+				}
+			});
+		}, fast ? DEPOSIT_POLL_FAST_MS : DEPOSIT_POLL_SLOW_MS);
+	};
+
+	// NEW-B: tras una transición (subida de comprobante, volver a la pestaña) conviene
+	// sondear más rápido un rato para que el rechazo/aprobación se vea sin F5.
+	const triggerDepositFastPoll = () => {
+		depositFastPollUntil = Date.now() + DEPOSIT_POLL_FAST_WINDOW_MS;
+		startDepositPolling();
+	};
+
+	// Seña pendiente: permite subir/resubir el comprobante SIPAP sin salir de esta
+	// página (evita que el cliente tenga que escribir por WhatsApp ante un rechazo).
+	const depositRoot = root.querySelector<HTMLElement>('[data-reservation-deposit]');
+	const sipapPanel = depositRoot?.querySelector<HTMLElement>('[data-step-panel]') ?? null;
+	if (depositRoot && sipapPanel) {
+		refreshSipapDepositPanel();
 		bindSipapCopyButtons(depositRoot);
 		bindSipapReceiptUpload(sipapPanel, {
 			onResult: () => {
-				depositRoot.querySelector('[data-deposit-reject-notice]')?.remove();
-				void refreshReservationSummary();
+				void refreshReservationAndDeposit().then(() => {
+					triggerDepositFastPoll();
+				});
 			},
 			onError: (message) => showToast(message, 'error'),
 		});
+
+		// NEW-B: siempre refrescar al volver a la pestaña (antes se salía sin pedir nada
+		// si ya no correspondía sondear, dejando ver un rechazo/aprobación vieja).
+		document.addEventListener('visibilitychange', () => {
+			if (document.visibilityState !== 'visible') return;
+			void refreshReservationAndDeposit().then(() => {
+				if (!shouldPollDepositStatus()) {
+					stopDepositPolling();
+					return;
+				}
+				triggerDepositFastPoll();
+			});
+		});
+
+		startDepositPolling();
+		window.addEventListener('pagehide', stopDepositPolling, { once: true });
 	}
 
 	const handleRescheduleNext = async () => {
@@ -1404,8 +1661,14 @@ export const initializePublicReservationPage = () => {
 				showToast('Selecciona una fecha.', 'error');
 				return;
 			}
+			if (!selectedSlot) {
+				showToast('Selecciona un horario.', 'error');
+				return;
+			}
+			if (availableSlotGroups.length === 0 && !isLoadingSlots) {
+				await loadSlots(selectedDate);
+			}
 			setRescheduleStep(2);
-			await loadSlots(selectedDate);
 			return;
 		}
 
@@ -1418,18 +1681,11 @@ export const initializePublicReservationPage = () => {
 				showToast('Esa sucursal no tiene horarios para este día.', 'error');
 				return;
 			}
-			selectedSlot = '';
-			slotInput.value = '';
-			setRescheduleStep(3);
-			return;
-		}
-
-		if (rescheduleStep === 3) {
 			if (!selectedSlot) {
 				showToast('Selecciona un horario.', 'error');
 				return;
 			}
-			setRescheduleStep(4);
+			setRescheduleStep(3);
 		}
 	};
 
@@ -1440,14 +1696,7 @@ export const initializePublicReservationPage = () => {
 		}
 
 		if (rescheduleStep === 3) {
-			selectedSlot = '';
-			slotInput.value = '';
 			setRescheduleStep(2);
-			return;
-		}
-
-		if (rescheduleStep === 4) {
-			setRescheduleStep(3);
 		}
 	};
 

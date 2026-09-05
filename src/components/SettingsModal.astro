@@ -39,7 +39,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 >
 <dialog
 	data-settings-modal
-		class="m-0 mt-auto mb-0 h-[92dvh] w-screen max-w-none sm:m-auto sm:h-[min(46rem,90vh)] sm:w-[min(54rem,calc(100vw-2rem))] sm:max-w-[min(54rem,calc(100vw-2rem))] open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] lg:m-0 lg:ml-auto lg:mr-0 lg:mt-0 lg:mb-0 lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[70vw] lg:max-w-[70vw] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
+		class="m-0 mt-auto mb-0 h-[92dvh] w-screen max-w-none sm:m-0 sm:ml-auto sm:mr-0 sm:mt-0 sm:mb-0 sm:h-[100dvh] sm:max-h-[100dvh] sm:w-[70vw] sm:max-w-[70vw] open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-none border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:border-y-0 sm:border-r-0 sm:shadow-none"
 >
 	<div class="panel-modal-header panel-modal-header--shadow">
 		<div class="panel-modal-header__row">
@@ -946,7 +946,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 								<button type="button" class="modal-action-secondary" data-settings-close-action>
 									Cancelar
 								</button>
-								<button type="submit" class="modal-action-primary" form="settings-workspace-form">
+								<button type="submit" class="modal-action-primary" form="settings-workspace-form" data-requires-write>
 									<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline" aria-hidden="true">save</span>
 									Guardar negocio
 								</button>
@@ -959,7 +959,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 										<button type="button" class="modal-action-secondary" data-settings-close-action>
 											Cancelar
 										</button>
-										<button type="submit" class="modal-action-primary" form="settings-payments-form">
+										<button type="submit" class="modal-action-primary" form="settings-payments-form" data-requires-write>
 											<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline" aria-hidden="true">save</span>
 											Guardar cobros
 										</button>
@@ -972,7 +972,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 								<button type="button" class="modal-action-secondary" data-settings-close-action>
 									Cancelar
 								</button>
-								<button type="submit" class="modal-action-primary" form="settings-system-form">
+								<button type="submit" class="modal-action-primary" form="settings-system-form" data-requires-write>
 									<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline" aria-hidden="true">save</span>
 									Guardar sistema
 								</button>
@@ -2879,11 +2879,24 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			if (!form) return;
 
 			const suspended = Number(data?.deposits_suspended) === 1;
+			const enforcement = String(data?.refund_enforcement_level || 'NONE').trim().toUpperCase();
 			const strikes = Number(data?.refund_strike_count) || 0;
 			const maxStrikes = Number(data?.max_refund_strikes) || 3;
 			const banner = form.querySelector<HTMLElement>('[data-payments-strikes-banner]');
 			if (banner) {
-				if (suspended) {
+				const enforcementCopy: Record<string, string> = {
+					DEPOSITS_ONLY: 'Señas suspendidas. Contactá a soporte Hasel para reactivarlas.',
+					PUBLIC_BOOKINGS: 'Reservas públicas bloqueadas por disputas de reembolso. Contactá a soporte Hasel.',
+					PUBLIC_UNPUBLISHED:
+						'El perfil público está oculto por disputas de reembolso. Contactá a soporte Hasel.',
+					OPERATIONS_SUSPENDED:
+						'La agenda interna también está bloqueada. Contactá a soporte Hasel.',
+				};
+				if (enforcement !== 'NONE' && enforcementCopy[enforcement]) {
+					banner.classList.remove('hidden');
+					banner.textContent =
+						String(data?.deposits_suspended_reason || '').trim() || enforcementCopy[enforcement];
+				} else if (suspended) {
 					banner.classList.remove('hidden');
 					banner.textContent =
 						String(data?.deposits_suspended_reason || '').trim() ||
@@ -3328,18 +3341,6 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 		to { opacity: 0; transform: translateY(100%); }
 	}
 
-	@media (min-width: 640px) {
-		@keyframes settings-modal-in {
-			from { opacity: 0; transform: translateY(10px) scale(0.98); }
-			to { opacity: 1; transform: translateY(0) scale(1); }
-		}
-
-		@keyframes settings-modal-out {
-			from { opacity: 1; transform: translateY(0) scale(1); }
-			to { opacity: 0; transform: translateY(8px) scale(0.98); }
-		}
-	}
-
 	@keyframes settings-backdrop-in {
 		from {
 			opacity: 0;
@@ -3366,8 +3367,8 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 		}
 	}
 
-	/* Desktop PC: side drawer a la derecha (mismo slide que Servicios) */
-	@media (min-width: 1024px) {
+	/* Tablet+: side drawer a la derecha (mismo slide que Servicios) */
+	@media (min-width: 640px) {
 		[data-settings-modal] {
 			inset: 0 0 0 auto;
 			animation-name: settings-drawer-in;

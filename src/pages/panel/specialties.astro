@@ -50,7 +50,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		</div>
 
 		<dialog
-			class="m-0 mt-auto mb-0 w-screen max-w-none max-h-[80vh] open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:m-auto sm:w-[min(32rem,calc(100vw-2rem))] sm:max-w-[min(32rem,calc(100vw-2rem))] sm:max-h-[90vh] sm:rounded-[1.8rem] lg:m-0 lg:ml-auto lg:mr-0 lg:mt-0 lg:mb-0 lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[min(32rem,100%)] lg:max-w-[min(32rem,100%)] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
+			class="m-0 mt-auto mb-0 w-screen max-w-none max-h-[80vh] open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:m-0 sm:ml-auto sm:mr-0 sm:mt-0 sm:mb-0 sm:h-[100dvh] sm:max-h-[100dvh] sm:w-[min(32rem,100%)] sm:max-w-[min(32rem,100%)] sm:rounded-none sm:border-y-0 sm:border-r-0 sm:shadow-none"
 			data-specialty-modal
 		>
 			<div class="panel-modal-header">
@@ -145,7 +145,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 
 				<div class="z-20 mt-auto shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-4 py-4 sm:px-7 sm:py-5 lg:px-6">
 					<div class="modal-footer">
-					<button type="button" class="hidden modal-action-danger" data-delete-specialty aria-label="Eliminar especialidad">
+					<button type="button" class="hidden modal-action-danger" data-delete-specialty data-requires-write aria-label="Eliminar especialidad">
 						<span class="material-symbols-rounded mr-1.5 align-[-0.22em] text-[1.15rem]" aria-hidden="true">delete</span>
 						<span class="modal-action-danger__label" data-delete-specialty-label>Eliminar</span>
 					</button>
@@ -154,7 +154,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 					<button type="button" class="modal-action-secondary" data-close-specialty-modal>
 						Cancelar
 					</button>
-					<button type="submit" class="modal-action-primary" data-submit-specialty>
+					<button type="submit" class="modal-action-primary" data-submit-specialty data-requires-write>
 						<span class="material-symbols-rounded text-[1.2rem]" data-submit-specialty-icon aria-hidden="true">check</span>
 						<span data-submit-specialty-label>Crear especialidad</span>
 					</button>
@@ -756,42 +756,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		}
 	}
 
-	@media (min-width: 640px) and (max-width: 1023px) {
-		dialog[data-specialty-modal] {
-			inset: 0;
-			margin: auto;
-			width: min(32rem, calc(100vw - 2rem));
-			max-width: min(32rem, calc(100vw - 2rem));
-			max-height: 90vh;
-			height: auto;
-		}
-
-		@keyframes specialty-modal-in {
-			from {
-				opacity: 0;
-				transform: translateY(10px) scale(0.98);
-			}
-
-			to {
-				opacity: 1;
-				transform: translateY(0) scale(1);
-			}
-		}
-
-		@keyframes specialty-modal-out {
-			from {
-				opacity: 1;
-				transform: translateY(0) scale(1);
-			}
-
-			to {
-				opacity: 0;
-				transform: translateY(8px) scale(0.98);
-			}
-		}
-	}
-
-	@media (min-width: 1024px) {
+	@media (min-width: 640px) {
 		dialog[data-specialty-modal] {
 			inset: 0 0 0 auto;
 			height: 100dvh;

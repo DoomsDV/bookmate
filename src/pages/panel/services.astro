@@ -46,7 +46,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		</div>
 
 		<dialog
-			class="m-0 mt-auto mb-0 w-screen max-w-none max-h-[80vh] open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-white/10 bg-(--surface-bright) p-0 text-(--on-surface) shadow-2xl shadow-black/60 sm:m-auto sm:w-[min(48rem,calc(100vw-2rem))] sm:max-w-[min(48rem,calc(100vw-2rem))] sm:max-h-[90vh] sm:rounded-[1.8rem] lg:m-0 lg:ml-auto lg:mr-0 lg:mt-0 lg:mb-0 lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[max(50vw,40rem)] lg:max-w-[max(50vw,40rem)] lg:rounded-none lg:border-y-0 lg:border-r-0"
+			class="m-0 mt-auto mb-0 w-screen max-w-none max-h-[80vh] open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-white/10 bg-(--surface-bright) p-0 text-(--on-surface) shadow-2xl shadow-black/60 sm:m-0 sm:ml-auto sm:mr-0 sm:mt-0 sm:mb-0 sm:h-[100dvh] sm:max-h-[100dvh] sm:w-[max(50vw,40rem)] sm:max-w-[max(50vw,40rem)] sm:rounded-none sm:border-y-0 sm:border-r-0"
 			data-service-modal
 		>
 
@@ -419,6 +419,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 							type="button"
 							class="hidden modal-action-danger"
 							data-delete-service
+							data-requires-write
 							aria-label="Eliminar servicio"
 						>
 							<span
@@ -442,6 +443,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 								type="submit"
 								class:list={['modal-action-primary', !canManageServices && 'hidden']}
 								data-submit-service
+								data-requires-write
 							>
 								<span
 									class="material-symbols-rounded text-[1.2rem]"
@@ -1840,44 +1842,8 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		}
 	}
 
-	/* Tablet: modal centrado */
-	@media (min-width: 640px) and (max-width: 1023px) {
-		dialog[data-service-modal] {
-			inset: 0;
-			margin: auto;
-			width: min(48rem, calc(100vw - 2rem));
-			max-width: min(48rem, calc(100vw - 2rem));
-			max-height: 90vh;
-			height: auto;
-		}
-
-		@keyframes service-modal-in {
-			from {
-				opacity: 0;
-				transform: translateY(10px) scale(0.98);
-			}
-
-			to {
-				opacity: 1;
-				transform: translateY(0) scale(1);
-			}
-		}
-
-		@keyframes service-modal-out {
-			from {
-				opacity: 1;
-				transform: translateY(0) scale(1);
-			}
-
-			to {
-				opacity: 0;
-				transform: translateY(8px) scale(0.98);
-			}
-		}
-	}
-
-	/* Desktop PC: side drawer a la derecha */
-	@media (min-width: 1024px) {
+	/* Tablet+: side drawer a la derecha */
+	@media (min-width: 640px) {
 		dialog[data-service-modal] {
 			inset: 0 0 0 auto;
 			height: 100dvh;

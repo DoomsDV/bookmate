@@ -236,6 +236,34 @@ export const mountPublicSlotBranches = (options: MountPublicSlotBranchesOptions)
 	container.innerHTML = '';
 	let branchToneIndex = 0;
 
+	const createSlotButton = (group: PublicSlotBranchGroup, slot: string) => {
+		const slotKey = `${group.location.id_location}:${slot}`;
+		const slotButton = document.createElement('button');
+		slotButton.type = 'button';
+		const time = formatSlotLabel24h(slot);
+		const periodKey = getSlotDayPeriod(slot);
+		slotButton.innerHTML = `<span class="public-slot-time__label">${escapeHtml(time)}</span>`;
+		slotButton.setAttribute(
+			'aria-label',
+			`${time} de la ${periodKey === 'morning' ? 'mañana' : 'tarde'}`
+		);
+		slotButton.dataset.slotKey = slotKey;
+		const isSelected = selectedSlotKey === slotKey;
+		slotButton.className =
+			(compactPillGrid
+				? 'public-slot-time public-slot-time--pill flex min-h-11 items-center justify-center rounded-xl border px-2 py-3 text-sm font-medium cursor-pointer transition'
+				: 'public-slot-time flex h-11 items-center justify-center rounded-full border px-4 text-sm font-medium cursor-pointer transition') +
+			(isSelected ? ' is-selected' : '');
+
+		slotButton.addEventListener('click', () => {
+			onSelect(group.location.id_location, slot, group.location);
+			for (const btn of container.querySelectorAll<HTMLElement>('.public-slot-time')) {
+				btn.classList.toggle('is-selected', btn.dataset.slotKey === slotKey);
+			}
+		});
+		return slotButton;
+	};
+
 	const mountGrid = (section: HTMLElement, group: PublicSlotBranchGroup) => {
 		if (showLocationHeader) {
 			appendLocationSlotHeader(section, group.location, {
@@ -245,39 +273,43 @@ export const mountPublicSlotBranches = (options: MountPublicSlotBranchesOptions)
 			});
 		}
 
-		const grid = document.createElement('div');
-		grid.className = compactPillGrid
-			? 'public-slot-pill-grid'
-			: 'grid grid-cols-2 gap-3 sm:grid-cols-4';
+		if (compactPillGrid) {
+			const periods = document.createElement('div');
+			periods.className = 'public-slot-periods';
 
-		for (const slot of group.slots) {
-			const slotKey = `${group.location.id_location}:${slot}`;
-			const slotButton = document.createElement('button');
-			slotButton.type = 'button';
-			const time = formatSlotLabel24h(slot);
-			slotButton.innerHTML = `<span class="public-slot-time__label">${escapeHtml(time)}</span>`;
-			slotButton.setAttribute(
-				'aria-label',
-				`${time} de la ${getSlotDayPeriod(slot) === 'morning' ? 'mañana' : 'tarde'}`
-			);
-			slotButton.dataset.slotKey = slotKey;
-			const isSelected = selectedSlotKey === slotKey;
-			slotButton.className =
-				(compactPillGrid
-					? 'public-slot-time public-slot-time--pill flex min-h-11 items-center justify-center rounded-xl border px-2 py-3 text-sm font-medium cursor-pointer transition'
-					: 'public-slot-time flex h-11 items-center justify-center rounded-full border px-4 text-sm font-medium cursor-pointer transition') +
-				(isSelected ? ' is-selected' : '');
+			forEachSlotPeriod(group.slots, (period) => {
+				const block = document.createElement('div');
+				block.className = 'public-slot-period';
+				block.dataset.slotPeriod = period.key;
 
-			slotButton.addEventListener('click', () => {
-				onSelect(group.location.id_location, slot, group.location);
-				for (const btn of container.querySelectorAll<HTMLElement>('.public-slot-time')) {
-					btn.classList.toggle('is-selected', btn.dataset.slotKey === slotKey);
+				const heading = document.createElement('p');
+				heading.className = 'public-slot-period__label';
+				heading.textContent = period.label;
+				block.appendChild(heading);
+
+				const grid = document.createElement('div');
+				grid.className = 'public-slot-pill-grid';
+
+				for (const slot of period.slots) {
+					grid.appendChild(createSlotButton(group, slot));
 				}
+
+				block.appendChild(wrapSlotPillGrid(grid));
+				periods.appendChild(block);
 			});
-			grid.appendChild(slotButton);
+
+			section.appendChild(periods);
+			return;
 		}
 
-		section.appendChild(compactPillGrid ? wrapSlotPillGrid(grid) : grid);
+		const grid = document.createElement('div');
+		grid.className = 'grid grid-cols-2 gap-3 sm:grid-cols-4';
+
+		for (const slot of group.slots) {
+			grid.appendChild(createSlotButton(group, slot));
+		}
+
+		section.appendChild(grid);
 	};
 
 	const mountRoulette = (

@@ -795,6 +795,11 @@ class CalendarManager extends HTMLElement {
 		return window.innerWidth < 768;
 	}
 
+	/** Shell compacto (bottom nav, canvas con scroll): < lg. */
+	private isCompactShellViewport() {
+		return window.innerWidth < 1024;
+	}
+
 	private getHeaderToolbar(isMobile: boolean) {
 		return isMobile
 			? {
@@ -831,10 +836,10 @@ class CalendarManager extends HTMLElement {
 		title.textContent = this.formatMobileToolbarTitle(this.calendar.getDate());
 	}
 
-	private getCalendarHeightOption(isMobile?: boolean) {
-		// Mobile: altura natural → scroll del main (no se corta con el bottom bar).
-		// Desktop: host fijo → scroll interno del timegrid (headers sticky).
-		return (isMobile ?? this.isMobileViewport()) ? 'auto' : '100%';
+	private getCalendarHeightOption() {
+		// Compacto (< lg): altura natural → scrollea el canvas (bottom nav).
+		// Desktop lg+: host fijo → scroll interno del timegrid.
+		return this.isCompactShellViewport() ? 'auto' : '100%';
 	}
 
 	/** Mobile timegrid: sin cabecera FC (la reemplaza el chrome sticky). */
@@ -1551,6 +1556,7 @@ class CalendarManager extends HTMLElement {
 		if (!this.calendar) return;
 
 		const isMobile = this.isMobileViewport();
+		this.calendar.setOption('height', this.getCalendarHeightOption());
 		if (!force && this.isMobileLayout === isMobile) {
 			this.calendar.updateSize();
 			return;
@@ -1558,7 +1564,7 @@ class CalendarManager extends HTMLElement {
 
 		this.isMobileLayout = isMobile;
 		this.calendar.setOption('headerToolbar', this.getHeaderToolbar(isMobile));
-		this.calendar.setOption('height', this.getCalendarHeightOption(isMobile));
+		this.calendar.setOption('height', this.getCalendarHeightOption());
 		this.calendar.setOption(
 			'titleFormat',
 			isMobile
@@ -2069,7 +2075,7 @@ class CalendarManager extends HTMLElement {
 			selectAllow: (span) => !this.isRangeInsideClosure(span.start, span.end),
 			nowIndicator: true,
 			allDaySlot: false,
-			height: this.getCalendarHeightOption(isMobile),
+			height: this.getCalendarHeightOption(),
 			dayHeaders: !this.shouldHideNativeDayHeaders(isMobile, isMobile ? MOBILE_DEFAULT_VIEW : DESKTOP_DEFAULT_VIEW),
 			scrollTimeReset: false,
 			slotMinTime: '06:00:00',

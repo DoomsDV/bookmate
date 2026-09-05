@@ -30,6 +30,7 @@ let dashboard: DashboardMainData = {
 		today_appointments: 0,
 		today_completed_appointments: 0,
 		pending_appointments: 0,
+		unconfirmed_appointments: 0,
 		my_customers: 2,
 		total_customers: 6,
 	},
@@ -70,7 +71,7 @@ if (!token) {
 	if (profileResult.status === 'fulfilled') {
 		const firstName = String(profileResult.value.first_name || '').trim();
 		const lastName = String(profileResult.value.last_name || '').trim();
-		userDisplayName = `${firstName} ${lastName}`.replace(/\s+/g, ' ').trim();
+		userDisplayName = firstName || lastName;
 	} else {
 		userDisplayName = '';
 	}
@@ -112,7 +113,7 @@ const greetingNamePieces = greetingNameWords.map((word, wordIndex) => {
 const todayTotal = dashboard.kpis.today_appointments;
 const todayCompleted = Math.min(todayTotal, dashboard.kpis.today_completed_appointments || 0);
 const todayRemaining = Math.max(0, todayTotal - todayCompleted);
-const pendingAppointments = Math.max(0, dashboard.kpis.pending_appointments || 0);
+const unconfirmedTotal = Math.max(0, dashboard.kpis.unconfirmed_appointments || 0);
 const dayProgressPct =
 	todayTotal > 0 ? Math.min(100, Math.round((todayCompleted / todayTotal) * 100)) : 0;
 
@@ -253,7 +254,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 							<section class="dashboard-summary-card mb-0 transition-all duration-300">
 								<div class="flex flex-col justify-between gap-3 lg:flex-row lg:items-center lg:gap-4">
 									<div class="flex min-w-0 flex-col gap-2 lg:flex-row lg:items-center lg:gap-4">
-										<div class="dashboard-greeting grid min-w-0 gap-1" data-dashboard-intro>
+										<div class="dashboard-greeting grid min-w-0 gap-2" data-dashboard-intro>
 											<h1
 												class="dashboard-greeting__title font-extrabold text-[#202124] dark:text-[#E3E3E3] tracking-tight"
 												data-dashboard-greeting
@@ -359,126 +360,70 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 									<div class="dashboard-carousel">
 									<div class="dashboard-profit-metrics-track">
-										<article class="dashboard-profit-card" data-profit-accent="emerald">
-											<div class="dashboard-profit-card__head">
-												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">payments</span>
-												<p class="dashboard-profit-label">Ingresos del mes</p>
-											</div>
-											<div class="dashboard-profit-card__hero">
-												<p class="dashboard-profit-value" data-profit-month-revenue>&nbsp;</p>
-												<div class="dashboard-profit-viz dashboard-profit-viz--bars" aria-hidden="true">
-													<span class="dashboard-profit-viz__col">
-														<span class="dashboard-profit-viz__bar" data-profit-bar="last"></span>
-													</span>
-													<span class="dashboard-profit-viz__col">
-														<span class="dashboard-profit-viz__bar is-now" data-profit-bar="month"></span>
-													</span>
-												</div>
-											</div>
-											<ul class="dashboard-profit-stats">
-												<li class="dashboard-profit-stat">
-													<span class="dashboard-profit-stat__label">Mes anterior</span>
-													<span class="dashboard-profit-stat__value" data-profit-last-month>&nbsp;</span>
-												</li>
-												<li class="dashboard-profit-stat">
-													<span class="dashboard-profit-stat__label">Ticket promedio</span>
-													<span class="dashboard-profit-stat__value" data-profit-avg-ticket>&nbsp;</span>
-												</li>
-												<li class="dashboard-profit-stat">
-													<span class="dashboard-profit-stat__label">Reservas cobradas</span>
-													<span class="dashboard-profit-stat__value">
-														<span data-profit-month-count>&nbsp;</span>
-														<span class="dashboard-profit-stat__delta" data-profit-mom hidden></span>
-													</span>
-												</li>
-											</ul>
+										<a
+											class="dashboard-profit-card dashboard-profit-card--simple"
+											data-profit-accent="brand"
+											href="/panel/calendar"
+										>
+											<span class="dashboard-profit-card__head">
+												<span class="dashboard-profit-icon" aria-hidden="true">
+													<span class="material-symbols-rounded">today</span>
+												</span>
+												<p class="dashboard-profit-label">Hoy</p>
+												<span class="dashboard-profit-card__go material-symbols-rounded" aria-hidden="true">arrow_outward</span>
+											</span>
+											<p class="dashboard-profit-value dashboard-profit-value--static">{todayTotal}</p>
+											<p class="dashboard-profit-caption">{todayTotal === 1 ? 'turno' : 'turnos'}</p>
+										</a>
+										<a
+											class:list={[
+												'dashboard-profit-card dashboard-profit-card--simple',
+												unconfirmedTotal > 0 && 'is-alert',
+											]}
+											data-profit-accent="amber"
+											href="#dashboard-upcoming-appointments"
+										>
+											<span class="dashboard-profit-card__head">
+												<span class="dashboard-profit-icon" aria-hidden="true">
+													<span class="material-symbols-rounded">hourglass_top</span>
+												</span>
+												<p class="dashboard-profit-label">Por confirmar</p>
+												<span class="dashboard-profit-card__go material-symbols-rounded" aria-hidden="true">arrow_outward</span>
+											</span>
+											<p class="dashboard-profit-value dashboard-profit-value--static">{unconfirmedTotal}</p>
+											<p class="dashboard-profit-caption">
+												{unconfirmedTotal === 0
+													? 'Nada pendiente'
+													: unconfirmedTotal === 1
+														? 'Cita por confirmar'
+														: 'Citas por confirmar'}
+											</p>
+										</a>
+										<article class="dashboard-profit-card dashboard-profit-card--simple" data-profit-accent="emerald">
+											<span class="dashboard-profit-card__head">
+												<span class="dashboard-profit-icon" aria-hidden="true">
+													<span class="material-symbols-rounded">payments</span>
+												</span>
+												<p class="dashboard-profit-label">Este mes</p>
+											</span>
+											<p class="dashboard-profit-value" data-profit-month-revenue>&nbsp;</p>
+											<p class="dashboard-profit-caption">Estimado por servicios</p>
 										</article>
-										<article class="dashboard-profit-card" data-profit-accent="brand">
-											<div class="dashboard-profit-card__head">
-												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">today</span>
-												<p class="dashboard-profit-label">Agenda de hoy</p>
-											</div>
-											<div class="dashboard-profit-card__hero">
-												<p class="dashboard-profit-value" data-profit-today>&nbsp;</p>
-												<svg class="dashboard-profit-viz dashboard-profit-viz--ring" viewBox="0 0 36 36" aria-hidden="true">
-													<circle class="dashboard-profit-viz__track" cx="18" cy="18" r="14" pathLength="100"></circle>
-													<circle
-														class="dashboard-profit-viz__arc"
-														cx="18"
-														cy="18"
-														r="14"
-														pathLength="100"
-														style={`--ring:${todayTotal > 0 ? dayProgressPct : 0}`}
-													></circle>
-												</svg>
-											</div>
-											<ul class="dashboard-profit-stats">
-												<li class="dashboard-profit-stat">
-													<span class="dashboard-profit-stat__label">Completados</span>
-													<span class="dashboard-profit-stat__value dashboard-profit-value--static">{todayCompleted}</span>
-												</li>
-												<li class="dashboard-profit-stat">
-													<span class="dashboard-profit-stat__label">Programados</span>
-													<span class="dashboard-profit-stat__value dashboard-profit-value--static">{todayTotal}</span>
-												</li>
-												<li class="dashboard-profit-stat">
-													<span class="dashboard-profit-stat__label">Pendientes</span>
-													<span class="dashboard-profit-stat__value dashboard-profit-value--static">{todayRemaining}</span>
-												</li>
-											</ul>
-										</article>
-										<article class="dashboard-profit-card" data-profit-accent="amber">
-											<div class="dashboard-profit-card__head">
-												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">schedule</span>
-												<p class="dashboard-profit-label">Esperado</p>
-											</div>
-											<div class="dashboard-profit-card__hero">
-												<p class="dashboard-profit-value" data-profit-pending>&nbsp;</p>
-												<div class="dashboard-profit-viz dashboard-profit-viz--pipe" aria-hidden="true">
-													<span class="dashboard-profit-viz__pipe">
-														<span class="dashboard-profit-viz__fill" data-profit-pipe="pending"></span>
-													</span>
-												</div>
-											</div>
-											<ul class="dashboard-profit-stats">
-												<li class="dashboard-profit-stat">
-													<span class="dashboard-profit-stat__label">Pendiente de pago</span>
-													<span class="dashboard-profit-stat__value dashboard-profit-value--static">{pendingAppointments}</span>
-												</li>
-												<li class="dashboard-profit-stat">
-													<span class="dashboard-profit-stat__label">Proyección mensual</span>
-													<span class="dashboard-profit-stat__value" data-profit-pipe-label>&nbsp;</span>
-												</li>
-											</ul>
-										</article>
-										<article class="dashboard-profit-card" data-profit-accent="violet">
-											<div class="dashboard-profit-card__head">
-												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">groups</span>
-												<p class="dashboard-profit-label">Clientes</p>
-											</div>
-											<div class="dashboard-profit-card__hero">
-												<p class="dashboard-profit-value" data-profit-total-clients>&nbsp;</p>
-												<div class="dashboard-profit-viz dashboard-profit-viz--dots" data-profit-client-dots aria-hidden="true">
-													{Array.from({ length: 8 }).map((_, index) => (
-														<span class="dashboard-profit-viz__dot" data-dot-index={index}></span>
-													))}
-												</div>
-											</div>
-											<ul class="dashboard-profit-stats">
-												<li class="dashboard-profit-stat">
-													<span class="dashboard-profit-stat__label">Nuevos este mes</span>
-													<span class="dashboard-profit-stat__value" data-profit-new-clients>&nbsp;</span>
-												</li>
-												<li class="dashboard-profit-stat">
-													<span class="dashboard-profit-stat__label">Clientes activos</span>
-													<span class="dashboard-profit-stat__value" data-profit-active-clients>&nbsp;</span>
-												</li>
-												<li class="dashboard-profit-stat">
-													<span class="dashboard-profit-stat__label">Agendados (próx. 7 días)</span>
-													<span class="dashboard-profit-stat__value" data-profit-upcoming-clients>&nbsp;</span>
-												</li>
-											</ul>
-										</article>
+										<a
+											class="dashboard-profit-card dashboard-profit-card--simple"
+											data-profit-accent="violet"
+											href="/panel/customers"
+										>
+											<span class="dashboard-profit-card__head">
+												<span class="dashboard-profit-icon" aria-hidden="true">
+													<span class="material-symbols-rounded">person_add</span>
+												</span>
+												<p class="dashboard-profit-label">Nuevos</p>
+												<span class="dashboard-profit-card__go material-symbols-rounded" aria-hidden="true">arrow_outward</span>
+											</span>
+											<p class="dashboard-profit-value" data-profit-new-clients>&nbsp;</p>
+											<p class="dashboard-profit-caption">Clientes este mes</p>
+										</a>
 									</div>
 									</div>
 								</section>
@@ -647,7 +592,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 											id="dashboard-upcoming-appointments"
 											class="dashboard-report-shell dashboard-floor__panel rounded-4xl p-4 sm:p-6 transition-colors duration-300"
 										>
-											<div class="mb-4 flex items-center justify-between gap-3">
+											<div class="dashboard-upcoming-head mb-4 flex items-center justify-between gap-3">
 												<div class="min-w-0">
 													<h2 class="text-xl font-bold text-[#202124] dark:text-[#E3E3E3]">Próximas citas</h2>
 													<p class="dashboard-appointments-subtitle">Siguientes 7 días</p>
@@ -810,7 +755,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 															<p class="dashboard-alert-title" data-dashboard-cobros-alert-title>Comprobantes por validar</p>
 															<p class="dashboard-alert-meta" data-dashboard-cobros-alert-meta>Cargando…</p>
 														</div>
-														<a href="/panel/cobros?status=pending" class="dashboard-alert-action">Validar</a>
+														<a href="/panel/cobros?status=pending" class="dashboard-alert-action" data-dashboard-cobros-alert-action>Validar</a>
 													</li>
 												</ul>
 
@@ -1842,14 +1787,22 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 		try {
 			const { fetchCobrosPendingCount } = await import('../../scripts/cobros-pending-badge');
-			const count = await fetchCobrosPendingCount(options);
+			const [count, pendingPayload] = await Promise.all([
+				fetchCobrosPendingCount(options),
+				fetch('/api/cobros?status=pending&date_preset=all&page=1&limit=1', {
+					headers: { Accept: 'application/json' },
+				})
+					.then((response) => response.json())
+					.catch(() => null),
+			]);
 			if (count === null) {
 				slot.hidden = true;
 				syncDashboardAlertsEmpty();
 				return;
 			}
 
-			if (count <= 0) {
+			const receiptCount = Number(pendingPayload?.meta?.total ?? 0) || 0;
+			if (receiptCount <= 0 && count <= 0) {
 				slot.hidden = true;
 				syncDashboardAlertsEmpty();
 				return;
@@ -1857,12 +1810,31 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 			const title = slot.querySelector<HTMLElement>('[data-dashboard-cobros-alert-title]');
 			const meta = slot.querySelector<HTMLElement>('[data-dashboard-cobros-alert-meta]');
-			if (title) {
-				title.textContent =
-					count === 1 ? '1 comprobante por validar' : `${count} comprobantes por validar`;
-			}
-			if (meta) {
-				meta.textContent = 'Señas SIPAP pendientes de revisión.';
+			const action = slot.querySelector<HTMLAnchorElement>('[data-dashboard-cobros-alert-action]');
+			if (receiptCount > 0) {
+				if (title) {
+					title.textContent =
+						receiptCount === 1
+							? '1 comprobante por validar'
+							: `${receiptCount} comprobantes por validar`;
+				}
+				if (meta) meta.textContent = 'Señas SIPAP pendientes de revisión.';
+				if (action) {
+					action.textContent = 'Validar';
+					action.href = '/panel/cobros?status=pending';
+				}
+			} else {
+				if (title) {
+					title.textContent =
+						count === 1 ? '1 reembolso por revisar' : `${count} reembolsos por revisar`;
+				}
+				if (meta) {
+					meta.textContent = 'Hay devoluciones o disputas que requieren tu atención.';
+				}
+				if (action) {
+					action.textContent = 'Revisar';
+					action.href = '/panel/cobros?status=refunded';
+				}
 			}
 			slot.hidden = false;
 			slot.classList.remove('dashboard-alert-item--loading');
@@ -1915,69 +1887,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			};
 
 			setText('[data-profit-month-revenue]', formatGs(data.month_revenue));
-			setText('[data-profit-today]', formatGs(data.today_revenue));
-			setText('[data-profit-pending]', formatGs(data.pending_expected_revenue));
-			setText('[data-profit-total-clients]', String(Number(data.total_clients ?? 0)));
 			setText('[data-profit-new-clients]', String(Number(data.new_clients_month ?? 0)));
-			setText('[data-profit-active-clients]', String(Number(data.active_clients_month ?? 0)));
-			setText('[data-profit-upcoming-clients]', String(Number(data.upcoming_clients_7d ?? 0)));
-			setText('[data-profit-last-month]', formatGs(data.last_month_revenue));
-			setText('[data-profit-avg-ticket]', formatGs(data.month_avg_ticket));
-			setText('[data-profit-month-count]', String(Number(data.month_completed_count ?? 0)));
-
-			const monthRevenue = Math.max(0, Number(data.month_revenue) || 0);
-			const lastMonthRevenue = Math.max(0, Number(data.last_month_revenue) || 0);
-			const pendingRevenue = Math.max(0, Number(data.pending_expected_revenue) || 0);
-			const clientCount = Math.max(0, Math.floor(Number(data.total_clients) || 0));
-			const barMax = Math.max(monthRevenue, lastMonthRevenue, 1);
-			const barRatio = (value: number) => Math.max(0.08, value / barMax);
-
-			// Proyección mensual = cobrado hasta ahora + lo esperado (pendiente de pago).
-			const pipelineTotal = monthRevenue + pendingRevenue;
-			setText('[data-profit-pipe-label]', formatGs(pipelineTotal));
-
-			const lastBar = panel.querySelector<HTMLElement>('[data-profit-bar="last"]');
-			const monthBar = panel.querySelector<HTMLElement>('[data-profit-bar="month"]');
-			if (lastBar) lastBar.style.transform = `scaleY(${barRatio(lastMonthRevenue)})`;
-			if (monthBar) monthBar.style.transform = `scaleY(${barRatio(monthRevenue)})`;
-
-			const pendingRatio = pipelineTotal > 0 ? pendingRevenue / pipelineTotal : 0;
-			const pendingFill = panel.querySelector<HTMLElement>('[data-profit-pipe="pending"]');
-			if (pendingFill) pendingFill.style.transform = `scaleX(${Math.max(0.06, pendingRatio)})`;
-
-			const dots = panel.querySelectorAll<HTMLElement>('[data-profit-client-dots] .dashboard-profit-viz__dot');
-			const filledDots = Math.min(dots.length, clientCount);
-			dots.forEach((dot, index) => {
-				dot.classList.toggle('is-filled', index < filledDots);
-			});
-
-			const momNode = panel.querySelector<HTMLElement>('[data-profit-mom]');
-			if (momNode) {
-				const mom = data.mom_delta_pct;
-				if (mom === null || mom === undefined || !Number.isFinite(Number(mom))) {
-					momNode.hidden = true;
-					momNode.replaceChildren();
-				} else {
-					const value = Number(mom);
-					const sign = value > 0 ? '+' : '';
-					momNode.hidden = false;
-					momNode.className =
-						value > 0
-							? 'dashboard-profit-stat__delta is-up'
-							: value < 0
-								? 'dashboard-profit-stat__delta is-down'
-								: 'dashboard-profit-stat__delta';
-					momNode.replaceChildren();
-					if (value !== 0) {
-						const arrow = document.createElement('span');
-						arrow.className = 'material-symbols-rounded dashboard-profit-stat__arrow';
-						arrow.setAttribute('aria-hidden', 'true');
-						arrow.textContent = value > 0 ? 'arrow_upward' : 'arrow_downward';
-						momNode.appendChild(arrow);
-					}
-					momNode.appendChild(document.createTextNode(`${sign}${value}%`));
-				}
-			}
 
 			panel.hidden = false;
 			panel.classList.remove('hidden', 'is-dismissed', 'is-loading');
@@ -2420,13 +2330,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		background: var(--page-background, #f6f7f9);
 	}
 
-	@media (hover: none) and (pointer: coarse), (max-width: 1023px) {
-		.dashboard-ai-orb {
-			filter: none !important;
-			animation: none !important;
-		}
-	}
-
 	.dashboard-content-canvas > * {
 		position: relative;
 		z-index: 1;
@@ -2439,13 +2342,9 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	.dashboard-primary-cta {
 		color: #f8fbff;
-		background: linear-gradient(
-			158deg,
-			color-mix(in srgb, var(--primary) 90%, #ffffff 10%) 0%,
-			color-mix(in srgb, var(--primary) 84%, #1e3a8a 16%) 100%
-		);
+		background: var(--primary);
 		border: 1px solid color-mix(in srgb, var(--primary) 66%, #1e3a8a 34%);
-		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+		box-shadow: none;
 	}
 
 	.dashboard-primary-cta,
@@ -2497,13 +2396,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		transform: scale(0.98);
 	}
 
-	.dashboard-ai-chat-cta span:not(.dashboard-ai-strip__shiny) {
+	.dashboard-ai-chat-cta span {
 		color: inherit;
-	}
-
-	.dashboard-ai-chat-cta .dashboard-ai-strip__shiny {
-		color: transparent;
-		-webkit-text-fill-color: transparent;
 	}
 
 	.dashboard-ai-chat-cta:hover {
@@ -2513,16 +2407,12 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	.dashboard-primary-cta:hover {
 		transform: none;
-		filter: brightness(0.99);
-		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+		filter: brightness(0.94);
+		box-shadow: none;
 	}
 
 	.dashboard-header-cta {
 		min-height: 3rem;
-	}
-
-	.dashboard-header-actions .dashboard-header-cta {
-		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 	}
 
 	.dashboard-ai-chat-cta:focus-visible,
@@ -2543,13 +2433,9 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	html[data-theme='dark'] .dashboard-primary-cta {
-		background: linear-gradient(
-			158deg,
-			color-mix(in srgb, var(--primary) 92%, #60a5fa 8%) 0%,
-			color-mix(in srgb, var(--primary) 78%, #1e3a8a 22%) 100%
-		);
+		background: var(--primary);
 		border-color: color-mix(in srgb, var(--primary) 52%, #93c5fd 48%);
-		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+		box-shadow: none;
 		color: #ffffff;
 	}
 
@@ -2580,17 +2466,17 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	html[data-theme='dark'] .dashboard-primary-cta:hover {
-		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+		box-shadow: none;
 	}
 
 	.dashboard-greeting__title {
 		display: flex;
 		flex-direction: column;
 		align-items: flex-start;
-		gap: 0.05em;
-		font-size: clamp(2.35rem, 5.5vw, 3.15rem);
+		gap: 0.1em;
+		font-size: clamp(2.9rem, 6.8vw, 3.95rem);
 		font-weight: 860;
-		line-height: 1.05;
+		line-height: 1.06;
 		letter-spacing: -0.03em;
 	}
 
@@ -2677,11 +2563,9 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	.dashboard-team-chip--pill {
 		display: none;
-		border: 0;
-		background: #ffffff;
-		box-shadow:
-			0 1px 2px rgba(15, 23, 42, 0.04),
-			0 6px 16px rgba(15, 23, 42, 0.04);
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		box-shadow: none;
 	}
 
 	.dashboard-team-chip--compact {
@@ -2692,10 +2576,10 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		min-height: 0;
 		margin: 0;
 		padding: 0.7rem 0.85rem;
-		border-radius: 1.15rem;
-		border: 1px solid color-mix(in srgb, var(--shell-border, rgba(148, 163, 184, 0.28)) 90%, transparent);
-		background: color-mix(in srgb, var(--surface-bright, #fff) 88%, var(--surface-container, #eef2f6) 12%);
-		box-shadow: 0 1px 0 color-mix(in srgb, var(--on-surface) 4%, transparent);
+		border-radius: 0.75rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		box-shadow: none;
 		gap: 0.35rem;
 	}
 
@@ -2829,10 +2713,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			border: 0;
 			border-radius: 999px;
 			color: #f8fbff;
-			background: linear-gradient(135deg, #3b6fe0 0%, #5b8def 48%, #7aa8f5 100%);
-			box-shadow:
-				0 6px 18px rgba(47, 111, 221, 0.38),
-				0 1px 3px rgba(15, 23, 42, 0.12);
+			background: var(--primary);
+			box-shadow: 0 2px 8px rgba(15, 23, 42, 0.16);
 			cursor: pointer;
 			-webkit-tap-highlight-color: transparent;
 			transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
@@ -2846,10 +2728,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 
 		.dashboard-cita-fab:hover {
-			filter: brightness(1.04);
-			box-shadow:
-				0 8px 22px rgba(47, 111, 221, 0.44),
-				0 1px 3px rgba(15, 23, 42, 0.14);
+			filter: brightness(0.96);
+			box-shadow: 0 3px 10px rgba(15, 23, 42, 0.2);
 		}
 
 		.dashboard-cita-fab:active {
@@ -2862,10 +2742,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 
 		html[data-theme='dark'] .dashboard-cita-fab {
-			background: linear-gradient(135deg, #3b6fe0 0%, #5b8def 55%, #6b9af0 100%);
-			box-shadow:
-				0 8px 24px rgba(0, 0, 0, 0.45),
-				0 0 0 1px rgba(147, 197, 253, 0.18);
+			background: var(--primary);
+			box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
 		}
 
 		/* Agenda ya está en la bottom nav: evitamos CTA duplicada en mobile/tablet. */
@@ -2930,297 +2808,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 	}
 
-
-	.dashboard-ai-card {
-		position: relative;
-		overflow: visible;
-		padding-block: 0.35rem 0.15rem;
-		padding-inline: 0;
-		border: 0;
-		border-radius: 0;
-		--ai-card-bg: transparent;
-		background: transparent;
-		box-shadow: none;
-	}
-
-	.dashboard-ai-orbs {
-		display: none;
-		pointer-events: none;
-	}
-
-	.dashboard-ai-card.is-generating .dashboard-ai-orbs {
-		display: block;
-	}
-
-	.dashboard-ai-orbs {
-		position: absolute;
-		inset: -0.5rem 0;
-		z-index: 0;
-		overflow: hidden;
-		border-radius: 1.25rem;
-		pointer-events: none;
-	}
-
-	.dashboard-ai-orb {
-		position: absolute;
-		border-radius: 50%;
-		filter: blur(26px);
-		opacity: 0;
-		animation: ai-orb-drift 5.5s ease-in-out infinite;
-	}
-
-	.dashboard-ai-orb--1 {
-		top: -18%;
-		left: -8%;
-		width: 9rem;
-		height: 9rem;
-		background: radial-gradient(circle, rgba(56, 189, 248, 0.55) 0%, rgba(56, 189, 248, 0) 72%);
-		animation-delay: 0s;
-	}
-
-	.dashboard-ai-orb--2 {
-		top: 8%;
-		right: -10%;
-		width: 7.5rem;
-		height: 7.5rem;
-		background: radial-gradient(circle, rgba(59, 130, 246, 0.48) 0%, rgba(59, 130, 246, 0) 70%);
-		animation-delay: 1.2s;
-	}
-
-	.dashboard-ai-orb--3 {
-		bottom: -22%;
-		left: 34%;
-		width: 8.5rem;
-		height: 8.5rem;
-		background: radial-gradient(circle, rgba(125, 211, 252, 0.42) 0%, rgba(125, 211, 252, 0) 68%);
-		animation-delay: 2.4s;
-	}
-
-	.dashboard-ai-header,
-	.dashboard-ai-state,
-	.dashboard-ai-body {
-		position: relative;
-		z-index: 1;
-	}
-
-	.dashboard-ai-shimmer-top {
-		pointer-events: none;
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		height: 3px;
-		opacity: 0;
-		overflow: hidden;
-		transition: opacity 280ms ease;
-		z-index: 1;
-	}
-
-	.dashboard-ai-shimmer-top::after {
-		content: '';
-		position: absolute;
-		inset: 0;
-		background: linear-gradient(
-			90deg,
-			transparent 0%,
-			rgba(56, 189, 248, 0.2) 18%,
-			rgba(59, 130, 246, 0.95) 50%,
-			rgba(56, 189, 248, 0.2) 82%,
-			transparent 100%
-		);
-		transform: translateX(-100%);
-	}
-
-	.dashboard-ai-card.is-generating .dashboard-ai-shimmer-top {
-		opacity: 1;
-	}
-
-	.dashboard-ai-card.is-generating .dashboard-ai-shimmer-top::after {
-		animation: ai-shimmer-sweep 2.4s ease-in-out infinite;
-	}
-
-	.dashboard-ai-card.is-generating {
-		animation: none;
-	}
-
-	.dashboard-ai-card.is-generating::after {
-		content: none;
-	}
-
-	.dashboard-ai-card.is-generating .dashboard-ai-sparkle {
-		animation: ai-sparkle-pulse 1.6s ease-in-out infinite;
-		filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.55));
-	}
-
-	.dashboard-ai-loading {
-		display: grid;
-		gap: 1rem;
-	}
-
-	.dashboard-ai-loading-label {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.55rem;
-		margin: 0;
-		font-size: 0.95rem;
-		font-weight: 600;
-		line-height: 1.45;
-		color: color-mix(in srgb, var(--on-surface-variant) 90%, #334155 10%);
-	}
-
-	.dashboard-ai-loading-icon {
-		font-size: 1.05rem;
-		color: var(--primary);
-		animation: ai-sparkle-pulse 1.6s ease-in-out infinite;
-		filter: drop-shadow(0 0 8px color-mix(in srgb, var(--primary) 45%, transparent));
-	}
-
-	.dashboard-ai-skeleton {
-		display: grid;
-		gap: 0.55rem;
-		max-width: 36rem;
-	}
-
-	.dashboard-ai-skeleton-line {
-		position: relative;
-		display: block;
-		overflow: hidden;
-		height: 0.72rem;
-		border-radius: 999px;
-		background: color-mix(in srgb, var(--on-surface-variant) 10%, #e2e8f0 90%);
-	}
-
-	.dashboard-ai-skeleton-line::after {
-		content: '';
-		position: absolute;
-		inset: 0;
-		background: linear-gradient(
-			90deg,
-			transparent 0%,
-			rgba(59, 130, 246, 0.12) 24%,
-			rgba(96, 165, 250, 0.42) 50%,
-			rgba(59, 130, 246, 0.12) 76%,
-			transparent 100%
-		);
-		transform: translateX(-100%);
-	}
-
-	.dashboard-ai-card.is-generating .dashboard-ai-skeleton-line::after {
-		animation: ai-shimmer-sweep 1.8s ease-in-out infinite;
-	}
-
-	.dashboard-ai-skeleton-line--lg { width: 96%; }
-	.dashboard-ai-skeleton-line--md { width: 82%; }
-	.dashboard-ai-skeleton-line--md::after { animation-delay: 120ms; }
-	.dashboard-ai-skeleton-line--sm { width: 64%; }
-	.dashboard-ai-skeleton-line--sm::after { animation-delay: 240ms; }
-
-	@keyframes ai-shimmer-sweep {
-		0% { transform: translateX(-100%); }
-		100% { transform: translateX(100%); }
-	}
-
-	@keyframes ai-orb-drift {
-		0%, 100% {
-			opacity: 0.28;
-			transform: translate(0, 0) scale(1);
-		}
-
-		33% {
-			opacity: 0.52;
-			transform: translate(8px, -6px) scale(1.06);
-		}
-
-		66% {
-			opacity: 0.38;
-			transform: translate(-6px, 8px) scale(0.96);
-		}
-	}
-
-	@keyframes ai-card-pulse {
-		0%, 100% {
-			border-color: rgba(59, 130, 246, 0.2);
-			box-shadow:
-				inset 0 1px 0 rgba(186, 230, 253, 0.06),
-				0 4px 20px rgba(37, 99, 235, 0.07);
-		}
-
-		50% {
-			border-color: rgba(56, 189, 248, 0.38);
-			box-shadow:
-				inset 0 1px 0 rgba(186, 230, 253, 0.11),
-				0 8px 28px rgba(37, 99, 235, 0.13);
-		}
-	}
-
-	@keyframes ai-card-pulse-dark {
-		0%, 100% {
-			border-color: rgba(96, 165, 250, 0.22);
-			box-shadow:
-				inset 0 1px 0 rgba(147, 197, 253, 0.05),
-				0 6px 24px rgba(37, 99, 235, 0.12);
-		}
-
-		50% {
-			border-color: rgba(125, 211, 252, 0.4);
-			box-shadow:
-				inset 0 1px 0 rgba(147, 197, 253, 0.1),
-				0 10px 32px rgba(37, 99, 235, 0.18);
-		}
-	}
-
-	@media (max-width: 639px) {
-		.dashboard-ai-orb {
-			filter: blur(18px);
-		}
-
-		.dashboard-ai-orb--1 {
-			width: 6.5rem;
-			height: 6.5rem;
-		}
-
-		.dashboard-ai-orb--2 {
-			width: 5.5rem;
-			height: 5.5rem;
-		}
-
-		.dashboard-ai-orb--3 {
-			width: 6rem;
-			height: 6rem;
-		}
-	}
-
-	@media (min-width: 640px) {
-		.dashboard-ai-card.is-generating .dashboard-ai-orb {
-			filter: blur(20px);
-		}
-	}
-
-	@keyframes ai-sparkle-pulse {
-		0%, 100% {
-			opacity: 0.72;
-			transform: scale(1);
-		}
-
-		50% {
-			opacity: 1;
-			transform: scale(1.08);
-		}
-	}
-
-	.dashboard-ai-header {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-	}
-
-	.dashboard-ai-state {
-		color: color-mix(in srgb, var(--on-surface-variant) 90%, #334155 10%);
-	}
-
-	.dashboard-ai-text {
-		color: color-mix(in srgb, var(--on-surface) 94%, #0f172a 6%);
-	}
 
 	.dashboard-ai-text--preview {
 		display: flex;
@@ -3448,8 +3035,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 	}
 
-	/* Desktop: drawer lateral desde la derecha (como Servicios / Cita). */
-	@media (min-width: 1024px) {
+	/* Tablet+: drawer lateral desde la derecha (como Servicios / Cita). */
+	@media (min-width: 640px) {
 		dialog[data-ai-summary-modal][open] {
 			flex-direction: row;
 			align-items: stretch;
@@ -3512,60 +3099,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		background: color-mix(in srgb, var(--primary) 20%, transparent);
 	}
 
-	html[data-theme='dark'] .dashboard-ai-card {
-		border: 0;
-		--ai-card-bg: transparent;
-		background: transparent;
-		box-shadow: none;
-	}
-
-	html[data-theme='dark'] .dashboard-ai-card.is-generating {
-		animation: none;
-	}
-
-	html[data-theme='dark'] .dashboard-ai-orb--1 {
-		background: radial-gradient(circle, rgba(56, 189, 248, 0.42) 0%, rgba(56, 189, 248, 0) 72%);
-	}
-
-	html[data-theme='dark'] .dashboard-ai-orb--2 {
-		background: radial-gradient(circle, rgba(59, 130, 246, 0.36) 0%, rgba(59, 130, 246, 0) 70%);
-	}
-
-	html[data-theme='dark'] .dashboard-ai-orb--3 {
-		background: radial-gradient(circle, rgba(125, 211, 252, 0.32) 0%, rgba(125, 211, 252, 0) 68%);
-	}
-
-	html[data-theme='dark'] .dashboard-ai-card.is-generating::after {
-		content: none;
-	}
-
-	html[data-theme='dark'] .dashboard-ai-loading-label {
-		color: color-mix(in srgb, var(--on-surface-variant) 42%, white 58%);
-	}
-
-	html[data-theme='dark'] .dashboard-ai-skeleton-line {
-		background: color-mix(in srgb, var(--on-surface-variant) 12%, #2b2d31 88%);
-	}
-
-	html[data-theme='dark'] .dashboard-ai-skeleton-line::after {
-		background: linear-gradient(
-			90deg,
-			transparent 0%,
-			rgba(59, 130, 246, 0.14) 24%,
-			rgba(125, 211, 252, 0.5) 50%,
-			rgba(59, 130, 246, 0.14) 76%,
-			transparent 100%
-		);
-	}
-
-	html[data-theme='dark'] .dashboard-ai-state {
-		color: color-mix(in srgb, var(--on-surface-variant) 42%, white 58%);
-	}
-
-	html[data-theme='dark'] .dashboard-ai-text {
-		color: color-mix(in srgb, var(--on-surface) 82%, #cbd5e1 18%);
-	}
-
 	@media (prefers-reduced-motion: reduce) {
 		.dashboard-ai-sections--modal.dashboard-ai-sections--animate .dashboard-ai-section--stagger {
 			animation: none !important;
@@ -3611,15 +3144,13 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		min-height: 11.5rem;
 		padding: 0;
 		border: 0;
-		border-radius: 1.75rem;
+		border-radius: 1.25rem;
 		color: var(--on-surface, #202124);
 		background: transparent;
 		box-shadow: none;
 		isolation: isolate;
 		box-sizing: border-box;
-		transition:
-			transform 520ms var(--day-ease),
-			box-shadow 520ms var(--day-ease);
+		transition: border-color 320ms var(--day-ease);
 	}
 
 		.dashboard-day-progress__inner {
@@ -3633,12 +3164,10 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		min-height: 100%;
 		overflow: hidden;
 		padding: 1.15rem 1.25rem 1.2rem;
-		border: 1px solid color-mix(in srgb, var(--on-surface) 6%, transparent);
-		border-radius: 1.75rem;
-		background:
-			radial-gradient(22rem 14rem at 8% -20%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 62%),
-			#ffffff;
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
+		border: 1px solid var(--shell-border);
+		border-radius: 1.25rem;
+		background: var(--surface-bright);
+		box-shadow: none;
 	}
 
 	.dashboard-day-progress__head {
@@ -3691,8 +3220,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		flex-shrink: 0;
 		padding: 0.28rem 0.62rem;
 		border-radius: 999px;
-		background: color-mix(in srgb, var(--on-surface) 5%, transparent);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+		background: var(--surface-container-high);
+		box-shadow: none;
 		color: color-mix(in srgb, var(--on-surface-variant) 70%, var(--on-surface) 30%);
 		font-size: 0.72rem;
 		font-weight: 800;
@@ -3767,8 +3296,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		position: relative;
 		height: 0.7rem;
 		border-radius: 999px;
-		background: color-mix(in srgb, var(--on-surface) 8%, #e8eaed);
-		box-shadow: inset 0 1px 1px color-mix(in srgb, var(--on-surface) 8%, transparent);
+		background: var(--surface-container-high);
+		box-shadow: none;
 		overflow: hidden;
 	}
 
@@ -3777,11 +3306,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		position: absolute;
 		inset: 0;
 		border-radius: inherit;
-		background: linear-gradient(
-			90deg,
-			color-mix(in srgb, var(--primary) 82%, #93c5fd 18%),
-			var(--primary)
-		);
+		background: var(--primary);
 		transform-origin: left center;
 		animation: dashboard-day-slot 720ms var(--day-ease) calc(var(--i, 0) * 70ms) both;
 	}
@@ -3803,8 +3328,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		min-width: 0;
 		padding: 0.72rem 0.8rem 0.7rem;
 		border-radius: 1rem;
-		background: color-mix(in srgb, var(--on-surface) 4%, #f6f7f8);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+		background: var(--surface-container-high);
+		box-shadow: none;
 		animation: dashboard-day-rise 760ms var(--day-ease) both;
 	}
 
@@ -3870,8 +3395,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		width: 2.35rem;
 		height: 2.35rem;
 		border-radius: 0.85rem;
-		background: color-mix(in srgb, var(--primary) 14%, #ffffff);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+		background: color-mix(in srgb, var(--primary) 14%, var(--surface-bright));
+		box-shadow: none;
 		color: var(--primary);
 		flex-shrink: 0;
 	}
@@ -3912,11 +3437,9 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	html[data-theme='dark'] .dashboard-day-progress__inner {
-		border-color: rgba(255, 255, 255, 0.06);
-		background:
-			radial-gradient(24rem 16rem at 6% -30%, color-mix(in srgb, var(--primary) 20%, transparent), transparent 64%),
-			color-mix(in srgb, var(--surface-container-high, #1c1d22) 90%, #0a0b0e 10%);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+		border-color: var(--shell-border);
+		background: var(--surface-bright);
+		box-shadow: none;
 	}
 
 	html[data-theme='dark'] .dashboard-day-progress__eyebrow,
@@ -3932,25 +3455,25 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	html[data-theme='dark'] .dashboard-day-progress__pct {
-		background: rgba(255, 255, 255, 0.05);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+		background: var(--surface-container-high);
+		box-shadow: none;
 		color: color-mix(in srgb, var(--on-surface-variant) 40%, #e8eaed 60%);
 	}
 
 	html[data-theme='dark'] .dashboard-day-progress__icon {
 		background: color-mix(in srgb, var(--primary) 18%, #1a1c21);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+		box-shadow: none;
 		color: color-mix(in srgb, var(--primary) 72%, white 28%);
 	}
 
 	html[data-theme='dark'] .dashboard-day-progress__slot {
-		background: rgba(255, 255, 255, 0.07);
-		box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.18);
+		background: var(--surface-container-high);
+		box-shadow: none;
 	}
 
 	html[data-theme='dark'] .dashboard-day-progress__island {
-		background: rgba(255, 255, 255, 0.035);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+		background: var(--surface-container-high);
+		box-shadow: none;
 	}
 
 	html[data-theme='dark'] .dashboard-day-progress__island.is-done {
@@ -3967,12 +3490,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	html[data-theme='dark'] .dashboard-day-progress__island strong {
 		color: var(--on-surface, #e3e3e3);
-	}
-
-	@media (min-width: 1024px) {
-		.dashboard-day-progress:hover {
-			transform: translateY(-2px);
-		}
 	}
 
 	.dashboard-report-shell.dashboard-floor__panel {
@@ -4101,12 +3618,9 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	.dashboard-alerts-shell {
 		display: flex;
 		flex-direction: column;
-		border: 1px solid color-mix(in srgb, var(--on-surface) 8%, transparent);
-		background: #ffffff;
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.72),
-			0 1px 0 color-mix(in srgb, var(--on-surface) 4%, transparent),
-			0 12px 28px color-mix(in srgb, #1e293b 6%, transparent);
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		box-shadow: none;
 		min-height: 0;
 		box-sizing: border-box;
 	}
@@ -4127,9 +3641,9 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	html[data-theme='dark'] .dashboard-alerts-shell {
-		background: color-mix(in srgb, var(--surface-container-high, #1c1d22) 92%, #0e1014 8%);
-		border: 1px solid rgba(255, 255, 255, 0.06);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+		background: var(--surface-bright);
+		border: 1px solid var(--shell-border);
+		box-shadow: none;
 	}
 
 	.dashboard-alert-item {
@@ -4139,7 +3653,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		padding: 0.75rem 0.8rem;
 		border-radius: 0.95rem;
 		border: 0;
-		background: #f4f6f8;
+		background: var(--surface-container-high);
 	}
 
 	html[data-theme='dark'] .dashboard-alert-item {
@@ -4245,14 +3759,14 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		min-height: 100%;
 		padding: 1.5rem 1.15rem;
 		border-radius: 1.1rem;
-		background: color-mix(in srgb, var(--on-surface) 4%, #f4f6f8);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+		background: var(--surface-container-high);
+		box-shadow: none;
 		text-align: center;
 	}
 
 	html[data-theme='dark'] .dashboard-alerts-empty__well {
-		background: color-mix(in srgb, #14151a 82%, #000 18%);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+		background: var(--surface-container-high);
+		box-shadow: none;
 	}
 
 	.dashboard-alerts-empty__icon {
@@ -4345,6 +3859,45 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			align-items: stretch;
 		}
 
+		.dashboard-floor--action .dashboard-report-shell.dashboard-floor__panel {
+			align-self: stretch;
+			height: 100%;
+			max-height: min(34rem, calc(100dvh - 10rem));
+		}
+
+		.dashboard-floor--action .dashboard-alerts-shell {
+			position: sticky;
+			top: 1.25rem;
+			align-self: stretch;
+			height: 100%;
+			padding: 1.15rem;
+			border-radius: 1.25rem;
+			background: var(--surface-bright);
+		}
+
+		html[data-theme='dark'] .dashboard-floor--action .dashboard-alerts-shell {
+			background: var(--surface-bright);
+		}
+
+		.dashboard-floor--action .dashboard-alerts-head {
+			margin-bottom: 0.8rem;
+		}
+
+		.dashboard-floor--action .dashboard-alerts-list {
+			flex: none;
+		}
+
+		.dashboard-floor--action .dashboard-alerts-empty {
+			flex: none;
+			min-height: 0;
+			padding: 0;
+		}
+
+		.dashboard-floor--action .dashboard-alerts-empty__well {
+			min-height: 0;
+			padding: 1.1rem 1rem;
+		}
+
 		.dashboard-floor--today {
 			grid-template-columns: 1fr;
 			min-height: 0;
@@ -4384,7 +3937,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	.dashboard-profitability-shell.is-loading .dashboard-profit-value:not(.dashboard-profit-value--static),
-	.dashboard-profitability-shell.is-loading .dashboard-profit-stat__value:not(.dashboard-profit-value--static) {
+	.dashboard-profitability-shell.is-loading .dashboard-profit-stat__value:not(.dashboard-profit-value--static),
+	.dashboard-profitability-shell.is-loading .dashboard-profit-chip__value {
 		color: transparent !important;
 		border-radius: 0.45rem;
 		background: linear-gradient(
@@ -4405,13 +3959,15 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		margin-top: 0.7rem;
 	}
 
-	.dashboard-profitability-shell.is-loading .dashboard-profit-stat__value:not(.dashboard-profit-value--static) {
+	.dashboard-profitability-shell.is-loading .dashboard-profit-stat__value:not(.dashboard-profit-value--static),
+	.dashboard-profitability-shell.is-loading .dashboard-profit-chip__value {
 		min-height: 0.9rem;
 		min-width: 3.4rem;
 	}
 
 	.dashboard-profitability-shell.is-ready .dashboard-profit-value:not(.dashboard-profit-value--static),
-	.dashboard-profitability-shell.is-ready .dashboard-profit-stat__value:not(.dashboard-profit-value--static) {
+	.dashboard-profitability-shell.is-ready .dashboard-profit-stat__value:not(.dashboard-profit-value--static),
+	.dashboard-profitability-shell.is-ready .dashboard-profit-chip__value {
 		animation: none;
 	}
 
@@ -4455,7 +4011,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	html[data-theme='dark'] .dashboard-profitability-shell.is-loading .dashboard-profit-value:not(.dashboard-profit-value--static),
-	html[data-theme='dark'] .dashboard-profitability-shell.is-loading .dashboard-profit-stat__value:not(.dashboard-profit-value--static) {
+	html[data-theme='dark'] .dashboard-profitability-shell.is-loading .dashboard-profit-stat__value:not(.dashboard-profit-value--static),
+	html[data-theme='dark'] .dashboard-profitability-shell.is-loading .dashboard-profit-chip__value {
 		background: linear-gradient(
 			110deg,
 			rgba(255, 255, 255, 0.05) 0%,
@@ -4571,37 +4128,30 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		display: flex;
 		flex-direction: column;
 		min-width: 0;
-		border: 1px solid color-mix(in srgb, var(--on-surface) 8%, transparent);
-		border-radius: 1.35rem;
-		background: #ffffff;
+		border: 1px solid var(--shell-border);
+		border-radius: 1.25rem;
+		background: var(--surface-bright);
 		padding: 1rem 1.05rem 0.95rem;
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.72),
-			0 1px 0 color-mix(in srgb, var(--on-surface) 4%, transparent),
-			0 12px 28px color-mix(in srgb, #1e293b 6%, transparent);
+		box-shadow: none;
 		overflow: hidden;
+		color: inherit;
+		text-decoration: none;
 		transition:
-			transform 320ms cubic-bezier(0.32, 0.72, 0, 1),
-			border-color 320ms cubic-bezier(0.32, 0.72, 0, 1),
-			box-shadow 320ms cubic-bezier(0.32, 0.72, 0, 1);
+			border-color 260ms cubic-bezier(0.32, 0.72, 0, 1),
+			background-color 260ms cubic-bezier(0.32, 0.72, 0, 1);
+	}
+
+	a.dashboard-profit-card {
+		cursor: pointer;
+	}
+
+	a.dashboard-profit-card:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--profit-accent) 70%, #fff 30%);
+		outline-offset: 2px;
 	}
 
 	.dashboard-profit-card:hover {
-		border-color: color-mix(in srgb, var(--profit-accent) 28%, transparent);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.8),
-			0 1px 0 color-mix(in srgb, var(--profit-accent) 10%, transparent),
-			0 16px 34px color-mix(in srgb, #1e293b 8%, transparent);
-	}
-
-	@container profit (min-width: 70rem) {
-		.dashboard-profit-card:hover {
-			transform: translateY(-2px);
-		}
-	}
-
-	.dashboard-profit-card:active {
-		transform: translateY(0) scale(0.99);
+		border-color: color-mix(in srgb, var(--profit-accent) 32%, var(--shell-border));
 	}
 
 	.dashboard-profit-card__head {
@@ -4626,14 +4176,13 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	html[data-theme='dark'] .dashboard-profit-card {
-		border: 1px solid rgba(255, 255, 255, 0.06);
-		background: color-mix(in srgb, var(--surface-container-high, #1c1d22) 92%, #0e1014 8%);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		box-shadow: none;
 	}
 
 	html[data-theme='dark'] .dashboard-profit-card:hover {
-		border-color: color-mix(in srgb, var(--profit-accent) 32%, rgba(255, 255, 255, 0.08));
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+		border-color: color-mix(in srgb, var(--profit-accent) 36%, var(--shell-border));
 	}
 
 	html[data-theme='dark'] .dashboard-profit-icon {
@@ -4671,10 +4220,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		.dashboard-day-progress__head,
 		.dashboard-day-progress__split,
 		.dashboard-day-progress__metric--empty,
-		.dashboard-day-progress__island,
-		.dashboard-profit-viz__bar,
-		.dashboard-profit-viz__fill,
-		.dashboard-profit-viz__dot {
+		.dashboard-day-progress__island {
 			transition: none;
 			animation: none;
 		}
@@ -4682,11 +4228,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		.dashboard-day-progress__slot.is-done::after {
 			animation: none;
 			transform: scaleX(1);
-		}
-
-		.dashboard-profit-viz__arc {
-			animation: none;
-			stroke-dasharray: var(--ring, 0) 100;
 		}
 
 		.dashboard-profit-card:hover,
@@ -4725,6 +4266,124 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		min-width: 0;
 	}
 
+	.dashboard-profit-card__hero--stack {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.45rem;
+	}
+
+	.dashboard-profit-card--simple {
+		align-items: stretch;
+		justify-content: flex-start;
+		gap: 0.5rem;
+		padding: 1rem 1.05rem 0.95rem;
+		min-height: 0;
+		text-align: left;
+		background: var(--surface-bright);
+	}
+
+	.dashboard-profit-card--simple .dashboard-profit-card__head {
+		display: flex;
+		align-items: center;
+		gap: 0.65rem;
+		min-width: 0;
+	}
+
+	.dashboard-profit-card--simple .dashboard-profit-card__hero {
+		display: none;
+	}
+
+	.dashboard-profit-card--simple .dashboard-profit-icon {
+		width: 2.15rem;
+		height: 2.15rem;
+		border-radius: 0.78rem;
+		box-shadow: none;
+	}
+
+	.dashboard-profit-card--simple .dashboard-profit-icon .material-symbols-rounded {
+		font-size: 1.15rem;
+		line-height: 1;
+		font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+	}
+
+	.dashboard-profit-card__go {
+		margin-left: auto;
+		flex-shrink: 0;
+		font-size: 0.98rem;
+		line-height: 1;
+		color: var(--on-surface-variant);
+		opacity: 0.42;
+		transition: opacity 200ms ease, transform 200ms ease, color 200ms ease;
+	}
+
+	a.dashboard-profit-card--simple:hover .dashboard-profit-card__go {
+		opacity: 0.95;
+		color: var(--profit-accent);
+		transform: translate(1px, -1px);
+	}
+
+	.dashboard-profit-card--simple .dashboard-profit-label {
+		flex: 1 1 auto;
+		min-width: 0;
+		font-size: 0.88rem;
+		font-weight: 750;
+		letter-spacing: -0.02em;
+		line-height: 1.2;
+		color: var(--on-surface);
+	}
+
+	.dashboard-profit-card--simple .dashboard-profit-value {
+		margin: 0;
+		padding-left: 2.8rem;
+		font-size: clamp(1.7rem, 2.4vw, 2.05rem);
+		font-weight: 800;
+		letter-spacing: -0.045em;
+		line-height: 0.95;
+		text-wrap: balance;
+	}
+
+	.dashboard-profit-card--simple .dashboard-profit-caption {
+		margin: 0.08rem 0 0;
+		padding-left: 2.8rem;
+		max-width: none;
+	}
+
+	.dashboard-profit-card--simple.is-alert {
+		border-color: color-mix(in srgb, var(--profit-accent) 38%, transparent);
+	}
+
+	html[data-theme='dark'] .dashboard-profit-card--simple {
+		background: var(--surface-bright);
+	}
+
+	html[data-theme='dark'] .dashboard-profit-card--simple .dashboard-profit-icon {
+		background: color-mix(in srgb, var(--profit-accent) 18%, #1a1c21);
+		box-shadow: none;
+		color: color-mix(in srgb, var(--profit-accent) 72%, white 28%);
+	}
+
+	.dashboard-profit-caption {
+		margin: 0;
+		font-size: 0.75rem;
+		font-weight: 650;
+		letter-spacing: -0.01em;
+		color: color-mix(in srgb, var(--on-surface-variant) 88%, var(--on-surface) 12%);
+	}
+
+	.dashboard-profit-hero-copy {
+		display: flex;
+		align-items: baseline;
+		gap: 0.38rem;
+		min-width: 0;
+	}
+
+	.dashboard-profit-unit {
+		font-size: 0.78rem;
+		font-weight: 650;
+		letter-spacing: -0.01em;
+		color: color-mix(in srgb, var(--on-surface-variant) 80%, var(--on-surface) 20%);
+	}
+
 	.dashboard-profit-value {
 		margin: 0;
 		min-width: 0;
@@ -4736,127 +4395,161 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		font-variant-numeric: tabular-nums lining-nums;
 	}
 
+	.dashboard-profit-pair {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		gap: 0.75rem;
+		width: 100%;
+		min-width: 0;
+	}
+
+	.dashboard-profit-pair__item {
+		min-width: 0;
+	}
+
+	.dashboard-profit-pair .dashboard-profit-value {
+		font-size: 1.22rem;
+	}
+
+	.dashboard-profit-pair__label {
+		display: block;
+		margin-top: 0.22rem;
+		font-size: 0.68rem;
+		font-weight: 650;
+		letter-spacing: -0.01em;
+		color: color-mix(in srgb, var(--on-surface-variant) 80%, var(--on-surface) 20%);
+	}
+
+	.dashboard-profit-hint {
+		margin: 0;
+		font-size: 0.72rem;
+		font-weight: 700;
+		letter-spacing: -0.01em;
+		color: var(--profit-accent);
+	}
+
+	.dashboard-profit-compare {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		justify-content: flex-end;
+		gap: 0.12rem;
+		min-width: 0;
+		text-align: right;
+	}
+
+	.dashboard-profit-compare[hidden] {
+		display: none;
+	}
+
+	.dashboard-profit-compare__delta {
+		margin: 0;
+		display: inline-flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 0.08rem;
+		font-size: 0.92rem;
+		font-weight: 800;
+		letter-spacing: -0.03em;
+		color: color-mix(in srgb, var(--on-surface-variant) 78%, #94a3b8 22%);
+		font-variant-numeric: tabular-nums lining-nums;
+	}
+
+	.dashboard-profit-compare__delta.is-up {
+		color: #15803d;
+	}
+
+	.dashboard-profit-compare__delta.is-down {
+		color: #b42318;
+	}
+
+	.dashboard-profit-compare__caption {
+		margin: 0;
+		max-width: 8.4rem;
+		font-size: 0.64rem;
+		font-weight: 650;
+		line-height: 1.25;
+		color: color-mix(in srgb, var(--on-surface-variant) 80%, var(--on-surface) 20%);
+	}
+
+	.dashboard-profit-empty {
+		margin: 0;
+		max-width: 7.4rem;
+		font-size: 0.72rem;
+		font-weight: 650;
+		line-height: 1.3;
+		text-align: right;
+		color: color-mix(in srgb, var(--on-surface-variant) 80%, var(--on-surface) 20%);
+	}
+
+	.dashboard-profit-chips {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 0.4rem;
+		margin: 0.15rem 0 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.dashboard-profit-chip {
+		display: flex;
+		flex-direction: column;
+		gap: 0.12rem;
+		min-width: 0;
+		padding: 0.42rem 0.45rem 0.4rem;
+		border-radius: 0.7rem;
+		background: color-mix(in srgb, var(--profit-accent) 10%, transparent);
+	}
+
+	.dashboard-profit-chip__value {
+		font-size: 0.92rem;
+		font-weight: 800;
+		letter-spacing: -0.03em;
+		color: var(--on-surface);
+		font-variant-numeric: tabular-nums lining-nums;
+	}
+
+	.dashboard-profit-chip__label {
+		font-size: 0.62rem;
+		font-weight: 650;
+		line-height: 1.25;
+		color: color-mix(in srgb, var(--on-surface-variant) 80%, var(--on-surface) 20%);
+	}
+
 	.dashboard-profit-viz {
 		flex: 0 0 auto;
 		display: block;
 	}
 
-	.dashboard-profit-viz--bars {
-		display: flex;
-		align-items: stretch;
-		gap: 0.28rem;
-		width: 2.15rem;
-		height: 2.55rem;
-	}
-
-	.dashboard-profit-viz__col {
-		display: flex;
-		align-items: flex-end;
-		flex: 1 1 0;
-		min-width: 0;
-		border-radius: 999px;
-		background: color-mix(in srgb, var(--profit-accent) 12%, transparent);
-		overflow: hidden;
-	}
-
-	.dashboard-profit-viz__bar {
-		display: block;
-		width: 100%;
-		height: 100%;
-		border-radius: inherit;
-		background: color-mix(in srgb, var(--profit-accent) 42%, #94a3b8 58%);
-		transform: scaleY(0.1);
-		transform-origin: bottom center;
-		transition: transform 720ms cubic-bezier(0.32, 0.72, 0, 1);
-	}
-
-	.dashboard-profit-viz__bar.is-now {
-		background: var(--profit-accent);
-	}
-
-	.dashboard-profit-viz--ring {
-		width: 2.55rem;
-		height: 2.55rem;
-		transform: rotate(-90deg);
-	}
-
-	.dashboard-profit-viz__track,
-	.dashboard-profit-viz__arc {
-		fill: none;
-		stroke-width: 4.4;
-		stroke-linecap: round;
-	}
-
-	.dashboard-profit-viz__track {
-		stroke: color-mix(in srgb, var(--profit-accent) 16%, transparent);
-	}
-
-	.dashboard-profit-viz__arc {
-		stroke: var(--profit-accent);
-		stroke-dasharray: 0 100;
-		animation: dashboard-profit-ring-in 800ms cubic-bezier(0.32, 0.72, 0, 1) 120ms forwards;
-	}
-
-	.dashboard-profitability-shell.is-ready .dashboard-profit-viz__arc {
-		stroke-dasharray: var(--ring, 0) 100;
-	}
-
-	@keyframes dashboard-profit-ring-in {
-		to {
-			stroke-dasharray: var(--ring, 0) 100;
-		}
-	}
-
-	.dashboard-profit-viz--pipe {
+	.dashboard-profit-viz--split {
 		display: flex;
 		align-items: center;
-		width: 4.4rem;
+		width: 7.2rem;
 		height: 2.55rem;
 	}
 
-	.dashboard-profit-viz__pipe {
-		position: relative;
-		display: block;
+	.dashboard-profit-split {
+		display: flex;
 		width: 100%;
 		height: 0.55rem;
 		overflow: hidden;
+		gap: 2px;
 		border-radius: 999px;
 		background: color-mix(in srgb, var(--profit-accent) 16%, transparent);
 	}
 
-	.dashboard-profit-viz__fill {
-		position: absolute;
-		inset: 0;
-		border-radius: inherit;
-		background: var(--profit-accent);
-		transform: scaleX(0.08);
-		transform-origin: left center;
-		transition: transform 720ms cubic-bezier(0.32, 0.72, 0, 1);
-	}
-
-	.dashboard-profit-viz--dots {
-		display: grid;
-		grid-template-columns: repeat(4, 0.42rem);
-		grid-template-rows: repeat(2, 0.42rem);
-		gap: 0.28rem;
-		align-content: center;
-		height: 2.55rem;
-	}
-
-	.dashboard-profit-viz__dot {
-		width: 0.42rem;
-		height: 0.42rem;
+	.dashboard-profit-split__seg {
+		min-width: 0;
+		height: 100%;
 		border-radius: 999px;
-		background: color-mix(in srgb, var(--profit-accent) 18%, transparent);
-		transform: scale(0.86);
-		transition:
-			background-color 420ms cubic-bezier(0.32, 0.72, 0, 1),
-			transform 420ms cubic-bezier(0.32, 0.72, 0, 1);
 	}
 
-	.dashboard-profit-viz__dot.is-filled {
+	.dashboard-profit-split__seg.is-done {
 		background: var(--profit-accent);
-		transform: scale(1);
+	}
+
+	.dashboard-profit-split__seg.is-left {
+		background: color-mix(in srgb, var(--profit-accent) 46%, #94a3b8 54%);
 	}
 
 	.dashboard-profit-caption {
@@ -4874,21 +4567,32 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		color: color-mix(in srgb, var(--on-surface-variant) 42%, #e8eaed 58%);
 	}
 
-	.dashboard-profitability-shell.is-loading .dashboard-profit-viz {
+	.dashboard-profitability-shell.is-loading .dashboard-profit-viz:not(.dashboard-profit-viz--split) {
 		opacity: 0.35;
 	}
 
-	html[data-theme='dark'] .dashboard-profit-viz__col,
-	html[data-theme='dark'] .dashboard-profit-viz__pipe {
+	html[data-theme='dark'] .dashboard-profit-unit,
+	html[data-theme='dark'] .dashboard-profit-pair__label,
+	html[data-theme='dark'] .dashboard-profit-compare__caption,
+	html[data-theme='dark'] .dashboard-profit-empty,
+	html[data-theme='dark'] .dashboard-profit-chip__label {
+		color: color-mix(in srgb, var(--on-surface-variant) 42%, #e8eaed 58%);
+	}
+
+	html[data-theme='dark'] .dashboard-profit-compare__delta.is-up {
+		color: #86efac;
+	}
+
+	html[data-theme='dark'] .dashboard-profit-compare__delta.is-down {
+		color: #f5a8a2;
+	}
+
+	html[data-theme='dark'] .dashboard-profit-chip {
+		background: color-mix(in srgb, var(--profit-accent) 14%, transparent);
+	}
+
+	html[data-theme='dark'] .dashboard-profit-split {
 		background: color-mix(in srgb, var(--profit-accent) 22%, transparent);
-	}
-
-	html[data-theme='dark'] .dashboard-profit-viz__track {
-		stroke: color-mix(in srgb, var(--profit-accent) 28%, transparent);
-	}
-
-	html[data-theme='dark'] .dashboard-profit-viz__dot:not(.is-filled) {
-		background: color-mix(in srgb, var(--profit-accent) 28%, transparent);
 	}
 
 	.dashboard-profit-stats {
@@ -5008,29 +4712,26 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		max-width: 100%;
 		padding: 0.3rem;
 		border-radius: 1.15rem;
-		background: color-mix(in srgb, var(--on-surface) 4%, #f4f6f8);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+		background: var(--surface-container-high);
+		box-shadow: none;
 	}
 
 	html[data-theme='dark'] .dashboard-report-list {
-		background: color-mix(in srgb, #121318 78%, #000 22%);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+		background: var(--surface-container-high);
+		box-shadow: none;
 	}
 
 	.dashboard-report-shell {
-		border: 1px solid color-mix(in srgb, var(--on-surface) 8%, transparent);
-		background: #ffffff;
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.72),
-			0 1px 0 color-mix(in srgb, var(--on-surface) 4%, transparent),
-			0 12px 28px color-mix(in srgb, #1e293b 6%, transparent);
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		box-shadow: none;
 		scroll-margin-top: 0.75rem;
 	}
 
 	html[data-theme='dark'] .dashboard-report-shell {
-		background: color-mix(in srgb, var(--surface-container-high, #1c1d22) 92%, #0e1014 8%);
-		border: 1px solid rgba(255, 255, 255, 0.06);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+		background: var(--surface-bright);
+		border: 1px solid var(--shell-border);
+		box-shadow: none;
 	}
 
 	.dashboard-report-card {
@@ -5284,8 +4985,9 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	@media (max-width: 768px) {
 		.dashboard-greeting__title {
-			font-size: clamp(2.2rem, 8.5vw, 2.75rem);
+			font-size: clamp(2.55rem, 9.6vw, 3.2rem);
 			line-height: 1.08;
+			gap: 0.08em;
 		}
 
 		.dashboard-greeting__sub {
@@ -5338,8 +5040,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			word-break: break-word;
 		}
 
-		.dashboard-profit-viz--pipe {
-			width: 3.6rem;
+		.dashboard-profit-viz--split {
+			width: 6.2rem;
 		}
 
 		.dashboard-profit-label {
@@ -5462,6 +5164,11 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			padding: 0.75rem 0.85rem 0.35rem;
 		}
 
+		.dashboard-profit-card.dashboard-profit-card--simple {
+			padding: 0.88rem 0.9rem 0.82rem;
+			min-height: 0;
+		}
+
 		.dashboard-day-progress__inner {
 			padding: 0.7rem 0.72rem;
 		}
@@ -5475,14 +5182,14 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		position: relative;
 		overflow: hidden;
 		border-radius: 1.25rem;
-		border: 1px solid rgba(148, 163, 184, 0.24);
-		background: #ffffff;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
 		box-shadow: none;
 	}
 
 	html[data-theme='dark'] .m3-card {
-		border: 1px solid rgba(148, 163, 184, 0.12);
-		background: #121214;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
 		box-shadow: none;
 	}
 
@@ -5578,11 +5285,11 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	:global(.team-avatar--placeholder) {
-		background: linear-gradient(120deg, #d9e7f8, #b9cde8);
+		background: color-mix(in srgb, var(--primary) 14%, var(--surface-container-high));
 	}
 
 	html[data-theme='dark'] :global(.team-avatar--placeholder) {
-		background: linear-gradient(120deg, #27272a, #3f3f46);
+		background: var(--surface-container-high);
 	}
 
 	:global(.team-avatar--more) {
@@ -5625,25 +5332,13 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			animation: none;
 		}
 
-		.dashboard-ai-card.is-generating .dashboard-ai-shimmer-top::after,
-		.dashboard-ai-card.is-generating .dashboard-ai-orb,
-		.dashboard-ai-card.is-generating .dashboard-ai-sparkle,
-		.dashboard-ai-card.is-generating,
-		.dashboard-ai-loading-icon,
-		.dashboard-ai-card.is-generating .dashboard-ai-skeleton-line::after,
 		.dashboard-profitability-shell.is-loading .dashboard-profit-value:not(.dashboard-profit-value--static),
 		.dashboard-profitability-shell.is-loading .dashboard-profit-stat__value:not(.dashboard-profit-value--static),
+		.dashboard-profitability-shell.is-loading .dashboard-profit-chip__value,
 		.dashboard-profitability-shell.is-ready .dashboard-profit-value:not(.dashboard-profit-value--static),
-		.dashboard-profitability-shell.is-ready .dashboard-profit-stat__value:not(.dashboard-profit-value--static) {
+		.dashboard-profitability-shell.is-ready .dashboard-profit-stat__value:not(.dashboard-profit-value--static),
+		.dashboard-profitability-shell.is-ready .dashboard-profit-chip__value {
 			animation: none;
-		}
-
-		.dashboard-ai-card.is-generating .dashboard-ai-shimmer-top::after {
-			transform: translateX(0);
-		}
-
-		.dashboard-ai-card.is-generating .dashboard-ai-orb {
-			opacity: 0.35;
 		}
 	}
 
@@ -5651,14 +5346,9 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	:global(html[data-page-hidden] .dashboard-ai-strip.is-generating .dashboard-ai-strip__icon),
 	:global(html[data-page-hidden] .dashboard-ai-strip.is-generating .dashboard-ai-strip__badge),
 	:global(html[data-page-hidden] .dashboard-ai-strip.is-generating .dashboard-ai-strip__skel-line::after),
-	html[data-page-hidden] .dashboard-ai-card.is-generating .dashboard-ai-shimmer-top::after,
-	html[data-page-hidden] .dashboard-ai-card.is-generating .dashboard-ai-orb,
-	html[data-page-hidden] .dashboard-ai-card.is-generating .dashboard-ai-sparkle,
-	html[data-page-hidden] .dashboard-ai-card.is-generating,
-	html[data-page-hidden] .dashboard-ai-loading-icon,
-	html[data-page-hidden] .dashboard-ai-card.is-generating .dashboard-ai-skeleton-line::after,
 	html[data-page-hidden] .dashboard-profitability-shell.is-loading .dashboard-profit-value:not(.dashboard-profit-value--static),
-	html[data-page-hidden] .dashboard-profitability-shell.is-loading .dashboard-profit-stat__value:not(.dashboard-profit-value--static) {
+	html[data-page-hidden] .dashboard-profitability-shell.is-loading .dashboard-profit-stat__value:not(.dashboard-profit-value--static),
+	html[data-page-hidden] .dashboard-profitability-shell.is-loading .dashboard-profit-chip__value {
 		animation-play-state: paused !important;
 	}
 </style>

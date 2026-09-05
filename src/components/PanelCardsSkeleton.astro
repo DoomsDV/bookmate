@@ -23,7 +23,11 @@ const placeholders = Array.from({ length: count }, (_, i) => i);
 		<div class="panel-skeleton-line h-11 w-full sm:w-40 rounded-full"></div>
 	</header>
 
-	<div class:list={['material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3', wide && 'xl:grid-cols-4']}>
+	<div class:list={[
+		'material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8',
+		roster ? 'xl:grid-cols-3' : 'lg:grid-cols-3',
+		wide && 'xl:grid-cols-4',
+	]}>
 		{
 			placeholders.map(() =>
 				roster ? (

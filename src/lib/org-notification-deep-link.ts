@@ -2,8 +2,25 @@ const ORG_MEMBER_QUERY_KEY = 'org_member_id';
 export const PENDING_ORG_MEMBER_STORAGE_KEY = 'hasel:pending-org-member-id';
 export const PUSH_NAVIGATE_MESSAGE_TYPE = 'BOOKMATE_PUSH_NAVIGATE';
 
-const sanitizeRedirectPath = (value: string) => {
+const normalizePushTargetPath = (value: string) => {
 	const redirectTo = String(value || '').trim();
+	if (!redirectTo) return '';
+
+	if (redirectTo.startsWith('/') && !redirectTo.startsWith('//')) {
+		return redirectTo;
+	}
+
+	try {
+		const parsed = new URL(redirectTo, window.location.origin);
+		if (parsed.origin !== window.location.origin) return '';
+		return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+	} catch {
+		return '';
+	}
+};
+
+const sanitizeRedirectPath = (value: string) => {
+	const redirectTo = normalizePushTargetPath(value);
 	if (!redirectTo || !redirectTo.startsWith('/') || redirectTo.startsWith('//')) {
 		return '';
 	}

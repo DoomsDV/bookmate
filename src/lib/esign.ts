@@ -76,6 +76,15 @@ export interface CreateEsignDocumentPayload {
 	items: EsignItem[];
 	cdcRef?: string;
 	motivo?: number;
+	/** iTipTra — 2 = Prestación de servicios */
+	tipoTransaccion?: number;
+	desTipoTransaccion?: string;
+	/** iIndPres — 3 = operación electrónica / internet */
+	indPres?: number;
+	desIndPres?: string;
+	/** iTiPago en contado — 3 = tarjeta de crédito */
+	medioPago?: number;
+	desMedioPago?: string;
 }
 
 export interface EsignDocumentResult {
@@ -100,6 +109,29 @@ interface EsignEnvelope<T> {
 	data: T | null;
 	error?: { code?: string; message?: string } | null;
 }
+
+interface OrdsInternalEnvelope<T> {
+	status: string;
+	data?: T;
+	message?: unknown;
+	code?: unknown;
+}
+
+const isOrdsInternalEnvelope = (payload: unknown): payload is OrdsInternalEnvelope<unknown> =>
+	typeof payload === 'object' &&
+	payload !== null &&
+	!Array.isArray(payload) &&
+	typeof (payload as Record<string, unknown>).status === 'string';
+
+const ordsMessage = (payload: OrdsInternalEnvelope<unknown> | null, fallback: string) => {
+	const message = payload?.message;
+	return typeof message === 'string' && message.trim() ? message.trim() : fallback;
+};
+
+const ordsCode = (payload: OrdsInternalEnvelope<unknown> | null) => {
+	const code = payload?.code;
+	return typeof code === 'string' && code.trim() ? code.trim() : undefined;
+};
 
 const requireApiKey = () => {
 	if (!isEsignConfigured()) {
@@ -128,17 +160,23 @@ const parseEnvelope = async <T>(response: Response, fallbackMessage: string): Pr
 };
 
 export const createEsignDocument = async (
-	payload: CreateEsignDocumentPayload
+	payload: CreateEsignDocumentPayload,
+	options?: { idempotencyKey?: string }
 ): Promise<EsignDocumentResult> => {
 	const apiKey = requireApiKey();
+	const headers: Record<string, string> = {
+		'Content-Type': 'application/json',
+		Accept: 'application/json',
+		Authorization: `Bearer ${apiKey}`,
+	};
+	const idem = String(options?.idempotencyKey || '').trim();
+	if (idem) {
+		headers['Idempotency-Key'] = idem;
+	}
 
 	const response = await fetch(`${ESIGN_API_BASE_URL}/v1/documents`, {
 		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-			Accept: 'application/json',
-			Authorization: `Bearer ${apiKey}`,
-		},
+		headers,
 		body: JSON.stringify(payload),
 	});
 
@@ -168,23 +206,44 @@ export const callEsignInternalOrds = async <T = unknown>(
 		body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
 	});
 
-	let payload: any = null;
+	let payload: unknown = null;
 	try {
-		payload = await response.json();
+		payload = (await response.json()) as unknown;
 	} catch {
 		payload = null;
 	}
+	const envelope = isOrdsInternalEnvelope(payload) ? payload : null;
 
 	if (!response.ok) {
 		throw new EsignApiError(
-			String(payload?.message || `ORDS respondió HTTP ${response.status} en ${path}.`),
+			ordsMessage(envelope, `ORDS respondió HTTP ${response.status} en ${path}.`),
 			response.status,
-			'ORDS_INTERNAL_ERROR',
+			ordsCode(envelope) || 'ORDS_INTERNAL_ERROR',
 			payload
 		);
 	}
 
-	return (payload?.data ?? payload) as T;
+	if (!envelope) {
+		throw new EsignApiError(
+			`ORDS devolvió una envoltura inválida en ${path}.`,
+			502,
+			'ORDS_INTERNAL_INVALID_ENVELOPE',
+			payload
+		);
+	}
+
+	if (envelope.status !== 'success') {
+		const code = ordsCode(envelope);
+		const message = ordsMessage(envelope, 'Sin detalle.');
+		throw new EsignApiError(
+			`ORDS devolvió status "${envelope.status}"${code ? ` (${code})` : ''} en ${path}: ${message}`,
+			502,
+			code || 'ORDS_INTERNAL_LOGICAL_ERROR',
+			payload
+		);
+	}
+
+	return envelope.data as T;
 };
 
 export const getEsignKudeStatus = async (cdc: string): Promise<EsignKudeStatus> => {
@@ -203,4 +262,122 @@ export const getEsignKudeStatus = async (cdc: string): Promise<EsignKudeStatus> 
 	});
 
 	return parseEnvelope<EsignKudeStatus>(response, 'No fue posible consultar el KuDE.');
+};
+
+/** Límite de descarga del XML firmado (bytes). DE típico << 1 MiB. */
+export const ESIGN_XML_MAX_BYTES = 2 * 1024 * 1024;
+/** Timeout de descarga XML (ms). */
+export const ESIGN_XML_TIMEOUT_MS = 30_000;
+
+export interface EsignDocumentXml {
+	/** Bytes canónicos del XML firmado (UTF-8). */
+	bytes: Uint8Array;
+	/** Texto UTF-8 del XML (mismo contenido que bytes). */
+	text: string;
+	sha256: string;
+	size: number;
+	mime: string;
+}
+
+const hashSha256Hex = async (bytes: Uint8Array): Promise<string> => {
+	const copy = new Uint8Array(bytes.byteLength);
+	copy.set(bytes);
+	const digest = await crypto.subtle.digest('SHA-256', copy as BufferSource);
+	return Array.from(new Uint8Array(digest))
+		.map((b) => b.toString(16).padStart(2, '0'))
+		.join('');
+};
+
+/**
+ * GET /v1/documents/{cdc}/xml — XML firmado canónico (API key del tenant).
+ * 404 si no hay; 401/403 si auth/tenant incorrecto.
+ */
+export const getEsignDocumentXml = async (
+	cdc: string,
+	options?: { maxBytes?: number; timeoutMs?: number }
+): Promise<EsignDocumentXml> => {
+	const apiKey = requireApiKey();
+	const cleanCdc = String(cdc || '').trim();
+	if (!cleanCdc) {
+		throw new EsignApiError('Falta el CDC para descargar el XML.', 400, 'MISSING_CDC');
+	}
+
+	const maxBytes = options?.maxBytes ?? ESIGN_XML_MAX_BYTES;
+	const timeoutMs = options?.timeoutMs ?? ESIGN_XML_TIMEOUT_MS;
+	const controller = new AbortController();
+	const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+	let response: Response;
+	try {
+		response = await fetch(`${ESIGN_API_BASE_URL}/v1/documents/${encodeURIComponent(cleanCdc)}/xml`, {
+			method: 'GET',
+			headers: {
+				Accept: 'application/xml, text/xml, */*',
+				Authorization: `Bearer ${apiKey}`,
+			},
+			signal: controller.signal,
+		});
+	} catch (error) {
+		if (error instanceof Error && error.name === 'AbortError') {
+			throw new EsignApiError(
+				`Timeout al descargar XML (${timeoutMs}ms).`,
+				504,
+				'ESIGN_XML_TIMEOUT'
+			);
+		}
+		throw new EsignApiError(
+			error instanceof Error ? error.message : 'Error de red al descargar XML.',
+			502,
+			'ESIGN_XML_NETWORK'
+		);
+	} finally {
+		clearTimeout(timer);
+	}
+
+	if (response.status === 401 || response.status === 403) {
+		throw new EsignApiError(
+			'No autorizado para descargar el XML (API key / tenant).',
+			response.status,
+			'ESIGN_XML_FORBIDDEN'
+		);
+	}
+	if (response.status === 404) {
+		throw new EsignApiError('XML no disponible para este CDC.', 404, 'ESIGN_XML_NOT_FOUND');
+	}
+	if (!response.ok) {
+		throw new EsignApiError(
+			`Firmador respondió HTTP ${response.status} al pedir XML.`,
+			response.status,
+			'ESIGN_XML_HTTP'
+		);
+	}
+
+	const contentLength = Number(response.headers.get('content-length') || 0);
+	if (contentLength > maxBytes) {
+		throw new EsignApiError(
+			`XML demasiado grande (${contentLength} > ${maxBytes} bytes).`,
+			413,
+			'ESIGN_XML_TOO_LARGE'
+		);
+	}
+
+	const buffer = new Uint8Array(await response.arrayBuffer());
+	if (buffer.byteLength === 0) {
+		throw new EsignApiError('XML vacío.', 502, 'ESIGN_XML_EMPTY');
+	}
+	if (buffer.byteLength > maxBytes) {
+		throw new EsignApiError(
+			`XML demasiado grande (${buffer.byteLength} > ${maxBytes} bytes).`,
+			413,
+			'ESIGN_XML_TOO_LARGE'
+		);
+	}
+
+	const mimeHeader = String(response.headers.get('content-type') || '').trim();
+	const mime =
+		mimeHeader || 'application/xml; charset=UTF-8';
+	const text = new TextDecoder('utf-8').decode(buffer);
+	const sha256 = await hashSha256Hex(buffer);
+
+	return { bytes: buffer, text, sha256, size: buffer.byteLength, mime };
 };

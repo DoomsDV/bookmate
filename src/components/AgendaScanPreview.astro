@@ -14,13 +14,15 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 						<span class="agenda-preview-mark" aria-hidden="true">
 							<span class="material-symbols-rounded">calendar_add_on</span>
 						</span>
-						<div>
-							<h2 class="agenda-preview-title">
-								Reservas detectadas (<span data-agenda-preview-count>0</span>)
-							</h2>
+						<div class="agenda-preview-heading__copy">
+							<h2 class="agenda-preview-title">Reservas detectadas</h2>
 							<p class="agenda-preview-subtitle">Revisá y corregí antes de guardar</p>
 						</div>
 					</div>
+					<p class="agenda-preview-pending" aria-live="polite">
+						<span data-agenda-preview-count>0</span>
+						<span data-agenda-preview-pending-label>pendientes</span>
+					</p>
 					<button
 						type="button"
 						class="agenda-preview-close"
@@ -156,6 +158,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 	}
 
 	.agenda-preview-shell {
+		--agenda-ease: cubic-bezier(0.32, 0.72, 0, 1);
 		position: fixed;
 		inset: 0;
 		z-index: 10000;
@@ -381,7 +384,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		}
 
 		.agenda-preview-tablehead {
-			padding-left: calc(1.75rem + 3px + 0.85rem);
+			padding-left: 1.75rem;
 			padding-right: 1.75rem;
 		}
 
@@ -416,6 +419,23 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		align-items: center;
 		gap: 0.7rem;
 		min-width: 0;
+		flex: 1;
+	}
+
+	.agenda-preview-heading__copy {
+		min-width: 0;
+	}
+
+	.agenda-preview-pending {
+		margin: 0;
+		margin-left: auto;
+		flex-shrink: 0;
+		font-size: 0.78rem;
+		font-weight: 650;
+		letter-spacing: 0.01em;
+		color: color-mix(in srgb, var(--on-surface-variant) 88%, transparent);
+		white-space: nowrap;
+		transition: color 520ms cubic-bezier(0.32, 0.72, 0, 1);
 	}
 
 	.agenda-preview-mark {
@@ -465,6 +485,22 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		color: var(--on-surface-variant);
 		cursor: pointer;
 		flex-shrink: 0;
+		transition: background 220ms var(--agenda-ease), color 220ms var(--agenda-ease), border-color 220ms var(--agenda-ease), transform 220ms var(--agenda-ease);
+	}
+
+	.agenda-preview-close:hover {
+		background: color-mix(in srgb, var(--surface-variant) 92%, transparent);
+		color: var(--on-surface);
+		border-color: color-mix(in srgb, var(--on-surface) 16%, transparent);
+	}
+
+	.agenda-preview-close:active {
+		transform: scale(0.94);
+	}
+
+	.agenda-preview-close:focus-visible {
+		outline: none;
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 28%, transparent);
 	}
 
 	.agenda-preview-defaults {
@@ -645,7 +681,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		text-overflow: ellipsis;
 		white-space: nowrap;
 		overflow: hidden;
-		transition: border-color 150ms ease, box-shadow 150ms ease;
+		transition: border-color 240ms var(--agenda-ease), box-shadow 240ms var(--agenda-ease), background-color 240ms var(--agenda-ease);
 	}
 
 	.agenda-preview-defaults__field input:hover,
@@ -724,7 +760,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 	}
 
 	.agenda-preview-image-pane.is-visible {
-		display: flex;
+		display: none;
 	}
 
 	.agenda-preview-image-toolbar {
@@ -752,7 +788,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		user-select: none;
 		-webkit-user-select: none;
 		-webkit-tap-highlight-color: transparent;
-		transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+		transition: background 220ms var(--agenda-ease), color 220ms var(--agenda-ease), border-color 220ms var(--agenda-ease), transform 220ms var(--agenda-ease);
 	}
 
 	.agenda-preview-image-toolbar button:hover {
@@ -796,7 +832,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		object-fit: contain;
 		object-position: center;
 		transform-origin: center center;
-		transition: transform 120ms ease;
+		transition: transform 220ms var(--agenda-ease);
 		border-radius: 0.75rem;
 		box-shadow: 0 10px 28px color-mix(in srgb, #000 22%, transparent);
 		pointer-events: none;
@@ -822,7 +858,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		flex-shrink: 0;
 		align-items: center;
 		gap: 0.65rem;
-		padding: 0.4rem 1rem 0.35rem calc(1rem + 3px + 0.85rem);
+		padding: 0.4rem 1rem 0.35rem 1rem;
 		border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 70%, transparent);
 		font-size: 0.62rem;
 		font-weight: 800;
@@ -859,15 +895,33 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 			'pro pro';
 		gap: 0.55rem 0.5rem;
 		align-items: start;
-		padding: 0.85rem 0 0.9rem 0.9rem;
+		padding: 0.95rem 0.15rem 1rem;
 		margin-left: 0;
 		border: 0;
-		border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 72%, transparent);
-		border-left: 3px solid var(--agenda-rail);
+		border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 58%, transparent);
 		border-radius: 0;
 		background: transparent;
 		box-shadow: none;
-		transition: background-color 160ms ease, border-left-color 160ms ease;
+		transition: background-color 520ms cubic-bezier(0.32, 0.72, 0, 1);
+		animation: agenda-preview-row-in 640ms cubic-bezier(0.32, 0.72, 0, 1) both;
+	}
+
+	.agenda-preview-row:nth-child(1) { animation-delay: 30ms; }
+	.agenda-preview-row:nth-child(2) { animation-delay: 70ms; }
+	.agenda-preview-row:nth-child(3) { animation-delay: 110ms; }
+	.agenda-preview-row:nth-child(4) { animation-delay: 150ms; }
+	.agenda-preview-row:nth-child(5) { animation-delay: 190ms; }
+	.agenda-preview-row:nth-child(6) { animation-delay: 230ms; }
+
+	@keyframes agenda-preview-row-in {
+		from {
+			opacity: 0;
+			transform: translateY(10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
 	}
 
 	.agenda-preview-row:last-child {
@@ -879,10 +933,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		box-shadow: none;
 	}
 
-	.agenda-preview-row.is-incomplete {
-		--agenda-rail: #f59e0b;
-		background: color-mix(in srgb, var(--surface-variant) 14%, transparent);
-	}
+	/* .agenda-preview-row.is-incomplete removido para mantener el fondo limpio */
 
 	.agenda-preview-row__client {
 		grid-area: client;
@@ -900,6 +951,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: 0.45rem 0.5rem;
 		min-width: 0;
+		align-items: stretch;
 	}
 
 	.agenda-preview-row__field[data-field='service'] {
@@ -963,7 +1015,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		box-sizing: border-box;
 		appearance: none;
 		-webkit-appearance: none;
-		transition: border-color 140ms ease, color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+		transition: border-color 220ms var(--agenda-ease), color 220ms var(--agenda-ease), background-color 220ms var(--agenda-ease), box-shadow 220ms var(--agenda-ease);
 	}
 
 	.agenda-preview-row__lead-name:hover {
@@ -976,6 +1028,8 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		outline: none;
 		padding: 0.15rem 0.3rem;
 		border-bottom-color: transparent;
+		border-radius: 0.4rem;
+		background: color-mix(in srgb, var(--surface-variant) 36%, transparent);
 		box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 28%, transparent);
 	}
 
@@ -1006,14 +1060,6 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		color: color-mix(in srgb, var(--on-surface-variant) 90%, transparent);
 	}
 
-	.agenda-preview-row__datetime .agenda-preview-row__control {
-		border-bottom: 0;
-		border-radius: 0.55rem;
-		padding: 0.35rem 0.65rem;
-		background: color-mix(in srgb, var(--surface-variant) 48%, var(--surface-bright));
-		box-shadow: none;
-	}
-
 	.agenda-preview-row__control {
 		display: flex;
 		flex-direction: row;
@@ -1028,7 +1074,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		background: transparent;
 		box-sizing: border-box;
 		overflow: visible;
-		transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+		transition: border-color 220ms var(--agenda-ease), background-color 220ms var(--agenda-ease), box-shadow 220ms var(--agenda-ease);
 	}
 
 	.agenda-preview-row__icon {
@@ -1094,16 +1140,14 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		color: var(--on-surface);
 	}
 
-	.agenda-preview-row__control input[type='date'],
-	.agenda-preview-row__control input[type='time'] {
+	.agenda-preview-row__control input[type='date'].agenda-preview-dateinput,
+	.agenda-preview-row__control input[type='time'].agenda-preview-timeinput {
 		display: block;
-		-webkit-appearance: none;
-		appearance: none;
 		font-variant-numeric: tabular-nums;
 	}
 
-	.agenda-preview-row__control input[type='date']::-webkit-datetime-edit,
-	.agenda-preview-row__control input[type='time']::-webkit-datetime-edit {
+	.agenda-preview-row__control input[type='date'].agenda-preview-dateinput::-webkit-datetime-edit,
+	.agenda-preview-row__control input[type='time'].agenda-preview-timeinput::-webkit-datetime-edit {
 		display: inline-flex;
 		align-items: center;
 		padding: 0;
@@ -1111,9 +1155,8 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		line-height: 1.4;
 	}
 
-	/* Oculta el indicador nativo: ya hay ícono a la izquierda y el check a la derecha. */
-	.agenda-preview-row__control input[type='date']::-webkit-calendar-picker-indicator,
-	.agenda-preview-row__control input[type='time']::-webkit-calendar-picker-indicator {
+	.agenda-preview-row__field--time .agenda-preview-row__icon,
+	.agenda-preview-row__field--date .agenda-preview-row__icon {
 		display: none;
 	}
 
@@ -1289,7 +1332,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		color: #f87171;
 		cursor: pointer;
 		z-index: 1;
-		transition: background 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
+		transition: background 220ms var(--agenda-ease), border-color 220ms var(--agenda-ease), color 220ms var(--agenda-ease), box-shadow 220ms var(--agenda-ease), transform 220ms var(--agenda-ease);
 	}
 
 	.agenda-preview-row__delete .material-symbols-rounded {
@@ -1301,6 +1344,10 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		background: color-mix(in srgb, #ef4444 14%, transparent);
 		border-color: color-mix(in srgb, #ef4444 62%, transparent);
 		color: #ef4444;
+	}
+
+	.agenda-preview-row__delete:active {
+		transform: scale(0.96);
 	}
 
 	.agenda-preview-row__delete:focus-visible {
@@ -1324,11 +1371,16 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		cursor: pointer;
 		box-sizing: border-box;
 		flex-shrink: 0;
-		transition: background 140ms ease;
+		transition: background 220ms var(--agenda-ease), border-color 220ms var(--agenda-ease), transform 220ms var(--agenda-ease);
 	}
 
 	.agenda-preview-addrow:hover {
 		background: color-mix(in srgb, var(--primary) 12%, transparent);
+		border-color: color-mix(in srgb, var(--primary) 55%, var(--shell-border));
+	}
+
+	.agenda-preview-addrow:active {
+		transform: scale(0.98);
 	}
 
 	.agenda-preview-error {
@@ -1374,18 +1426,76 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		cursor: pointer;
 	}
 
+	.agenda-preview-save {
+		transition: background-color 240ms var(--agenda-ease), transform 240ms var(--agenda-ease), box-shadow 240ms var(--agenda-ease);
+	}
+
+	.agenda-preview-save:hover:not(:disabled) {
+		background: color-mix(in srgb, var(--primary) 88%, #000);
+		transform: translateY(-1px);
+		box-shadow: 0 10px 26px color-mix(in srgb, var(--primary) 24%, transparent);
+	}
+
+	.agenda-preview-save:active:not(:disabled) {
+		transform: translateY(0) scale(0.98);
+		box-shadow: none;
+	}
+
+	.agenda-preview-save:focus-visible {
+		outline: none;
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 30%, transparent);
+	}
+
 	.agenda-preview-save:disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
 	}
 
 	@media (min-width: 900px) {
+		.agenda-preview-header {
+			padding-left: 2rem;
+			padding-right: 2rem;
+		}
+
+		.agenda-preview-defaults {
+			padding-left: 2rem;
+			padding-right: 2rem;
+		}
+
+		.agenda-preview-rows {
+			padding: 0.5rem 2rem 0;
+		}
+
+		.agenda-preview-tablehead {
+			padding-left: 2rem;
+			padding-right: 2rem;
+		}
+
+		.agenda-preview-addrow {
+			margin-left: 2rem;
+			margin-right: 2rem;
+		}
+
+		.agenda-preview-error {
+			margin-left: 2rem;
+			margin-right: 2rem;
+		}
+
+		.agenda-preview-footer {
+			padding-left: 2rem;
+			padding-right: 2rem;
+		}
+	}
+
+	/* Imagen solo en desktop ancho: si no entra la tabla PC, no se muestra. */
+	@media (min-width: 1400px) {
 		.agenda-preview-dialog.has-image .agenda-preview-body {
 			flex-direction: row;
 			align-items: stretch;
 		}
 
 		.agenda-preview-dialog.has-image .agenda-preview-image-pane.is-visible {
+			display: flex;
 			width: min(36rem, 42%);
 			flex: 0 0 min(36rem, 42%);
 			min-width: min(28rem, 38%);
@@ -1411,83 +1521,23 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 			flex: 1 1 0;
 			min-width: 0;
 		}
-
-		.agenda-preview-header {
-			padding-left: 2rem;
-			padding-right: 2rem;
-		}
-
-		.agenda-preview-defaults {
-			padding-left: 2rem;
-			padding-right: 2rem;
-		}
-
-		.agenda-preview-rows {
-			padding: 0.5rem 2rem 0;
-		}
-
-		.agenda-preview-tablehead {
-			padding-left: calc(2rem + 3px + 0.85rem);
-			padding-right: 2rem;
-		}
-
-		.agenda-preview-addrow {
-			margin-left: 2rem;
-			margin-right: 2rem;
-		}
-
-		.agenda-preview-error {
-			margin-left: 2rem;
-			margin-right: 2rem;
-		}
-
-		.agenda-preview-footer {
-			padding-left: 2rem;
-			padding-right: 2rem;
-		}
-
-		.agenda-preview-row {
-			padding: 0.9rem 0 1rem 1rem;
-			gap: 0.6rem;
-		}
 	}
 
-	/* Cards en PC / pane medio: Servicio | Profesional. No baja el umbral de tabla 720. */
 	@media (min-width: 641px) {
-		@container agenda-rows (min-width: 360px) and (max-width: 719px) {
-			.agenda-preview-row {
-				grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
-				grid-template-areas:
-					'client client delete'
-					'datetime datetime datetime'
-					'service pro .';
-			}
-
-			.agenda-preview-row__field[data-field='service'],
-			.agenda-preview-row__pro {
-				min-width: 0;
-			}
-		}
-	}
-
-	@container agenda-rows (min-width: 720px) {
 		.agenda-preview-tablehead {
-			display: grid;
-			grid-template-columns: var(--agenda-table-cols);
-			align-items: end;
-			gap: 0.65rem;
+			display: none;
 		}
 
 		.agenda-preview-row {
 			grid-template-columns: var(--agenda-table-cols);
 			grid-template-areas: 'client datetime service pro delete';
 			align-items: center;
-			gap: 0.35rem 0.65rem;
-			padding: 0.7rem 0.15rem 0.7rem 0.85rem;
+			gap: 0.35rem 1rem;
+			padding: 0.95rem 1.6rem 0.95rem 0.35rem;
 		}
 
-		.agenda-preview-row.is-incomplete {
-			background: color-mix(in srgb, var(--surface-variant) 18%, transparent);
+		.agenda-preview-row:hover {
+			background: color-mix(in srgb, var(--surface-variant) 16%, transparent);
 		}
 
 		.agenda-preview-row__lead-name {
@@ -1503,41 +1553,87 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		.agenda-preview-row__lead-name:focus,
 		.agenda-preview-row__lead-name:focus-visible {
 			border-bottom: 0;
-			box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 28%, transparent);
+			box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 22%, transparent);
 			border-radius: 0.4rem;
-			background: color-mix(in srgb, var(--surface-variant) 42%, transparent);
+			background: color-mix(in srgb, var(--surface-variant) 32%, transparent);
 			padding: 0.15rem 0.3rem;
+		}
+
+		.agenda-preview-row__client {
+			max-width: 100%;
+			overflow: hidden;
+		}
+
+		.agenda-preview-row__field--phone {
+			max-width: 11.5rem;
 		}
 
 		.agenda-preview-row__field--phone .agenda-preview-row__control,
 		.agenda-preview-row__field--phone .agenda-preview-row__control:focus-within,
 		.agenda-preview-row__field--phone.is-valid .agenda-preview-row__control,
 		.agenda-preview-row__field--phone.is-valid .agenda-preview-row__control:focus-within {
-			padding: 0.25rem 0.65rem;
-			min-height: 2rem;
-			border: 1px solid var(--shell-border);
-			border-radius: 0.6rem;
-			background: var(--surface-bright);
+			padding: 0.28rem 0.55rem;
+			margin-left: 0;
+			min-height: 1.85rem;
+			border: 1px solid color-mix(in srgb, var(--shell-border) 80%, transparent);
+			border-radius: 0.5rem;
+			background: color-mix(in srgb, var(--surface-variant) 42%, var(--surface-bright));
 			box-shadow: none;
+			transition:
+				background-color 220ms var(--agenda-ease),
+				border-color 220ms var(--agenda-ease),
+				box-shadow 220ms var(--agenda-ease);
+		}
+
+		.agenda-preview-row__field--phone .agenda-preview-row__control:hover {
+			border-color: color-mix(in srgb, var(--on-surface-variant) 36%, transparent);
+			background: color-mix(in srgb, var(--surface-variant) 52%, var(--surface-bright));
 		}
 
 		.agenda-preview-row__field--phone .agenda-preview-row__control:focus-within,
 		.agenda-preview-row__field--phone.is-valid .agenda-preview-row__control:focus-within {
-			box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 28%, transparent);
+			border-color: color-mix(in srgb, var(--primary) 55%, var(--shell-border));
+			box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 24%, transparent);
+			background: var(--surface-bright);
 		}
 
-		.agenda-preview-row__field--phone:not(.is-valid) .agenda-preview-row__control input {
-			color: var(--primary);
-			font-weight: 700;
+		.agenda-preview-row__field--phone .agenda-preview-row__icon {
+			display: none;
 		}
 
-		.agenda-preview-row__field--phone:not(.is-valid) .agenda-preview-row__icon {
-			color: var(--primary);
-		}
-
+		.agenda-preview-row__field--phone .agenda-preview-row__control input,
+		.agenda-preview-row__field--phone:not(.is-valid) .agenda-preview-row__control input,
 		.agenda-preview-row__field--phone.is-valid .agenda-preview-row__control input {
-			color: var(--on-surface-variant);
-			font-weight: 600;
+			color: var(--on-surface);
+			font-size: 0.8rem;
+			font-weight: 650;
+			font-variant-numeric: tabular-nums;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.agenda-preview-row__field--compact.agenda-preview-row__field--phone .agenda-preview-row__control,
+		.agenda-preview-row__field--compact.agenda-preview-row__field--phone .agenda-preview-row__control:focus-within,
+		.agenda-preview-row__field--compact.agenda-preview-row__field--phone.is-valid .agenda-preview-row__control,
+		.agenda-preview-row__field--compact.agenda-preview-row__field--phone.is-valid .agenda-preview-row__control:focus-within {
+			min-height: 1.85rem;
+			padding: 0.28rem 0.55rem;
+			border: 1px solid color-mix(in srgb, var(--shell-border) 80%, transparent);
+			border-radius: 0.5rem;
+			background: color-mix(in srgb, var(--surface-variant) 42%, var(--surface-bright));
+			box-shadow: none;
+		}
+
+		.agenda-preview-row__field--compact.agenda-preview-row__field--phone .agenda-preview-row__control:hover {
+			border-color: color-mix(in srgb, var(--on-surface-variant) 36%, transparent);
+			background: color-mix(in srgb, var(--surface-variant) 52%, var(--surface-bright));
+		}
+
+		.agenda-preview-row__field--compact.agenda-preview-row__field--phone .agenda-preview-row__control:focus-within,
+		.agenda-preview-row__field--compact.agenda-preview-row__field--phone.is-valid .agenda-preview-row__control:focus-within {
+			border-color: color-mix(in srgb, var(--primary) 55%, var(--shell-border));
+			box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 24%, transparent);
+			background: var(--surface-bright);
 		}
 
 		.agenda-preview-row__datetime {
@@ -1564,11 +1660,13 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		.agenda-preview-row__datetime .agenda-preview-row__control:focus-within,
 		.agenda-preview-row__datetime .agenda-preview-row__field.is-valid .agenda-preview-row__control,
 		.agenda-preview-row__datetime .agenda-preview-row__field.is-valid .agenda-preview-row__control:focus-within {
+			border-bottom: 0;
 			min-height: 1.7rem;
 			padding: 0.12rem 0.4rem;
 			background: transparent;
 			border-radius: 0.45rem;
 			box-shadow: none;
+			flex: 1;
 		}
 
 		.agenda-preview-row__datetime .agenda-preview-row__control:hover,
@@ -1582,11 +1680,13 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 			font-size: 1.12rem;
 			font-weight: 800;
 			letter-spacing: -0.02em;
+			font-variant-numeric: tabular-nums;
 		}
 
-		.agenda-preview-row__field[data-field='date'] .agenda-preview-datebtn {
+		.agenda-preview-row__field[data-field='date'] .agenda-preview-dateinput {
 			font-size: 0.78rem;
 			font-weight: 600;
+			letter-spacing: 0.02em;
 			color: var(--on-surface-variant);
 		}
 
@@ -1609,40 +1709,48 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		}
 
 		.agenda-preview-row__control .agenda-preview-row__icon,
-		.agenda-preview-row__icon {
+		.agenda-preview-row__icon,
+		.agenda-preview-row__field--phone .agenda-preview-row__icon {
 			display: none;
 		}
 
-		.agenda-preview-row__field--phone .agenda-preview-row__icon {
+		.agenda-preview-row__control:has(select) .agenda-preview-row__chevron {
 			display: inline-flex;
-			width: 1.05rem;
-			min-width: 1.05rem;
-			font-size: 1.05rem;
+			color: color-mix(in srgb, var(--on-surface-variant) 80%, transparent);
+		}
+
+		.agenda-preview-row__control:has(.panel-themed-select) .agenda-preview-row__chevron {
+			display: none;
 		}
 
 		.agenda-preview-row__control {
-			min-height: 2.35rem;
-			padding: 0.3rem 0.65rem;
-			gap: 0.35rem;
+			min-height: 2.15rem;
+			padding: 0.2rem 0.45rem;
+			margin: 0 -0.45rem;
+			gap: 0.25rem;
 			border-bottom: 0;
-			border-radius: 0.55rem;
-			background: color-mix(in srgb, var(--surface-variant) 55%, var(--surface-bright));
+			border-radius: 0.45rem;
+			background: transparent;
+		}
+
+		.agenda-preview-row__control:hover {
+			background: color-mix(in srgb, var(--surface-variant) 28%, transparent);
 		}
 
 		.agenda-preview-row__control:focus-within,
-		.agenda-preview-row__field.is-valid .agenda-preview-row__control,
-		.agenda-preview-row__field.is-valid .agenda-preview-row__control:focus-within {
+		.agenda-preview-row__field.is-valid:not(.agenda-preview-row__field--phone) .agenda-preview-row__control,
+		.agenda-preview-row__field.is-valid:not(.agenda-preview-row__field--phone) .agenda-preview-row__control:focus-within {
 			border-bottom: 0;
-			box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--primary) 32%, transparent);
-			background: color-mix(in srgb, var(--surface-variant) 42%, var(--surface-bright));
+			box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 22%, transparent);
+			background: color-mix(in srgb, var(--surface-variant) 32%, transparent);
 		}
 
-		.agenda-preview-row__field.is-valid .agenda-preview-row__control {
+		.agenda-preview-row__field.is-valid:not(.agenda-preview-row__field--phone) .agenda-preview-row__control {
 			box-shadow: none;
 		}
 
-		.agenda-preview-row__field.is-valid .agenda-preview-row__control:focus-within {
-			box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--agenda-valid) 45%, transparent);
+		.agenda-preview-row__field.is-valid:not(.agenda-preview-row__field--phone) .agenda-preview-row__control:focus-within {
+			box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 22%, transparent);
 		}
 
 		.agenda-preview-row__field--compact .agenda-preview-row__control {
@@ -1657,35 +1765,49 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 			font-weight: 600;
 		}
 
-		.agenda-preview-row__field--compact.agenda-preview-row__field--phone .agenda-preview-row__control,
-		.agenda-preview-row__field--compact.agenda-preview-row__field--phone .agenda-preview-row__control:focus-within,
-		.agenda-preview-row__field--compact.agenda-preview-row__field--phone.is-valid .agenda-preview-row__control,
-		.agenda-preview-row__field--compact.agenda-preview-row__field--phone.is-valid .agenda-preview-row__control:focus-within {
-			min-height: 2rem;
-			padding: 0.25rem 0.65rem;
-			border: 1px solid var(--shell-border);
-			border-radius: 0.6rem;
-			background: var(--surface-bright);
-			box-shadow: none;
-		}
-
-		.agenda-preview-row__field--compact.agenda-preview-row__field--phone .agenda-preview-row__control:focus-within,
-		.agenda-preview-row__field--compact.agenda-preview-row__field--phone.is-valid .agenda-preview-row__control:focus-within {
-			box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 28%, transparent);
-		}
-
-		.agenda-preview-row__field--compact.agenda-preview-row__field--phone .agenda-preview-row__control input {
-			font-size: 0.8rem;
-		}
-
 		.agenda-preview-row__delete {
 			width: 2.15rem;
 			height: 2.15rem;
 			justify-self: end;
+			border-color: transparent;
+			color: color-mix(in srgb, var(--on-surface-variant) 70%, transparent);
+		}
+
+		.agenda-preview-row__delete:hover {
+			border-color: color-mix(in srgb, #ef4444 42%, transparent);
+			color: #f87171;
 		}
 	}
 
-	/* La columna de reservas puede ser angosta aunque el viewport sea ancho. */
+	/* Pane estrecho (p. ej. imagen lateral en desktop): columnas más flexibles. */
+	@media (min-width: 641px) {
+		@container agenda-rows (max-width: 920px) {
+			.agenda-preview-row {
+				--agenda-table-cols: minmax(0, 1.1fr) minmax(5rem, 0.58fr) minmax(0, 0.92fr) minmax(0, 0.92fr) 2.1rem;
+				gap: 0.3rem 0.45rem;
+				padding-right: 0.85rem;
+			}
+
+			.agenda-preview-row__client,
+			.agenda-preview-row__lead,
+			.agenda-preview-row__datetime,
+			.agenda-preview-row__field[data-field='service'],
+			.agenda-preview-row__pro {
+				min-width: 0;
+			}
+
+			.agenda-preview-row__lead-name {
+				max-width: 100%;
+			}
+
+			.agenda-preview-row__field--phone {
+				max-width: 100%;
+			}
+		}
+	}
+
+	/* Cards solo en mobile: tablet/PC usan la fila horizontal. */
+	@media (max-width: 640px) {
 	@container agenda-rows (max-width: 719px) {
 		.agenda-preview-tablehead {
 			display: none;
@@ -1740,12 +1862,15 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 
 		/* iOS Safari: 16px evita zoom al enfocar (gana a --compact + --phone). */
 		.agenda-preview-row__lead-name,
-		.agenda-preview-row__field--phone input,
-		.agenda-preview-row__field--compact.agenda-preview-row__field--phone .agenda-preview-row__control input,
-		.agenda-preview-row__field--time .agenda-preview-timeinput,
-		.agenda-preview-timeinput {
+		.agenda-preview-row__control input,
+		.agenda-preview-row__control select,
+		.agenda-preview-row__control .agenda-preview-row__select-trigger,
+		.agenda-preview-dateinput,
+		.agenda-preview-timeinput,
+		.agenda-preview--native-selects .agenda-preview-defaults__field select {
 			font-size: 16px;
 		}
+	}
 	}
 
 	@media (max-width: 640px) {
@@ -1873,21 +1998,41 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		.agenda-preview-rows .agenda-preview-row {
 			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
 			grid-template-areas:
-				'client client delete'
+				'lead lead delete'
+				'phone phone phone'
 				'datetime datetime datetime'
 				'service service service'
 				'pro pro pro';
 			align-items: start;
-			gap: 0.4rem 0.45rem;
-			padding: 0.65rem 0.65rem 0.7rem 0.75rem;
-			border-radius: 0.75rem;
-			background: color-mix(in srgb, var(--surface-variant) 36%, var(--surface-bright));
+			gap: 0.65rem 0.5rem;
+			padding: 0.85rem 0.1rem 0.9rem;
+			border: 0;
+			border-radius: 0;
+			border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 58%, transparent);
+			background: transparent;
 			box-shadow: none;
 		}
 
+		.agenda-preview-rows .agenda-preview-row:last-child {
+			border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 58%, transparent);
+		}
+
+		.agenda-preview-rows .agenda-preview-row:hover {
+			background: color-mix(in srgb, var(--surface-variant) 22%, transparent);
+		}
+
+		.agenda-preview-pending {
+			font-size: 0.72rem;
+		}
+
 		.agenda-preview-row__lead {
+			grid-area: lead;
 			min-height: 2rem;
 			gap: 0.45rem;
+		}
+
+		.agenda-preview-row__field--phone {
+			grid-area: phone;
 		}
 
 		.agenda-preview-row__lead-name {
@@ -1906,15 +2051,16 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		}
 
 		.agenda-preview-row__client {
-			gap: 0.5rem;
+			display: contents;
 		}
 
 		.agenda-preview-row__datetime {
-			gap: 0.4rem;
+			gap: 0.5rem;
+			align-items: stretch;
 		}
 
 		.agenda-preview-row__pro {
-			gap: 0;
+			gap: 0.65rem;
 		}
 
 		.agenda-preview-row__field[data-field='service'],
@@ -1924,7 +2070,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		}
 
 		.agenda-preview-row__field {
-			gap: 0;
+			gap: 0.2rem;
 		}
 
 		/* Placeholder + valor ya identifican el campo; el label queda solo para a11y. */
@@ -1972,29 +2118,130 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		}
 
 		.agenda-preview-row__control {
-			min-height: 2.75rem;
-			padding: 0.3rem 0.55rem;
-			border-bottom: 0;
-			border-radius: 0.6rem;
+			min-height: 3rem;
+			flex: 1;
+			padding: 0.4rem 0.75rem;
+			border: 1px solid var(--shell-border);
+			border-radius: 0.75rem;
 			gap: 0;
-			background: color-mix(in srgb, var(--surface-variant) 48%, var(--surface-bright));
+			background: var(--surface-bright);
+			box-shadow: none;
+			box-sizing: border-box;
+		}
+
+		.agenda-preview-row__datetime .agenda-preview-row__control,
+		.agenda-preview-row__datetime .agenda-preview-row__field.is-valid .agenda-preview-row__control,
+		.agenda-preview-row__datetime .agenda-preview-row__control:focus-within,
+		.agenda-preview-row__datetime .agenda-preview-row__field.is-valid .agenda-preview-row__control:focus-within {
+			border: 1px solid var(--shell-border);
+			border-radius: 0.75rem;
+			min-height: 3rem;
+			padding: 0.4rem 0.75rem;
+			background: var(--surface-bright);
 			box-shadow: none;
 		}
 
-		/* Caja visible sobre la placa de la card: Hora, Fecha, Servicio, Profesional. */
-		.agenda-preview-row__datetime .agenda-preview-row__control,
-		.agenda-preview-row__field[data-field='service'] .agenda-preview-row__control,
-		.agenda-preview-row__pro .agenda-preview-row__control,
-		.agenda-preview-row__datetime .agenda-preview-row__field.is-valid .agenda-preview-row__control,
-		.agenda-preview-row__field[data-field='service'].is-valid .agenda-preview-row__control,
-		.agenda-preview-row__pro .agenda-preview-row__field.is-valid .agenda-preview-row__control {
-			padding: 0.3rem 0.55rem;
-			border: 1px solid var(--shell-border);
-			border-radius: 0.6rem;
-			gap: 0;
-			min-height: 2.75rem;
-			background: var(--surface-bright);
+		/* Selects nativos del SO en mobile (desktop conserva themed select). */
+		.agenda-preview--native-selects .agenda-preview-row__field[data-field='service'] .agenda-preview-row__control,
+		.agenda-preview--native-selects .agenda-preview-row__pro .agenda-preview-row__control {
+			border: 0;
+			padding: 0;
+			min-height: 0;
+			background: transparent;
 			box-shadow: none;
+		}
+
+		.agenda-preview--native-selects .agenda-preview-row__control select {
+			display: block;
+			flex: 1 1 auto;
+			width: 100%;
+			min-height: 3rem;
+			padding: 0.4rem 2rem 0.4rem 0.75rem;
+			border: 1px solid var(--shell-border);
+			border-radius: 0.75rem;
+			background: var(--surface-bright);
+			color: var(--on-surface);
+			appearance: auto;
+			-webkit-appearance: menulist-button;
+			color-scheme: light dark;
+			cursor: pointer;
+			box-sizing: border-box;
+			overflow: visible;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		.agenda-preview--native-selects .agenda-preview-row__control:has(select) .agenda-preview-row__chevron {
+			display: none !important;
+		}
+
+		.agenda-preview--native-selects .agenda-preview-row__control:has(select:focus) select,
+		.agenda-preview--native-selects .agenda-preview-row__control:has(select:focus-visible) select {
+			outline: none;
+			border-color: var(--shell-border);
+			box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 28%, transparent);
+		}
+
+		.agenda-preview--native-selects .agenda-preview-select__chevron {
+			display: none;
+		}
+
+		/* Asignación: mismos selects nativos y caja unificada que las filas. */
+		.agenda-preview--native-selects .agenda-preview-defaults__field label {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			padding: 0;
+			margin: -1px;
+			overflow: hidden;
+			clip: rect(0, 0, 0, 0);
+			white-space: nowrap;
+			border: 0;
+		}
+
+		.agenda-preview--native-selects .agenda-preview-defaults__fields {
+			gap: 0.65rem 0.5rem;
+		}
+
+		.agenda-preview--native-selects .agenda-preview-defaults__field select {
+			display: block;
+			width: 100%;
+			min-height: 3rem;
+			padding: 0.4rem 2rem 0.4rem 0.75rem;
+			border: 1px solid var(--shell-border);
+			border-radius: 0.75rem;
+			background: var(--surface-bright);
+			color: var(--on-surface);
+			font-size: 16px;
+			font-weight: 600;
+			line-height: 1.4;
+			appearance: auto;
+			-webkit-appearance: menulist-button;
+			color-scheme: light dark;
+			cursor: pointer;
+			box-sizing: border-box;
+			overflow: visible;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			box-shadow: none;
+		}
+
+		.agenda-preview--native-selects .agenda-preview-defaults__field select.is-placeholder {
+			color: color-mix(in srgb, var(--on-surface-variant) 82%, transparent);
+			font-weight: 500;
+		}
+
+		.agenda-preview--native-selects .agenda-preview-defaults__field select:not(.is-placeholder) {
+			color: var(--on-surface);
+			font-weight: 600;
+		}
+
+		.agenda-preview--native-selects .agenda-preview-defaults__field select:focus,
+		.agenda-preview--native-selects .agenda-preview-defaults__field select:focus-visible {
+			outline: none;
+			border-color: var(--shell-border);
+			box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 28%, transparent);
+			background: var(--surface-bright);
 		}
 
 		.agenda-preview-row__control:focus-within,
@@ -2006,19 +2253,8 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 			box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 28%, transparent);
 		}
 
-		/* Teléfono bajo el nombre: misma caja 2.75rem que Hora/Fecha/Servicio. */
-		.agenda-preview-row__field--phone.agenda-preview-row__field--compact .agenda-preview-row__control,
-		.agenda-preview-row__field--phone .agenda-preview-row__control,
-		.agenda-preview-row__field--phone .agenda-preview-row__control:focus-within,
-		.agenda-preview-row__field--phone.is-valid .agenda-preview-row__control,
-		.agenda-preview-row__field--phone.is-valid .agenda-preview-row__control:focus-within {
-			padding: 0.3rem 0.55rem;
-			border: 1px solid var(--shell-border);
-			border-radius: 0.6rem;
+		.agenda-preview-row__field--phone .agenda-preview-row__control {
 			gap: 0.35rem;
-			min-height: 2.75rem;
-			background: var(--surface-bright);
-			box-shadow: none;
 		}
 
 		.agenda-preview-row__field--phone .agenda-preview-row__control:focus-within,
@@ -2026,27 +2262,18 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 			box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 28%, transparent);
 		}
 
-		.agenda-preview-row__control input,
-		.agenda-preview-row__control select,
-		.agenda-preview-row__control .agenda-preview-row__select-trigger {
-			font-size: 0.86rem;
-		}
-
-		.agenda-preview-row__field--compact.agenda-preview-row__field--phone .agenda-preview-row__control input {
-			font-size: 0.8rem;
-		}
-
 		.agenda-preview-row__field--time input {
-			font-size: 0.92rem;
 			font-weight: 800;
 		}
 
 		/* iOS Safari: 16px evita zoom al enfocar (gana a --compact + --phone). */
 		.agenda-preview-row__lead-name,
-		.agenda-preview-row__field--phone input,
-		.agenda-preview-row__field--compact.agenda-preview-row__field--phone .agenda-preview-row__control input,
-		.agenda-preview-row__field--time .agenda-preview-timeinput,
-		.agenda-preview-timeinput {
+		.agenda-preview-row__control input,
+		.agenda-preview-row__control select,
+		.agenda-preview-row__control .agenda-preview-row__select-trigger,
+		.agenda-preview-dateinput,
+		.agenda-preview-timeinput,
+		.agenda-preview--native-selects .agenda-preview-defaults__field select {
 			font-size: 16px;
 		}
 
@@ -2083,44 +2310,44 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 			padding-right: 2.4rem;
 		}
 
+		.agenda-preview--native-selects .agenda-preview-defaults__field select {
+			font-size: 16px;
+			padding: 0.4rem 2rem 0.4rem 0.75rem;
+		}
+
 		.agenda-preview-select__chevron {
 			right: 0.7rem;
 		}
 	}
 
-	/* Elevación solo en modo card (pane < 720). El bloque tabla no hereda fill/radius/gap. */
-	@container agenda-rows (max-width: 719px) {
+	/* Mobile: una sola placa, sin rail + borde (doble borde). */
+	@media (max-width: 640px) {
 		.agenda-preview-rows {
-			gap: 0.75rem;
-			padding-top: 0.75rem;
-			padding-bottom: 0.85rem;
+			gap: 0.65rem;
+			padding-top: 0.65rem;
+			padding-bottom: 0.75rem;
 		}
 
 		.agenda-preview-row {
-			border: 1px solid var(--shell-border);
-			border-left: 3px solid var(--agenda-rail);
-			border-radius: 0.85rem;
-			background: color-mix(in srgb, var(--surface-variant) 40%, var(--surface-bright));
-			padding: 0.85rem 0.8rem 0.9rem 0.9rem;
+			border: 0;
+			border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 58%, transparent);
+			border-radius: 0;
+			background: transparent;
+			padding: 0.85rem 0.1rem 0.9rem;
 			box-shadow: none;
 		}
 
 		.agenda-preview-row:last-child {
-			border-bottom: 1px solid var(--shell-border);
+			border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 58%, transparent);
 		}
 
 		.agenda-preview-row:hover {
-			background: color-mix(in srgb, var(--surface-variant) 52%, var(--surface-bright));
+			background: color-mix(in srgb, var(--surface-variant) 22%, transparent);
 			box-shadow: none;
-		}
-
-		.agenda-preview-row.is-incomplete {
-			background: color-mix(in srgb, var(--surface-variant) 40%, var(--surface-bright));
 		}
 	}
 
-	.agenda-preview-datebtn,
-	.agenda-preview-timeinput {
+	.agenda-preview-datebtn {
 		appearance: none;
 		-webkit-appearance: none;
 		width: 100%;
@@ -2139,14 +2366,39 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		-webkit-user-select: none;
 	}
 
-	.agenda-preview-timeinput {
-		cursor: text;
-		user-select: text;
-		-webkit-user-select: text;
+	.agenda-preview-dateinput[type='date'] {
+		width: 100%;
+		min-width: 0;
+		margin: 0;
+		padding: 0;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		box-shadow: none;
+		color: inherit;
+		font: inherit;
+		text-align: left;
+		cursor: pointer;
+		color-scheme: light dark;
 	}
 
-	.agenda-preview-datebtn.is-empty,
-	.agenda-preview-timeinput::placeholder {
+	.agenda-preview-timeinput[type='time'] {
+		width: 100%;
+		min-width: 0;
+		margin: 0;
+		padding: 0;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		box-shadow: none;
+		color: inherit;
+		font: inherit;
+		text-align: left;
+		cursor: pointer;
+		color-scheme: light dark;
+	}
+
+	.agenda-preview-datebtn.is-empty {
 		color: color-mix(in srgb, var(--on-surface-variant) 78%, transparent);
 		font-weight: 500;
 	}
@@ -2281,6 +2533,25 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 	.agenda-preview-times__opt.is-active {
 		background: color-mix(in srgb, var(--primary) 16%, transparent);
 		color: var(--primary);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.agenda-preview-row {
+			animation: none;
+		}
+
+		.agenda-preview-row,
+		.agenda-preview-row__control,
+		.agenda-preview-row__lead-name,
+		.agenda-preview-save,
+		.agenda-preview-close,
+		.agenda-preview-row__delete,
+		.agenda-preview-addrow,
+		.agenda-preview-defaults__field input,
+		.agenda-preview-defaults__field select,
+		.agenda-preview-image-toolbar button {
+			transition: none;
+		}
 	}
 </style>
 

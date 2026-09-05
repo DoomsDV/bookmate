@@ -211,7 +211,7 @@ const updateEmptyOrGrid = (
 	}
 
 	results.innerHTML = `
-		<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3" data-professionals-grid>
+		<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 xl:grid-cols-3" data-professionals-grid>
 			${professionals.map(renderProfessionalCard).join('')}
 		</div>
 	`;

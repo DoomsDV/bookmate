@@ -22,6 +22,7 @@ export interface DashboardKpis {
 	today_appointments: number;
 	today_completed_appointments: number;
 	pending_appointments: number;
+	unconfirmed_appointments: number;
 	my_customers: number;
 	total_customers: number | null;
 }
@@ -65,6 +66,7 @@ export interface DashboardProfitabilityData {
 	last_month_revenue: number;
 	mom_delta_pct: number | null;
 	pending_expected_revenue: number;
+	pending_appointments_month: number;
 	total_clients: number;
 	new_clients_month: number;
 	active_clients_month: number;
@@ -156,6 +158,7 @@ const normalizeKpis = (value: unknown): DashboardKpis => {
 			today_appointments: 0,
 			today_completed_appointments: 0,
 			pending_appointments: 0,
+			unconfirmed_appointments: 0,
 			my_customers: 0,
 			total_customers: null,
 		};
@@ -178,6 +181,7 @@ const normalizeKpis = (value: unknown): DashboardKpis => {
 		today_appointments: todayAppointments,
 		today_completed_appointments: todayCompleted,
 		pending_appointments: Math.max(0, Math.floor(toNumber(source.pending_appointments, 0))),
+		unconfirmed_appointments: Math.max(0, Math.floor(toNumber(source.unconfirmed_appointments, 0))),
 		my_customers: Math.max(0, Math.floor(toNumber(source.my_customers, 0))),
 		total_customers: totalCustomers,
 	};
@@ -426,6 +430,10 @@ const normalizeProfitabilityData = (value: unknown): DashboardProfitabilityData 
 				? null
 				: Number(momRaw),
 		pending_expected_revenue: Math.max(0, toNumber(source.pending_expected_revenue, 0)),
+		pending_appointments_month: Math.max(
+			0,
+			Math.floor(toNumber(source.pending_appointments_month, 0))
+		),
 		total_clients: Math.max(0, Math.floor(toNumber(source.total_clients, 0))),
 		new_clients_month: Math.max(0, Math.floor(toNumber(source.new_clients_month, 0))),
 		active_clients_month: Math.max(0, Math.floor(toNumber(source.active_clients_month, 0))),

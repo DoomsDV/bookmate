@@ -238,6 +238,7 @@ const googleErrorMessage = hasGoogleError
 														type="button"
 														class="calendar-create-btn calendar-header-toolbar__create inline-flex items-center justify-center gap-2"
 														data-open-appointment-modal
+														data-requires-write
 														aria-label="Agendar"
 													>
 														<svg
@@ -3622,6 +3623,49 @@ const googleErrorMessage = hasGoogleError
 		background-color: rgba(255, 255, 255, 0.1);
 	}
 
+	@media (min-width: 768px) and (max-width: 1023.98px) {
+		.app-shell > :last-child:has([data-calendar-main]) > .grid {
+			height: auto;
+			min-height: 0;
+			display: block;
+		}
+
+		.calendar-main[data-calendar-main] {
+			height: auto;
+			max-height: none;
+			overflow: visible;
+			padding-bottom: calc(4.85rem + env(safe-area-inset-bottom, 0px));
+		}
+
+		[data-calendar-root].material-region,
+		[data-calendar-root] .calendar-page-stack,
+		.calendar-stage-wrap,
+		.calendar-stage {
+			flex: 0 0 auto;
+			min-height: auto;
+			height: auto;
+		}
+
+		[data-calendar-root] .calendar-host {
+			flex: 0 0 auto;
+			min-height: 32rem;
+			height: auto;
+		}
+
+		[data-calendar-root] .fc {
+			height: auto;
+		}
+
+		[data-calendar-root] .fc .fc-view-harness {
+			height: auto !important;
+			min-height: 0 !important;
+		}
+
+		[data-calendar-root] .fc .fc-timegrid-body .fc-scroller {
+			overflow-y: visible !important;
+		}
+	}
+
 	@media (max-width: 767px) {
 		.appointment-modal-footer {
 			flex-direction: row;
@@ -4123,31 +4167,7 @@ const googleErrorMessage = hasGoogleError
 		}
 	}
 
-	@media (min-width: 640px) and (max-width: 1023px) {
-		@keyframes appointment-modal-in {
-			from {
-				opacity: 0;
-				transform: translateY(10px) scale(0.98);
-			}
-			to {
-				opacity: 1;
-				transform: translateY(0) scale(1);
-			}
-		}
-
-		@keyframes appointment-modal-out {
-			from {
-				opacity: 1;
-				transform: translateY(0) scale(1);
-			}
-			to {
-				opacity: 0;
-				transform: translateY(8px) scale(0.98);
-			}
-		}
-	}
-
-	@media (min-width: 1024px) {
+	@media (min-width: 640px) {
 		dialog[data-appointment-modal][open] {
 			flex-direction: row;
 			align-items: stretch;

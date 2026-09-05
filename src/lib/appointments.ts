@@ -105,6 +105,9 @@ export interface AppointmentDetail {
 	refund_status?: string | null;
 	refund_amount?: number | null;
 	cancel_reason?: string | null;
+	receipt_uploaded?: boolean;
+	receipt_pending_review?: boolean;
+	ocr_status?: string | null;
 }
 
 export interface AppointmentCalendarFilters {
@@ -454,6 +457,10 @@ const normalizeAppointmentDetail = (value: unknown): AppointmentDetail | null =>
 		refund_status: String(source.refund_status || '').trim() || null,
 		refund_amount: Number(source.refund_amount ?? NaN) || null,
 		cancel_reason: String(source.cancel_reason || '').trim() || null,
+		receipt_uploaded: source.receipt_uploaded === true || source.receipt_uploaded === 1,
+		receipt_pending_review:
+			source.receipt_pending_review === true || source.receipt_pending_review === 1,
+		ocr_status: String(source.ocr_status || '').trim() || null,
 	};
 
 	applyScheduleMisalignedFields(detail, source, status, startTime);

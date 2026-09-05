@@ -1,5 +1,6 @@
 ---
 import { ClientRouter } from 'astro:transitions';
+import AppAlert from '../components/AppAlert.astro';
 import FlashMessage from '../components/FlashMessage.astro';
 import FcmManager from '../components/FcmManager.astro';
 import OrgNotificationDeepLink from '../components/OrgNotificationDeepLink.astro';
@@ -294,6 +295,7 @@ const themeColor = initialTheme === 'dark' ? '#0e0e10' : '#f6f7f9';
                 <SubscriptionBanner isAdmin={isAdmin} />
                 <FcmManager />
                 <OrgNotificationDeepLink />
+                <AppAlert />
             </>
         )}
         {

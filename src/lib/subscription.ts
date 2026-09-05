@@ -75,6 +75,12 @@ export const SUBSCRIPTION_INVOICES_URL = resolveOrdsApiUrl(
 	'/workspace/subscription/invoices'
 );
 
+export const SUBSCRIPTION_INVOICE_KUDE_URL_TEMPLATE = resolveOrdsApiUrl(
+	import.meta.env.ORDS_SUBSCRIPTION_INVOICE_KUDE_URL,
+	'ORDS_SUBSCRIPTION_INVOICE_KUDE_URL',
+	'/workspace/subscription/invoices/:id/kude'
+);
+
 export const SUBSCRIPTION_CANCEL_URL = resolveOrdsApiUrl(
 	import.meta.env.ORDS_SUBSCRIPTION_CANCEL_URL,
 	'ORDS_SUBSCRIPTION_CANCEL_URL',
@@ -350,6 +356,21 @@ export interface BillingInvoiceItem {
 	period_start: string | null;
 	period_end: string | null;
 	hash: string | null;
+	/** CDC SIFEN cuando la FE ya fue emitida. */
+	cdc: string | null;
+	/** Estado del outbox fiscal (NONE, SENT_PENDING_ARTIFACTS, SENT, …). */
+	einvoice_status: string | null;
+	/** true solo si el KuDE PDF ya está persistido en Oracle. */
+	factura_disponible: boolean;
+}
+
+export interface InvoiceKudeDownloadInfo {
+	invoice_id: number;
+	status: string;
+	einvoice_status: string | null;
+	cdc: string | null;
+	kude_url: string;
+	factura_disponible: boolean;
 }
 
 export interface BillingHistory {
@@ -732,8 +753,31 @@ const normalizeBillingHistory = (value: unknown): BillingHistory => {
 				period_start: toNullableString(i.period_start),
 				period_end: toNullableString(i.period_end),
 				hash: toNullableString(i.hash),
+				cdc: toNullableString(i.cdc),
+				einvoice_status: toNullableString(i.einvoice_status),
+				factura_disponible:
+					i.factura_disponible === true ||
+					i.factura_disponible === 1 ||
+					i.factura_disponible === 'true' ||
+					i.factura_disponible === '1',
 			};
 		}),
+	};
+};
+
+const normalizeInvoiceKudeDownload = (value: unknown): InvoiceKudeDownloadInfo => {
+	const d = (value ?? {}) as Record<string, unknown>;
+	const kudeUrl = String(d.kude_url || '').trim();
+	if (!kudeUrl) {
+		throw new SubscriptionApiError('La factura electrónica aún no está disponible.', 409);
+	}
+	return {
+		invoice_id: toNumber(d.invoice_id, 0),
+		status: String(d.status || '').trim(),
+		einvoice_status: toNullableString(d.einvoice_status),
+		cdc: toNullableString(d.cdc),
+		kude_url: kudeUrl,
+		factura_disponible: true,
 	};
 };
 
@@ -744,6 +788,24 @@ export const listInvoicesWithOrds = async (token: string): Promise<BillingHistor
 		headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
 	});
 	return parseOrdsData(response, normalizeBillingHistory);
+};
+
+/** Metadatos de KuDE para el proxy same-origin de descarga PDF (solo server-side). */
+export const getInvoiceKudeWithOrds = async (
+	token: string,
+	invoiceId: number
+): Promise<InvoiceKudeDownloadInfo> => {
+	if (!token) throw new SubscriptionApiError('Token de acceso requerido.', 401);
+	const id = Number(invoiceId);
+	if (!Number.isFinite(id) || id <= 0) {
+		throw new SubscriptionApiError('invoice_id inválido.', 400);
+	}
+	const url = SUBSCRIPTION_INVOICE_KUDE_URL_TEMPLATE.replace(':id', encodeURIComponent(String(id)));
+	const response = await fetch(url, {
+		method: 'GET',
+		headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+	});
+	return parseOrdsData(response, normalizeInvoiceKudeDownload);
 };
 
 export const getInvoiceStatusWithOrds = async (
