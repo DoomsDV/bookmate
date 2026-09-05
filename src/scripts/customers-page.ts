@@ -165,6 +165,8 @@ class CustomerManager extends HTMLElement {
 	private profilePhoneInput: HTMLInputElement | null = null;
 	private profilePhoneErrorNode: HTMLElement | null = null;
 	private profileEditToggleBtn: HTMLButtonElement | null = null;
+	private profileModalTitle: HTMLElement | null = null;
+	private profileHeaderIcon: HTMLElement | null = null;
 	private profileSaveBtn: HTMLButtonElement | null = null;
 	private profileCancelBtn: HTMLButtonElement | null = null;
 	private isEditingProfile = false;
@@ -325,6 +327,8 @@ class CustomerManager extends HTMLElement {
 		this.profileEditToggleBtn = this.querySelector<HTMLButtonElement>(
 			'[data-edit-customer-profile-toggle]'
 		);
+		this.profileModalTitle = this.querySelector<HTMLElement>('[data-customer-profile-modal-title]');
+		this.profileHeaderIcon = this.querySelector<HTMLElement>('[data-customer-profile-header-icon]');
 		this.profileSaveBtn = this.querySelector<HTMLButtonElement>(
 			'[data-save-customer-profile-edit]'
 		);
@@ -541,6 +545,9 @@ class CustomerManager extends HTMLElement {
 		}
 		document.addEventListener('hasel:subscription', this.handleSubscriptionChange, { signal });
 		document.addEventListener(OPEN_CLINICAL_WORKSPACE_EVENT, this.handleOpenClinicalWorkspaceEvent, {
+			signal,
+		});
+		this.clinicalFichaCards?.addEventListener('click', this.handleClinicalFichaCardClick, {
 			signal,
 		});
 		this.querySelector('[data-clinical-workspace-back]')?.addEventListener(
@@ -1038,6 +1045,8 @@ class CustomerManager extends HTMLElement {
 		this.closeOdontogramPopover();
 		this.clinicalWorkspaceHost?.close();
 		this.disposeOdontogram3d();
+		this.activeProfileTab = 'summary';
+		this.syncProfileHeaderChrome();
 		if (!this.profileModal?.open) return;
 		this.profileModal.classList.add('is-closing');
 		if (this.#profileCloseTimer !== null) window.clearTimeout(this.#profileCloseTimer);
@@ -1597,6 +1606,27 @@ class CustomerManager extends HTMLElement {
 		} else {
 			this.syncOdontogramTourHelpVisibility();
 		}
+		this.syncProfileHeaderChrome();
+	}
+
+	private syncProfileHeaderChrome() {
+		const isClinica = this.activeProfileTab === 'clinica';
+		if (this.profileModalTitle) {
+			this.profileModalTitle.textContent = isClinica ? 'Clínica add-ons' : 'Perfil del cliente';
+		}
+		if (this.profileHeaderIcon) {
+			this.profileHeaderIcon.textContent = isClinica ? 'extension' : 'person';
+		}
+		this.syncProfileEditToggleVisibility();
+	}
+
+	private syncProfileEditToggleVisibility() {
+		if (!this.profileEditToggleBtn) return;
+		const show =
+			this.activeProfileTab === 'summary' &&
+			!this.isEditingProfile &&
+			this.canEditCustomerProfile();
+		this.profileEditToggleBtn.hidden = !show;
 	}
 
 	private hasOdontogramEntitlement() {
@@ -3293,7 +3323,7 @@ class CustomerManager extends HTMLElement {
 		}
 		if (this.profilePhoneRow) this.profilePhoneRow.setAttribute('data-editing', '1');
 
-		if (this.profileEditToggleBtn) this.profileEditToggleBtn.hidden = true;
+		this.syncProfileEditToggleVisibility();
 
 		window.setTimeout(() => this.profileNameInput?.focus(), 0);
 	}
@@ -3311,9 +3341,7 @@ class CustomerManager extends HTMLElement {
 		this.profilePhoneFieldWrap?.classList.add('hidden');
 		this.profilePhoneRow?.removeAttribute('data-editing');
 
-		if (this.profileEditToggleBtn) {
-			this.profileEditToggleBtn.hidden = !this.canEditCustomerProfile();
-		}
+		this.syncProfileEditToggleVisibility();
 		this.setProfileSaveButtonLoading(false);
 	}
 
@@ -3443,9 +3471,7 @@ class CustomerManager extends HTMLElement {
 		this.renderProfileScope();
 		this.activeProfileFullName = profile.full_name || '';
 		this.activeProfilePhoneE164 = profile.phone_number || '';
-		if (this.profileEditToggleBtn) {
-			this.profileEditToggleBtn.hidden = !this.canEditCustomerProfile();
-		}
+		this.syncProfileHeaderChrome();
 
 		if (this.profileNameNode) {
 			this.profileNameNode.textContent = displayName;

@@ -264,10 +264,19 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 				<div class="panel-modal-header__row">
 					<div class="panel-modal-header__leading">
 						<div class="panel-modal-header__icon">
-							<span class="material-symbols-rounded" aria-hidden="true">person</span>
+							<span
+								class="material-symbols-rounded"
+								aria-hidden="true"
+								data-customer-profile-header-icon
+								>person</span
+							>
 						</div>
 						<div class="panel-modal-header__text">
-							<h2 id="customer-profile-modal-title" class="panel-modal-header__title">
+							<h2
+								id="customer-profile-modal-title"
+								class="panel-modal-header__title"
+								data-customer-profile-modal-title
+							>
 								Perfil del cliente
 							</h2>
 						</div>
@@ -1009,12 +1018,12 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 							</div>
 						</div>
 					</div>
-							</div>
 
 							<CuerpoWorkspacePanel />
 						</div>
 					</div>
 				</div>
+			</div>
 
 			<div
 				class="customer-profile-modal-footer shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-4 py-4 sm:px-7"
@@ -3417,14 +3426,12 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		flex-direction: column;
 		align-items: stretch;
 		gap: 0.35rem;
-		isolation: isolate;
-		box-shadow: 0 8px 24px rgb(0 0 0 / 0.28);
+		background: transparent;
 	}
 
 	.customer-odontogram-cam__arch .customer-odontogram-cam__btn {
-		background: rgb(15 15 18 / 0.88);
-		backdrop-filter: none;
-		box-shadow: none;
+		background: rgb(15 15 18 / 0.72);
+		backdrop-filter: blur(10px);
 	}
 
 	.customer-odontogram-cam__btn--label {
@@ -4135,6 +4142,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		border: 1px solid var(--shell-border);
 		background: var(--surface-bright);
 		text-align: left;
+		cursor: pointer;
 		transition: border-color 0.15s ease, box-shadow 0.15s ease;
 	}
 
