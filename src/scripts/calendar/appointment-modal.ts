@@ -296,13 +296,13 @@ class AppointmentModal extends HTMLElement {
 		this.closeModalButtons =
 			this.querySelectorAll<HTMLButtonElement>('[data-close-appointment-modal]');
 		this.submitButton =
-			this.form?.querySelector<HTMLButtonElement>('[data-submit-appointment]') ?? null;
+			this.querySelector<HTMLButtonElement>('[data-submit-appointment]') ?? null;
 		this.submitLabel =
-			this.form?.querySelector<HTMLElement>('[data-submit-appointment-label]') ?? null;
+			this.querySelector<HTMLElement>('[data-submit-appointment-label]') ?? null;
 		this.submitIcon =
-			this.form?.querySelector<HTMLElement>('[data-submit-appointment-icon]') ?? null;
+			this.querySelector<HTMLElement>('[data-submit-appointment-icon]') ?? null;
 		this.deleteButton =
-			this.form?.querySelector<HTMLButtonElement>('[data-delete-appointment]') ?? null;
+			this.querySelector<HTMLButtonElement>('[data-delete-appointment]') ?? null;
 		this.customerIdInput = this.form?.querySelector<HTMLInputElement>('[data-customer-id]') ?? null;
 		this.customerNameInput = this.form?.querySelector<HTMLInputElement>('[name="customer_name"]') ?? null;
 		this.customerPhoneInput =

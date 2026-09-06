@@ -446,7 +446,7 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 														</div>
 													</div>
 
-													<div class="grid gap-4" data-exception-modal-body></div>
+													<div class="grid content-start gap-4" data-exception-modal-body></div>
 												</div>
 
 												<div
@@ -2065,12 +2065,14 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 	}
 
 	.schedule-exception-modal-scroll [data-exception-modal-body] {
-		flex: 1 1 auto;
+		flex: 0 1 auto;
 		min-height: 0;
+		align-content: start;
 	}
 
 	.schedule-exception-modal-body--empty {
 		display: flex;
+		flex: 1 1 auto;
 	}
 
 	.schedule-exception-empty-state {

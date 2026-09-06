@@ -1855,7 +1855,7 @@ class ScheduleManager extends HTMLElement {
 		if (!this.exceptionModalBodyNode) return;
 		this.exceptionModalBodyNode.className = empty
 			? 'schedule-exception-modal-body--empty'
-			: 'grid gap-4';
+			: 'grid content-start gap-4';
 	}
 
 	private createExceptionModalEmptyState(icon: string, title: string, copy: string): HTMLElement {
@@ -1932,7 +1932,7 @@ class ScheduleManager extends HTMLElement {
 		}
 
 		const typeFieldset = document.createElement('fieldset');
-		typeFieldset.className = 'grid gap-2';
+		typeFieldset.className = 'grid content-start items-start gap-2';
 		const typeLegend = document.createElement('legend');
 		typeLegend.className = 'pb-2.5 text-[0.88rem] font-bold text-(--on-surface)';
 		typeLegend.textContent = 'Tipo de excepción';

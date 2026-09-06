@@ -691,25 +691,6 @@ const { showVoiceButton = false }: Props = Astro.props;
 				</div>
 
 				<div
-					class="appointment-body-map-overlay hidden"
-					data-appointment-body-map-overlay
-					hidden
-				>
-					<header class="appointment-body-map-overlay__header">
-						<button
-							type="button"
-							class="appointment-body-map-overlay__back"
-							data-appointment-body-map-back
-						>
-							<span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
-							Volver a la cita
-						</button>
-						<h3 class="appointment-body-map-overlay__title">Mapa corporal</h3>
-					</header>
-					<CuerpoWorkspacePanel embedded panelClass="cuerpo-workspace-panel--appointment" />
-				</div>
-
-				<div
 					class="shrink-0 z-20 mt-auto border-t border-(--shell-border) bg-(--surface-bright) px-4 py-4 sm:px-7 sm:py-5"
 					data-appointment-modal-footer-wrap
 				>
@@ -746,6 +727,24 @@ const { showVoiceButton = false }: Props = Astro.props;
 				</div>
 				</div>
 			</form>
+			<div
+				class="appointment-body-map-overlay hidden"
+				data-appointment-body-map-overlay
+				hidden
+			>
+				<header class="appointment-body-map-overlay__header">
+					<button
+						type="button"
+						class="appointment-body-map-overlay__back"
+						data-appointment-body-map-back
+					>
+						<span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
+						Volver a la cita
+					</button>
+					<h3 class="appointment-body-map-overlay__title">Mapa corporal</h3>
+				</header>
+				<CuerpoWorkspacePanel embedded panelClass="cuerpo-workspace-panel--appointment" />
+			</div>
 			</div>
 		</dialog>
 		<FileViewer label="Archivo adjunto" />
