@@ -17,8 +17,8 @@ const { rootClass = '', panelClass = '', embedded = false } = Astro.props;
 		Cambios sin guardar en esta sesión.
 	</div>
 	<div class:list={['cuerpo-workspace__layout', rootClass]} data-cuerpo-workspace>
-		<div class="cuerpo-workspace__map-col">
-			<div class="cuerpo-toolbar">
+		<section class="cuerpo-workspace__map-col" aria-label="Mapa para registrar marcas">
+			<header class="cuerpo-toolbar">
 				<div class="cuerpo-segment" role="toolbar" aria-label="Vista del cuerpo">
 					<span class="cuerpo-segment__label">Vista</span>
 					<div class="cuerpo-segment__track">
@@ -37,7 +37,7 @@ const { rootClass = '', panelClass = '', embedded = false } = Astro.props;
 						<button type="button" class="cuerpo-pill" data-cuerpo-lens="ANKLE">Tobillo</button>
 					</div>
 				</div>
-			</div>
+			</header>
 			<p class="cuerpo-map-zoom-label hidden" data-cuerpo-zoom-label aria-live="polite"></p>
 			<div class="cuerpo-map-stage">
 				<svg
@@ -52,25 +52,9 @@ const { rootClass = '', panelClass = '', embedded = false } = Astro.props;
 					<g data-cuerpo-map-marks></g>
 				</svg>
 			</div>
-			<div class="cuerpo-controls-dock">
-				<div class="cuerpo-segment cuerpo-segment--inline" role="group" aria-label="Lado del cuerpo">
-					<span class="cuerpo-segment__label">Lado</span>
-					<div class="cuerpo-segment__track">
-						<button type="button" class="cuerpo-pill" data-cuerpo-mark-side="L" aria-pressed="false">Izq.</button>
-						<button type="button" class="cuerpo-pill is-active" data-cuerpo-mark-side="R" aria-pressed="true">Der.</button>
-					</div>
-				</div>
-				<div class="cuerpo-intensity">
-					<span class="cuerpo-intensity__label">Intensidad</span>
-					<div class="cuerpo-intensity__controls">
-						<button type="button" class="cuerpo-stepper-btn" data-cuerpo-intensity-dec aria-label="Menos intensidad">−</button>
-						<span class="cuerpo-intensity__value" data-cuerpo-intensity-value>7</span>
-						<button type="button" class="cuerpo-stepper-btn" data-cuerpo-intensity-inc aria-label="Más intensidad">+</button>
-						<input type="range" min="0" max="10" value="7" class="cuerpo-intensity__slider" data-cuerpo-intensity-slider aria-label="Intensidad 0 a 10" />
-					</div>
-				</div>
-				<div class="cuerpo-segment cuerpo-segment--inline" role="toolbar" aria-label="Tipo de marca">
-					<span class="cuerpo-segment__label">Tipo</span>
+			<section class="cuerpo-controls-dock" aria-label="Configuración de la marca">
+				<div class="cuerpo-segment cuerpo-segment--inline cuerpo-segment--kind" role="toolbar" aria-label="Tipo de marca">
+					<span class="cuerpo-segment__label">Registrar</span>
 					<div class="cuerpo-segment__track">
 						<button type="button" class="cuerpo-mark-kind is-active" data-cuerpo-mark-kind="PAIN">Dolor</button>
 						<button type="button" class="cuerpo-mark-kind" data-cuerpo-mark-kind="TENSION">Tensión</button>
@@ -79,8 +63,30 @@ const { rootClass = '', panelClass = '', embedded = false } = Astro.props;
 						<button type="button" class="cuerpo-mark-kind" data-cuerpo-mark-kind="EDEMA">Edema</button>
 					</div>
 				</div>
-			</div>
-		</div>
+				<div class="cuerpo-mark-settings">
+					<div class="cuerpo-segment cuerpo-segment--inline" role="group" aria-label="Lado del cuerpo">
+						<span class="cuerpo-segment__label">Lado</span>
+						<div class="cuerpo-segment__track">
+							<button type="button" class="cuerpo-pill" data-cuerpo-mark-side="L" aria-pressed="false">Izq.</button>
+							<button type="button" class="cuerpo-pill is-active" data-cuerpo-mark-side="R" aria-pressed="true">Der.</button>
+						</div>
+					</div>
+					<div class="cuerpo-intensity">
+					<span class="cuerpo-intensity__label">Intensidad</span>
+					<div class="cuerpo-intensity__controls">
+						<button type="button" class="cuerpo-stepper-btn" data-cuerpo-intensity-dec aria-label="Menos intensidad">−</button>
+						<span class="cuerpo-intensity__value" data-cuerpo-intensity-value>7</span>
+						<button type="button" class="cuerpo-stepper-btn" data-cuerpo-intensity-inc aria-label="Más intensidad">+</button>
+						<input type="range" min="0" max="10" value="7" class="cuerpo-intensity__slider" data-cuerpo-intensity-slider aria-label="Intensidad 0 a 10" />
+					</div>
+				</div>
+				</div>
+				<p class="cuerpo-map-instruction">
+					<span class="material-symbols-rounded" aria-hidden="true">ads_click</span>
+					Hacé clic sobre la silueta para registrar la marca.
+				</p>
+			</section>
+		</section>
 		<aside class="cuerpo-workspace__side">
 			<div class="cuerpo-session-card">
 				<div class="cuerpo-session-picker hidden" data-cuerpo-session-picker-wrap hidden={embedded ? true : undefined}>
@@ -104,16 +110,15 @@ const { rootClass = '', panelClass = '', embedded = false } = Astro.props;
 				</div>
 			</div>
 			<section class="cuerpo-side-section">
-				<h4 class="customer-profile-section-title">Marcas de hoy</h4>
+				<div class="cuerpo-side-section__heading">
+					<h4 class="customer-profile-section-title">Registro de la sesión</h4>
+					<span class="cuerpo-marks-count" data-cuerpo-marks-count aria-live="polite"></span>
+				</div>
 				<ul class="cuerpo-marks-list" data-cuerpo-marks-list></ul>
-				<p class="cuerpo-marks-empty hidden" data-cuerpo-marks-empty>Sin marcas en esta sesión.</p>
+				<p class="cuerpo-marks-empty hidden" data-cuerpo-marks-empty>Seleccioná el tipo y hacé clic en la zona a registrar.</p>
 				<p class="cuerpo-marks-view-hint hidden" data-cuerpo-marks-view-hint>
 					Hay marcas en otra vista. Cambiá Frente/Espalda/Lado para verlas en el mapa.
 				</p>
-				<button type="button" class="modal-action-primary w-full" data-cuerpo-add-mark>
-					<span class="material-symbols-rounded" aria-hidden="true">add</span>
-					Añadir marca
-				</button>
 			</section>
 			<section class="cuerpo-joint-panel hidden" data-cuerpo-joint-panel hidden>
 				<h4 class="customer-profile-section-title">ROM</h4>
@@ -124,14 +129,19 @@ const { rootClass = '', panelClass = '', embedded = false } = Astro.props;
 				<div class="cuerpo-tests" data-cuerpo-tests></div>
 			</section>
 			<div class="cuerpo-side-actions">
-				<button type="button" class="modal-action-primary w-full hidden" data-cuerpo-save-session>
+				<div class="cuerpo-secondary-actions">
+					<button type="button" class="cuerpo-action-button" data-cuerpo-compare>
+						<span class="material-symbols-rounded" aria-hidden="true">compare</span>
+						Comparar
+					</button>
+					<button type="button" class="cuerpo-action-button" data-cuerpo-pdf>
+						<span class="material-symbols-rounded" aria-hidden="true">picture_as_pdf</span>
+						PDF
+					</button>
+				</div>
+				<button type="button" class="cuerpo-save-session hidden" data-cuerpo-save-session>
 					<span class="material-symbols-rounded" aria-hidden="true">save</span>
 					Guardar sesión
-				</button>
-				<button type="button" class="modal-action-secondary w-full" data-cuerpo-compare>Comparar con anterior</button>
-				<button type="button" class="modal-action-secondary w-full" data-cuerpo-pdf>
-					<span class="material-symbols-rounded" aria-hidden="true">picture_as_pdf</span>
-					PDF
 				</button>
 			</div>
 			<div class="cuerpo-compare-wrap hidden" data-cuerpo-compare-wrap>

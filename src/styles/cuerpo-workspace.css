@@ -21,8 +21,8 @@
 .cuerpo-workspace__layout {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr);
-	gap: 1.25rem;
-	padding: 1rem 1.1rem 1.25rem;
+	gap: 1rem;
+	padding: 1rem;
 	min-height: 0;
 	flex: 1 1 auto;
 	overflow-x: hidden;
@@ -33,7 +33,7 @@
 
 @media (min-width: 900px) {
 	.cuerpo-workspace__layout {
-		grid-template-columns: minmax(0, 1.25fr) minmax(17rem, 0.75fr);
+		grid-template-columns: minmax(0, 1.4fr) minmax(18.5rem, 0.6fr);
 		align-items: stretch;
 		overflow: hidden;
 	}
@@ -41,7 +41,8 @@
 
 .cuerpo-workspace__map-col {
 	display: grid;
-	gap: 0.85rem;
+	grid-template-rows: auto auto minmax(20rem, 1fr) auto;
+	gap: 0.75rem;
 	min-width: 0;
 	min-height: 0;
 }
@@ -57,13 +58,13 @@
 
 .cuerpo-toolbar {
 	display: grid;
-	gap: 0.65rem;
+	gap: 0.55rem;
 }
 
-/* Segment controls — una sola superficie, sin borde por botón */
+/* Controles agrupados: compactos y consistentes para uso clínico. */
 .cuerpo-segment {
 	display: grid;
-	gap: 0.35rem;
+	gap: 0.3rem;
 }
 
 .cuerpo-segment--inline {
@@ -79,7 +80,7 @@
 .cuerpo-segment__label {
 	font-size: 0.68rem;
 	font-weight: 700;
-	letter-spacing: 0.06em;
+	letter-spacing: 0.04em;
 	text-transform: uppercase;
 	color: color-mix(in srgb, var(--on-surface-variant) 88%, transparent);
 }
@@ -87,17 +88,18 @@
 .cuerpo-segment__track {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 0.12rem;
-	padding: 0.18rem;
-	border-radius: 0.8rem;
+	gap: 0.15rem;
+	padding: 0.2rem;
+	border-radius: 0.65rem;
 	background: color-mix(in srgb, var(--on-surface) 5%, var(--surface));
 }
 
 .cuerpo-pill,
 .cuerpo-mark-kind {
-	padding: 0.42rem 0.78rem;
+	min-height: 2rem;
+	padding: 0.36rem 0.68rem;
 	border: none;
-	border-radius: 0.62rem;
+	border-radius: 0.48rem;
 	background: transparent;
 	font-size: 0.78rem;
 	font-weight: 700;
@@ -139,10 +141,12 @@
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	padding: 1rem 0.75rem;
-	border-radius: 1.15rem;
-	background: color-mix(in srgb, var(--primary) 5%, var(--surface));
-	min-height: 17rem;
+	padding: 0.75rem;
+	border: 1px solid color-mix(in srgb, var(--shell-border) 75%, transparent);
+	border-radius: 0.85rem;
+	background: color-mix(in srgb, var(--primary) 3%, var(--surface));
+	min-height: 21rem;
+	overflow: hidden;
 }
 
 html[data-theme='light'] .cuerpo-map-stage {
@@ -150,7 +154,7 @@ html[data-theme='light'] .cuerpo-map-stage {
 }
 
 .cuerpo-map-svg {
-	width: min(100%, 16.5rem);
+	width: min(100%, 18.5rem);
 	height: auto;
 	color: color-mix(in srgb, var(--on-surface) 52%, transparent);
 	cursor: crosshair;
@@ -172,10 +176,23 @@ html[data-theme='light'] .cuerpo-map-raster {
 
 .cuerpo-controls-dock {
 	display: grid;
-	gap: 0.7rem;
-	padding: 0.75rem 0.85rem;
-	border-radius: 0.9rem;
-	background: color-mix(in srgb, var(--on-surface) 4%, var(--surface-bright));
+	gap: 0.65rem;
+	padding: 0.7rem 0.8rem;
+	border: 1px solid var(--shell-border);
+	border-radius: 0.85rem;
+	background: color-mix(in srgb, var(--on-surface) 2.5%, var(--surface-bright));
+}
+
+.cuerpo-mark-settings {
+	display: grid;
+	gap: 0.65rem;
+}
+
+@media (min-width: 620px) {
+	.cuerpo-mark-settings {
+		grid-template-columns: auto minmax(14rem, 1fr);
+		align-items: end;
+	}
 }
 
 .cuerpo-intensity {
@@ -216,8 +233,8 @@ html[data-theme='light'] .cuerpo-map-raster {
 }
 
 .cuerpo-stepper-btn {
-	width: 1.85rem;
-	height: 1.85rem;
+	width: 2rem;
+	height: 2rem;
 	border: none;
 	border-radius: 0.55rem;
 	background: color-mix(in srgb, var(--on-surface) 7%, var(--surface-bright));
@@ -232,9 +249,25 @@ html[data-theme='light'] .cuerpo-map-raster {
 	background: color-mix(in srgb, var(--on-surface) 11%, var(--surface-bright));
 }
 
+.cuerpo-map-instruction {
+	display: flex;
+	align-items: center;
+	gap: 0.35rem;
+	margin: 0;
+	font-size: 0.78rem;
+	font-weight: 600;
+	line-height: 1.35;
+	color: var(--on-surface-variant);
+}
+
+.cuerpo-map-instruction .material-symbols-rounded {
+	font-size: 1rem;
+	color: var(--primary);
+}
+
 .cuerpo-workspace__side {
 	display: grid;
-	gap: 0.9rem;
+	gap: 0.8rem;
 	align-content: start;
 	min-width: 0;
 	min-height: 0;
@@ -264,9 +297,10 @@ html[data-theme='light'] .cuerpo-map-raster {
 .cuerpo-session-card {
 	display: grid;
 	gap: 0.35rem;
-	padding: 0.7rem 0.8rem;
-	border-radius: 0.85rem;
-	background: color-mix(in srgb, var(--on-surface) 4%, var(--surface-bright));
+	padding: 0.65rem 0.75rem;
+	border: 1px solid var(--shell-border);
+	border-radius: 0.75rem;
+	background: color-mix(in srgb, var(--on-surface) 2.5%, var(--surface-bright));
 }
 
 .cuerpo-session-card:has(.cuerpo-session-picker:not(.hidden)) .cuerpo-session-label {
@@ -331,16 +365,36 @@ html[data-theme='light'] .cuerpo-map-raster {
 
 .cuerpo-side-section {
 	display: grid;
-	gap: 0.85rem;
+	gap: 0.6rem;
+	padding-top: 0.8rem;
+	border-top: 1px solid var(--shell-border);
 }
 
 .cuerpo-side-section .customer-profile-section-title {
 	margin: 0;
 }
 
+.cuerpo-side-section__heading {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 0.75rem;
+}
+
+.cuerpo-marks-count {
+	font-size: 0.72rem;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+	color: var(--on-surface-variant);
+}
+
+.cuerpo-marks-count.hidden {
+	display: none;
+}
+
 .cuerpo-marks-list {
 	display: grid;
-	gap: 0.6rem;
+	gap: 0.4rem;
 	margin: 0;
 	padding: 0;
 	list-style: none;
@@ -350,8 +404,8 @@ html[data-theme='light'] .cuerpo-map-raster {
 	display: flex;
 	align-items: center;
 	gap: 0.45rem;
-	padding: 0.35rem 0.45rem;
-	border-radius: 0.6rem;
+	padding: 0.25rem 0.35rem;
+	border-radius: 0.55rem;
 	background: color-mix(in srgb, var(--on-surface) 3%, var(--surface-bright));
 	font-size: 0.84rem;
 	font-weight: 600;
@@ -420,10 +474,9 @@ html[data-theme='light'] .cuerpo-map-raster {
 
 .cuerpo-marks-empty {
 	margin: 0;
-}
-
-.cuerpo-side-section [data-cuerpo-add-mark] {
-	margin-top: 0.25rem;
+	font-size: 0.82rem;
+	line-height: 1.45;
+	color: var(--on-surface-variant);
 }
 
 .cuerpo-mark-item__dot {
@@ -435,7 +488,70 @@ html[data-theme='light'] .cuerpo-map-raster {
 
 .cuerpo-side-actions {
 	display: grid;
-	gap: 0.5rem;
+	gap: 0.55rem;
+	padding-top: 0.8rem;
+	border-top: 1px solid var(--shell-border);
+}
+
+.cuerpo-secondary-actions {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0.45rem;
+}
+
+.cuerpo-action-button,
+.cuerpo-save-session {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.4rem;
+	min-height: 2.5rem;
+	padding: 0.55rem 0.75rem;
+	border-radius: 0.62rem;
+	font-size: 0.8rem;
+	font-weight: 800;
+	cursor: pointer;
+	transition:
+		background 160ms ease,
+		border-color 160ms ease,
+		transform 120ms ease;
+}
+
+.cuerpo-action-button {
+	border: 1px solid var(--shell-border);
+	background: transparent;
+	color: var(--on-surface);
+}
+
+.cuerpo-action-button:hover {
+	background: color-mix(in srgb, var(--on-surface) 5%, transparent);
+}
+
+.cuerpo-save-session {
+	width: 100%;
+	border: 1px solid var(--primary);
+	background: var(--primary);
+	color: var(--on-primary, #fff);
+}
+
+.cuerpo-action-button:active:not(:disabled),
+.cuerpo-save-session:active:not(:disabled) {
+	transform: translateY(1px);
+}
+
+.cuerpo-action-button:focus-visible,
+.cuerpo-save-session:focus-visible {
+	outline: 2px solid color-mix(in srgb, var(--primary) 55%, transparent);
+	outline-offset: 2px;
+}
+
+.cuerpo-save-session:hover:not(:disabled) {
+	background: color-mix(in srgb, var(--primary) 88%, var(--on-surface));
+}
+
+.cuerpo-save-session .material-symbols-rounded,
+.cuerpo-action-button .material-symbols-rounded {
+	font-size: 1.05rem;
 }
 
 .cuerpo-rom-field {

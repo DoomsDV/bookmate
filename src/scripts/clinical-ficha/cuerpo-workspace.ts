@@ -792,10 +792,15 @@ export class CuerpoWorkspace {
 		const list = this.root.querySelector('[data-cuerpo-marks-list]');
 		const empty = this.root.querySelector('[data-cuerpo-marks-empty]');
 		const viewHint = this.root.querySelector('[data-cuerpo-marks-view-hint]');
+		const count = this.root.querySelector('[data-cuerpo-marks-count]');
 		if (!list) return;
 		list.replaceChildren();
 		const marks = this.snapshot?.marks ?? [];
 		const marksInView = marks.filter((mark) => mark.view === this.view);
+		if (count) {
+			count.textContent = marks.length === 1 ? '1 marca' : `${marks.length} marcas`;
+			count.classList.toggle('hidden', marks.length === 0);
+		}
 
 		if (!marks.length) {
 			empty?.classList.remove('hidden');
