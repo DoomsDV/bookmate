@@ -95,13 +95,13 @@ export const getBodyMapAssetUrl = (
 ): string => {
 	const vista = VIEW_ASSET[view] ?? 'frente';
 	if (lens === 'ANKLE') {
-		return `/body-map/zoom-generico-tobillo-${vista}.png`;
+		return `/body-map/zooms/generico/tobillo-${vista}.png`;
 	}
 	const gender = SILHOUETTE_ASSET[silhouette] ?? 'mujer';
 	if (lens === 'BODY') {
-		return `/body-map/cuerpo-${gender}-${vista}.png`;
+		return `/body-map/cuerpo/${gender}-${vista}.png`;
 	}
-	return `/body-map/zoom-${gender}-${JOINT_ASSET[lens]}-${vista}.png`;
+	return `/body-map/zooms/${gender}/${JOINT_ASSET[lens]}-${vista}.png`;
 };
 
 /** Zonas de detección alineadas a ref_body_region (coordenadas en viewBox). */
