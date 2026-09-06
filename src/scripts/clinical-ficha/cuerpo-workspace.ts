@@ -12,10 +12,11 @@ import {
 import { downloadBodyMapPdf } from '../../lib/clinical-ficha/body-pdf';
 import {
 	BODY_VIEWBOX,
-	getActiveMapViewBox,
+	getBodyMapAssetUrl,
 	getBodyOutline,
 	JOINT_VIEWPORTS,
-	markToViewCoords,
+	mapBodyToCanvas,
+	mapCanvasToBody,
 	resolveBodyRegion,
 	SILHOUETTE_LABELS,
 } from '../../lib/clinical-ficha/body-silhouettes';
@@ -561,8 +562,7 @@ export class CuerpoWorkspace {
 	}
 
 	private applyMapViewBox(svg: SVGSVGElement): void {
-		const box = getActiveMapViewBox(this.lens, this.view);
-		svg.setAttribute('viewBox', `${box.x} ${box.y} ${box.width} ${box.height}`);
+		svg.setAttribute('viewBox', `0 0 ${BODY_VIEWBOX.width} ${BODY_VIEWBOX.height}`);
 	}
 
 	private renderMap(): void {
@@ -605,7 +605,10 @@ export class CuerpoWorkspace {
 		if (!(compareOutline instanceof SVGGElement)) return;
 		this.ensureSvgNamespace(this.compareSvg);
 		this.applyMapViewBox(this.compareSvg);
-		this.drawOutline(this.compareSvg, compareOutline, { interactive: false });
+		this.drawOutline(this.compareSvg, compareOutline, {
+			interactive: false,
+			silhouette: normalizeSilhouette(previous.silhouette),
+		});
 		this.renderMarks(this.compareLayer, previous.marks, { interactive: false });
 	}
 
@@ -618,19 +621,39 @@ export class CuerpoWorkspace {
 	private drawOutline(
 		svg: SVGSVGElement,
 		layer: SVGGElement,
-		options: { interactive: boolean }
+		options: { interactive: boolean; silhouette?: BodySilhouette }
 	): void {
 		layer.replaceChildren();
+		const silhouette = options.silhouette ?? this.silhouette;
+		const assetUrl = getBodyMapAssetUrl(silhouette, this.view, this.lens);
+
+		const image = document.createElementNS(SVG_NS, 'image');
+		image.setAttribute('href', assetUrl);
+		image.setAttribute('x', '0');
+		image.setAttribute('y', '0');
+		image.setAttribute('width', String(BODY_VIEWBOX.width));
+		image.setAttribute('height', String(BODY_VIEWBOX.height));
+		image.setAttribute('preserveAspectRatio', this.lens === 'BODY' ? 'xMidYMid slice' : 'xMidYMid meet');
+		image.setAttribute('class', 'cuerpo-map-raster');
+		image.setAttribute('pointer-events', 'none');
+		layer.appendChild(image);
+
 		const path = document.createElementNS(SVG_NS, 'path');
-		path.setAttribute('d', getBodyOutline(this.silhouette, this.view));
+		path.setAttribute('d', getBodyOutline(silhouette, this.view));
 		path.setAttribute('fill', 'currentColor');
-		path.setAttribute('fill-opacity', '0.1');
-		path.setAttribute('stroke', 'currentColor');
-		path.setAttribute('stroke-width', '1.2');
+		path.setAttribute('fill-opacity', '0');
+		path.setAttribute('stroke', 'none');
 		path.setAttribute('data-cuerpo-outline', '1');
-		path.setAttribute('vector-effect', 'non-scaling-stroke');
-		path.setAttribute('shape-rendering', 'geometricPrecision');
+		path.setAttribute('class', 'cuerpo-map-outline-hit');
 		layer.appendChild(path);
+
+		image.addEventListener('error', () => {
+			path.setAttribute('fill-opacity', '0.1');
+			path.setAttribute('stroke', 'currentColor');
+			path.setAttribute('stroke-width', '1.2');
+			path.setAttribute('vector-effect', 'non-scaling-stroke');
+			image.remove();
+		});
 
 		if (options.interactive) {
 			svg.onclick = (event) => {
@@ -638,8 +661,8 @@ export class CuerpoWorkspace {
 				if ((event.target as Element | null)?.closest('[data-cuerpo-map-mark]')) return;
 				const { nx, ny } = this.pointerToNormalizedCoords(svg, event.clientX, event.clientY);
 				if (nx < 0 || nx > 1 || ny < 0 || ny > 1) return;
-				if (!this.isPointOnBody(path, nx, ny)) return;
-				this.addMark(nx, ny);
+				const body = mapCanvasToBody(this.lens, this.view, nx, ny);
+				this.addMark(body.nx, body.ny);
 			};
 		} else {
 			svg.onclick = null;
@@ -652,25 +675,9 @@ export class CuerpoWorkspace {
 		clientY: number
 	): { nx: number; ny: number } {
 		const rect = svg.getBoundingClientRect();
-		const box = getActiveMapViewBox(this.lens, this.view);
 		const relX = rect.width > 0 ? (clientX - rect.left) / rect.width : 0;
 		const relY = rect.height > 0 ? (clientY - rect.top) / rect.height : 0;
-		const x = box.x + relX * box.width;
-		const y = box.y + relY * box.height;
-		return {
-			nx: x / BODY_VIEWBOX.width,
-			ny: y / BODY_VIEWBOX.height,
-		};
-	}
-
-	private isPointOnBody(path: SVGPathElement, nx: number, ny: number): boolean {
-		const { x, y } = markToViewCoords(nx, ny);
-		const svg = path.ownerSVGElement;
-		if (!svg || typeof path.isPointInFill !== 'function') return true;
-		const point = svg.createSVGPoint();
-		point.x = x;
-		point.y = y;
-		return path.isPointInFill(point);
+		return { nx: relX, ny: relY };
 	}
 
 	private renderMarks(
@@ -681,9 +688,10 @@ export class CuerpoWorkspace {
 		layer.replaceChildren();
 		for (const mark of marks.filter((m) => m.view === this.view)) {
 			const meta = markKindMeta(mark.kind);
-			const { x, y } = markToViewCoords(mark.nx, mark.ny);
+			const point = mapBodyToCanvas(this.lens, this.view, mark.nx, mark.ny);
+			if (!point) continue;
 			const g = document.createElementNS(SVG_NS, 'g');
-			g.setAttribute('transform', `translate(${x}, ${y})`);
+			g.setAttribute('transform', `translate(${point.x}, ${point.y})`);
 			if (options.interactive) {
 				g.setAttribute('data-cuerpo-map-mark', '1');
 				g.setAttribute('data-mark-id', mark.id);
@@ -707,7 +715,8 @@ export class CuerpoWorkspace {
 	}
 
 	private addMarkAtCenter(): void {
-		this.addMark(0.5, 0.45);
+		const body = mapCanvasToBody(this.lens, this.view, 0.5, 0.45);
+		this.addMark(body.nx, body.ny);
 	}
 
 	private addMark(nx: number, ny: number): void {
@@ -1108,43 +1117,94 @@ export class CuerpoWorkspace {
 		);
 	}
 
+	private loadMapImage(src: string): Promise<HTMLImageElement> {
+		return new Promise((resolve, reject) => {
+			const img = new Image();
+			img.onload = () => resolve(img);
+			img.onerror = () => reject(new Error('No se pudo cargar la silueta.'));
+			img.src = src;
+		});
+	}
+
+	private drawFittedImage(
+		ctx: CanvasRenderingContext2D,
+		img: HTMLImageElement,
+		width: number,
+		height: number,
+		mode: 'cover' | 'contain'
+	): void {
+		const imageRatio = img.width / img.height;
+		const canvasRatio = width / height;
+		let dw = width;
+		let dh = height;
+		let dx = 0;
+		let dy = 0;
+		const fitHeight = mode === 'cover' ? imageRatio > canvasRatio : imageRatio < canvasRatio;
+		if (fitHeight) {
+			dw = height * imageRatio;
+			dx = (width - dw) / 2;
+		} else {
+			dh = width / imageRatio;
+			dy = (height - dh) / 2;
+		}
+		ctx.drawImage(img, dx, dy, dw, dh);
+	}
+
+	private paintMarksOnCanvas(
+		ctx: CanvasRenderingContext2D,
+		marks: BodyMark[],
+		width: number,
+		height: number
+	): void {
+		const scaleX = width / BODY_VIEWBOX.width;
+		const scaleY = height / BODY_VIEWBOX.height;
+		for (const mark of marks.filter((item) => item.view === this.view)) {
+			const point = mapBodyToCanvas(this.lens, this.view, mark.nx, mark.ny);
+			if (!point) continue;
+			const meta = markKindMeta(mark.kind);
+			const cx = point.x * scaleX;
+			const cy = point.y * scaleY;
+			ctx.beginPath();
+			ctx.arc(cx, cy, (2 + mark.intensity * 0.35) * scaleX, 0, Math.PI * 2);
+			ctx.fillStyle = meta.color;
+			ctx.globalAlpha = 0.28;
+			ctx.fill();
+			ctx.beginPath();
+			ctx.arc(cx, cy, 1.6 * scaleX, 0, Math.PI * 2);
+			ctx.globalAlpha = 1;
+			ctx.fillStyle = meta.color;
+			ctx.fill();
+		}
+	}
+
 	private async exportPdf(): Promise<void> {
 		if (!this.snapshot || !this.context) return;
 		let mapImage: string | null = null;
-		if (this.mapSvg) {
-			try {
-				this.ensureSvgNamespace(this.mapSvg);
-				const clone = this.mapSvg.cloneNode(true) as SVGSVGElement;
-				for (const node of clone.querySelectorAll('[stroke="currentColor"]')) {
-					node.setAttribute('stroke', '#5c6570');
-				}
-				for (const node of clone.querySelectorAll('[fill="currentColor"]')) {
-					node.setAttribute('fill', '#5c6570');
-				}
-				const serializer = new XMLSerializer();
-				const source = serializer.serializeToString(clone);
-				const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
-				const url = URL.createObjectURL(blob);
-				const img = new Image();
-				await new Promise<void>((resolve, reject) => {
-					img.onload = () => resolve();
-					img.onerror = () => reject(new Error('svg'));
-					img.src = url;
-				});
-				const canvas = document.createElement('canvas');
-				canvas.width = 300;
-				canvas.height = 400;
-				const ctx = canvas.getContext('2d');
-				if (ctx) {
-					ctx.fillStyle = '#ffffff';
-					ctx.fillRect(0, 0, canvas.width, canvas.height);
-					ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-					mapImage = canvas.toDataURL('image/png');
-				}
-				URL.revokeObjectURL(url);
-			} catch {
-				mapImage = null;
+		try {
+			const raster = await this.loadMapImage(
+				getBodyMapAssetUrl(this.silhouette, this.view, this.lens)
+			);
+			const canvas = document.createElement('canvas');
+			canvas.width = 600;
+			canvas.height = 780;
+			const ctx = canvas.getContext('2d');
+			if (ctx) {
+				ctx.fillStyle = '#ffffff';
+				ctx.fillRect(0, 0, canvas.width, canvas.height);
+				ctx.filter = 'invert(1)';
+				this.drawFittedImage(
+					ctx,
+					raster,
+					canvas.width,
+					canvas.height,
+					this.lens === 'BODY' ? 'cover' : 'contain'
+				);
+				ctx.filter = 'none';
+				this.paintMarksOnCanvas(ctx, this.snapshot.marks, canvas.width, canvas.height);
+				mapImage = canvas.toDataURL('image/png');
 			}
+		} catch {
+			mapImage = null;
 		}
 		downloadBodyMapPdf({
 			customerName: this.context.customerName,

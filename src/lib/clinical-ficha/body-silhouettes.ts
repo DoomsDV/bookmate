@@ -67,6 +67,43 @@ export const SILHOUETTE_LABELS: Record<BodySilhouette, string> = {
 	CHILD: 'Silueta infantil',
 };
 
+const VIEW_ASSET: Record<BodyView, string> = {
+	FRONT: 'frente',
+	BACK: 'espalda',
+	SIDE: 'lado',
+};
+
+const SILHOUETTE_ASSET: Record<BodySilhouette, string> = {
+	NEUTRAL: 'mujer',
+	FEMALE: 'mujer',
+	MALE: 'hombre',
+	CHILD: 'nino',
+};
+
+const JOINT_ASSET: Record<JointCode, string> = {
+	SHOULDER: 'hombro',
+	HIP: 'cadera',
+	KNEE: 'rodilla',
+	ANKLE: 'tobillo',
+};
+
+/** PNGs en `/public/body-map`. El tobillo es genérico para las tres siluetas. */
+export const getBodyMapAssetUrl = (
+	silhouette: BodySilhouette,
+	view: BodyView,
+	lens: 'BODY' | JointCode = 'BODY'
+): string => {
+	const vista = VIEW_ASSET[view] ?? 'frente';
+	if (lens === 'ANKLE') {
+		return `/body-map/zoom-generico-tobillo-${vista}.png`;
+	}
+	const gender = SILHOUETTE_ASSET[silhouette] ?? 'mujer';
+	if (lens === 'BODY') {
+		return `/body-map/cuerpo-${gender}-${vista}.png`;
+	}
+	return `/body-map/zoom-${gender}-${JOINT_ASSET[lens]}-${vista}.png`;
+};
+
 /** Zonas de detección alineadas a ref_body_region (coordenadas en viewBox). */
 export const BODY_REGION_HITS: BodyRegionHit[] = [
 	{ code: 'FRONT_SHOULDER_L', view: 'FRONT', cx: 26, cy: 40, rx: 11, ry: 9, side: 'L' },
@@ -131,3 +168,44 @@ export const markToViewCoords = (nx: number, ny: number): { x: number; y: number
 	x: nx * BODY_VIEWBOX.width,
 	y: ny * BODY_VIEWBOX.height,
 });
+
+/** Convierte un clic en el canvas (0–1) a coordenadas del cuerpo completo. */
+export const mapCanvasToBody = (
+	lens: 'BODY' | JointCode,
+	_view: BodyView,
+	nx: number,
+	ny: number
+): { nx: number; ny: number } => {
+	if (lens === 'BODY') return { nx, ny };
+	const box = JOINT_VIEWPORTS[lens]?.viewBox;
+	if (!box) return { nx, ny };
+	return {
+		nx: (box.x + nx * box.width) / BODY_VIEWBOX.width,
+		ny: (box.y + ny * box.height) / BODY_VIEWBOX.height,
+	};
+};
+
+/** Proyecta una marca del cuerpo al canvas actual. `null` si cae fuera del zoom. */
+export const mapBodyToCanvas = (
+	lens: 'BODY' | JointCode,
+	_view: BodyView,
+	nx: number,
+	ny: number
+): { x: number; y: number } | null => {
+	const point = markToViewCoords(nx, ny);
+	if (lens === 'BODY') return point;
+	const box = JOINT_VIEWPORTS[lens]?.viewBox;
+	if (!box) return point;
+	if (
+		point.x < box.x ||
+		point.x > box.x + box.width ||
+		point.y < box.y ||
+		point.y > box.y + box.height
+	) {
+		return null;
+	}
+	return {
+		x: ((point.x - box.x) / box.width) * BODY_VIEWBOX.width,
+		y: ((point.y - box.y) / box.height) * BODY_VIEWBOX.height,
+	};
+};

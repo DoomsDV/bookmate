@@ -145,11 +145,23 @@
 	min-height: 17rem;
 }
 
+html[data-theme='light'] .cuerpo-map-stage {
+	background: color-mix(in srgb, var(--on-surface) 6%, var(--surface-bright));
+}
+
 .cuerpo-map-svg {
-	width: min(100%, 15rem);
+	width: min(100%, 16.5rem);
 	height: auto;
 	color: color-mix(in srgb, var(--on-surface) 52%, transparent);
 	cursor: crosshair;
+}
+
+.cuerpo-map-raster {
+	pointer-events: none;
+}
+
+html[data-theme='light'] .cuerpo-map-raster {
+	filter: invert(1);
 }
 
 .cuerpo-map-svg--compare {
@@ -643,15 +655,28 @@ dialog[data-appointment-modal].is-body-map-workspace .appointment-body-map-overl
 
 .cuerpo-mark-editor {
 	padding: 0;
-	border: 0;
+	border: 1px solid var(--shell-border);
 	border-radius: 1rem;
 	background: var(--surface-bright);
 	color: var(--on-surface);
-	max-width: min(24rem, calc(100vw - 2rem));
+	max-width: min(22rem, calc(100vw - 2rem));
+	margin: 0;
+	position: fixed;
+	inset: auto 1.25rem 1.25rem auto;
+	box-shadow: 0 18px 40px color-mix(in srgb, var(--on-surface) 22%, transparent);
 }
 
 .cuerpo-mark-editor::backdrop {
-	background: color-mix(in srgb, var(--on-surface) 45%, transparent);
+	background: transparent;
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
+}
+
+@media (max-width: 899px) {
+	.cuerpo-mark-editor {
+		inset: auto 0.75rem 0.75rem 0.75rem;
+		max-width: none;
+	}
 }
 
 .cuerpo-mark-editor__form {
