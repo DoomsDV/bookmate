@@ -1686,6 +1686,10 @@ html:has(.sipap-deposit-panel:not(.hidden)) body,
 	z-index: 1;
 }
 
+.public-service-card:not(.is-selected) .public-service-card__check {
+	display: none;
+}
+
 .public-service-card.is-selected .public-service-card__check {
 	display: block;
 }
@@ -3850,6 +3854,10 @@ html[data-theme='dark'] .public-booking-back-link:hover {
 	pointer-events: none;
 }
 
+.public-location-card:not(.is-selected) .public-location-card__check {
+	display: none;
+}
+
 .public-location-card.is-selected .public-location-card__check {
 	display: block;
 }
@@ -4578,6 +4586,10 @@ html[data-theme='dark'] .public-booking-back-link:hover {
 	color: var(--primary);
 	z-index: 2;
 	pointer-events: none;
+}
+
+.public-org-card:not(.is-selected) .public-org-card__check {
+	display: none;
 }
 
 .public-org-card.is-selected .public-org-card__check {
