@@ -962,9 +962,9 @@ export const deleteCardWithOrds = async (token: string, cardId: number): Promise
 
 export const activateSubscriptionWithOrds = async (
 	token: string,
-	payload: { target_type?: 'PLAN' | 'STORAGE_ADDON'; plan_code?: string; addon_code?: string },
+	payload: { target_type?: 'PLAN' | 'STORAGE_ADDON' | 'MODULE_ADDON'; plan_code?: string; addon_code?: string },
 	idempotencyKey?: string
-): Promise<ActivateResult> => {
+): Promise<{ data: ActivateResult; httpStatus: number }> => {
 	if (!token) throw new SubscriptionApiError('Token de acceso requerido.', 401);
 	const response = await fetch(SUBSCRIPTION_ACTIVATE_URL, {
 		method: 'POST',
@@ -976,5 +976,6 @@ export const activateSubscriptionWithOrds = async (
 		},
 		body: JSON.stringify(payload),
 	});
-	return parseOrdsData(response, normalizeActivate);
+	const data = await parseOrdsData(response, normalizeActivate);
+	return { data, httpStatus: response.status === 201 ? 201 : 200 };
 };

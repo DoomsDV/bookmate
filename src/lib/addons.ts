@@ -1,4 +1,7 @@
 import { resolveOrdsApiUrl } from './env-urls';
+import { readIdempotencyKeyHeader } from './idempotency';
+
+export { readIdempotencyKeyHeader };
 
 export const ADDONS_URL = resolveOrdsApiUrl(
 	import.meta.env.ORDS_ADDONS_URL,
@@ -14,6 +17,7 @@ export const ADDONS_CANCEL_URL = resolveOrdsApiUrl(
 
 export type ModuleAddonGrantType = 'PREVIEW' | 'PAID';
 export type ModuleAddonStatus = 'ACTIVE' | 'CANCELED' | 'EXPIRED';
+export type AddonCancelRefundType = 'nce' | 'credit' | 'none';
 
 export interface ModuleAddonItem {
 	id_addon: number;
@@ -29,6 +33,12 @@ export interface ModuleAddonItem {
 	is_active_for_org: boolean;
 	grant_type: ModuleAddonGrantType | null;
 	status: ModuleAddonStatus | null;
+	/** Cobro proporcional de alta mid-cycle. Ausente si ORDS aún no lo envía. */
+	prorate_amount: number | null;
+	days_remaining: number | null;
+	/** Crédito/NCE estimado al cancelar. 0 si PREVIEW o si ORDS no lo envía. */
+	cancel_credit_amount: number;
+	cancel_refund_type: AddonCancelRefundType;
 }
 
 export interface AddonsCatalog {
@@ -36,6 +46,31 @@ export interface AddonsCatalog {
 	items: ModuleAddonItem[];
 	active_items: ModuleAddonItem[];
 	available_items: ModuleAddonItem[];
+}
+
+/**
+ * Respuesta de POST /workspace/addons.
+ * Con ADDONS_BILLING_LIVE=0 el backend sigue devolviendo el ítem (PREVIEW).
+ * Con live=1 debe espejar /subscription/activate: invoice_id, hash, requires_polling, payment_status.
+ */
+export interface AddonActivateResult {
+	invoice_id: number | null;
+	hash: string;
+	status: string;
+	payment_status: string | null;
+	requires_polling: boolean;
+	target_type: string;
+	addon: ModuleAddonItem | null;
+}
+
+export interface AddonCancelResult {
+	addon_code: string;
+	addon_name: string | null;
+	credit_granted: number;
+	nce_amount: number;
+	nce_queued: boolean;
+	account_balance: number | null;
+	addon: ModuleAddonItem | null;
 }
 
 export class AddonApiError extends Error {
@@ -74,6 +109,23 @@ const toNullableString = (value: unknown): string | null => {
 	return str === '' ? null : str;
 };
 
+const toNullableAmount = (value: unknown): number | null => {
+	if (value === null || value === undefined || value === '') return null;
+	const parsed = Number(value);
+	return Number.isFinite(parsed) ? parsed : null;
+};
+
+const toRefundType = (
+	value: unknown,
+	grantType: ModuleAddonGrantType | null
+): AddonCancelRefundType => {
+	const raw = String(value || '')
+		.trim()
+		.toLowerCase();
+	if (raw === 'nce' || raw === 'credit' || raw === 'none') return raw;
+	return grantType === 'PREVIEW' ? 'none' : 'credit';
+};
+
 const normalizeModuleAddonItem = (value: unknown): ModuleAddonItem | null => {
 	if (!value || typeof value !== 'object') return null;
 	const source = value as Record<string, unknown>;
@@ -82,6 +134,8 @@ const normalizeModuleAddonItem = (value: unknown): ModuleAddonItem | null => {
 
 	const grantTypeRaw = toNullableString(source.grant_type);
 	const statusRaw = toNullableString(source.status);
+	const grantType: ModuleAddonGrantType | null =
+		grantTypeRaw === 'PREVIEW' || grantTypeRaw === 'PAID' ? grantTypeRaw : null;
 
 	return {
 		id_addon: id,
@@ -95,12 +149,15 @@ const normalizeModuleAddonItem = (value: unknown): ModuleAddonItem | null => {
 		audience_code: toNullableString(source.audience_code),
 		eligible: toBool(source.eligible),
 		is_active_for_org: toBool(source.is_active_for_org),
-		grant_type:
-			grantTypeRaw === 'PREVIEW' || grantTypeRaw === 'PAID' ? grantTypeRaw : null,
+		grant_type: grantType,
 		status:
 			statusRaw === 'ACTIVE' || statusRaw === 'CANCELED' || statusRaw === 'EXPIRED'
 				? statusRaw
 				: null,
+		prorate_amount: toNullableAmount(source.prorate_amount),
+		days_remaining: toNullableAmount(source.days_remaining),
+		cancel_credit_amount: toNumber(source.cancel_credit_amount, 0),
+		cancel_refund_type: toRefundType(source.cancel_refund_type, grantType),
 	};
 };
 
@@ -132,6 +189,50 @@ const normalizeAddonsCatalog = (value: unknown): AddonsCatalog => {
 	};
 };
 
+const looksLikeAddonItem = (source: Record<string, unknown>): boolean => {
+	const id = toNumber(source.id_addon, NaN);
+	return Number.isInteger(id) && id > 0 && String(source.code || '').trim() !== '';
+};
+
+const normalizeAddonActivate = (value: unknown): AddonActivateResult => {
+	const source = (value ?? {}) as Record<string, unknown>;
+	const nestedAddon = normalizeModuleAddonItem(source.addon);
+	const inlineAddon = looksLikeAddonItem(source) ? normalizeModuleAddonItem(source) : null;
+	const addon = nestedAddon || inlineAddon;
+	const hash = String(source.hash || '').trim();
+	const invoiceRaw = toNumber(source.invoice_id, NaN);
+	const invoiceId = Number.isInteger(invoiceRaw) && invoiceRaw > 0 ? invoiceRaw : null;
+	const status = String(source.status || addon?.status || (hash ? 'PENDING' : 'ACTIVE')).trim();
+
+	return {
+		invoice_id: invoiceId,
+		hash,
+		status,
+		payment_status: toNullableString(source.payment_status) || (status ? status : null),
+		requires_polling:
+			source.requires_polling === undefined ? Boolean(hash) : toBool(source.requires_polling),
+		target_type: String(source.target_type || 'MODULE_ADDON').trim() || 'MODULE_ADDON',
+		addon,
+	};
+};
+
+const normalizeAddonCancel = (value: unknown): AddonCancelResult => {
+	const source = (value ?? {}) as Record<string, unknown>;
+	const addon = looksLikeAddonItem(source) ? normalizeModuleAddonItem(source) : null;
+	return {
+		addon_code: String(source.addon_code || addon?.code || '').trim(),
+		addon_name: toNullableString(source.addon_name) || addon?.name || null,
+		credit_granted: toNumber(source.credit_granted, 0),
+		nce_amount: toNumber(source.nce_amount, 0),
+		nce_queued: toBool(source.nce_queued),
+		account_balance:
+			source.account_balance == null || source.account_balance === ''
+				? null
+				: toNumber(source.account_balance, 0),
+		addon,
+	};
+};
+
 const parseOrdsData = async <T>(response: Response, normalize: (data: unknown) => T): Promise<T> => {
 	let body: AddonSuccessResponse | AddonFailureResponse | null = null;
 	try {
@@ -140,6 +241,7 @@ const parseOrdsData = async <T>(response: Response, normalize: (data: unknown) =
 		throw new AddonApiError('No fue posible interpretar la respuesta del servidor.', 502);
 	}
 
+	// 200 y 201 son éxito (201 = PENDING/Pagopar). El cobro se decide por el body, no por HTTP.
 	if (!body || typeof body !== 'object' || body.status !== 'success' || !('data' in body)) {
 		const failure = (body ?? {}) as AddonFailureResponse;
 		throw new AddonApiError(
@@ -152,6 +254,10 @@ const parseOrdsData = async <T>(response: Response, normalize: (data: unknown) =
 
 	return normalize((body as AddonSuccessResponse).data);
 };
+
+/** ORDS: 201 si PENDING/requires_polling; 200 si PAID inmediato o preview. */
+export const ordsActivateHttpStatus = (response: Response): number =>
+	response.status === 201 ? 201 : 200;
 
 export const listAddonsWithOrds = async (token: string): Promise<AddonsCatalog> => {
 	if (!token) throw new AddonApiError('Token de acceso requerido.', 401);
@@ -167,10 +273,15 @@ export const listAddonsWithOrds = async (token: string): Promise<AddonsCatalog> 
 	return parseOrdsData(response, normalizeAddonsCatalog);
 };
 
+/**
+ * Activa o cobra un complemento de módulo.
+ * Reenvía `Idempotency-Key` a ORDS (`HTTP_IDEMPOTENCY_KEY` → `pr_activate_module_addon`).
+ */
 export const activateAddonWithOrds = async (
 	token: string,
-	addonCode: string
-): Promise<ModuleAddonItem> => {
+	addonCode: string,
+	idempotencyKey?: string
+): Promise<{ data: AddonActivateResult; httpStatus: number }> => {
 	if (!token) throw new AddonApiError('Token de acceso requerido.', 401);
 
 	const code = String(addonCode || '').trim().toUpperCase();
@@ -182,23 +293,19 @@ export const activateAddonWithOrds = async (
 			Authorization: `Bearer ${token}`,
 			Accept: 'application/json',
 			'Content-Type': 'application/json',
+			...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
 		},
 		body: JSON.stringify({ addon_code: code }),
 	});
 
-	return parseOrdsData(response, (data) => {
-		const normalized = normalizeModuleAddonItem(data);
-		if (!normalized) {
-			throw new AddonApiError('No fue posible interpretar el complemento activado.', 502);
-		}
-		return normalized;
-	});
+	const data = await parseOrdsData(response, normalizeAddonActivate);
+	return { data, httpStatus: ordsActivateHttpStatus(response) };
 };
 
 export const cancelAddonWithOrds = async (
 	token: string,
 	addonCode: string
-): Promise<ModuleAddonItem> => {
+): Promise<AddonCancelResult> => {
 	if (!token) throw new AddonApiError('Token de acceso requerido.', 401);
 
 	const code = String(addonCode || '').trim().toUpperCase();
@@ -214,11 +321,5 @@ export const cancelAddonWithOrds = async (
 		body: JSON.stringify({ addon_code: code }),
 	});
 
-	return parseOrdsData(response, (data) => {
-		const normalized = normalizeModuleAddonItem(data);
-		if (!normalized) {
-			throw new AddonApiError('No fue posible interpretar el complemento cancelado.', 502);
-		}
-		return normalized;
-	});
+	return parseOrdsData(response, normalizeAddonCancel);
 };

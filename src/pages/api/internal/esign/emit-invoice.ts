@@ -20,6 +20,8 @@ interface EmitInvoiceWebhookBody {
 	credit_note_id?: number;
 	emission_key?: string;
 	tipo?: 'fe' | 'nce' | 'nde';
+	invoice_type?: string;
+	codigo?: string;
 	cdcRef?: string;
 	motivo?: number;
 	datos_operacion?: { establecimiento?: string; punto_expedicion?: string };
@@ -50,6 +52,35 @@ const requireServiceToken = (request: Request) => {
 const DEFAULT_AFECTACION_IVA = 1;
 const DEFAULT_TASA_IVA = 10;
 
+const stripInternalBillingJargon = (description: string): string =>
+	description
+		.replace(/\s*\(prorrateo\s+\d+\s+d[ií]as?(?:\(s\))?\)/gi, '')
+		.replace(/\s*\(sin cobro;\s*entra en la renovaci[oó]n\)/gi, '')
+		.replace(/\s*\(\s*1\s+mes\s*\)/gi, '')
+		.replace(/\s*-\s*cr[eé]dito\s+[\d.]+(?:\s+Gs)?/gi, '')
+		.replace(/\s{2,}/g, ' ')
+		.trim();
+
+const isModuleAddonInvoice = (body: EmitInvoiceWebhookBody): boolean => {
+	const invoiceType = String(body.invoice_type || '').trim().toUpperCase();
+	const codigo = String(body.codigo || '').trim().toUpperCase();
+	return invoiceType === 'MODULE_ADDON' || codigo === 'HASEL-ADDON';
+};
+
+const fiscalItemCodigo = (tipo: string, body: EmitInvoiceWebhookBody): string => {
+	if (tipo === 'nce' || tipo === 'nde') return 'HASEL-NCE';
+	if (isModuleAddonInvoice(body)) return 'HASEL-ADDON';
+	return 'HASEL-SUB';
+};
+
+const fiscalItemDescripcion = (body: EmitInvoiceWebhookBody): string => {
+	const raw = String(body.descripcion || '').trim();
+	if (isModuleAddonInvoice(body)) {
+		return stripInternalBillingJargon(raw) || raw || 'Complemento Hasel';
+	}
+	return raw || 'Suscripción Hasel';
+};
+
 const normalizeReceptor = (receptor?: EsignReceptor) => {
 	if (!receptor) return undefined;
 	const normalized = { ...receptor };
@@ -69,9 +100,9 @@ const normalizeReceptor = (receptor?: EsignReceptor) => {
 
 const buildDocumentPayload = (body: EmitInvoiceWebhookBody): CreateEsignDocumentPayload => {
 	const monto = Number(body.monto || 0);
-	const descripcion = String(body.descripcion || 'Suscripción Hasel').trim() || 'Suscripción Hasel';
 	const receptor = normalizeReceptor(body.receptor);
 	const tipo = String(body.tipo || 'fe').toLowerCase() as 'fe' | 'nce' | 'nde';
+	const descripcion = fiscalItemDescripcion(body);
 	const datosOperacion = {
 		establecimiento: body.datos_operacion?.establecimiento || '001',
 		punto_expedicion: body.datos_operacion?.punto_expedicion || '001',
@@ -79,7 +110,7 @@ const buildDocumentPayload = (body: EmitInvoiceWebhookBody): CreateEsignDocument
 
 	const items = [
 		{
-			codigo: tipo === 'nce' ? 'HASEL-NCE' : 'HASEL-SUB',
+			codigo: fiscalItemCodigo(tipo, body),
 			descripcion,
 			cantidad: 1,
 			precioUnitario: monto,

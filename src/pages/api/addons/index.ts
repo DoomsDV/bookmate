@@ -5,6 +5,7 @@ import {
 	activateAddonWithOrds,
 	AddonApiError,
 	listAddonsWithOrds,
+	readIdempotencyKeyHeader,
 } from '../../../lib/addons';
 
 const requireToken = (token: string | undefined) => {
@@ -54,8 +55,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
 			.trim()
 			.toUpperCase();
 		if (!addonCode) throw new AddonApiError('Falta el código del complemento.', 400);
-		const result = await activateAddonWithOrds(token, addonCode);
-		return Response.json({ status: 'success', data: result }, { status: 200 });
+		const idempotencyKey = readIdempotencyKeyHeader(request);
+		const { data: result, httpStatus } = await activateAddonWithOrds(
+			token,
+			addonCode,
+			idempotencyKey
+		);
+		return Response.json({ status: 'success', data: result }, { status: httpStatus });
 	} catch (error) {
 		return toErrorResponse(error, 'No fue posible activar el complemento.');
 	}

@@ -1,9 +1,12 @@
+import { createIdempotencyKey } from '../lib/idempotency';
 import { showFlashMessage } from '../lib/flash';
 
 type ComplementosStoreElement = HTMLElement & {
 	__complementosBound?: boolean;
 	__complementosReload?: () => void;
 };
+
+type AddonCancelRefundType = 'nce' | 'credit' | 'none';
 
 type ModuleAddonItem = {
 	code: string;
@@ -18,6 +21,10 @@ type ModuleAddonItem = {
 	is_active_for_org: boolean;
 	grant_type: string | null;
 	status: string | null;
+	prorate_amount: number | null;
+	days_remaining: number | null;
+	cancel_credit_amount: number;
+	cancel_refund_type: AddonCancelRefundType;
 };
 
 type ComplementosTab = 'explore' | 'mine';
@@ -40,6 +47,20 @@ const periodLabel = (period: string) => {
 };
 
 const toBool = (value: unknown): boolean => value === true || value === 1 || value === '1';
+
+const toNullableAmount = (value: unknown): number | null => {
+	if (value === null || value === undefined || value === '') return null;
+	const parsed = Number(value);
+	return Number.isFinite(parsed) ? parsed : null;
+};
+
+const toRefundType = (value: unknown, grantType: string | null): AddonCancelRefundType => {
+	const raw = String(value || '')
+		.trim()
+		.toLowerCase();
+	if (raw === 'nce' || raw === 'credit' || raw === 'none') return raw;
+	return grantType === 'PREVIEW' ? 'none' : 'credit';
+};
 
 const ADDON_COPY: Record<string, string> = {
 	ODONTOGRAM_3D: 'Ficha clínica interactiva 3D y evolución de tratamientos.',
@@ -117,20 +138,27 @@ const invalidateSubscriptionCache = () => {
 	}
 };
 
-const parseItem = (item: Record<string, unknown>): ModuleAddonItem => ({
-	code: String(item.code || '').trim(),
-	name: String(item.name || '').trim() || 'Complemento',
-	short_description: String(item.short_description || '').trim(),
-	feature_code: String(item.feature_code || '').trim(),
-	price_amount: Number(item.price_amount) || 0,
-	currency: String(item.currency || 'PYG').trim() || 'PYG',
-	billing_period: String(item.billing_period || 'MONTHLY').trim() || 'MONTHLY',
-	audience_code: item.audience_code != null ? String(item.audience_code).trim() || null : null,
-	eligible: toBool(item.eligible),
-	is_active_for_org: toBool(item.is_active_for_org),
-	grant_type: item.grant_type != null ? String(item.grant_type).trim() || null : null,
-	status: item.status != null ? String(item.status).trim() || null : null,
-});
+const parseItem = (item: Record<string, unknown>): ModuleAddonItem => {
+	const grantType = item.grant_type != null ? String(item.grant_type).trim() || null : null;
+	return {
+		code: String(item.code || '').trim(),
+		name: String(item.name || '').trim() || 'Complemento',
+		short_description: String(item.short_description || '').trim(),
+		feature_code: String(item.feature_code || '').trim(),
+		price_amount: Number(item.price_amount) || 0,
+		currency: String(item.currency || 'PYG').trim() || 'PYG',
+		billing_period: String(item.billing_period || 'MONTHLY').trim() || 'MONTHLY',
+		audience_code: item.audience_code != null ? String(item.audience_code).trim() || null : null,
+		eligible: toBool(item.eligible),
+		is_active_for_org: toBool(item.is_active_for_org),
+		grant_type: grantType,
+		status: item.status != null ? String(item.status).trim() || null : null,
+		prorate_amount: toNullableAmount(item.prorate_amount),
+		days_remaining: toNullableAmount(item.days_remaining),
+		cancel_credit_amount: Number(item.cancel_credit_amount) || 0,
+		cancel_refund_type: toRefundType(item.cancel_refund_type, grantType),
+	};
+};
 
 const parseItemList = (value: unknown): ModuleAddonItem[] => {
 	if (!Array.isArray(value)) return [];
@@ -152,6 +180,41 @@ const parseCatalog = (payload: unknown) => {
 			? parseItemList(data.available_items)
 			: items.filter((item) => !item.is_active_for_org),
 	};
+};
+
+const confirmDialog = async (opts: {
+	type?: 'warning' | 'info';
+	title: string;
+	message: string;
+	confirmText: string;
+	cancelText?: string;
+}): Promise<boolean> => {
+	if (window.BookmateAlert?.confirm) {
+		return window.BookmateAlert.confirm({
+			type: opts.type || 'info',
+			title: opts.title,
+			message: opts.message,
+			confirmText: opts.confirmText,
+			cancelText: opts.cancelText || 'Volver',
+		});
+	}
+	return window.confirm(opts.message);
+};
+
+const pollInvoice = async (hash: string): Promise<'paid' | 'failed' | 'pending'> => {
+	for (let attempt = 0; attempt < 6; attempt++) {
+		try {
+			const res = await fetch(`/api/subscription/invoice/${encodeURIComponent(hash)}`);
+			const data = await res.json().catch(() => ({}));
+			const status = data?.data?.status;
+			if (res.ok && data?.status === 'success' && status === 'PAID') return 'paid';
+			if (status === 'FAILED') return 'failed';
+		} catch {
+			/* reintenta */
+		}
+		await new Promise((r) => setTimeout(r, 2500));
+	}
+	return 'pending';
 };
 
 if (!customElements.get('complementos-store')) {
@@ -193,6 +256,12 @@ export const initComplementosPage = () => {
 	let busyCode: string | null = null;
 	let loadRequestId = 0;
 	let activeTab: ComplementosTab = 'explore';
+	const pendingActivateKeys = new Map<string, string>();
+
+	const findItem = (code: string) =>
+		activeItems.find((item) => item.code === code) ||
+		availableItems.find((item) => item.code === code) ||
+		null;
 
 	const setError = (message: string) => {
 		if (!errorEl) return;
@@ -221,6 +290,15 @@ export const initComplementosPage = () => {
 		const isBusy = busyCode === item.code;
 		const activateLabel = billingLive ? 'Suscribirse' : 'Activar';
 		const activatingLabel = billingLive ? 'Procesando…' : 'Activando…';
+		const showProrate =
+			billingLive &&
+			!active &&
+			item.prorate_amount != null &&
+			item.prorate_amount > 0 &&
+			item.prorate_amount < item.price_amount;
+		const days = Math.max(0, Math.round(item.days_remaining || 0));
+		const showCancelHint =
+			billingLive && active && item.cancel_refund_type !== 'none' && item.cancel_credit_amount > 0;
 
 		const priceBlock = billingLive
 			? `<div class="complementos-card__price">
@@ -231,6 +309,17 @@ export const initComplementosPage = () => {
 					<span class="complementos-card__amount is-struck">${escapeHtml(price)}</span>
 					<span class="complementos-card__free">Gratis</span>
 				</div>`;
+
+		const prorateHint = showProrate
+			? `<p class="complementos-card__hint">Hoy: ${escapeHtml(formatGs(item.prorate_amount || 0))} (proporcional${
+					days > 0 ? ` · ${days} día${days === 1 ? '' : 's'}` : ''
+				})</p>`
+			: '';
+		const cancelHint = showCancelHint
+			? `<p class="complementos-card__hint">Al cancelar: ${
+					item.cancel_refund_type === 'nce' ? 'nota de crédito estimada' : 'crédito estimado'
+				} ${escapeHtml(formatGs(item.cancel_credit_amount))}</p>`
+			: '';
 
 		let action = '';
 		if (active) {
@@ -271,7 +360,7 @@ export const initComplementosPage = () => {
 		const status = active
 			? `<span class="complementos-card__status">
 					<span class="complementos-card__status-dot" aria-hidden="true"></span>
-					${billingLive ? 'Activo' : 'Activo · sin cargo'}
+					${billingLive ? (item.grant_type === 'PREVIEW' ? 'Activo · vista previa' : 'Activo') : 'Activo · sin cargo'}
 				</span>`
 			: '';
 
@@ -288,6 +377,8 @@ export const initComplementosPage = () => {
 								${priceBlock}
 								${status}
 							</div>
+							${prorateHint}
+							${cancelHint}
 							${action}
 						</div>
 					</div>
@@ -406,26 +497,208 @@ export const initComplementosPage = () => {
 		}
 	};
 
-	const postAddon = async (path: string, addonCode: string) => {
+	const postJson = async (path: string, body: Record<string, unknown>, headers: Record<string, string> = {}) => {
 		const res = await fetch(path, {
 			method: 'POST',
 			headers: {
 				Accept: 'application/json',
 				'Content-Type': 'application/json',
+				...headers,
 			},
-			body: JSON.stringify({ addon_code: addonCode }),
+			body: JSON.stringify(body),
 		});
-		if (!res.ok) {
+		const payload = await res.json().catch(() => ({}));
+		if (!res.ok || payload?.status !== 'success') {
 			throw new Error(
-				await readApiMessage(res, 'No se pudo completar la operación. Intentá de nuevo.')
+				String(payload?.message || '').trim() ||
+					'No se pudo completar la operación. Intentá de nuevo.'
 			);
 		}
-		return res.json().catch(() => ({}));
+		return payload;
 	};
 
 	const setBusy = (code: string | null) => {
 		busyCode = code;
 		render();
+	};
+
+	const confirmActivate = async (item: ModuleAddonItem): Promise<boolean> => {
+		if (!billingLive) return true;
+		const prorate = item.prorate_amount;
+		const chargeToday =
+			prorate != null && prorate >= 0 ? prorate : item.price_amount;
+		const message =
+			chargeToday <= 0
+				? `Sin cobro hoy. ${item.name} se suma al cargo de la próxima renovación (${formatGs(item.price_amount)} / mes).`
+				: prorate != null && prorate > 0 && prorate < item.price_amount
+					? `Hoy se cobra ${formatGs(prorate)} (proporcional). Después, ${formatGs(item.price_amount)} / mes con tu suscripción.`
+					: `Se cobrará ${formatGs(item.price_amount)} / mes con tu tarjeta registrada.`;
+		return confirmDialog({
+			type: 'info',
+			title: `Suscribirse a ${item.name}`,
+			message,
+			confirmText: chargeToday > 0 ? `Pagar ${formatGs(chargeToday)}` : 'Activar sin cobro',
+			cancelText: 'Cancelar',
+		});
+	};
+
+	const confirmCancel = async (item: ModuleAddonItem): Promise<boolean> => {
+		const credit = item.cancel_credit_amount;
+		const refundType = item.cancel_refund_type;
+		const message =
+			!billingLive || refundType === 'none' || item.grant_type === 'PREVIEW'
+				? `Vas a desactivar ${item.name}. No se genera crédito ni nota de crédito.`
+				: refundType === 'nce' && credit > 0
+					? `Al cancelar ${item.name} se emitirá una nota de crédito por ${formatGs(credit)} (tiempo no usado). El módulo deja de estar disponible de inmediato.`
+					: credit > 0
+						? `Al cancelar ${item.name} se acreditarán ${formatGs(credit)} a favor por el tiempo no utilizado. El módulo deja de estar disponible de inmediato.`
+						: `Vas a cancelar ${item.name}. El módulo deja de estar disponible de inmediato.`;
+		return confirmDialog({
+			type: 'warning',
+			title: billingLive ? 'Cancelar complemento' : 'Desactivar complemento',
+			message,
+			confirmText: billingLive ? 'Cancelar módulo' : 'Desactivar',
+			cancelText: 'Volver',
+		});
+	};
+
+	const activateAddon = async (code: string) => {
+		const item = findItem(code);
+		if (!item) return;
+		const confirmed = await confirmActivate(item);
+		if (!confirmed) return;
+
+		setBusy(code);
+		const idemKey = pendingActivateKeys.get(code) || createIdempotencyKey();
+		pendingActivateKeys.set(code, idemKey);
+
+		let res: Response;
+		try {
+			res = await fetch('/api/addons', {
+				method: 'POST',
+				headers: {
+					Accept: 'application/json',
+					'Content-Type': 'application/json',
+					'Idempotency-Key': idemKey,
+				},
+				body: JSON.stringify({ addon_code: code }),
+			});
+		} catch {
+			setBusy(null);
+			showFlashMessage({
+				type: 'error',
+				message:
+					'No pudimos confirmar el cobro. Revisá tu conexión y tocá Suscribirse de nuevo para reintentar.',
+			});
+			return;
+		}
+
+		let payload: Record<string, unknown>;
+		try {
+			payload = await res.json().catch(() => ({}));
+			// 201 = PENDING/Pagopar (éxito). El cobro se decide por requires_polling/hash, no por HTTP.
+			const httpOk = res.status === 200 || res.status === 201 || res.ok;
+			if (!httpOk || payload?.status !== 'success') {
+				throw new Error(
+					String(payload?.message || '').trim() || 'No se pudo activar el complemento.'
+				);
+			}
+		} catch (error) {
+			pendingActivateKeys.delete(code);
+			setBusy(null);
+			showFlashMessage({
+				type: 'error',
+				message: error instanceof Error ? error.message : 'No se pudo activar el complemento.',
+			});
+			return;
+		}
+
+		const data = (payload?.data || {}) as Record<string, unknown>;
+		const hash = String(data.hash || '').trim();
+		const paymentStatus = String(data.payment_status || data.status || '').toUpperCase();
+		const needsPoll =
+			(data.requires_polling !== 0 && data.requires_polling !== false && Boolean(hash)) ||
+			(paymentStatus === 'PENDING' && Boolean(hash));
+
+		if (needsPoll) {
+			showFlashMessage({ type: 'info', message: 'Cobro iniciado. Confirmando el pago…' });
+			const poll = await pollInvoice(hash);
+			pendingActivateKeys.delete(code);
+			if (poll === 'paid') {
+				invalidateSubscriptionCache();
+				showFlashMessage({
+					type: 'success',
+					message: 'Pago confirmado. El complemento ya está activo.',
+				});
+				busyCode = null;
+				activeTab = 'mine';
+				await load();
+				return;
+			}
+			busyCode = null;
+			render();
+			showFlashMessage({
+				type: poll === 'failed' ? 'error' : 'info',
+				message:
+					poll === 'failed'
+						? 'El pago no se completó. Podés intentarlo nuevamente.'
+						: 'Tu pago está siendo procesado. Se reflejará en unos minutos.',
+			});
+			return;
+		}
+
+		pendingActivateKeys.delete(code);
+		invalidateSubscriptionCache();
+		const paidWithoutCharge = String(data.status || data.payment_status || '').toUpperCase() === 'PAID';
+		showFlashMessage({
+			type: 'success',
+			message: paidWithoutCharge
+				? 'Complemento activado usando tu saldo a favor.'
+				: billingLive
+					? 'Listo. Se sumará al cargo de la próxima renovación.'
+					: 'Complemento activado. Ya lo podés usar en el perfil del cliente.',
+		});
+		busyCode = null;
+		activeTab = 'mine';
+		await load();
+	};
+
+	const cancelAddon = async (code: string) => {
+		const item = findItem(code);
+		if (!item) return;
+		const confirmed = await confirmCancel(item);
+		if (!confirmed) return;
+
+		setBusy(code);
+		try {
+			const payload = await postJson('/api/addons/cancel', { addon_code: code });
+			const data = (payload?.data || {}) as Record<string, unknown>;
+			const granted = Number(data.credit_granted || 0);
+			const nceAmount = Number(data.nce_amount || 0);
+			const nceQueued = Number(data.nce_queued || 0) === 1 || data.nce_queued === true;
+			invalidateSubscriptionCache();
+			showFlashMessage({
+				type: 'success',
+				message:
+					nceQueued && nceAmount > 0
+						? `Cancelado. Se emitirá nota de crédito por ${formatGs(nceAmount)}.`
+						: granted > 0
+							? `Cancelado. Se acreditaron ${formatGs(granted)} a favor.`
+							: billingLive
+								? 'Complemento cancelado.'
+								: 'Complemento desactivado.',
+			});
+			busyCode = null;
+			await load();
+		} catch (error) {
+			busyCode = null;
+			render();
+			showFlashMessage({
+				type: 'error',
+				message:
+					error instanceof Error ? error.message : 'No se pudo desactivar el complemento.',
+			});
+		}
 	};
 
 	root.addEventListener('click', (event) => {
@@ -443,59 +716,14 @@ export const initComplementosPage = () => {
 		if (activateBtn) {
 			const code = String(activateBtn.dataset.addonCode || '').trim();
 			if (!code || busyCode) return;
-			void (async () => {
-				setBusy(code);
-				try {
-					await postAddon('/api/addons', code);
-					invalidateSubscriptionCache();
-					showFlashMessage({
-						type: 'success',
-						message: 'Complemento activado. Ya lo podés usar en el perfil del cliente.',
-					});
-					busyCode = null;
-					activeTab = 'mine';
-					await load();
-				} catch (error) {
-					busyCode = null;
-					render();
-					showFlashMessage({
-						type: 'error',
-						message:
-							error instanceof Error
-								? error.message
-								: 'No se pudo activar el complemento.',
-					});
-				}
-			})();
+			void activateAddon(code);
 			return;
 		}
 
 		if (cancelBtn) {
 			const code = String(cancelBtn.dataset.addonCode || '').trim();
 			if (!code || busyCode) return;
-			void (async () => {
-				setBusy(code);
-				try {
-					await postAddon('/api/addons/cancel', code);
-					invalidateSubscriptionCache();
-					showFlashMessage({
-						type: 'success',
-						message: 'Complemento desactivado.',
-					});
-					busyCode = null;
-					await load();
-				} catch (error) {
-					busyCode = null;
-					render();
-					showFlashMessage({
-						type: 'error',
-						message:
-							error instanceof Error
-								? error.message
-								: 'No se pudo desactivar el complemento.',
-					});
-				}
-			})();
+			void cancelAddon(code);
 		}
 	});
 

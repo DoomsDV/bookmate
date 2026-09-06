@@ -20,14 +20,21 @@ export const POST: APIRoute = async ({ request, locals }) => {
 		}
 		const body = await request.json().catch(() => ({}));
 		const targetTypeRaw = String(body?.target_type ?? 'PLAN').trim().toUpperCase();
-		const targetType = targetTypeRaw === 'STORAGE_ADDON' ? 'STORAGE_ADDON' : 'PLAN';
+		const targetType =
+			targetTypeRaw === 'STORAGE_ADDON' || targetTypeRaw === 'MODULE_ADDON'
+				? targetTypeRaw
+				: 'PLAN';
 		const payload =
-			targetType === 'STORAGE_ADDON'
-				? { target_type: 'STORAGE_ADDON' as const, addon_code: String(body?.addon_code ?? '').trim().toUpperCase() }
+			targetType === 'STORAGE_ADDON' || targetType === 'MODULE_ADDON'
+				? { target_type: targetType, addon_code: String(body?.addon_code ?? '').trim().toUpperCase() }
 				: { target_type: 'PLAN' as const, plan_code: String(body?.plan_code ?? '').trim().toUpperCase() };
 		const idempotencyKey = readIdempotencyKeyHeader(request);
-		const result = await activateSubscriptionWithOrds(locals.token, payload, idempotencyKey);
-		return Response.json({ status: 'success', data: result }, { status: 200 });
+		const { data: result, httpStatus } = await activateSubscriptionWithOrds(
+			locals.token,
+			payload,
+			idempotencyKey
+		);
+		return Response.json({ status: 'success', data: result }, { status: httpStatus });
 	} catch (error) {
 		return toErrorResponse(error, 'No fue posible activar la suscripción.');
 	}
