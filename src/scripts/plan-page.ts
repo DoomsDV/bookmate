@@ -796,9 +796,10 @@ export function initPlanPage() {
 	});
 
 	// --- Mensajes del iframe (retorno del catastro) ---
-	window.addEventListener('message', (event: MessageEvent) => {
-		const payload = event.data;
-		if (!payload || typeof payload !== 'object' || payload.type !== 'hasel-card-status') return;
+window.addEventListener('message', (event: MessageEvent) => {
+	if (event.origin !== window.location.origin) return;
+	const payload = event.data;
+	if (!payload || typeof payload !== 'object' || payload.type !== 'hasel-card-status') return;
 		closeCardModal();
 		const status = String(payload.status || '');
 		if (status === 'add_new_card_success') {
@@ -995,26 +996,26 @@ function handleIframeCardReturn(): boolean {
 	// Fallback: la redirección ocurrió a nivel top (no iframe).
 	const cleanUrl = window.location.pathname;
 	window.history.replaceState({}, '', cleanUrl);
-	if (status === 'add_new_card_success') {
-		flash('Verificando la tarjeta…', 'info');
-		void fetch('/api/subscription/card/confirm', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({}),
+	// Igual que en el listener de postMessage: confirmar-tarjeta es obligatorio para
+	// Pagopar sea cual sea el resultado del iframe. Antes esta rama solo confirmaba en
+	// el caso de éxito, y en fallo mostraba el error sin llamar al backend — dejando la
+	// tarjeta catastrada en Pagopar pero nunca sincronizada localmente (incidente 2026-09-06).
+	flash('Verificando la tarjeta…', 'info');
+	void fetch('/api/subscription/card/confirm', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({}),
+	})
+		.then((r) => r.json().catch(() => ({})))
+		.then((data) => {
+			if (data?.status === 'success' && Array.isArray(data?.data?.cards) && data.data.cards.length > 0) {
+				flash('Tarjeta registrada correctamente.', 'success');
+				setTimeout(() => window.location.reload(), 900);
+			} else {
+				flash('No se pudo registrar la tarjeta. Intentá nuevamente.', 'error');
+			}
 		})
-			.then((r) => r.json().catch(() => ({})))
-			.then((data) => {
-				if (data?.status === 'success' && Array.isArray(data?.data?.cards) && data.data.cards.length > 0) {
-					flash('Tarjeta registrada correctamente.', 'success');
-					setTimeout(() => window.location.reload(), 900);
-				} else {
-					flash('No se pudo registrar la tarjeta. Intentá nuevamente.', 'error');
-				}
-			})
-			.catch(() => flash('No fue posible confirmar la tarjeta.', 'error'));
-	} else {
-		flash('No se pudo registrar la tarjeta. Intentá nuevamente.', 'error');
-	}
+		.catch(() => flash('No fue posible confirmar la tarjeta.', 'error'));
 	return false;
 }
 
