@@ -145,7 +145,7 @@
 	border: 1px solid color-mix(in srgb, var(--shell-border) 75%, transparent);
 	border-radius: 0.85rem;
 	background: color-mix(in srgb, var(--primary) 3%, var(--surface));
-	min-height: 21rem;
+	min-height: 17rem;
 	overflow: hidden;
 }
 
@@ -154,8 +154,9 @@ html[data-theme='light'] .cuerpo-map-stage {
 }
 
 .cuerpo-map-svg {
-	width: min(100%, 18.5rem);
-	height: auto;
+	width: auto;
+	height: clamp(17rem, 46dvh, 24rem);
+	max-width: 100%;
 	color: color-mix(in srgb, var(--on-surface) 52%, transparent);
 	cursor: crosshair;
 }
@@ -177,6 +178,8 @@ html[data-theme='light'] .cuerpo-map-raster {
 .cuerpo-controls-dock {
 	display: grid;
 	gap: 0.65rem;
+	align-content: start;
+	height: fit-content;
 	padding: 0.7rem 0.8rem;
 	border: 1px solid var(--shell-border);
 	border-radius: 0.85rem;

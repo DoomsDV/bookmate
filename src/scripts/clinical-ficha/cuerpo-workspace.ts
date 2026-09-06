@@ -552,13 +552,13 @@ export class CuerpoWorkspace {
 		const label = this.root.querySelector('[data-cuerpo-zoom-label]');
 		if (!label) return;
 		if (this.lens === 'BODY') {
-			label.classList.add('hidden');
-			label.textContent = '';
+			label.classList.remove('hidden');
+			label.textContent = 'Vista completa. Elegí una zona para ampliarla.';
 			return;
 		}
 		const viewport = JOINT_VIEWPORTS[this.lens];
 		label.classList.remove('hidden');
-		label.textContent = `Zoom: ${viewport.label}`;
+		label.textContent = `Vista ampliada: ${viewport.label}`;
 	}
 
 	private applyMapViewBox(svg: SVGSVGElement): void {
