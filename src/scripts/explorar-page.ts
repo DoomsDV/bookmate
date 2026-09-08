@@ -79,6 +79,105 @@ const buildSuggestItems = (
 	return results.slice(0, 8);
 };
 
+const closeExplorarCombos = (except?: HTMLElement | null) => {
+	document.querySelectorAll<HTMLElement>('[data-explorar-combo].is-open').forEach((root) => {
+		if (except && root === except) return;
+		root.classList.remove('is-open');
+		const menu = root.querySelector<HTMLElement>('[data-explorar-combo-menu]');
+		const trigger = root.querySelector<HTMLButtonElement>('[data-explorar-combo-trigger]');
+		if (menu) menu.hidden = true;
+		trigger?.setAttribute('aria-expanded', 'false');
+	});
+};
+
+const initCombos = () => {
+	document.querySelectorAll<HTMLElement>('[data-explorar-combo]').forEach((root) => {
+		if (root.dataset.explorarComboReady === '1') return;
+		const select = root.querySelector('select');
+		const trigger = root.querySelector<HTMLButtonElement>('[data-explorar-combo-trigger]');
+		const valueNode = root.querySelector('[data-explorar-combo-value]');
+		const menu = root.querySelector<HTMLElement>('[data-explorar-combo-menu]');
+		if (!select || !trigger || !valueNode || !menu) return;
+
+		root.dataset.explorarComboReady = '1';
+
+		const sync = () => {
+			const selected = select.selectedOptions[0];
+			valueNode.textContent = selected?.textContent?.trim() || '';
+			menu.replaceChildren(
+				...Array.from(select.options).map((option) => {
+					const button = document.createElement('button');
+					button.type = 'button';
+					button.className = 'explorar-combo__option';
+					button.setAttribute('role', 'option');
+					button.setAttribute('aria-selected', option.selected ? 'true' : 'false');
+					button.classList.toggle('is-selected', option.selected);
+					button.dataset.value = option.value;
+					button.textContent = option.textContent;
+					return button;
+				})
+			);
+		};
+
+		const setOpen = (open: boolean) => {
+			if (open) closeExplorarCombos(root);
+			menu.hidden = !open;
+			trigger.setAttribute('aria-expanded', String(open));
+			root.classList.toggle('is-open', open);
+			if (open) sync();
+		};
+
+		sync();
+
+		trigger.addEventListener('click', (event) => {
+			event.preventDefault();
+			setOpen(!root.classList.contains('is-open'));
+		});
+
+		root.addEventListener('click', (event) => {
+			const target = event.target;
+			if (!(target instanceof Element)) return;
+			if (target.closest('[data-explorar-combo-trigger], [data-explorar-combo-menu]')) return;
+			trigger.click();
+		});
+
+		menu.addEventListener('click', (event) => {
+			const option = (event.target as Element).closest<HTMLButtonElement>('[data-value]');
+			if (!option) return;
+			event.stopPropagation();
+			select.value = option.dataset.value || '';
+			sync();
+			setOpen(false);
+		});
+	});
+};
+
+const bindComboChrome = () => {
+	if (document.documentElement.dataset.explorarComboChrome === '1') return;
+	document.documentElement.dataset.explorarComboChrome = '1';
+
+	document.addEventListener('pointerdown', (event) => {
+		const target = event.target;
+		if (!(target instanceof Element) || target.closest('[data-explorar-combo]')) return;
+		closeExplorarCombos();
+	});
+
+	document.addEventListener('keydown', (event) => {
+		if (event.key === 'Escape') closeExplorarCombos();
+	});
+};
+
+const initSearchForm = () => {
+	const form = document.querySelector<HTMLFormElement>('.explorar-search');
+	if (!form || form.dataset.explorarFormReady === '1') return;
+	form.dataset.explorarFormReady = '1';
+	form.addEventListener('submit', () => {
+		form.querySelectorAll<HTMLInputElement | HTMLSelectElement>('[name]').forEach((field) => {
+			if (!String(field.value || '').trim()) field.disabled = true;
+		});
+	});
+};
+
 const initSuggest = (payload: ExplorarPagePayload) => {
 	const field = document.querySelector<HTMLElement>('[data-explorar-query-field]');
 	const input = document.querySelector<HTMLInputElement>('[data-explorar-query-input]');
@@ -226,6 +325,9 @@ const initViewToggle = (payload: ExplorarPagePayload) => {
 const initExplorarPage = () => {
 	const payload = parsePayload();
 	if (!payload) return;
+	initCombos();
+	bindComboChrome();
+	initSearchForm();
 	initSuggest(payload);
 	initViewToggle(payload);
 };

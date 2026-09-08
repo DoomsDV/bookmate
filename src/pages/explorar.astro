@@ -220,37 +220,100 @@ const clientPayload = JSON.stringify({
 		<div class="explorar-search-wrap">
 			<form class="explorar-search" method="get" action="/explorar" role="search">
 				<div class="explorar-search__field" data-explorar-query-field>
-					<label class="explorar-search__label" for="explorar-q">Qué buscás</label>
-					<input
-						id="explorar-q"
-						class="explorar-search__input"
-						type="search"
-						name="q"
-						value={q}
-						placeholder="Nombre o rubro"
-						autocomplete="off"
-						data-explorar-query-input
-					/>
+					<span class="explorar-search__icon material-symbols-rounded" aria-hidden="true">search</span>
+					<div class="explorar-search__stack">
+						<label class="explorar-search__label" for="explorar-q">Qué buscás</label>
+						<input
+							id="explorar-q"
+							class="explorar-search__input"
+							type="search"
+							name="q"
+							value={q}
+							placeholder="Nombre o rubro"
+							autocomplete="off"
+							data-explorar-query-input
+						/>
+					</div>
 					<ul class="explorar-suggest" data-explorar-suggest aria-label="Sugerencias"></ul>
 				</div>
 
-				<div class="explorar-search__field">
-					<label class="explorar-search__label" for="explorar-city">Dónde</label>
-					<select id="explorar-city" class="explorar-search__select" name="city_id">
+				<div class="explorar-search__field explorar-combo" data-explorar-combo>
+					<span class="explorar-search__icon material-symbols-rounded" aria-hidden="true">location_on</span>
+					<div class="explorar-search__stack">
+						<span class="explorar-search__label" id="explorar-city-label">Dónde</span>
+						<button
+							type="button"
+							class="explorar-combo__trigger"
+							aria-labelledby="explorar-city-label explorar-city-value"
+							aria-haspopup="listbox"
+							aria-expanded="false"
+							data-explorar-combo-trigger
+						>
+							<span id="explorar-city-value" data-explorar-combo-value>
+								{cityId
+									? toDisplayCityName(
+											directory.facets.cities.find((city) => city.id === cityId)?.name || 'Todo Paraguay'
+										)
+									: 'Todo Paraguay'}
+							</span>
+							<span class="explorar-combo__chevron material-symbols-rounded" aria-hidden="true">
+								expand_more
+							</span>
+						</button>
+					</div>
+					<select
+						id="explorar-city"
+						class="explorar-search__native"
+						name="city_id"
+						tabindex="-1"
+						aria-hidden="true"
+					>
 						<option value="">Todo Paraguay</option>
 						{
 							directory.facets.cities.map((city) => (
 								<option value={city.id} selected={city.id === cityId}>
-									{city.name}
+									{toDisplayCityName(city.name)}
 								</option>
 							))
 						}
 					</select>
+					<div
+						class="explorar-combo__menu"
+						hidden
+						role="listbox"
+						aria-labelledby="explorar-city-label"
+						data-explorar-combo-menu
+					></div>
 				</div>
 
-				<div class="explorar-search__field">
-					<label class="explorar-search__label" for="explorar-specialty">Categoría</label>
-					<select id="explorar-specialty" class="explorar-search__select" name="specialty">
+				<div class="explorar-search__field explorar-combo" data-explorar-combo>
+					<span class="explorar-search__icon material-symbols-rounded" aria-hidden="true">spa</span>
+					<div class="explorar-search__stack">
+						<span class="explorar-search__label" id="explorar-specialty-label">Categoría</span>
+						<button
+							type="button"
+							class="explorar-combo__trigger"
+							aria-labelledby="explorar-specialty-label explorar-specialty-value"
+							aria-haspopup="listbox"
+							aria-expanded="false"
+							data-explorar-combo-trigger
+						>
+							<span id="explorar-specialty-value" data-explorar-combo-value>
+								{directory.facets.specialties.find((item) => item.code === specialty)?.label ||
+									'Todas las categorías'}
+							</span>
+							<span class="explorar-combo__chevron material-symbols-rounded" aria-hidden="true">
+								expand_more
+							</span>
+						</button>
+					</div>
+					<select
+						id="explorar-specialty"
+						class="explorar-search__native"
+						name="specialty"
+						tabindex="-1"
+						aria-hidden="true"
+					>
 						<option value="">Todas las categorías</option>
 						{
 							directory.facets.specialties.map((item) => (
@@ -260,6 +323,13 @@ const clientPayload = JSON.stringify({
 							))
 						}
 					</select>
+					<div
+						class="explorar-combo__menu"
+						hidden
+						role="listbox"
+						aria-labelledby="explorar-specialty-label"
+						data-explorar-combo-menu
+					></div>
 				</div>
 
 				<button type="submit" class="explorar-search__submit">
