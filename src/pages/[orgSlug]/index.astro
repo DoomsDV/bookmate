@@ -164,7 +164,7 @@ const serializedProfessionals = professionals.length
 		{
 			hub ? (
 				<>
-					<PublicHaselTopbar showReserve={false} showLogin={false} />
+					<PublicHaselTopbar variant="marketplace" />
 
 					{hub.maintenance ? (
 						<p class="hub-maintenance" role="status">
@@ -801,7 +801,7 @@ const serializedProfessionals = professionals.length
 				</>
 			) : (
 				<>
-					<PublicHaselTopbar reserveHref="/" reserveLabel="Ir al inicio" showLogin={false} />
+					<PublicHaselTopbar variant="marketplace" />
 					<div class="hub-error">
 						<h1>No encontramos este negocio</h1>
 						<p>{loadError || 'El enlace puede ser incorrecto o el negocio ya no está disponible.'}</p>

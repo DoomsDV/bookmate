@@ -2,6 +2,7 @@
 export const prerender = false;
 
 import Layout from '../../../layouts/Layout.astro';
+import PublicHaselTopbar from '../../../components/PublicHaselTopbar.astro';
 import PublicSipapDepositPanel from '../../../components/PublicSipapDepositPanel.astro';
 import {
 	buildPublicProfileMetaDescription,
@@ -104,6 +105,7 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 	robots={profile ? 'index, follow' : 'noindex, nofollow'}
 >
 	<main class="public-booking-shell">
+		<PublicHaselTopbar variant="marketplace" logoHref="/" />
 		{
 			loadError || !profile ? (
 				<div class="public-booking-shell__canvas">

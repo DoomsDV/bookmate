@@ -89,7 +89,10 @@ input[type='search']::-ms-clear {
 	--sidebar-surface: #ffffff;
 	--content-surface: rgba(255, 255, 255, 0.86);
 	--shell-border: #f6f5f4;
-	--shell-header-height: 3.75rem;
+	--app-topbar-h: 4rem;
+	--shell-header-height: var(--app-topbar-h);
+	--hub-topbar-h: var(--app-topbar-h);
+	--landing-topbar-h: var(--app-topbar-h);
 	--primary: #426edb;
 	--primary-soft: rgba(66, 110, 219, 0.12);
 	--primary-soft-hover: rgba(66, 110, 219, 0.18);
@@ -223,19 +226,19 @@ input[type='search']::-ms-clear {
 
 html[data-theme='dark'] {
 	color-scheme: dark;
-	--background: #0e0e10;
-	--background-accent: #0b0b0d;
-	--page-background: #0e0e10;
-	--surface: rgba(18, 18, 20, 0.94);
+	--background: #0c0e14;
+	--background-accent: #08090c;
+	--page-background: #0c0e14;
+	--surface: rgba(12, 14, 20, 0.94);
 	--surface-container: #121214;
 	--surface-container-low: #121214;
 	--surface-container-high: #1a1a1c;
 	--surface-container-highest: #222224;
 	--surface-bright: #121214;
 	--bar-outline: rgba(255, 255, 255, 0.08);
-	--shell-surface: #0e0e10;
+	--shell-surface: #0c0e14;
 	--sidebar-surface: #121214;
-	--content-surface: rgba(18, 18, 20, 0.88);
+	--content-surface: rgba(12, 14, 20, 0.88);
 	--shell-border: rgba(255, 255, 255, 0.08);
 	--primary: #426edb;
 	--primary-soft: rgba(66, 110, 219, 0.14);
@@ -245,12 +248,12 @@ html[data-theme='dark'] {
 	--secondary-container: rgba(160, 160, 160, 0.12);
 	--on-surface: #ffffff;
 	--on-surface-variant: #a0a0a0;
-	--hero-gradient: linear-gradient(135deg, #121214 0%, #0e0e10 100%);
+	--hero-gradient: linear-gradient(135deg, #141820 0%, #0c0e14 100%);
 	--hero-shadow: rgba(0, 0, 0, 0.5);
 	--hero-glow: radial-gradient(circle at center, rgba(26, 115, 232, 0.03), transparent 60%);
 	--control-surface: #1a1a1c;
 	--control-surface-strong: #222224;
-	--menu-surface: rgba(18, 18, 20, 0.98);
+	--menu-surface: rgba(12, 14, 20, 0.98);
 	--card-surface: var(--sidebar-surface);
 	--card-surface-strong: var(--sidebar-surface);
 	--card-border: rgba(255, 255, 255, 0.08);
@@ -1070,7 +1073,7 @@ button {
 
 @media (min-width: 640px) {
 	:root {
-		--shell-header-height: 4.25rem;
+		--shell-header-height: var(--app-topbar-h);
 	}
 }
 
@@ -1324,12 +1327,14 @@ html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header).is-scrol
 	display: inline-flex;
 	align-items: center;
 	justify-content: flex-start;
+	gap: 0.5rem;
 	width: auto;
 	height: 2.25rem;
 	padding: 0;
 	transform: translateY(1px);
 	user-select: none;
 	-webkit-user-select: none;
+	color: var(--on-surface);
 }
 
 @media (min-width: 640px) {
@@ -1339,14 +1344,22 @@ html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header).is-scrol
 	}
 }
 
+.topbar-brand-logo {
+	width: 2rem;
+	height: 2rem;
+	border-radius: 0.65rem;
+	object-fit: cover;
+	flex-shrink: 0;
+}
+
 .topbar-brand-wordmark {
-	color: var(--on-surface);
-	font-size: 0.9rem;
-	font-weight: 900;
-	letter-spacing: 0.24em;
+	color: inherit;
+	font-family: var(--font-body, 'Nunito Sans', sans-serif);
+	font-size: 1.15rem;
+	font-weight: 800;
+	letter-spacing: -0.02em;
 	line-height: 1;
-	text-transform: uppercase;
-	text-shadow: 0 0 18px color-mix(in srgb, var(--primary) 32%, transparent);
+	text-transform: none;
 }
 
 @media (max-width: 380px) {
@@ -1356,8 +1369,7 @@ html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header).is-scrol
 	}
 
 	.topbar-brand-wordmark {
-		font-size: 0.85rem;
-		letter-spacing: 0.16em;
+		font-size: 1.05rem;
 	}
 
 	.topbar-actions {

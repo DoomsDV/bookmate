@@ -1,34 +1,48 @@
 ---
 interface Props {
-	/** Ancla o URL del CTA principal (ej. #equipo o /org/p/pro) */
-	reserveHref?: string;
-	reserveLabel?: string;
-	showLogin?: boolean;
-	showReserve?: boolean;
-	variant?: 'public' | 'landing';
+	variant?: 'marketing' | 'marketplace';
+	/** Solo en /explorar: CTA para dueños de negocio (guest). */
+	showOwnerCta?: boolean;
+	/** Destino del logo; por defecto `/` en marketing y `/explorar` en marketplace. */
+	logoHref?: string;
 }
 
-const {
-	reserveHref = '#equipo',
-	reserveLabel = 'Reservar',
-	showLogin = false,
-	showReserve = true,
-	variant = 'public',
-} = Astro.props;
+const { variant = 'marketplace', showOwnerCta = false, logoHref: logoHrefProp } = Astro.props;
+
+const isLoggedIn = Boolean(Astro.locals.token);
+const organizationName = String(Astro.locals.organizationName || '').trim();
+const organizationLogoUrl = String(Astro.locals.organizationLogoUrl || '').trim();
+const avatarInitials =
+	organizationName
+		.split(/\s+/)
+		.filter(Boolean)
+		.slice(0, 2)
+		.map((part) => part.charAt(0).toUpperCase())
+		.join('') || 'H';
+
+const defaultLogoHref = variant === 'marketing' ? '/' : '/explorar';
+const logoHref = logoHrefProp ?? defaultLogoHref;
+const logoLabel = logoHref === '/' ? 'Hasel — Inicio' : 'Hasel — Buscar negocios';
 ---
 
 <header
-	class:list={['public-hasel-topbar', { 'public-hasel-topbar--landing': variant === 'landing' }]}
+	class:list={[
+		'public-hasel-topbar',
+		{
+			'public-hasel-topbar--marketing': variant === 'marketing',
+			'public-hasel-topbar--marketplace': variant === 'marketplace',
+		},
+	]}
 	data-public-hasel-topbar
 >
 	<div class="public-hasel-topbar__inner">
-		<a href="/" class="public-hasel-topbar__brand no-underline" aria-label="Hasel — Inicio">
+		<a href={logoHref} class="public-hasel-topbar__brand no-underline" aria-label={logoLabel}>
 			<img
 				src="/icons/icon-64.png"
 				alt=""
 				class="public-hasel-topbar__logo"
-				width="40"
-				height="40"
+				width="32"
+				height="32"
 				loading="eager"
 				decoding="async"
 			/>
@@ -36,7 +50,7 @@ const {
 		</a>
 
 		{
-			variant === 'landing' ? (
+			variant === 'marketing' ? (
 				<>
 					<nav class="public-hasel-topbar__links" aria-label="Secciones">
 						<a href="/explorar" class="public-hasel-topbar__link no-underline">Buscar negocios</a>
@@ -67,16 +81,39 @@ const {
 						<span class="material-symbols-rounded" data-hub-theme-icon aria-hidden="true">dark_mode</span>
 					</button>
 					{
-						showLogin ? (
+						isLoggedIn ? (
+							<a
+								href="/panel/dashboard"
+								class="public-hasel-topbar__avatar no-underline"
+								aria-label="Ir al panel"
+								title={organizationName || 'Ir al panel'}
+							>
+								{organizationLogoUrl ? (
+									<img
+										src={organizationLogoUrl}
+										alt=""
+										class="public-hasel-topbar__avatar-image"
+										width="32"
+										height="32"
+										loading="lazy"
+										decoding="async"
+									/>
+								) : (
+									<span class="public-hasel-topbar__avatar-initials" aria-hidden="true">
+										{avatarInitials}
+									</span>
+								)}
+							</a>
+						) : (
 							<a href="/auth/login" class="public-hasel-topbar__login no-underline">
 								Iniciar sesión
 							</a>
-						) : null
+						)
 					}
 					{
-						showReserve ? (
-							<a href={reserveHref} class="public-hasel-topbar__cta no-underline" data-hub-reserve-cta>
-								{reserveLabel}
+						showOwnerCta && !isLoggedIn ? (
+							<a href="/auth/register" class="public-hasel-topbar__cta no-underline">
+								Empezar gratis
 							</a>
 						) : null
 					}
@@ -93,6 +130,11 @@ const {
 		const isDark = theme === 'dark';
 		document.documentElement.dataset.theme = theme;
 		localStorage.setItem(THEME_KEY, theme);
+		try {
+			document.cookie = `bookmate-theme=${theme};path=/;max-age=31536000;SameSite=Lax`;
+		} catch {
+			/* ignore */
+		}
 		const label = isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
 		document.querySelectorAll<HTMLElement>('[data-hub-theme-toggle]').forEach((btn) => {
 			btn.setAttribute('aria-pressed', String(isDark));
@@ -114,7 +156,9 @@ const {
 		const topbar = document.querySelector<HTMLElement>('[data-public-hasel-topbar]');
 		if (!topbar) return;
 
-		applyTheme(resolveTheme());
+		if (topbar.classList.contains('public-hasel-topbar--marketplace')) {
+			applyTheme(resolveTheme());
+		}
 
 		document.querySelectorAll<HTMLElement>('[data-hub-theme-toggle]').forEach((btn) => {
 			if (btn.dataset.bound === '1') return;
@@ -144,7 +188,7 @@ const {
 		position: sticky;
 		top: 0;
 		z-index: 40;
-		height: var(--hub-topbar-h, 4.25rem);
+		height: var(--app-topbar-h, 4rem);
 		border-bottom: 1px solid transparent;
 		background: color-mix(in srgb, var(--surface, #fafbfc) 82%, transparent);
 		backdrop-filter: blur(14px);
@@ -156,7 +200,7 @@ const {
 	}
 
 	:global(html[data-theme='dark']) .public-hasel-topbar {
-		background: color-mix(in srgb, var(--surface, #0e0e10) 78%, transparent);
+		background: color-mix(in srgb, var(--page-background, #0c0e14) 78%, transparent);
 	}
 
 	.public-hasel-topbar.is-scrolled {
@@ -183,20 +227,23 @@ const {
 	.public-hasel-topbar__brand {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.55rem;
+		gap: 0.5rem;
 		color: var(--on-surface, #1e293b);
+		flex-shrink: 0;
 	}
 
 	.public-hasel-topbar__logo {
-		width: 2.25rem;
-		height: 2.25rem;
+		width: 2rem;
+		height: 2rem;
 		border-radius: 0.65rem;
 		object-fit: cover;
+		flex-shrink: 0;
 	}
 
 	.public-hasel-topbar__wordmark {
+		font-family: var(--font-body, 'Nunito Sans', sans-serif);
 		font-weight: 800;
-		font-size: 1.2rem;
+		font-size: 1.15rem;
 		letter-spacing: -0.02em;
 		line-height: 1;
 	}
@@ -205,6 +252,7 @@ const {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.5rem;
+		flex-shrink: 0;
 	}
 
 	.public-hasel-topbar__theme {
@@ -230,17 +278,49 @@ const {
 	}
 
 	.public-hasel-topbar__login {
-		display: none;
+		display: inline-flex;
+		align-items: center;
 		padding: 0.55rem 0.9rem;
 		border-radius: 999px;
 		font-weight: 700;
 		font-size: 0.92rem;
 		color: var(--on-surface-variant, #64748b);
 		transition: color 160ms ease;
+		white-space: nowrap;
 	}
 
 	.public-hasel-topbar__login:hover {
 		color: var(--on-surface, #1e293b);
+	}
+
+	.public-hasel-topbar__avatar {
+		display: inline-grid;
+		place-items: center;
+		width: 2.5rem;
+		height: 2.5rem;
+		border-radius: 999px;
+		border: 1px solid var(--shell-border, rgba(148, 163, 184, 0.35));
+		background: var(--control-surface, #fff);
+		overflow: hidden;
+		transition: border-color 160ms ease, box-shadow 160ms ease;
+	}
+
+	.public-hasel-topbar__avatar:hover {
+		border-color: color-mix(in srgb, var(--primary, #426edb) 35%, transparent);
+		box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary, #426edb) 12%, transparent);
+	}
+
+	.public-hasel-topbar__avatar-image {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.public-hasel-topbar__avatar-initials {
+		font-size: 0.78rem;
+		font-weight: 800;
+		letter-spacing: 0.02em;
+		color: var(--primary, #426edb);
 	}
 
 	.public-hasel-topbar__cta {
@@ -254,44 +334,16 @@ const {
 		background: #426edb;
 		color: #fff;
 		transition: background 160ms ease;
+		white-space: nowrap;
 	}
 
 	.public-hasel-topbar__cta:hover {
 		background: #5a82e8;
 	}
 
-	.public-hasel-topbar--landing {
-		height: auto;
-		padding: 0.65rem max(var(--landing-pad-x, 1.25rem), env(safe-area-inset-right, 0px)) 0.65rem
-			max(var(--landing-pad-x, 1.25rem), env(safe-area-inset-left, 0px));
-		background: color-mix(in srgb, var(--surface, #fafbfc) 80%, transparent);
-	}
-
-	.public-hasel-topbar--landing .public-hasel-topbar__inner {
+	.public-hasel-topbar--marketing .public-hasel-topbar__inner {
 		width: min(var(--landing-max, 72rem), 100%);
 		max-width: none;
-		padding: 0;
-		min-height: 2.75rem;
-	}
-
-	.public-hasel-topbar--landing .public-hasel-topbar__brand {
-		gap: 0.5rem;
-		color: var(--on-surface, #1e293b);
-		flex-shrink: 0;
-	}
-
-	.public-hasel-topbar--landing .public-hasel-topbar__logo {
-		width: 2rem;
-		height: 2rem;
-		border-radius: 999px;
-		object-fit: contain;
-	}
-
-	.public-hasel-topbar--landing .public-hasel-topbar__wordmark {
-		color: inherit;
-		font-size: 1.15rem;
-		font-weight: 800;
-		letter-spacing: -0.02em;
 	}
 
 	.public-hasel-topbar__links {
@@ -357,13 +409,45 @@ const {
 
 	.public-hasel-topbar__landing-login:focus-visible,
 	.public-hasel-topbar__landing-cta:focus-visible,
-	.public-hasel-topbar__link:focus-visible {
+	.public-hasel-topbar__link:focus-visible,
+	.public-hasel-topbar__brand:focus-visible {
 		outline: 2px solid var(--hub-accent, #5b9cff);
 		outline-offset: 3px;
 	}
 
+	:global(.landing-root) .public-hasel-topbar--marketing {
+		background: color-mix(in srgb, var(--surface) 80%, transparent);
+	}
+
+	:global(.landing-root) .public-hasel-topbar--marketing.is-scrolled {
+		border-bottom-color: var(--border);
+		background: color-mix(in srgb, var(--surface) 92%, transparent);
+	}
+
+	:global(.landing-root) .public-hasel-topbar--marketing .public-hasel-topbar__brand,
+	:global(.landing-root) .public-hasel-topbar--marketing .public-hasel-topbar__wordmark {
+		color: var(--text-primary);
+	}
+
+	:global(.landing-root) .public-hasel-topbar--marketing .public-hasel-topbar__link {
+		color: var(--text-secondary);
+	}
+
+	:global(.landing-root) .public-hasel-topbar--marketing .public-hasel-topbar__link:hover {
+		color: var(--text-primary);
+		background: rgba(255, 255, 255, 0.06);
+	}
+
+	:global(.landing-root) .public-hasel-topbar--marketing .public-hasel-topbar__landing-login {
+		color: var(--text-secondary);
+	}
+
+	:global(.landing-root) .public-hasel-topbar--marketing .public-hasel-topbar__landing-login:hover {
+		color: var(--text-primary);
+	}
+
 	@media (min-width: 1024px) {
-		.public-hasel-topbar--landing .public-hasel-topbar__inner {
+		.public-hasel-topbar--marketing .public-hasel-topbar__inner {
 			display: grid;
 			grid-template-columns: auto 1fr auto;
 			align-items: center;
@@ -383,9 +467,15 @@ const {
 		}
 	}
 
-	@media (min-width: 640px) {
-		.public-hasel-topbar__login {
-			display: inline-flex;
+	@media (prefers-reduced-transparency: reduce) {
+		:global(.landing-root) .public-hasel-topbar--marketing {
+			background: var(--surface);
+			backdrop-filter: none;
+			-webkit-backdrop-filter: none;
+		}
+
+		:global(.landing-root) .public-hasel-topbar--marketing.is-scrolled {
+			background: var(--surface);
 		}
 	}
 </style>

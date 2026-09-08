@@ -28,7 +28,16 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 
 			<div class="min-w-0">
 				<a href="/panel/dashboard" class="topbar-brand-link no-underline" aria-label="Ir al dashboard">
-					<span class="topbar-brand-wordmark">HASEL</span>
+					<img
+						src="/icons/icon-64.png"
+						alt=""
+						class="topbar-brand-logo"
+						width="32"
+						height="32"
+						loading="eager"
+						decoding="async"
+					/>
+					<span class="topbar-brand-wordmark">Hasel</span>
 				</a>
 			</div>
 		</div>
@@ -59,28 +68,6 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 				<span class="material-symbols-rounded text-[1rem]">support_agent</span>
 			</button>
 
-			<button
-				type="button"
-				class="topbar-action-btn flex size-9 shrink-0 items-center justify-center rounded-xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--control-surface-strong) sm:hidden"
-				aria-label="Cambiar tema"
-				aria-pressed="false"
-				data-theme-toggle-mobile
-			>
-				<span class="material-symbols-rounded text-[1rem]" data-theme-icon-mobile>dark_mode</span>
-			</button>
-
-			<button
-				type="button"
-				class="topbar-action-btn hidden size-9 shrink-0 items-center justify-center rounded-xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--control-surface-strong) sm:flex sm:size-10"
-				aria-label="Cambiar tema"
-				title="Cambiar tema"
-				aria-pressed="false"
-				data-theme-toggle
-			>
-				<span class="material-symbols-rounded text-[1rem]" data-theme-icon>dark_mode</span>
-				<span class="sr-only" data-theme-label>Modo Oscuro</span>
-			</button>
-
 			<details class="group relative hidden shrink-0 lg:block" data-profile-menu>
 				<summary
 					class="topbar-action-btn flex size-9 cursor-pointer list-none items-center justify-center rounded-xl border border-(--primary-container) bg-(--primary-soft) text-(--primary) outline-none transition duration-200 hover:bg-(--primary-soft-hover) focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2 focus-visible:ring-offset-transparent sm:size-10"
@@ -107,6 +94,18 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 							settings
 						</span>
 						Ajustes
+					</button>
+
+					<button
+						type="button"
+						class="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-(--on-surface) transition hover:bg-(--primary-container)/45"
+						data-theme-toggle-menu
+						aria-pressed="false"
+					>
+						<span class="material-symbols-rounded text-[1.15rem] text-(--on-surface-variant)" data-theme-icon-menu>
+							dark_mode
+						</span>
+						<span data-theme-label-menu>Cambiar a modo claro</span>
 					</button>
 
 					<form
@@ -211,11 +210,9 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 		const sideNavBackdrop = document.querySelector<HTMLElement>('[data-side-nav-backdrop]');
 		const sideNavCloseButtons = document.querySelectorAll<HTMLButtonElement>('[data-side-nav-close]');
 		
-		const themeToggle = document.querySelector<HTMLElement>('[data-theme-toggle]');
-		const themeIcon = document.querySelector<HTMLElement>('[data-theme-icon]');
-		const themeLabel = document.querySelector<HTMLElement>('[data-theme-label]');
-		const themeToggleMobile = document.querySelector<HTMLElement>('[data-theme-toggle-mobile]');
-		const themeIconMobile = document.querySelector<HTMLElement>('[data-theme-icon-mobile]');
+		const themeToggleMenu = document.querySelector<HTMLElement>('[data-theme-toggle-menu]');
+		const themeIconMenu = document.querySelector<HTMLElement>('[data-theme-icon-menu]');
+		const themeLabelMenu = document.querySelector<HTMLElement>('[data-theme-label-menu]');
 		const logoutForms = document.querySelectorAll<HTMLFormElement>('[data-logout-form]');
 		
 		const desktopBreakpoint = window.matchMedia('(min-width: 1024px)');
@@ -413,14 +410,10 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 				/* ignore */
 			}
 			const nextThemeLabel = isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
-			
-			[themeToggle, themeToggleMobile].forEach(t => {
-				t?.setAttribute('aria-pressed', String(isDark));
-				t?.setAttribute('aria-label', nextThemeLabel);
-				t?.setAttribute('title', nextThemeLabel);
-			});
-			[themeIcon, themeIconMobile].forEach(i => { if (i) i.textContent = isDark ? 'light_mode' : 'dark_mode'; });
-			if (themeLabel) themeLabel.textContent = isDark ? 'Modo Claro' : 'Modo Oscuro';
+
+			themeToggleMenu?.setAttribute('aria-pressed', String(isDark));
+			if (themeIconMenu) themeIconMenu.textContent = isDark ? 'light_mode' : 'dark_mode';
+			if (themeLabelMenu) themeLabelMenu.textContent = nextThemeLabel;
 		};
 
 		const resolveInitialTheme = (): 'light' | 'dark' => {
@@ -471,8 +464,7 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 
 		// Attach Listeners
 		navToggles.forEach((toggle) => on(toggle, 'click', toggleSideNav));
-		on(themeToggle, 'click', toggleTheme);
-		on(themeToggleMobile, 'click', toggleTheme);
+		on(themeToggleMenu, 'click', toggleTheme);
 		on(sideNavBackdrop, 'click', closeSideNav);
 		sideNavCloseButtons.forEach(btn => on(btn, 'click', closeSideNav));
 		sideNav?.addEventListener('touchstart', handleSideNavTouchStart, { signal, passive: true });
