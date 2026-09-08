@@ -168,6 +168,12 @@ const parseUpdatePayload = (source: any): UpdateWorkspacePayload => {
 		}
 	}
 
+	if (Object.prototype.hasOwnProperty.call(source ?? {}, 'survey_auto_enabled')) {
+		const raw = source?.survey_auto_enabled;
+		payload.survey_auto_enabled =
+			raw === 1 || raw === true || raw === '1' || String(raw).toLowerCase() === 'true' ? 1 : 0;
+	}
+
 	const panelTheme = String(source?.panel_theme ?? '').trim();
 	if (panelTheme !== '') payload.panel_theme = panelTheme;
 

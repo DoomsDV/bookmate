@@ -53,6 +53,8 @@ export interface CustomerAppointmentSummary {
 	recommendations?: string | null;
 	notes?: string | null;
 	attachments?: CustomerAppointmentAttachment[];
+	survey_status?: string;
+	survey_score?: number;
 }
 
 export interface CustomerTopService {
@@ -350,6 +352,12 @@ const normalizeAppointmentSummary = (value: unknown): CustomerAppointmentSummary
 			: {}),
 		...(sessionNotes.notes !== null ? { notes: sessionNotes.notes } : {}),
 		...(attachments ? { attachments } : {}),
+		...(String(source.survey_status || '').trim()
+			? { survey_status: String(source.survey_status).trim() }
+			: {}),
+		...(toNumber(source.survey_score, 0) >= 1 && toNumber(source.survey_score, 0) <= 5
+			? { survey_score: Math.floor(toNumber(source.survey_score, 0)) }
+			: {}),
 	};
 };
 

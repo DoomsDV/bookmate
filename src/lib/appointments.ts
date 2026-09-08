@@ -710,6 +710,33 @@ export const approveScheduleExceptionWithOrds = async (token: string, appointmen
 	};
 };
 
+export const sendAppointmentSurveyWithOrds = async (token: string, appointmentId: number) => {
+	ensureToken(token);
+	if (!Number.isInteger(appointmentId) || appointmentId <= 0) {
+		throw new AppointmentsApiError('ID de cita invalido.', 400);
+	}
+
+	const response = await fetch(`${APPOINTMENTS_URL}/${appointmentId}/survey`, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			Accept: 'application/json',
+		},
+	});
+
+	const { data } = await parseJsonResponse(response);
+	if (!response.ok || !data || typeof data !== 'object' || data.status !== 'success') {
+		throw toApiError(response, data, 'No fue posible enviar la encuesta.');
+	}
+
+	return {
+		message:
+			typeof data.message === 'string' && data.message.trim()
+				? data.message
+				: 'Encuesta enviada por WhatsApp.',
+	};
+};
+
 export interface AppointmentAttachmentUploadPayload {
 	file_base64: string;
 	filename: string;

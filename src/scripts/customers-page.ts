@@ -16,7 +16,11 @@ import {
 import { destroyActiveBookmateTour } from '../lib/product-tour';
 import { openPanelModal } from '../lib/panel-scroll-lock';
 import { showOdontogramTour } from '../lib/odontogram-tour';
-import { canShowClinicalTab, canShowOdontogramCard } from '../lib/clinical-ficha/addon-entitlement';
+import {
+	canShowBodyMapCard,
+	canShowClinicalTab,
+	canShowOdontogramCard,
+} from '../lib/clinical-ficha/addon-entitlement';
 import {
 	buildFichaAddonCards,
 	isFichaCardVisible,
@@ -576,7 +580,11 @@ class CustomerManager extends HTMLElement {
 		this.syncClinicalTabVisibility();
 
 		const deepLink = parseClinicalDeepLink();
-		if (deepLink?.customerId && deepLink.workspace) {
+		if (
+			deepLink?.customerId &&
+			deepLink.workspace &&
+			(deepLink.workspace !== 'cuerpo' || canShowBodyMapCard())
+		) {
 			this.pendingClinicalOpen = {
 				customerId: deepLink.customerId,
 				workspace: deepLink.workspace,
@@ -1441,6 +1449,7 @@ class CustomerManager extends HTMLElement {
 		if (!detail?.customerId || (detail.workspace !== 'odontogram' && detail.workspace !== 'cuerpo')) {
 			return;
 		}
+		if (detail.workspace === 'cuerpo' && !canShowBodyMapCard()) return;
 		this.pendingClinicalOpen = detail;
 		if (this.activeProfileCustomerId === detail.customerId && this.profileModal?.open) {
 			this.fulfillPendingClinicalOpen();
@@ -1464,6 +1473,7 @@ class CustomerManager extends HTMLElement {
 		code: ClinicalWorkspaceCode,
 		options?: Partial<OpenClinicalWorkspaceDetail>
 	) {
+		if (code === 'cuerpo' && !canShowBodyMapCard()) return;
 		if (code === 'cuerpo' && options?.appointmentId && options.appointmentId > 0) {
 			this.activeBodyAppointmentId = options.appointmentId;
 		}
@@ -1610,7 +1620,7 @@ class CustomerManager extends HTMLElement {
 	}
 
 	private openBodyMapFromHistory(appointmentId: number) {
-		if (appointmentId <= 0) return;
+		if (appointmentId <= 0 || !canShowBodyMapCard()) return;
 		this.activeBodyAppointmentId = appointmentId;
 		this.setActiveProfileTab('clinica');
 		this.openClinicalWorkspace('cuerpo', { appointmentId });
@@ -3121,7 +3131,7 @@ class CustomerManager extends HTMLElement {
 		body.appendChild(notesBlock);
 
 		const bodyMarkCount = Math.max(0, Math.floor(Number(appointment.body_mark_count || 0)));
-		if (bodyMarkCount > 0 && appointment.id_appointment) {
+		if (bodyMarkCount > 0 && appointment.id_appointment && canShowBodyMapCard()) {
 			const mapChip = document.createElement('button');
 			mapChip.type = 'button';
 			mapChip.className = 'customer-profile-body-map-chip';
@@ -3165,6 +3175,102 @@ class CustomerManager extends HTMLElement {
 			filesBlock.appendChild(noFiles);
 		}
 		body.appendChild(filesBlock);
+
+		if (appointment.status === 'COMPLETADO' && appointment.id_appointment) {
+			const surveyBlock = this.buildSurveyActionBlock(appointment);
+			if (surveyBlock) body.appendChild(surveyBlock);
+		}
+	}
+
+	private buildSurveyActionBlock(appointment: CustomerAppointmentSummary): HTMLElement | null {
+		const appointmentId = appointment.id_appointment;
+		if (!appointmentId) return null;
+
+		const status = String(appointment.survey_status || 'NONE').toUpperCase();
+		const block = document.createElement('div');
+		block.className = 'customer-profile-history-block customer-profile-survey-block';
+
+		const label = document.createElement('p');
+		label.className = 'customer-profile-history-block__label';
+		label.textContent = 'Encuesta de satisfacción';
+		block.appendChild(label);
+
+		if (status === 'COMPLETED') {
+			const score = Math.max(1, Math.min(5, Math.floor(Number(appointment.survey_score || 0))));
+			const done = document.createElement('p');
+			done.className = 'customer-profile-history-muted';
+			done.textContent = score > 0 ? `Calificó ${score} de 5` : 'Encuesta respondida';
+			block.appendChild(done);
+			return block;
+		}
+
+		if (status === 'SENT') {
+			const sent = document.createElement('p');
+			sent.className = 'customer-profile-history-muted';
+			sent.textContent = 'Encuesta enviada. Esperando respuesta del cliente.';
+			block.appendChild(sent);
+			return block;
+		}
+
+		const button = document.createElement('button');
+		button.type = 'button';
+		button.className = 'customer-profile-survey-send-btn';
+		button.textContent = 'Enviar encuesta';
+		button.addEventListener('click', () => {
+			void this.sendSurveyForAppointment(appointmentId, button);
+		});
+		block.appendChild(button);
+		return block;
+	}
+
+	private async sendSurveyForAppointment(appointmentId: number, button: HTMLButtonElement) {
+		if (button.disabled) return;
+		const previousLabel = button.textContent;
+		button.disabled = true;
+		button.textContent = 'Enviando…';
+
+		try {
+			const response = await fetch(`/api/appointments/${appointmentId}/survey`, {
+				method: 'POST',
+				headers: { Accept: 'application/json' },
+			});
+			const data = (await response.json().catch(() => null)) as {
+				status?: string;
+				message?: string;
+			} | null;
+
+			if (!response.ok || data?.status !== 'success') {
+				throw new Error(data?.message || 'No fue posible enviar la encuesta.');
+			}
+
+			button.textContent = 'Encuesta enviada';
+			button.classList.add('is-sent');
+			if (window.BookmateAlert?.alert) {
+				await window.BookmateAlert.alert({
+					type: 'success',
+					title: 'Encuesta enviada',
+					message: data.message || 'Encuesta enviada por WhatsApp.',
+				});
+			}
+
+			if (this.activeProfileCustomerId) {
+				await this.openCustomerProfile(this.activeProfileCustomerId);
+			}
+		} catch (error) {
+			button.disabled = false;
+			button.textContent = previousLabel || 'Enviar encuesta';
+			const message =
+				error instanceof Error ? error.message : 'No fue posible enviar la encuesta.';
+			if (window.BookmateAlert?.alert) {
+				await window.BookmateAlert.alert({
+					type: 'error',
+					title: 'No se pudo enviar',
+					message,
+				});
+			} else {
+				this.showProfileError(message);
+			}
+		}
 	}
 
 	private createHistoryTimelineItem(
@@ -3210,7 +3316,9 @@ class CustomerManager extends HTMLElement {
 
 		const hasNotes = appointment.has_history_notes === true;
 		const attachmentCount = Math.max(0, Math.floor(Number(appointment.attachment_count || 0)));
-		const bodyMarkCount = Math.max(0, Math.floor(Number(appointment.body_mark_count || 0)));
+		const bodyMarkCount = canShowBodyMapCard()
+			? Math.max(0, Math.floor(Number(appointment.body_mark_count || 0)))
+			: 0;
 		if (hasNotes || attachmentCount > 0 || bodyMarkCount > 0) {
 			const marks = document.createElement('span');
 			marks.className = 'customer-profile-timeline__marks';

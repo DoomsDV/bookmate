@@ -193,6 +193,12 @@ const normalizeWorkspaceSettings = (value: unknown): WorkspaceSettingsData | nul
 		cancel_wait_hours: cancelWaitHours,
 		notify_all_professionals:
 			String(source.notify_all_professionals || 'N').trim().toUpperCase() === 'Y' ? 'Y' : 'N',
+		survey_auto_enabled:
+			Number(source.survey_auto_enabled) === 1 ||
+			String(source.survey_auto_enabled).trim() === '1' ||
+			String(source.survey_auto_enabled).toLowerCase() === 'true'
+				? 1
+				: 0,
 		catalogs: parseCatalogs(source.catalogs),
 	};
 };

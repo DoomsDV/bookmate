@@ -2492,6 +2492,50 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		gap: 0.3rem;
 	}
 
+	.customer-profile-survey-block {
+		margin-top: 0.75rem;
+		padding-top: 0.75rem;
+		border-top: 1px solid color-mix(in srgb, var(--shell-border) 70%, transparent);
+	}
+
+	.customer-profile-survey-send-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 100%;
+		min-height: 2.5rem;
+		padding: 0.55rem 1rem;
+		border: 1px solid color-mix(in srgb, var(--primary) 35%, var(--shell-border));
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--primary) 8%, var(--surface-bright));
+		color: var(--primary);
+		font-size: 0.88rem;
+		font-weight: 700;
+		line-height: 1.2;
+		cursor: pointer;
+		transition:
+			background 140ms ease,
+			border-color 140ms ease,
+			color 140ms ease,
+			opacity 140ms ease;
+	}
+
+	.customer-profile-survey-send-btn:hover:not(:disabled) {
+		background: color-mix(in srgb, var(--primary) 14%, var(--surface-bright));
+		border-color: color-mix(in srgb, var(--primary) 55%, var(--shell-border));
+	}
+
+	.customer-profile-survey-send-btn:disabled,
+	.customer-profile-survey-send-btn.is-sent {
+		opacity: 0.72;
+		cursor: default;
+	}
+
+	.customer-profile-survey-send-btn:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--primary) 45%, transparent);
+		outline-offset: 2px;
+	}
+
 	.customer-profile-history-block__label {
 		margin: 0;
 		font-size: 0.74rem;

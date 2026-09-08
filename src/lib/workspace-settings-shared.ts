@@ -49,6 +49,8 @@ export interface WorkspaceSettingsData {
 	cancel_wait_hours: number | null;
 	/** Preferencia personal del admin: Y/N */
 	notify_all_professionals: string;
+	/** Encuesta CSAT automática post-cita (0|1). */
+	survey_auto_enabled: number;
 	catalogs?: WorkspaceCatalogs;
 }
 
@@ -70,6 +72,7 @@ export interface UpdateWorkspacePayload {
 	rh_id_reminder_hours?: number;
 	cwh_id_cancel_wait_hours?: number | null;
 	notify_all_professionals?: 'Y' | 'N';
+	survey_auto_enabled?: 0 | 1 | boolean;
 	panel_theme?: string;
 	logo_base64?: string;
 	logo_name?: string;
