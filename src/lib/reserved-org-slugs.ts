@@ -17,6 +17,8 @@ export const RESERVED_ORG_SLUGS = new Set([
 	'login',
 	'register',
 	'hasel',
+	'explorar',
+	'explore',
 	'bookmate',
 	'www',
 	'app',

@@ -5,6 +5,7 @@ interface Props {
 	reserveLabel?: string;
 	showLogin?: boolean;
 	showReserve?: boolean;
+	variant?: 'public' | 'landing';
 }
 
 const {
@@ -12,10 +13,14 @@ const {
 	reserveLabel = 'Reservar',
 	showLogin = false,
 	showReserve = true,
+	variant = 'public',
 } = Astro.props;
 ---
 
-<header class="public-hasel-topbar" data-public-hasel-topbar>
+<header
+	class:list={['public-hasel-topbar', { 'public-hasel-topbar--landing': variant === 'landing' }]}
+	data-public-hasel-topbar
+>
 	<div class="public-hasel-topbar__inner">
 		<a href="/" class="public-hasel-topbar__brand no-underline" aria-label="Hasel — Inicio">
 			<img
@@ -30,32 +35,54 @@ const {
 			<span class="public-hasel-topbar__wordmark">Hasel</span>
 		</a>
 
-		<div class="public-hasel-topbar__actions">
-			<button
-				type="button"
-				class="public-hasel-topbar__theme"
-				aria-label="Cambiar tema"
-				title="Cambiar tema"
-				aria-pressed="false"
-				data-hub-theme-toggle
-			>
-				<span class="material-symbols-rounded" data-hub-theme-icon aria-hidden="true">dark_mode</span>
-			</button>
-			{
-				showLogin ? (
-					<a href="/auth/login" class="public-hasel-topbar__login no-underline">
-						Iniciar sesión
-					</a>
-				) : null
-			}
-			{
-				showReserve ? (
-					<a href={reserveHref} class="public-hasel-topbar__cta no-underline" data-hub-reserve-cta>
-						{reserveLabel}
-					</a>
-				) : null
-			}
-		</div>
+		{
+			variant === 'landing' ? (
+				<>
+					<nav class="public-hasel-topbar__links" aria-label="Secciones">
+						<a href="/explorar" class="public-hasel-topbar__link no-underline">Buscar negocios</a>
+						<a href="/#funciones" class="public-hasel-topbar__link no-underline">Funciones</a>
+						<a href="/#como-funciona" class="public-hasel-topbar__link no-underline">Cómo funciona</a>
+						<a href="/#precios" class="public-hasel-topbar__link no-underline">Precios</a>
+						<a href="/#soporte" class="public-hasel-topbar__link no-underline">Soporte</a>
+					</nav>
+					<div class="public-hasel-topbar__landing-actions">
+						<a href="/auth/login" class="public-hasel-topbar__landing-login no-underline">
+							Iniciar sesión
+						</a>
+						<a href="/auth/register" class="public-hasel-topbar__landing-cta no-underline">
+							Empezar gratis
+						</a>
+					</div>
+				</>
+			) : (
+				<div class="public-hasel-topbar__actions">
+					<button
+						type="button"
+						class="public-hasel-topbar__theme"
+						aria-label="Cambiar tema"
+						title="Cambiar tema"
+						aria-pressed="false"
+						data-hub-theme-toggle
+					>
+						<span class="material-symbols-rounded" data-hub-theme-icon aria-hidden="true">dark_mode</span>
+					</button>
+					{
+						showLogin ? (
+							<a href="/auth/login" class="public-hasel-topbar__login no-underline">
+								Iniciar sesión
+							</a>
+						) : null
+					}
+					{
+						showReserve ? (
+							<a href={reserveHref} class="public-hasel-topbar__cta no-underline" data-hub-reserve-cta>
+								{reserveLabel}
+							</a>
+						) : null
+					}
+				</div>
+			)
+		}
 	</div>
 </header>
 
@@ -231,6 +258,129 @@ const {
 
 	.public-hasel-topbar__cta:hover {
 		background: #5a82e8;
+	}
+
+	.public-hasel-topbar--landing {
+		height: auto;
+		padding: 0.65rem max(var(--landing-pad-x, 1.25rem), env(safe-area-inset-right, 0px)) 0.65rem
+			max(var(--landing-pad-x, 1.25rem), env(safe-area-inset-left, 0px));
+		background: color-mix(in srgb, var(--surface, #fafbfc) 80%, transparent);
+	}
+
+	.public-hasel-topbar--landing .public-hasel-topbar__inner {
+		width: min(var(--landing-max, 72rem), 100%);
+		max-width: none;
+		padding: 0;
+		min-height: 2.75rem;
+	}
+
+	.public-hasel-topbar--landing .public-hasel-topbar__brand {
+		gap: 0.5rem;
+		color: var(--on-surface, #1e293b);
+		flex-shrink: 0;
+	}
+
+	.public-hasel-topbar--landing .public-hasel-topbar__logo {
+		width: 2rem;
+		height: 2rem;
+		border-radius: 999px;
+		object-fit: contain;
+	}
+
+	.public-hasel-topbar--landing .public-hasel-topbar__wordmark {
+		color: inherit;
+		font-size: 1.15rem;
+		font-weight: 800;
+		letter-spacing: -0.02em;
+	}
+
+	.public-hasel-topbar__links {
+		display: none;
+		align-items: center;
+		gap: 0.1rem;
+	}
+
+	.public-hasel-topbar__link {
+		padding: 0.45rem 0.75rem;
+		border-radius: 999px;
+		color: var(--on-surface-variant, #64748b);
+		font-size: 0.875rem;
+		font-weight: 600;
+		white-space: nowrap;
+		transition: color 200ms ease, background-color 200ms ease;
+	}
+
+	.public-hasel-topbar__link:hover {
+		color: var(--on-surface, #1e293b);
+		background: color-mix(in srgb, var(--hub-primary, #426edb) 7%, transparent);
+	}
+
+	.public-hasel-topbar__landing-actions {
+		display: flex;
+		align-items: center;
+		gap: 0.2rem;
+		flex-shrink: 0;
+	}
+
+	.public-hasel-topbar__landing-login,
+	.public-hasel-topbar__landing-cta {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 2.35rem;
+		padding: 0.45rem 1rem;
+		border-radius: 999px;
+		font-size: 0.8125rem;
+		font-weight: 700;
+		white-space: nowrap;
+		transition: background-color 200ms ease, color 200ms ease, transform 200ms ease;
+	}
+
+	.public-hasel-topbar__landing-login {
+		color: var(--on-surface-variant, #64748b);
+	}
+
+	.public-hasel-topbar__landing-login:hover {
+		color: var(--on-surface, #1e293b);
+	}
+
+	.public-hasel-topbar__landing-cta {
+		background: var(--hub-primary, #426edb);
+		color: #fff;
+		box-shadow: 0 1px 2px rgb(12 20 40 / 0.2);
+	}
+
+	.public-hasel-topbar__landing-cta:hover {
+		background: #5a82e8;
+		transform: translateY(-1px);
+	}
+
+	.public-hasel-topbar__landing-login:focus-visible,
+	.public-hasel-topbar__landing-cta:focus-visible,
+	.public-hasel-topbar__link:focus-visible {
+		outline: 2px solid var(--hub-accent, #5b9cff);
+		outline-offset: 3px;
+	}
+
+	@media (min-width: 1024px) {
+		.public-hasel-topbar--landing .public-hasel-topbar__inner {
+			display: grid;
+			grid-template-columns: auto 1fr auto;
+			align-items: center;
+		}
+
+		.public-hasel-topbar__links {
+			display: flex;
+			justify-self: center;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.public-hasel-topbar__landing-login,
+		.public-hasel-topbar__landing-cta,
+		.public-hasel-topbar__link {
+			transition: none;
+		}
 	}
 
 	@media (min-width: 640px) {

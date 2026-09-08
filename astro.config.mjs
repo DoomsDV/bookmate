@@ -135,7 +135,10 @@ export default defineConfig({
         },
       ],
     }
-  }), sitemap()],
+  }), sitemap({
+    // SSR: /explorar no se prerenderiza; incluirla explícitamente en el índice.
+    customPages: [`${getSiteUrl()}/explorar`],
+  })],
 
   vite: {
     plugins: [

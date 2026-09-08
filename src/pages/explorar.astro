@@ -1,0 +1,460 @@
+---
+export const prerender = false;
+
+import Layout from '../layouts/Layout.astro';
+import PublicHaselTopbar from '../components/PublicHaselTopbar.astro';
+import { PublicBookingApiError } from '../lib/public-booking';
+import {
+	searchOrgDirectory,
+	type OrgDirectoryCity,
+	type OrgDirectoryResult,
+} from '../lib/public-org-directory';
+import { resolvePublicSiteOrigin } from '../lib/public-profile-url';
+import '../styles/global.css';
+import '../styles/public-org-hub.css';
+import '../styles/public-explorar.css';
+
+const toPositiveInt = (value: string | null) => {
+	const parsed = Number(value);
+	return Number.isInteger(parsed) && parsed > 0 ? parsed : 0;
+};
+
+const foldCityKey = (value: string) =>
+	value
+		.normalize('NFD')
+		.replace(/\p{M}/gu, '')
+		.toLowerCase()
+		.replace(/\s+/g, ' ')
+		.trim();
+
+const CITY_DISPLAY: Record<string, string> = {
+	aregua: 'Areguá',
+	asuncion: 'Asunción',
+	caacupe: 'Caacupé',
+	caaguazu: 'Caaguazú',
+	capiata: 'Capiatá',
+	'ciudad del este': 'Ciudad del Este',
+	concepcion: 'Concepción',
+	'coronel oviedo': 'Coronel Oviedo',
+	encarnacion: 'Encarnación',
+	'fernando de la mora': 'Fernando de la Mora',
+	guarambare: 'Guarambaré',
+	itaugua: 'Itauguá',
+	lambare: 'Lambaré',
+	limpio: 'Limpio',
+	luque: 'Luque',
+	'mariano roque alonso': 'Mariano Roque Alonso',
+	nemby: 'Ñemby',
+	'pedro juan caballero': 'Pedro Juan Caballero',
+	pilar: 'Pilar',
+	'san antonio': 'San Antonio',
+	'san lorenzo': 'San Lorenzo',
+	'villa elisa': 'Villa Elisa',
+	villarrica: 'Villarrica',
+	villeta: 'Villeta',
+	ypane: 'Ypané',
+};
+
+const CITY_PARTICLES = new Set(['de', 'del', 'la', 'las', 'los', 'y']);
+
+const toDisplayCityName = (value: string) => {
+	const raw = String(value || '').trim();
+	if (!raw) return '';
+	const mapped = CITY_DISPLAY[foldCityKey(raw)];
+	if (mapped) return mapped;
+	return raw
+		.toLocaleLowerCase('es')
+		.split(/\s+/)
+		.map((word, index) =>
+			index > 0 && CITY_PARTICLES.has(word)
+				? word
+				: word.charAt(0).toLocaleUpperCase('es') + word.slice(1)
+		)
+		.join(' ');
+};
+
+const COVER_TONES = [
+	{ a: '#3558b0', b: '#5b9cff', c: '#8ec5f0' },
+	{ a: '#2f6f9a', b: '#4aa8b0', c: '#7ad0c8' },
+	{ a: '#3d6ad4', b: '#426edb', c: '#7eb6e8' },
+	{ a: '#2a7a8a', b: '#3d9a9a', c: '#6ec9b8' },
+	{ a: '#2f5f8a', b: '#3d8a98', c: '#6ab8c8' },
+	{ a: '#3a62c9', b: '#5b9cff', c: '#9ad0ee' },
+] as const;
+
+const hashCoverTone = (seed: string) => {
+	const key = seed || 'hasel';
+	let hash = 2166136261;
+	for (let i = 0; i < key.length; i += 1) {
+		hash ^= key.charCodeAt(i);
+		hash = Math.imul(hash, 16777619);
+	}
+	return COVER_TONES[(hash >>> 0) % COVER_TONES.length];
+};
+
+const orgInitial = (name: string) => {
+	const letter = String(name || '').trim().charAt(0);
+	return letter ? letter.toLocaleUpperCase('es') : 'H';
+};
+
+const q = String(Astro.url.searchParams.get('q') || '').trim();
+const specialty = String(Astro.url.searchParams.get('specialty') || '').trim();
+const cityId = toPositiveInt(Astro.url.searchParams.get('city_id'));
+const departmentId = toPositiveInt(Astro.url.searchParams.get('department_id'));
+
+const hasFilters = Boolean(q || specialty || cityId || departmentId);
+const robots = hasFilters ? 'noindex, follow' : 'index, follow';
+
+const buildExplorarUrl = (overrides: Record<string, string | number | null | undefined> = {}) => {
+	const params = new URLSearchParams();
+	const next = {
+		q: overrides.q !== undefined ? overrides.q : q,
+		specialty: overrides.specialty !== undefined ? overrides.specialty : specialty,
+		city_id: overrides.city_id !== undefined ? overrides.city_id : cityId || null,
+		department_id:
+			overrides.department_id !== undefined ? overrides.department_id : departmentId || null,
+	};
+
+	const queryText = String(next.q || '').trim();
+	const specialtyCode = String(next.specialty || '').trim();
+	const nextCityId = toPositiveInt(next.city_id != null ? String(next.city_id) : null);
+	const nextDepartmentId = toPositiveInt(
+		next.department_id != null ? String(next.department_id) : null
+	);
+
+	if (queryText) params.set('q', queryText);
+	if (specialtyCode) params.set('specialty', specialtyCode);
+	if (nextCityId) params.set('city_id', String(nextCityId));
+	if (nextDepartmentId) params.set('department_id', String(nextDepartmentId));
+
+	const suffix = params.toString();
+	return suffix ? `/explorar?${suffix}` : '/explorar';
+};
+
+let directory: OrgDirectoryResult = {
+	items: [],
+	has_more: false,
+	facets: { specialties: [], cities: [] },
+};
+let loadError = '';
+
+try {
+	directory = await searchOrgDirectory({
+		q: q || undefined,
+		specialty: specialty || undefined,
+		city_id: cityId || undefined,
+		department_id: departmentId || undefined,
+	});
+} catch (error) {
+	const bookingError =
+		error instanceof PublicBookingApiError
+			? error
+			: new PublicBookingApiError('No fue posible cargar el directorio.', 500);
+	loadError = bookingError.message;
+}
+
+directory = {
+	...directory,
+	items: directory.items.map((item) => ({
+		...item,
+		city_name: toDisplayCityName(item.city_name),
+	})),
+	facets: {
+		...directory.facets,
+		cities: directory.facets.cities.map((city) => ({
+			...city,
+			name: toDisplayCityName(city.name),
+		})),
+	},
+};
+
+const siteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
+const pageTitle = 'Buscar negocios | Hasel';
+const metaDescription =
+	'Encontrá peluquerías, clínicas, estudios y más negocios que reservan con Hasel. Filtrá por rubro y ciudad.';
+const canonicalPath = '/explorar';
+
+const selectedSpecialtyLabel =
+	directory.facets.specialties.find((item) => item.code === specialty)?.label || specialty;
+const selectedCity: OrgDirectoryCity | undefined = directory.facets.cities.find(
+	(item) => item.id === cityId
+);
+
+const hasCoords = directory.items.some(
+	(item) =>
+		typeof item.latitude === 'number' &&
+		typeof item.longitude === 'number' &&
+		Number.isFinite(item.latitude) &&
+		Number.isFinite(item.longitude)
+);
+
+const stadiaKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
+const clientPayload = JSON.stringify({
+	items: directory.items,
+	facets: directory.facets,
+	hasCoords,
+	stadiaKey,
+});
+---
+
+<Layout
+	pageTitle={pageTitle}
+	metaDescription={metaDescription}
+	canonicalPath={canonicalPath}
+	siteOrigin={siteOrigin}
+	robots={robots}
+	ogImage="/icons/icon-512x512.png"
+>
+	<main
+		class="hub-root explorar-root"
+		data-explorar-root
+		data-explorar-payload={clientPayload}
+	>
+		<PublicHaselTopbar variant="landing" />
+
+		<div class="explorar-hero">
+			<h1 class="explorar-hero__title">Descubrí lugares para cuidarte</h1>
+			<p class="explorar-hero__lead">Reservá tu turno en pocos minutos.</p>
+		</div>
+
+		<div class="explorar-search-wrap">
+			<form class="explorar-search" method="get" action="/explorar" role="search">
+				<div class="explorar-search__field" data-explorar-query-field>
+					<label class="explorar-search__label" for="explorar-q">Qué buscás</label>
+					<input
+						id="explorar-q"
+						class="explorar-search__input"
+						type="search"
+						name="q"
+						value={q}
+						placeholder="Nombre o rubro"
+						autocomplete="off"
+						data-explorar-query-input
+					/>
+					<ul class="explorar-suggest" data-explorar-suggest aria-label="Sugerencias"></ul>
+				</div>
+
+				<div class="explorar-search__field">
+					<label class="explorar-search__label" for="explorar-city">Dónde</label>
+					<select id="explorar-city" class="explorar-search__select" name="city_id">
+						<option value="">Todo Paraguay</option>
+						{
+							directory.facets.cities.map((city) => (
+								<option value={city.id} selected={city.id === cityId}>
+									{city.name}
+								</option>
+							))
+						}
+					</select>
+				</div>
+
+				<div class="explorar-search__field">
+					<label class="explorar-search__label" for="explorar-specialty">Categoría</label>
+					<select id="explorar-specialty" class="explorar-search__select" name="specialty">
+						<option value="">Todas las categorías</option>
+						{
+							directory.facets.specialties.map((item) => (
+								<option value={item.code} selected={item.code === specialty}>
+									{item.label}
+								</option>
+							))
+						}
+					</select>
+				</div>
+
+				<button type="submit" class="explorar-search__submit">
+					<span class="material-symbols-rounded" aria-hidden="true">search</span>
+					Buscar
+				</button>
+			</form>
+		</div>
+
+		<div class="explorar-toolbar">
+			<nav class="explorar-rail" aria-label="Rubros">
+				<a
+					href={buildExplorarUrl({ specialty: null })}
+					class:list={['explorar-chip', { 'is-active': !specialty }]}
+				>
+					Todos
+				</a>
+				{
+					directory.facets.specialties.map((item) => (
+						<a
+							href={buildExplorarUrl({ specialty: item.code })}
+							class:list={['explorar-chip', { 'is-active': specialty === item.code }]}
+						>
+							{item.label}
+						</a>
+					))
+				}
+			</nav>
+
+			<div
+				class="explorar-view-toggle"
+				data-explorar-view-toggle
+				role="group"
+				aria-label="Vista de resultados"
+			>
+				<button
+					type="button"
+					class="explorar-view-toggle__btn is-active"
+					data-explorar-view-list
+					aria-pressed="true"
+				>
+					<span class="material-symbols-rounded" aria-hidden="true">view_list</span>
+					Lista
+				</button>
+				<button
+					type="button"
+					class="explorar-view-toggle__btn"
+					data-explorar-view-map
+					aria-pressed="false"
+				>
+					<span class="material-symbols-rounded" aria-hidden="true">map</span>
+					Mapa
+				</button>
+			</div>
+		</div>
+
+		{
+			hasFilters ? (
+				<div class="explorar-active-filters" aria-label="Filtros activos">
+					{q ? (
+						<a href={buildExplorarUrl({ q: null })} class="explorar-filter-pill">
+							{q}
+							<span class="explorar-filter-pill__x" aria-hidden="true">
+								×
+							</span>
+						</a>
+					) : null}
+					{specialty ? (
+						<a href={buildExplorarUrl({ specialty: null })} class="explorar-filter-pill">
+							{selectedSpecialtyLabel}
+							<span class="explorar-filter-pill__x" aria-hidden="true">
+								×
+							</span>
+						</a>
+					) : null}
+					{selectedCity ? (
+						<a href={buildExplorarUrl({ city_id: null })} class="explorar-filter-pill">
+							{selectedCity.name}
+							<span class="explorar-filter-pill__x" aria-hidden="true">
+								×
+							</span>
+						</a>
+					) : null}
+				</div>
+			) : null
+		}
+
+		{
+			loadError ? (
+				<div class="explorar-error">
+					<h2>No pudimos cargar el directorio</h2>
+					<p>{loadError}</p>
+				</div>
+			) : directory.items.length === 0 ? (
+				<div class="explorar-empty">
+					<h2>No encontramos negocios</h2>
+					<p>Probá con otro rubro, ciudad o término de búsqueda.</p>
+				</div>
+			) : (
+				<div class="explorar-body" data-explorar-body>
+					<div class="explorar-results-heading">
+						<p class="explorar-results-heading__count">
+							{directory.items.length}{' '}
+							{directory.items.length === 1 ? 'negocio encontrado' : 'negocios encontrados'}
+						</p>
+						<h2>Negocios cerca tuyo</h2>
+					</div>
+					<div class="explorar-grid">
+						{
+							directory.items.map((item, index) => {
+								const hubPath = `/${encodeURIComponent(item.slug)}`;
+								const bannerUrl = String(item.banner_url || '').trim();
+								const logoUrl = String(item.logo_url || '').trim();
+								const tone = hashCoverTone(item.specialty.code || item.slug);
+								const coverStyle = bannerUrl
+									? undefined
+									: `--cover-a:${tone.a};--cover-b:${tone.b};--cover-c:${tone.c}`;
+								return (
+									<a
+										href={hubPath}
+										class:list={['explorar-card', { 'has-logo': Boolean(logoUrl) }]}
+										style={`--card-i:${index}`}
+										data-explorar-card
+										data-explorar-slug={item.slug}
+									>
+										<div
+											class:list={['explorar-card__cover', { 'has-banner': Boolean(bannerUrl) }]}
+											style={coverStyle}
+										>
+											{bannerUrl ? (
+												<img
+													class="explorar-card__banner"
+													src={bannerUrl}
+													alt=""
+													loading="lazy"
+													decoding="async"
+												/>
+											) : (
+												<div class="explorar-card__fallback" aria-hidden="true">
+													<span class="explorar-card__initial">{orgInitial(item.name)}</span>
+												</div>
+											)}
+										</div>
+										{logoUrl ? (
+											<img
+												class="explorar-card__avatar"
+												src={logoUrl}
+												alt=""
+												loading="lazy"
+												decoding="async"
+											/>
+										) : (
+											<span class="explorar-card__avatar explorar-card__avatar--fallback" aria-hidden="true">
+												{orgInitial(item.name)}
+											</span>
+										)}
+										<div class="explorar-card__body">
+											<h2 class="explorar-card__name">{item.name}</h2>
+											<div class="explorar-card__meta">
+												{item.specialty.label ? (
+													<span class="explorar-card__rubro">{item.specialty.label}</span>
+												) : null}
+												{item.city_name ? (
+													<span class="explorar-card__city">
+														<span class="material-symbols-rounded" aria-hidden="true">location_on</span>
+														{item.city_name}
+													</span>
+												) : null}
+											</div>
+											<span class="explorar-card__cta">
+												Ver negocio
+												<span class="material-symbols-rounded" aria-hidden="true">arrow_forward</span>
+											</span>
+										</div>
+									</a>
+								);
+							})
+						}
+					</div>
+
+					<div class="explorar-map-panel" aria-hidden="true">
+						<div class="explorar-map-panel__canvas" data-explorar-map></div>
+					</div>
+				</div>
+			)
+		}
+
+		{
+			directory.has_more ? (
+				<div class="explorar-soft-gate">
+					<p class="explorar-soft-gate__banner">Hay más negocios en Hasel.</p>
+				</div>
+			) : null
+		}
+	</main>
+
+	<script src="../scripts/explorar-page.ts"></script>
+</Layout>

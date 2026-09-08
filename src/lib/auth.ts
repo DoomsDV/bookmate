@@ -1289,6 +1289,7 @@ const isPublicOrgHubPath = (pathname: string) => {
 export const isPublicPath = (pathname: string) => {
 	return (
 		pathname === '/' ||
+		pathname === '/explorar' ||
 		pathname === '/politicas-y-privacidad' ||
 		pathname === '/politicas-de-cancelacion-y-reembolso' ||
 		pathname.startsWith('/auth') ||
