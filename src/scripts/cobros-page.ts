@@ -157,6 +157,8 @@ const statusChipClass = (item: CobroItem) => {
 
 let onSubscriptionRefresh: (() => void) | null = null;
 let subscriptionListenerBound = false;
+let onCobrosFocusRequest: ((appointmentId: number) => void) | null = null;
+let cobrosFocusListenerBound = false;
 
 export const initCobrosPage = () => {
 	const root = document.querySelector<CobrosManagerElement>('cobros-manager');
@@ -247,6 +249,9 @@ export const initCobrosPage = () => {
 	const appointmentFromUrl = Number(urlParams.get('appointment') || 0);
 	let pendingAppointmentId =
 		Number.isInteger(appointmentFromUrl) && appointmentFromUrl > 0 ? appointmentFromUrl : 0;
+	let focusAppointmentId = 0;
+	let pendingFocusItem: CobroItem | null = null;
+	let focusHighlightTimer: number | null = null;
 	let items: CobroItem[] = [];
 	let selected: CobroItem | null = null;
 	let busy = false;
@@ -1043,6 +1048,7 @@ export const initCobrosPage = () => {
 		for (const item of items) {
 			const tr = document.createElement('tr');
 			tr.className = 'border-b border-(--shell-border)/70';
+			tr.dataset.cobrosAppointment = String(item.id_appointment || '');
 			tr.innerHTML = `
 				<td class="px-4 py-3 whitespace-nowrap">${formatDateTime(item.start_time || item.created_at)}</td>
 				<td class="px-4 py-3 font-semibold">${escapeHtml(item.customer_name || '—')}</td>
@@ -1065,6 +1071,7 @@ export const initCobrosPage = () => {
 
 			const card = document.createElement('article');
 			card.className = 'cobros-card';
+			card.dataset.cobrosAppointment = String(item.id_appointment || '');
 			const ctaLabel = openActionLabel(item);
 			card.innerHTML = `
 				<div class="cobros-card__inner">
@@ -1087,6 +1094,58 @@ export const initCobrosPage = () => {
 			`;
 			cardsEl.appendChild(card);
 		}
+	};
+
+	const stripAppointmentQuery = () => {
+		const url = new URL(window.location.href);
+		if (!url.searchParams.has('appointment')) return;
+		url.searchParams.delete('appointment');
+		const query = url.searchParams.toString();
+		window.history.replaceState({}, '', `${url.pathname}${query ? `?${query}` : ''}${url.hash}`);
+	};
+
+	const clearFocusHighlight = () => {
+		root.querySelectorAll('[data-cobros-focus]').forEach((el) => {
+			el.removeAttribute('data-cobros-focus');
+		});
+	};
+
+	const applyFocusHighlight = (appointmentId: number) => {
+		if (focusHighlightTimer !== null) {
+			window.clearTimeout(focusHighlightTimer);
+			focusHighlightTimer = null;
+		}
+		clearFocusHighlight();
+		if (!appointmentId) return;
+
+		const targets = root.querySelectorAll(`[data-cobros-appointment="${appointmentId}"]`);
+		targets.forEach((el) => {
+			el.setAttribute('data-cobros-focus', '');
+		});
+
+		const prefersDesktop = window.matchMedia('(min-width: 768px)').matches;
+		const scrollTarget = prefersDesktop
+			? tableBody?.querySelector<HTMLElement>(`[data-cobros-appointment="${appointmentId}"]`)
+			: cardsEl?.querySelector<HTMLElement>(`[data-cobros-appointment="${appointmentId}"]`);
+		(scrollTarget ?? targets[0] as HTMLElement | undefined)?.scrollIntoView({
+			block: 'center',
+			behavior: 'smooth',
+		});
+
+		focusHighlightTimer = window.setTimeout(() => {
+			clearFocusHighlight();
+			focusHighlightTimer = null;
+		}, 2400);
+	};
+
+	const applyPendingCobrosFocus = () => {
+		const appointmentId = focusAppointmentId;
+		const focusItem = pendingFocusItem;
+		focusAppointmentId = 0;
+		pendingFocusItem = null;
+		if (appointmentId > 0) applyFocusHighlight(appointmentId);
+		if (focusItem) openModal(focusItem);
+		stripAppointmentQuery();
 	};
 
 	const fetchCobros = async (params: URLSearchParams) => {
@@ -1117,6 +1176,10 @@ export const initCobrosPage = () => {
 		updatePagination();
 		try {
 			const lookupId = pendingAppointmentId;
+			if (!lookupId) {
+				focusAppointmentId = 0;
+				pendingFocusItem = null;
+			}
 			const params = new URLSearchParams({
 				status: statusFilter,
 				date_preset: datePreset,
@@ -1171,7 +1234,8 @@ export const initCobrosPage = () => {
 					lookupResult.items[0] ||
 					null;
 				pendingAppointmentId = 0;
-				if (match) openModal(match);
+				focusAppointmentId = match?.id_appointment || lookupId;
+				pendingFocusItem = match;
 			}
 		} catch (error) {
 			if (requestId !== loadRequestId) return;
@@ -1182,6 +1246,9 @@ export const initCobrosPage = () => {
 			if (requestId !== loadRequestId) return;
 			setLoading(false);
 			render();
+			if (focusAppointmentId || pendingFocusItem) {
+				applyPendingCobrosFocus();
+			}
 		}
 	};
 
@@ -1736,10 +1803,24 @@ export const initCobrosPage = () => {
 		if (ok) void load();
 	};
 
+	onCobrosFocusRequest = (appointmentId) => {
+		pendingAppointmentId = appointmentId;
+		void load();
+	};
+
 	if (!subscriptionListenerBound) {
 		subscriptionListenerBound = true;
 		document.addEventListener('hasel:subscription', () => {
 			onSubscriptionRefresh?.();
+		});
+	}
+
+	if (!cobrosFocusListenerBound) {
+		cobrosFocusListenerBound = true;
+		document.addEventListener('hasel:focus-cobro', (event) => {
+			const id = Number((event as CustomEvent<{ appointmentId?: number }>).detail?.appointmentId || 0);
+			if (!Number.isInteger(id) || id <= 0) return;
+			onCobrosFocusRequest?.(id);
 		});
 	}
 };

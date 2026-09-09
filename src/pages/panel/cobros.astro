@@ -2380,6 +2380,41 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		margin-top: 0.75rem;
 	}
 
+	/* El highlight de inbox va en la fila/card, no en main/página. */
+	:global(tr[data-cobros-focus]),
+	:global(.cobros-card[data-cobros-focus]) {
+		outline: none;
+		box-shadow: inset 3px 0 0 color-mix(in srgb, var(--on-surface) 42%, transparent);
+		background: color-mix(in srgb, var(--on-surface) 6%, transparent);
+	}
+
+	:global(tr[data-cobros-focus] > td) {
+		background: color-mix(in srgb, var(--on-surface) 6%, transparent);
+	}
+
+	:global(html[data-theme='dark'] tr[data-cobros-focus]),
+	:global(html[data-theme='dark'] .cobros-card[data-cobros-focus]) {
+		box-shadow: inset 3px 0 0 rgba(255, 255, 255, 0.42);
+		background: color-mix(in srgb, #ffffff 7%, transparent);
+	}
+
+	:global(html[data-theme='dark'] tr[data-cobros-focus] > td) {
+		background: color-mix(in srgb, #ffffff 7%, transparent);
+	}
+
+	:global(.cobros-card[data-cobros-focus]) {
+		box-shadow:
+			inset 3px 0 0 color-mix(in srgb, var(--on-surface) 42%, transparent),
+			0 0 0 1px color-mix(in srgb, var(--on-surface) 10%, transparent);
+	}
+
+	:global(html[data-theme='dark'] .cobros-card[data-cobros-focus]) {
+		background: #16161a;
+		box-shadow:
+			inset 3px 0 0 rgba(255, 255, 255, 0.42),
+			0 0 0 1px rgba(255, 255, 255, 0.1);
+	}
+
 	/* Validar comprobante: sheet móvil → drawer desde sm */
 	dialog[data-cobros-modal] {
 		position: fixed;
@@ -2391,7 +2426,9 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		margin: 0;
 		padding: 0;
 		border: 0;
-		background: transparent;
+		/* Evita que el <dialog> full-viewport pinte Canvas/accent (azul de Windows) sobre el panel. */
+		background: transparent !important;
+		background-color: transparent !important;
 		box-shadow: none;
 		overflow: hidden;
 		animation: cobros-modal-in 180ms cubic-bezier(0.2, 0, 0, 1);
@@ -2425,6 +2462,14 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		backdrop-filter: blur(var(--modal-backdrop-blur));
 		-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		animation: cobros-backdrop-in 180ms ease;
+	}
+
+	/* Dark: scrim carbón opaco, sin blur que arrastre --primary al canvas. */
+	html[data-theme='dark'] dialog[data-cobros-modal]::backdrop {
+		background-color: rgb(14 14 16 / 0.72);
+		backdrop-filter: none !important;
+		-webkit-backdrop-filter: none !important;
+		animation-name: cobros-backdrop-fade-in;
 	}
 
 	dialog[data-cobros-modal].is-closing {
@@ -2470,6 +2515,15 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		}
 	}
 
+	@keyframes cobros-backdrop-fade-in {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
 	@keyframes cobros-backdrop-out {
 		from {
 			opacity: 1;
@@ -2507,6 +2561,13 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 			background: var(--modal-backdrop-scrim);
 			backdrop-filter: blur(var(--modal-backdrop-blur));
 			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
+		}
+
+		html[data-theme='dark'] dialog[data-cobros-modal]::backdrop {
+			background-color: rgb(14 14 16 / 0.72);
+			backdrop-filter: none !important;
+			-webkit-backdrop-filter: none !important;
+			animation-name: cobros-backdrop-fade-in;
 		}
 	}
 

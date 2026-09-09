@@ -176,9 +176,19 @@ const openItem = (item: InboxItem) => {
 	}
 
 	if (item.ntype === 'PAYMENT') {
-		window.location.assign(
-			buildCobrosFocusUrl(Number(item.appointment_id || 0), item.action_url)
-		);
+		const appointmentId = Number(item.appointment_id || 0);
+		const url = buildCobrosFocusUrl(appointmentId, item.action_url);
+		if (window.location.pathname.startsWith('/panel/cobros')) {
+			const next = new URL(url, window.location.origin);
+			window.history.replaceState({}, '', `${next.pathname}${next.search}${next.hash}`);
+			document.dispatchEvent(
+				new CustomEvent('hasel:focus-cobro', {
+					detail: { appointmentId },
+				})
+			);
+			return;
+		}
+		window.location.assign(url);
 		return;
 	}
 
