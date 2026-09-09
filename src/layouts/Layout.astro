@@ -70,13 +70,15 @@ if (flashTypeFromCookie) {
     Astro.cookies.delete(FLASH_TYPE_COOKIE, { path: '/' });
 }
 
+const isPanelRoute = Astro.url.pathname === '/panel' || Astro.url.pathname.startsWith('/panel/');
 const themeCookie = String(Astro.cookies.get('bookmate-theme')?.value || '').trim();
-const initialTheme = themeCookie === 'light' || themeCookie === 'dark' ? themeCookie : 'dark';
+const storedPanelTheme = themeCookie === 'light' || themeCookie === 'dark' ? themeCookie : null;
+const initialTheme = isPanelRoute ? storedPanelTheme : undefined;
 const themeColor = initialTheme === 'dark' ? '#0c0e14' : '#f6f7f9';
 ---
 
 <!doctype html>
-<html lang="es" data-theme={initialTheme}>
+<html lang="es" {...(initialTheme ? { 'data-theme': initialTheme } : {})}>
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -122,17 +124,81 @@ const themeColor = initialTheme === 'dark' ? '#0c0e14' : '#f6f7f9';
         </script>
 
         <script is:inline>
-            // Agrupamos la lógica en una función
-            const setBookmateTheme = () => {
-                const storedTheme = localStorage.getItem('bookmate-theme');
-                const theme = storedTheme === 'dark' || storedTheme === 'light' ? storedTheme : 'dark';
-                document.documentElement.dataset.theme = theme;
+            const THEME_KEY = 'bookmate-theme';
+            const THEME_COLOR_DARK = '#0c0e14';
+            const THEME_COLOR_LIGHT = '#f6f7f9';
+            let themeMediaAbort = null;
+
+            const isPanelPath = (pathname) => {
+                const path = String(pathname || '').split(/[?#]/)[0] || '';
+                return path === '/panel' || path.indexOf('/panel/') === 0;
+            };
+
+            const systemTheme = () => {
                 try {
-                    document.cookie = 'bookmate-theme=' + theme + ';path=/;max-age=31536000;SameSite=Lax';
+                    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
                 } catch (e) {
-                    /* ignore */
+                    return 'light';
                 }
             };
+
+            const readStoredPanelTheme = () => {
+                try {
+                    const stored = localStorage.getItem(THEME_KEY);
+                    if (stored === 'light' || stored === 'dark') return stored;
+                } catch (e) {
+                    /* private mode / quota */
+                }
+                return null;
+            };
+
+            const resolveThemeForPath = (pathname) => {
+                if (isPanelPath(pathname)) {
+                    return readStoredPanelTheme() || systemTheme();
+                }
+                return systemTheme();
+            };
+
+            const applyResolvedTheme = (theme, root) => {
+                const target = root || document.documentElement;
+                target.dataset.theme = theme;
+                const doc = target.ownerDocument || document;
+                doc.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
+                    if (!meta.getAttribute('media')) {
+                        meta.setAttribute('content', theme === 'dark' ? THEME_COLOR_DARK : THEME_COLOR_LIGHT);
+                    }
+                });
+            };
+
+            const bindSystemThemeListener = (followsSystem) => {
+                if (themeMediaAbort) {
+                    themeMediaAbort.abort();
+                    themeMediaAbort = null;
+                }
+                if (!followsSystem) return;
+                themeMediaAbort = new AbortController();
+                try {
+                    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+                    mq.addEventListener(
+                        'change',
+                        () => {
+                            applyResolvedTheme(resolveThemeForPath(location.pathname), document.documentElement);
+                        },
+                        { signal: themeMediaAbort.signal }
+                    );
+                } catch (e) {
+                    /* matchMedia / AbortController */
+                }
+            };
+
+            const setBookmateTheme = (pathname, root) => {
+                const path = pathname || location.pathname;
+                const theme = resolveThemeForPath(path);
+                applyResolvedTheme(theme, root || document.documentElement);
+                bindSystemThemeListener(!isPanelPath(path) || !readStoredPanelTheme());
+            };
+
+            window.__haselSyncTheme = () => setBookmateTheme(location.pathname, document.documentElement);
 
             /** Solo desktop: recuerda sidebar colapsado/expandido entre páginas y refrescos. */
             const SIDEBAR_STATE_KEY = 'hasel-sidebar-state';
@@ -225,17 +291,17 @@ const themeColor = initialTheme === 'dark' ? '#0c0e14' : '#f6f7f9';
             syncPpeTabPrefForRoute();
             applyHubTabPref();
 
-            // 2. Copiar tema al documento entrante ANTES del paint (after-swap llega tarde).
+            // 2. Resolver el tema del DESTINO antes del paint (no copiar el de la página actual).
             document.addEventListener('astro:before-swap', (event) => {
-                const theme = document.documentElement.dataset.theme;
-                if (theme) event.newDocument.documentElement.dataset.theme = theme;
+                const toPath = String(event.to && event.to.pathname ? event.to.pathname : location.pathname);
+                setBookmateTheme(toPath, event.newDocument.documentElement);
                 document.documentElement.classList.add('is-theme-swapping');
                 event.newDocument.documentElement.classList.add('is-theme-swapping');
             });
 
             // 3. Se ejecuta cada vez que ClientRouter intercambia el contenido de la página
             document.addEventListener('astro:after-swap', () => {
-                setBookmateTheme();
+                setBookmateTheme(location.pathname, document.documentElement);
                 applySidebarState();
                 syncPpeTabPrefForRoute();
                 applyHubTabPref();

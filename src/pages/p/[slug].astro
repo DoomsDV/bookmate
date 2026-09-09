@@ -51,12 +51,11 @@ if (!loadError) {
 <style is:global>
 	html:has(.public-booking-shell),
 	html:has(.public-booking-shell) body {
-		background: #121214;
+		background: var(--page-background, #f6f7f9);
 	}
 
 	.public-booking-shell {
-		--surface-background: #121214;
 		min-height: 100vh;
-		background: var(--surface-background);
+		background: var(--page-background, #f6f7f9);
 	}
 </style>

@@ -351,8 +351,9 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 						<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"><span>Tema del panel <span class="text-rose-500">*</span></span>
 							<div class="relative">
 								<select name="panel_theme" class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
+							<option value="system" selected>Sistema</option>
 							<option value="light">Claro</option>
-							<option value="dark" selected>Oscuro</option>
+							<option value="dark">Oscuro</option>
 						</select>
 							</div>
 					</label>
@@ -1107,6 +1108,15 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 		ProfileImageCropper,
 	} from '../lib/profile-image-crop';
 	import { openPanelModal } from '../lib/panel-scroll-lock';
+	import {
+		applyResolvedTheme,
+		clearPanelTheme,
+		persistPanelTheme,
+		readStoredPanelTheme,
+		requestThemeSync,
+		systemTheme,
+		type PanelThemePref,
+	} from '../lib/theme';
 
 	const PANEL_THEMED_SETTINGS_SELECT =
 		'select[name="panel_theme"], select[data-settings-system-slot-interval], select[data-settings-system-reminder-hours], select[data-settings-system-alert-action], select[name="cwh_id_cancel_wait_hours"]';
@@ -2699,42 +2709,34 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			if (logoFile) logoFile.value = '';
 		}
 
-		private resolveActivePanelTheme(): 'light' | 'dark' {
-			const fromDom = document.documentElement.dataset.theme;
-			if (fromDom === 'dark' || fromDom === 'light') return fromDom;
-			try {
-				const stored = localStorage.getItem('bookmate-theme');
-				if (stored === 'dark' || stored === 'light') return stored;
-			} catch {
-				/* ignore quota / private mode */
-			}
-			return 'dark';
+		private resolvePanelThemePref(): PanelThemePref {
+			return readStoredPanelTheme() ?? 'system';
 		}
 
 		private syncPanelThemeSelect() {
 			const panelTheme = this.els.preferencesForm?.querySelector<HTMLSelectElement>('[name="panel_theme"]');
 			if (!panelTheme) return;
-			panelTheme.value = this.resolveActivePanelTheme();
+			panelTheme.value = this.resolvePanelThemePref();
 			syncSettingsThemedSelect(panelTheme);
 		}
 
-		private getPanelAppearanceValues(): { theme: 'light' | 'dark' } {
-			const theme: 'light' | 'dark' =
-				this.els.preferencesForm?.querySelector<HTMLSelectElement>('[name="panel_theme"]')?.value === 'dark'
-					? 'dark'
-					: 'light';
+		private getPanelAppearanceValues(): { theme: PanelThemePref } {
+			const raw = this.els.preferencesForm?.querySelector<HTMLSelectElement>('[name="panel_theme"]')?.value;
+			const theme: PanelThemePref = raw === 'dark' || raw === 'light' || raw === 'system' ? raw : 'system';
 			return { theme };
 		}
 
 		private persistPanelAppearance(theme: string) {
-			const safeTheme = theme === 'dark' ? 'dark' : 'light';
-			document.documentElement.dataset.theme = safeTheme;
-			localStorage.setItem('bookmate-theme', safeTheme);
-			try {
-				document.cookie = `bookmate-theme=${safeTheme};path=/;max-age=31536000;SameSite=Lax`;
-			} catch {
-				/* ignore */
+			if (theme === 'system') {
+				clearPanelTheme();
+				applyResolvedTheme(systemTheme());
+				requestThemeSync();
+				return;
 			}
+			const safeTheme = theme === 'dark' ? 'dark' : 'light';
+			persistPanelTheme(safeTheme);
+			applyResolvedTheme(safeTheme);
+			requestThemeSync();
 		}
 
 		private reloadAfterWorkspaceSave() {
@@ -3383,10 +3385,8 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			}
 
 			const payload = this.getAppearancePayload();
-			payload.panel_theme = theme;
-			if (!payload.theme_pref) {
-				payload.theme_pref = theme;
-			}
+			delete payload.panel_theme;
+			delete payload.theme_pref;
 
 			if (this.els.brandingForm) {
 				const logoFile = this.els.brandingForm.querySelector<HTMLInputElement>('[name="logo_file"]')?.files?.[0];

@@ -640,14 +640,15 @@ const jsonLd = [
 		--accent-hover: #5a82e8;
 		--accent-soft: rgba(66, 110, 219, 0.14);
 		--accent-on: #ffffff;
-		--surface: #0c0e14;
-		--surface-raised: #141820;
-		--surface-overlay: #1a2030;
-		--text-primary: #eef0f4;
-		--text-secondary: #a8adb8;
+		--surface: #f6f7f9;
+		--surface-raised: #ffffff;
+		--surface-overlay: #eef0f4;
+		--text-primary: #141820;
+		--text-secondary: #5c6370;
 		--text-muted: #7a8190;
-		--border: rgba(255, 255, 255, 0.08);
-		--border-strong: rgba(255, 255, 255, 0.14);
+		--border: rgba(15, 23, 42, 0.08);
+		--border-strong: rgba(15, 23, 42, 0.14);
+		--control-hover: rgba(15, 23, 42, 0.05);
 		--radius-sm: 8px;
 		--radius-md: 14px;
 		--radius-lg: 20px;
@@ -668,12 +669,29 @@ const jsonLd = [
 		-webkit-font-smoothing: antialiased;
 	}
 
+	:global(html[data-theme='dark']) .landing-root {
+		--surface: #0c0e14;
+		--surface-raised: #141820;
+		--surface-overlay: #1a2030;
+		--text-primary: #eef0f4;
+		--text-secondary: #a8adb8;
+		--text-muted: #7a8190;
+		--border: rgba(255, 255, 255, 0.08);
+		--border-strong: rgba(255, 255, 255, 0.14);
+		--control-hover: rgba(255, 255, 255, 0.06);
+	}
+
 	:global(html:has(.landing-root)),
 	:global(body:has(.landing-root)) {
 		overflow-x: clip;
-		background: var(--surface);
+		background: #f6f7f9;
 		margin: 0;
 		padding: 0;
+	}
+
+	:global(html[data-theme='dark']:has(.landing-root)),
+	:global(html[data-theme='dark']) :global(body:has(.landing-root)) {
+		background: #0c0e14;
 	}
 
 	:global(body:has(.landing-root)) {
@@ -847,7 +865,7 @@ const jsonLd = [
 
 	.m3-btn-text:hover {
 		color: var(--text-primary);
-		background: rgba(255, 255, 255, 0.06);
+		background: var(--control-hover);
 		transform: none;
 	}
 
@@ -1307,30 +1325,34 @@ const jsonLd = [
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-		opacity: 0.55;
 	}
 
-	.features-bento__cell--featured .features-bento__photo {
-		opacity: 0.45;
-	}
-
-	.features-bento__cell--featured::after {
-		content: '';
-		position: absolute;
-		inset: 0;
-		background: linear-gradient(180deg, transparent 20%, rgba(12, 14, 20, 0.92) 85%);
-		pointer-events: none;
-	}
-
-	.features-bento__cell--visual .features-bento__photo {
-		opacity: 0.5;
-	}
-
+	.features-bento__cell--featured::after,
 	.features-bento__cell--visual::after {
 		content: '';
 		position: absolute;
 		inset: 0;
-		background: linear-gradient(135deg, rgba(12, 14, 20, 0.75), rgba(12, 14, 20, 0.35));
+		pointer-events: none;
+		background: linear-gradient(
+			180deg,
+			transparent 62%,
+			rgba(12, 14, 20, 0.16) 82%,
+			rgba(12, 14, 20, 0.42) 100%
+		);
+	}
+
+	/* Foto + overlay oscuro: el texto siempre es claro, independiente del tema de la página. */
+	.features-bento__cell--featured,
+	.features-bento__cell--visual {
+		--text-primary: #eef0f4;
+		--text-secondary: #e4e7ee;
+	}
+
+	.features-bento__cell--featured .features-bento__title,
+	.features-bento__cell--featured .features-bento__text,
+	.features-bento__cell--visual .features-bento__title,
+	.features-bento__cell--visual .features-bento__text {
+		text-shadow: 0 1px 2px rgba(12, 14, 20, 0.55), 0 8px 18px rgba(12, 14, 20, 0.35);
 	}
 
 	.features-bento__cell--tint {
@@ -1541,6 +1563,15 @@ const jsonLd = [
 	}
 
 	.cta-premium {
+		color: var(--accent);
+		font: inherit;
+		font-weight: inherit;
+		letter-spacing: inherit;
+		line-height: inherit;
+		vertical-align: baseline;
+	}
+
+	:global(html[data-theme='dark']) .cta-premium {
 		color: #8eb4ff;
 	}
 
@@ -1549,8 +1580,14 @@ const jsonLd = [
 		gap: 1.25rem;
 		padding: 1.25rem;
 		border-radius: var(--radius-md);
-		background: rgba(0, 0, 0, 0.22);
+		background: var(--surface);
 		border: 1px solid var(--border);
+		box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+	}
+
+	:global(html[data-theme='dark']) .cta-split__panel {
+		background: rgba(0, 0, 0, 0.22);
+		box-shadow: none;
 	}
 
 	.cta-checklist {
@@ -1572,8 +1609,12 @@ const jsonLd = [
 
 	.cta-checklist .material-symbols-rounded {
 		font-size: 1.15rem;
-		color: #8eb4ff;
+		color: var(--accent);
 		flex-shrink: 0;
+	}
+
+	:global(html[data-theme='dark']) .cta-checklist .material-symbols-rounded {
+		color: #8eb4ff;
 	}
 
 	.cta-btn {

@@ -900,6 +900,16 @@ html[data-theme='dark'] .explorar-soft-gate__banner {
 }
 
 /* Rediseño de vitrina pública: abierto, editorial y centrado en los negocios. */
+html:has(.explorar-root),
+html:has(.explorar-root) body {
+	background: #f6f7f9;
+}
+
+html[data-theme='dark']:has(.explorar-root),
+html[data-theme='dark']:has(.explorar-root) body {
+	background: #0c0e14;
+}
+
 .explorar-root {
 	--hub-max: 1120px;
 	--hub-pad-x: 1.5rem;
@@ -909,7 +919,9 @@ html[data-theme='dark'] .explorar-soft-gate__banner {
 	--explorar-ink: #17243a;
 	--explorar-muted: #73829a;
 	min-height: 100dvh;
-	background: #f3f8fc;
+	background:
+		radial-gradient(ellipse 120% 70% at 50% -15%, rgba(66, 110, 219, 0.07), transparent 55%),
+		#f6f7f9;
 }
 
 .explorar-root::before {

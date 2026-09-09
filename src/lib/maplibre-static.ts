@@ -107,9 +107,18 @@ export const buildStadiaStaticMapUrl = (
 	} = {},
 ): string | null => buildStadiaMapPreviewUrl(apiKey, coords, options)?.url ?? null;
 
-/** SSR / cookie / localStorage: mismo criterio que `setBookmateTheme` (default dark). */
-export const resolveMapThemeFromStorage = (stored?: string | null): MapTheme =>
-	stored === 'light' ? 'light' : 'dark';
+/** Cookie / localStorage del panel. Vacío o `system` sigue al SO (en SSR, claro). */
+export const resolveMapThemeFromStorage = (stored?: string | null): MapTheme => {
+	if (stored === 'light' || stored === 'dark') return stored;
+	if (typeof window !== 'undefined') {
+		try {
+			return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+		} catch {
+			return 'light';
+		}
+	}
+	return 'light';
+};
 
 export const resolveMapTheme = (root?: Element | null): MapTheme => {
 	if (typeof document === 'undefined') return 'dark';

@@ -70,16 +70,6 @@ const logoLabel = logoHref === '/' ? 'Hasel — Inicio' : 'Hasel — Buscar nego
 				</>
 			) : (
 				<div class="public-hasel-topbar__actions">
-					<button
-						type="button"
-						class="public-hasel-topbar__theme"
-						aria-label="Cambiar tema"
-						title="Cambiar tema"
-						aria-pressed="false"
-						data-hub-theme-toggle
-					>
-						<span class="material-symbols-rounded" data-hub-theme-icon aria-hidden="true">dark_mode</span>
-					</button>
 					{
 						isLoggedIn ? (
 							<a
@@ -124,50 +114,9 @@ const logoLabel = logoHref === '/' ? 'Hasel — Inicio' : 'Hasel — Buscar nego
 </header>
 
 <script>
-	const THEME_KEY = 'bookmate-theme';
-
-	const applyTheme = (theme: 'light' | 'dark') => {
-		const isDark = theme === 'dark';
-		document.documentElement.dataset.theme = theme;
-		localStorage.setItem(THEME_KEY, theme);
-		try {
-			document.cookie = `bookmate-theme=${theme};path=/;max-age=31536000;SameSite=Lax`;
-		} catch {
-			/* ignore */
-		}
-		const label = isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
-		document.querySelectorAll<HTMLElement>('[data-hub-theme-toggle]').forEach((btn) => {
-			btn.setAttribute('aria-pressed', String(isDark));
-			btn.setAttribute('aria-label', label);
-			btn.setAttribute('title', label);
-		});
-		document.querySelectorAll<HTMLElement>('[data-hub-theme-icon]').forEach((icon) => {
-			icon.textContent = isDark ? 'light_mode' : 'dark_mode';
-		});
-	};
-
-	const resolveTheme = (): 'light' | 'dark' => {
-		const stored = localStorage.getItem(THEME_KEY);
-		if (stored === 'dark' || stored === 'light') return stored;
-		return 'dark';
-	};
-
 	const initTopbar = () => {
 		const topbar = document.querySelector<HTMLElement>('[data-public-hasel-topbar]');
 		if (!topbar) return;
-
-		if (topbar.classList.contains('public-hasel-topbar--marketplace')) {
-			applyTheme(resolveTheme());
-		}
-
-		document.querySelectorAll<HTMLElement>('[data-hub-theme-toggle]').forEach((btn) => {
-			if (btn.dataset.bound === '1') return;
-			btn.dataset.bound = '1';
-			btn.addEventListener('click', () => {
-				const isDark = document.documentElement.dataset.theme === 'dark';
-				applyTheme(isDark ? 'light' : 'dark');
-			});
-		});
 
 		const onScroll = () => {
 			topbar.classList.toggle('is-scrolled', window.scrollY > 8);
@@ -253,28 +202,6 @@ const logoLabel = logoHref === '/' ? 'Hasel — Inicio' : 'Hasel — Buscar nego
 		align-items: center;
 		gap: 0.5rem;
 		flex-shrink: 0;
-	}
-
-	.public-hasel-topbar__theme {
-		display: inline-grid;
-		place-items: center;
-		width: 2.5rem;
-		height: 2.5rem;
-		border-radius: 0.85rem;
-		border: 1px solid var(--shell-border, rgba(148, 163, 184, 0.35));
-		background: var(--control-surface, #fff);
-		color: var(--on-surface-variant, #64748b);
-		cursor: pointer;
-		transition: background 160ms ease, color 160ms ease;
-	}
-
-	.public-hasel-topbar__theme:hover {
-		background: var(--control-surface-strong, #f1f5f9);
-		color: var(--on-surface, #1e293b);
-	}
-
-	.public-hasel-topbar__theme .material-symbols-rounded {
-		font-size: 1.15rem;
 	}
 
 	.public-hasel-topbar__login {
@@ -435,7 +362,7 @@ const logoLabel = logoHref === '/' ? 'Hasel — Inicio' : 'Hasel — Buscar nego
 
 	:global(.landing-root) .public-hasel-topbar--marketing .public-hasel-topbar__link:hover {
 		color: var(--text-primary);
-		background: rgba(255, 255, 255, 0.06);
+		background: var(--control-hover, rgba(15, 23, 42, 0.05));
 	}
 
 	:global(.landing-root) .public-hasel-topbar--marketing .public-hasel-topbar__landing-login {

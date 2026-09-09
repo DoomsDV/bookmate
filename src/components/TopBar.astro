@@ -136,6 +136,7 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 
 <script>
 	import { maybeShowSettingsMenuTour } from '../lib/settings-menu-tour';
+	import { applyResolvedTheme, persistPanelTheme, requestThemeSync } from '../lib/theme';
 	import {
 		FCM_DEVICE_TOKEN_STORAGE_KEY,
 		FCM_PROMPT_SHOWN_SESSION_KEY,
@@ -400,31 +401,26 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 		};
 
 		// Theme Actions
-		const applyTheme = (theme: 'light' | 'dark') => {
-			const isDark = theme === 'dark';
-			document.documentElement.dataset.theme = theme;
-			localStorage.setItem('bookmate-theme', theme);
-			try {
-				document.cookie = `bookmate-theme=${theme};path=/;max-age=31536000;SameSite=Lax`;
-			} catch {
-				/* ignore */
-			}
-			const nextThemeLabel = isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
+		const paintedTheme = (): 'light' | 'dark' =>
+			document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
 
+		const syncThemeToggleUi = (theme: 'light' | 'dark') => {
+			const isDark = theme === 'dark';
+			const nextThemeLabel = isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
 			themeToggleMenu?.setAttribute('aria-pressed', String(isDark));
 			if (themeIconMenu) themeIconMenu.textContent = isDark ? 'light_mode' : 'dark_mode';
 			if (themeLabelMenu) themeLabelMenu.textContent = nextThemeLabel;
 		};
 
-		const resolveInitialTheme = (): 'light' | 'dark' => {
-			const storedTheme = localStorage.getItem('bookmate-theme');
-			if (storedTheme === 'dark' || storedTheme === 'light') return storedTheme;
-			return 'dark';
+		const applyTheme = (theme: 'light' | 'dark') => {
+			persistPanelTheme(theme);
+			applyResolvedTheme(theme);
+			requestThemeSync();
+			syncThemeToggleUi(theme);
 		};
 
 		const toggleTheme = () => {
-			const isDark = document.documentElement.dataset.theme === 'dark';
-			applyTheme(isDark ? 'light' : 'dark');
+			applyTheme(paintedTheme() === 'dark' ? 'light' : 'dark');
 		};
 
 		// Global Event Handlers
@@ -477,7 +473,7 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 
 		// Initialization logic wrapper
 		enrichLogoutForms();
-		applyTheme(resolveInitialTheme());
+		syncThemeToggleUi(paintedTheme());
 		restoreDesktopSidebarState();
 		syncOnResize();
 		maybeShowSettingsMenuTour();

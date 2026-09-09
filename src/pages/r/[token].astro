@@ -821,6 +821,29 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 	padding-block: clamp(1rem, 4vh, 2rem);
 	box-sizing: border-box;
 	font-family: var(--font-body);
+	--surface-background: #f6f7f9;
+	--surface-bright: #ffffff;
+	--surface-container-lowest: #ffffff;
+	--surface-container-low: #ffffff;
+	--surface-container: #f9f8f7;
+	--surface-container-high: #f6f5f4;
+	--surface-container-highest: #f2f0ef;
+	--outline: #79747e;
+	--outline-variant: #c4c0bc;
+	--on-primary: #ffffff;
+	--on-primary-container: #0842a0;
+	--primary-hover: color-mix(in srgb, var(--primary) 82%, #1c1917);
+	--tertiary: #3d6b4a;
+	--on-tertiary: #ffffff;
+	--tertiary-container: #d8f3dc;
+	--on-tertiary-container: #0c381c;
+	--error: #b3261e;
+	--error-container: #f9dedc;
+	--on-error-container: #410e0b;
+	--ticket-surface: #ffffff;
+}
+
+html[data-theme='dark'] .reservation-shell {
 	--surface-background: #121214;
 	--surface-bright: #121214;
 	--surface-container-lowest: #141414;

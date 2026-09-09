@@ -37,6 +37,7 @@ interface BookmateFlashDetail {
 }
 
 interface Window {
+    __haselSyncTheme?: () => void;
     BookmateAlert?: {
         alert: (options?: BookmateAlertOptions) => Promise<boolean>;
         confirm: (options?: BookmateAlertOptions) => Promise<boolean>;
