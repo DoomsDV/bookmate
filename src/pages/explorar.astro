@@ -73,25 +73,6 @@ const toDisplayCityName = (value: string) => {
 		.join(' ');
 };
 
-const COVER_TONES = [
-	{ a: '#3558b0', b: '#5b9cff', c: '#8ec5f0' },
-	{ a: '#2f6f9a', b: '#4aa8b0', c: '#7ad0c8' },
-	{ a: '#3d6ad4', b: '#426edb', c: '#7eb6e8' },
-	{ a: '#2a7a8a', b: '#3d9a9a', c: '#6ec9b8' },
-	{ a: '#2f5f8a', b: '#3d8a98', c: '#6ab8c8' },
-	{ a: '#3a62c9', b: '#5b9cff', c: '#9ad0ee' },
-] as const;
-
-const hashCoverTone = (seed: string) => {
-	const key = seed || 'hasel';
-	let hash = 2166136261;
-	for (let i = 0; i < key.length; i += 1) {
-		hash ^= key.charCodeAt(i);
-		hash = Math.imul(hash, 16777619);
-	}
-	return COVER_TONES[(hash >>> 0) % COVER_TONES.length];
-};
-
 const orgInitial = (name: string) => {
 	const letter = String(name || '').trim().charAt(0);
 	return letter ? letter.toLocaleUpperCase('es') : 'H';
@@ -220,7 +201,6 @@ const clientPayload = JSON.stringify({
 		<div class="explorar-search-wrap">
 			<form class="explorar-search" method="get" action="/explorar" role="search">
 				<div class="explorar-search__field" data-explorar-query-field>
-					<span class="explorar-search__icon material-symbols-rounded" aria-hidden="true">search</span>
 					<div class="explorar-search__stack">
 						<label class="explorar-search__label" for="explorar-q">Qué buscás</label>
 						<input
@@ -238,7 +218,6 @@ const clientPayload = JSON.stringify({
 				</div>
 
 				<div class="explorar-search__field explorar-combo" data-explorar-combo>
-					<span class="explorar-search__icon material-symbols-rounded" aria-hidden="true">location_on</span>
 					<div class="explorar-search__stack">
 						<span class="explorar-search__label" id="explorar-city-label">Dónde</span>
 						<button
@@ -287,7 +266,6 @@ const clientPayload = JSON.stringify({
 				</div>
 
 				<div class="explorar-search__field explorar-combo" data-explorar-combo>
-					<span class="explorar-search__icon material-symbols-rounded" aria-hidden="true">spa</span>
 					<div class="explorar-search__stack">
 						<span class="explorar-search__label" id="explorar-specialty-label">Categoría</span>
 						<button
@@ -332,9 +310,9 @@ const clientPayload = JSON.stringify({
 					></div>
 				</div>
 
-				<button type="submit" class="explorar-search__submit">
+				<button type="submit" class="explorar-search__submit" aria-label="Buscar">
 					<span class="material-symbols-rounded" aria-hidden="true">search</span>
-					Buscar
+					<span class="explorar-search__submit-label">Buscar</span>
 				</button>
 			</form>
 		</div>
@@ -443,10 +421,6 @@ const clientPayload = JSON.stringify({
 								const hubPath = `/${encodeURIComponent(item.slug)}`;
 								const bannerUrl = String(item.banner_url || '').trim();
 								const logoUrl = String(item.logo_url || '').trim();
-								const tone = hashCoverTone(item.specialty.code || item.slug);
-								const coverStyle = bannerUrl
-									? undefined
-									: `--cover-a:${tone.a};--cover-b:${tone.b};--cover-c:${tone.c}`;
 								return (
 									<a
 										href={hubPath}
@@ -455,10 +429,7 @@ const clientPayload = JSON.stringify({
 										data-explorar-card
 										data-explorar-slug={item.slug}
 									>
-										<div
-											class:list={['explorar-card__cover', { 'has-banner': Boolean(bannerUrl) }]}
-											style={coverStyle}
-										>
+										<div class:list={['explorar-card__cover', { 'has-banner': Boolean(bannerUrl) }]}>
 											{bannerUrl ? (
 												<img
 													class="explorar-card__banner"
