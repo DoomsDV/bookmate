@@ -444,13 +444,14 @@ const cardItems = professionals.map((professional) => ({
 
 	professional-manager .professionals-card {
 		--professionals-ease: cubic-bezier(0.32, 0.72, 0, 1);
+		--calendar-surface: color-mix(in srgb, var(--surface-container-low) 86%, var(--surface-bright) 14%);
 		cursor: pointer;
 		gap: 0;
 		min-height: 10.5rem;
 		padding: 0.95rem 0.9rem 0.85rem;
 		border: 0;
 		border-radius: 1.2rem;
-		background: var(--surface-bright);
+		background: var(--calendar-surface);
 		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 9%, transparent);
 		overflow: visible;
 		animation: professionals-card-enter 800ms var(--professionals-ease) both;
@@ -652,12 +653,11 @@ const cardItems = professionals.map((professional) => ({
 	}
 
 	html[data-theme='dark'] professional-manager .professionals-card {
-		background: #16161a;
 		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
 	}
 
 	html[data-theme='dark'] professional-manager .professionals-card:hover {
-		background: #19191e;
+		background: color-mix(in srgb, var(--surface-container-high) 28%, var(--calendar-surface) 72%);
 		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
 	}
 
@@ -684,7 +684,7 @@ const cardItems = professionals.map((professional) => ({
 
 	html[data-theme='dark'] professional-manager .professionals-card.panel-skeleton-card,
 	html[data-theme='dark'] professional-manager .professionals-card.panel-skeleton-card:hover {
-		background: #16161a;
+		background: var(--calendar-surface);
 		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
 	}
 

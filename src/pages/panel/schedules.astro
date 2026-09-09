@@ -1149,12 +1149,14 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 
 	.schedule-day-card {
 		--schedule-ease: cubic-bezier(0.32, 0.72, 0, 1);
+		/* Misma superficie que .customer-card / grilla semanal del calendario. */
+		--calendar-surface: color-mix(in srgb, var(--surface-container-low) 86%, var(--surface-bright) 14%);
 		min-width: 0;
 		max-width: 100%;
 		padding: 0.85rem 0.9rem 0.8rem;
 		border: 0;
 		border-radius: 1.2rem;
-		background: var(--surface-bright);
+		background: var(--calendar-surface);
 		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 9%, transparent);
 		animation: schedule-day-card-enter 800ms var(--schedule-ease) both;
 		transition:
@@ -1669,12 +1671,12 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 	}
 
 	html[data-theme='dark'] .schedule-day-card {
-		background: #16161a;
+		background: var(--calendar-surface);
 		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
 	}
 
 	html[data-theme='dark'] .schedule-day-card:hover {
-		background: #19191e;
+		background: color-mix(in srgb, var(--surface-container-high) 28%, var(--calendar-surface) 72%);
 		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
 	}
 
@@ -1685,12 +1687,12 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 
 	html[data-theme='dark'] .schedule-day-card.panel-skeleton-card,
 	html[data-theme='dark'] .schedule-day-card.panel-skeleton-card:hover {
-		background: #16161a;
+		background: var(--calendar-surface);
 		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
 	}
 
 	html[data-theme='dark'] .schedule-day-card__index {
-		background: color-mix(in srgb, var(--primary) 20%, #1a1d28 80%);
+		background: color-mix(in srgb, var(--primary) 20%, var(--surface-container-high) 80%);
 		color: color-mix(in srgb, var(--primary) 72%, #ffffff 28%);
 	}
 
@@ -2221,11 +2223,13 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 
 	.schedule-exc-plate {
 		--exc-ease: cubic-bezier(0.32, 0.72, 0, 1);
+		/* Misma superficie que .customer-card / grilla semanal del calendario. */
+		--calendar-surface: color-mix(in srgb, var(--surface-container-low) 86%, var(--surface-bright) 14%);
 		width: 100%;
 		padding: 0.85rem 0.9rem 0.8rem;
 		border: 0;
 		border-radius: 1.2rem;
-		background: var(--surface-bright);
+		background: var(--calendar-surface);
 		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 9%, transparent);
 		animation: schedule-exc-plate-enter 800ms var(--exc-ease) both;
 	}
@@ -2467,7 +2471,7 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 	}
 
 	html[data-theme='dark'] .schedule-exc-plate {
-		background: #16161a;
+		background: var(--calendar-surface);
 		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
 	}
 

@@ -89,6 +89,7 @@ const previewForAddon = (item: ModuleAddonItem) => {
 		return `
 			<div class="complementos-card__hero complementos-card__hero--odontogram" aria-hidden="true">
 				<img class="complementos-card__hero-img" src="${ODONTOGRAM_PREVIEW_SRC}" alt="" />
+				<span class="complementos-card__hero-fade"></span>
 			</div>
 		`;
 	}
@@ -354,13 +355,19 @@ export const initComplementosPage = () => {
 			`;
 		}
 
-		const featuredClass = isOdontogramAddon(item) ? ' is-featured' : '';
+		const featured = isOdontogramAddon(item);
+		const featuredClass = featured ? ' is-featured' : '';
 		const activeClass = active ? ' is-active' : '';
 		const eyebrow = billingLive ? 'Módulo mensual' : 'Beta · sin cargo';
+		const statusLabel = billingLive
+			? item.grant_type === 'PREVIEW'
+				? 'Activo · vista previa'
+				: 'Activo'
+			: 'Activo';
 		const status = active
 			? `<span class="complementos-card__status">
 					<span class="complementos-card__status-dot" aria-hidden="true"></span>
-					${billingLive ? (item.grant_type === 'PREVIEW' ? 'Activo · vista previa' : 'Activo') : 'Activo · sin cargo'}
+					${statusLabel}
 				</span>`
 			: '';
 
@@ -370,12 +377,14 @@ export const initComplementosPage = () => {
 					<div class="complementos-card__core">
 						${previewForAddon(item)}
 						<div class="complementos-card__body">
-							<p class="complementos-card__eyebrow">${eyebrow}</p>
+							<div class="complementos-card__topline">
+								<p class="complementos-card__eyebrow">${eyebrow}</p>
+								${status}
+							</div>
 							<h2 class="complementos-card__title">${escapeHtml(item.name)}</h2>
 							<p class="complementos-card__desc">${escapeHtml(desc)}</p>
 							<div class="complementos-card__meta">
 								${priceBlock}
-								${status}
 							</div>
 							${prorateHint}
 							${cancelHint}

@@ -447,12 +447,13 @@ const toDurationLabel = (value?: number | null) => {
 
 	service-manager .services-card {
 		--services-ease: cubic-bezier(0.32, 0.72, 0, 1);
+		--calendar-surface: color-mix(in srgb, var(--surface-container-low) 86%, var(--surface-bright) 14%);
 		cursor: pointer;
 		gap: 0;
 		padding: 0.7rem 0.75rem 0.6rem;
 		border: 0;
 		border-radius: 1.15rem;
-		background: var(--surface-bright);
+		background: var(--calendar-surface);
 		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 9%, transparent);
 		overflow: visible;
 		animation: services-card-enter 800ms var(--services-ease) both;
@@ -677,12 +678,11 @@ const toDurationLabel = (value?: number | null) => {
 	}
 
 	html[data-theme='dark'] service-manager .services-card {
-		background: #16161a;
 		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
 	}
 
 	html[data-theme='dark'] service-manager .services-card:hover {
-		background: #19191e;
+		background: color-mix(in srgb, var(--surface-container-high) 28%, var(--calendar-surface) 72%);
 		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
 	}
 
@@ -702,7 +702,7 @@ const toDurationLabel = (value?: number | null) => {
 
 	html[data-theme='dark'] service-manager .services-card.panel-skeleton-card,
 	html[data-theme='dark'] service-manager .services-card.panel-skeleton-card:hover {
-		background: #16161a;
+		background: var(--calendar-surface);
 		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
 	}
 

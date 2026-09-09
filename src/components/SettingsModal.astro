@@ -742,7 +742,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 														<h4 class="text-[0.98rem] font-bold text-(--on-surface)">Encuesta de satisfacción</h4>
 													</div>
 													<p class="text-[0.86rem] font-medium leading-relaxed text-(--on-surface-variant)">
-														Envía automáticamente una encuesta por WhatsApp 2 horas después de que termina la cita (de 9:00 a 21:00).
+														Envía automáticamente una encuesta por WhatsApp 2 horas después de que termina la cita.
 													</p>
 												</div>
 												<label class="settings-switch shrink-0">
@@ -1678,7 +1678,6 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 				await this.writeClipboardText(url);
 				if (icon) icon.textContent = 'check';
 				button.classList.add('text-emerald-500');
-				this.showFeedback('profile', 'URL copiada al portapapeles.', 'success');
 				window.setTimeout(() => {
 					if (icon) icon.textContent = 'content_copy';
 					button.classList.remove('text-emerald-500');

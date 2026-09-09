@@ -357,6 +357,12 @@ import '../../styles/global.css';
 		transition: transform 640ms var(--complementos-ease);
 	}
 
+	.complementos-card.is-featured .complementos-card__shell {
+		padding: 0;
+		border-radius: 1.65rem;
+		background: transparent;
+	}
+
 	.complementos-card__core {
 		display: grid;
 		min-width: 0;
@@ -368,10 +374,15 @@ import '../../styles/global.css';
 			inset 0 0 0 1px color-mix(in srgb, var(--on-surface) 6%, transparent);
 	}
 
+	.complementos-card.is-featured .complementos-card__core {
+		border-radius: 1.65rem;
+	}
+
 	@media (min-width: 880px) {
 		.complementos-card.is-featured .complementos-card__core {
-			grid-template-columns: minmax(16rem, 46%) minmax(0, 1fr);
+			grid-template-columns: minmax(18rem, 1.05fr) minmax(17rem, 0.95fr);
 			align-items: stretch;
+			min-height: 22.5rem;
 		}
 	}
 
@@ -387,6 +398,16 @@ import '../../styles/global.css';
 		box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 34%, transparent);
 	}
 
+	.complementos-card.is-featured:focus-within .complementos-card__shell {
+		box-shadow: none;
+	}
+
+	.complementos-card.is-featured:focus-within .complementos-card__core {
+		box-shadow:
+			inset 0 1px 0 color-mix(in srgb, #fff 14%, transparent),
+			inset 0 0 0 1px color-mix(in srgb, var(--primary) 42%, transparent);
+	}
+
 	.complementos-card__hero {
 		position: relative;
 		isolation: isolate;
@@ -399,12 +420,36 @@ import '../../styles/global.css';
 	}
 
 	.complementos-card.is-featured .complementos-card__hero {
-		min-height: 16.5rem;
+		min-height: 18rem;
+		background:
+			radial-gradient(80% 90% at 38% 42%, color-mix(in srgb, #10b981 18%, transparent), transparent 58%),
+			radial-gradient(50% 60% at 8% 8%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 52%),
+			#0a0c10;
 	}
 
 	@media (min-width: 880px) {
 		.complementos-card.is-featured .complementos-card__hero {
 			min-height: 100%;
+		}
+	}
+
+	.complementos-card__hero-fade {
+		display: none;
+	}
+
+	.complementos-card.is-featured .complementos-card__hero-fade {
+		display: block;
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		background:
+			linear-gradient(180deg, transparent 58%, color-mix(in srgb, var(--surface-bright) 88%, transparent) 100%);
+	}
+
+	@media (min-width: 880px) {
+		.complementos-card.is-featured .complementos-card__hero-fade {
+			background:
+				linear-gradient(90deg, transparent 62%, color-mix(in srgb, var(--surface-bright) 88%, transparent) 100%);
 		}
 	}
 
@@ -418,6 +463,18 @@ import '../../styles/global.css';
 		object-fit: contain;
 		object-position: center;
 		transition: transform 700ms var(--complementos-ease);
+	}
+
+	.complementos-card.is-featured .complementos-card__hero-img {
+		padding: 0.35rem 0.2rem 0.9rem;
+		object-position: 46% 58%;
+	}
+
+	@media (min-width: 880px) {
+		.complementos-card.is-featured .complementos-card__hero-img {
+			padding: 1.1rem 0.4rem 1.1rem 0.7rem;
+			object-position: 52% 54%;
+		}
 	}
 
 	.complementos-card:hover .complementos-card__hero-img {
@@ -445,11 +502,25 @@ import '../../styles/global.css';
 		padding: 1.35rem 1.4rem 1.45rem;
 	}
 
+	.complementos-card__topline {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.45rem 0.55rem;
+	}
+
 	@media (min-width: 880px) {
 		.complementos-card.is-featured .complementos-card__body {
-			align-content: center;
-			gap: 0.85rem;
-			padding: 1.85rem 1.9rem 1.95rem 1.55rem;
+			grid-template-rows: auto auto auto auto 1fr;
+			align-content: stretch;
+			gap: 0.7rem;
+			padding: 1.85rem 2rem 1.7rem 0.85rem;
+		}
+
+		.complementos-card.is-featured .complementos-card__cta {
+			max-width: none;
+			align-self: end;
+			margin-top: 1.15rem;
 		}
 	}
 
@@ -479,13 +550,14 @@ import '../../styles/global.css';
 
 	@media (min-width: 880px) {
 		.complementos-card.is-featured .complementos-card__title {
-			font-size: 2.05rem;
+			font-size: 1.85rem;
+			letter-spacing: -0.045em;
 		}
 	}
 
 	.complementos-card__desc {
 		margin: 0;
-		max-width: 28rem;
+		max-width: 36rem;
 		font-size: 0.95rem;
 		font-weight: 520;
 		line-height: 1.5;
@@ -618,6 +690,10 @@ import '../../styles/global.css';
 		transform: translateX(3px) translateY(-1px) scale(1.05);
 	}
 
+	.complementos-card__cta--soft:not(:disabled):hover .complementos-card__cta-glyph {
+		transform: scale(1.04);
+	}
+
 	.complementos-card__cta--primary {
 		background: var(--primary);
 		color: var(--on-primary, #f8fbff);
@@ -642,6 +718,11 @@ import '../../styles/global.css';
 		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
 	}
 
+	html[data-theme='dark'] .complementos-card.is-featured .complementos-card__shell {
+		background: transparent;
+		box-shadow: none;
+	}
+
 	html[data-theme='dark'] .complementos-card__core {
 		background: #0f0f13;
 		box-shadow:
@@ -649,8 +730,37 @@ import '../../styles/global.css';
 			inset 0 0 0 1px rgba(255, 255, 255, 0.04);
 	}
 
+	html[data-theme='dark'] .complementos-card.is-featured .complementos-card__core {
+		background: #0c0d11;
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.06),
+			inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+	}
+
 	html[data-theme='dark'] .complementos-card:hover .complementos-card__shell {
 		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
+	}
+
+	html[data-theme='dark'] .complementos-card.is-featured:hover .complementos-card__shell {
+		box-shadow: none;
+	}
+
+	html[data-theme='dark'] .complementos-card.is-featured:hover .complementos-card__core {
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.08),
+			inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+	}
+
+	html[data-theme='dark'] .complementos-card.is-featured .complementos-card__hero-fade {
+		background:
+			linear-gradient(180deg, transparent 52%, rgb(12 13 17 / 0.96) 100%);
+	}
+
+	@media (min-width: 880px) {
+		html[data-theme='dark'] .complementos-card.is-featured .complementos-card__hero-fade {
+			background:
+				linear-gradient(90deg, transparent 62%, rgb(12 13 17 / 0.92) 100%);
+		}
 	}
 
 	html[data-theme='dark'] .complementos-card__free {
@@ -666,6 +776,13 @@ import '../../styles/global.css';
 	html[data-theme='dark'] .complementos-card__status-dot {
 		background: #3ee0a8;
 		box-shadow: 0 0 0 4px color-mix(in srgb, #3ee0a8 16%, transparent);
+	}
+
+	html[data-theme='light'] .complementos-card.is-featured .complementos-card__hero {
+		background:
+			radial-gradient(80% 90% at 40% 48%, color-mix(in srgb, #10b981 14%, transparent), transparent 58%),
+			radial-gradient(50% 60% at 10% 8%, color-mix(in srgb, var(--primary) 12%, transparent), transparent 52%),
+			#e8edf2;
 	}
 
 	html[data-theme='light'] .complementos-card__hero {
