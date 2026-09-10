@@ -15,13 +15,22 @@ const { userName = 'Perfil' } = Astro.props;
 		<div class="flex min-w-0 items-center gap-2 sm:gap-3">
 			<button
 				type="button"
-				class="hidden size-9 shrink-0 items-center justify-center rounded-xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--control-surface-strong) lg:flex sm:size-10"
-					aria-label="Alternar menú lateral"
+				class="sidebar-collapse-toggle"
+				aria-label="Cerrar menú lateral"
 				aria-controls="app-side-nav"
-				aria-expanded="false"
+				aria-expanded="true"
 				data-nav-toggle
+				data-desktop-nav-toggle
 			>
-				<span class="material-symbols-rounded text-[1.1rem]">menu</span>
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+					<path
+						d="M10.1667 4L6 8.16667L10.1667 12.3333"
+						stroke="currentColor"
+						stroke-width="1.5"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					></path>
+				</svg>
 			</button>
 
 			<div class="min-w-0">
@@ -243,6 +252,12 @@ const { userName = 'Perfil' } = Astro.props;
 		const setNavTogglesExpanded = (expanded: boolean) => {
 			navToggles.forEach((toggle) => {
 				toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+				if (toggle.hasAttribute('data-desktop-nav-toggle')) {
+					toggle.setAttribute(
+						'aria-label',
+						expanded ? 'Cerrar menú lateral' : 'Abrir menú lateral',
+					);
+				}
 			});
 		};
 
@@ -509,3 +524,65 @@ const { userName = 'Perfil' } = Astro.props;
 		(window as any).__bookmateTopBarBound = true;
 	}
 </script>
+
+<style>
+	.sidebar-collapse-toggle {
+		display: none;
+	}
+
+	@media (min-width: 1024px) {
+		.sidebar-collapse-toggle {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			flex-shrink: 0;
+			width: 2rem;
+			height: 2rem;
+			padding: 0;
+			border: 1px solid #e5e7eb;
+			border-radius: 0.5rem;
+			background: #fff;
+			color: #9ca3af;
+			cursor: pointer;
+			transition:
+				color 150ms ease,
+				background-color 150ms ease,
+				border-color 150ms ease;
+		}
+
+		.sidebar-collapse-toggle:hover,
+		.sidebar-collapse-toggle:focus-visible {
+			background: var(--primary);
+			border-color: var(--primary);
+			color: #fff;
+		}
+
+		.sidebar-collapse-toggle:focus-visible {
+			outline: 2px solid color-mix(in srgb, var(--primary) 45%, transparent);
+			outline-offset: 2px;
+		}
+
+		.sidebar-collapse-toggle svg {
+			display: block;
+			transition: transform 150ms ease;
+		}
+
+		.sidebar-collapse-toggle[aria-expanded='false'] svg,
+		:global(html[data-sidebar-pref='collapsed']) .sidebar-collapse-toggle svg {
+			transform: rotate(180deg);
+		}
+	}
+
+	:global(html[data-theme='dark']) .sidebar-collapse-toggle {
+		background: #1a1a1c;
+		border-color: rgba(255, 255, 255, 0.12);
+		color: #9ca3af;
+	}
+
+	:global(html[data-theme='dark']) .sidebar-collapse-toggle:hover,
+	:global(html[data-theme='dark']) .sidebar-collapse-toggle:focus-visible {
+		background: var(--primary);
+		border-color: var(--primary);
+		color: #fff;
+	}
+</style>
