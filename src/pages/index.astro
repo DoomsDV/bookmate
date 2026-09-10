@@ -189,7 +189,7 @@ const jsonLd = [
 			'@type': 'Offer',
 			price: '0',
 			priceCurrency: 'PYG',
-			description: 'Prueba Premium 14 días sin tarjeta',
+			description: 'Prueba Premium 14 días',
 		},
 		featureList: [
 			...usefulServices.map((service) => service.title),
@@ -462,7 +462,7 @@ const jsonLd = [
 			<section id="precios" class="m3-cta-split" aria-labelledby="cta-heading">
 				<div class="cta-split__copy reveal-on-scroll">
 					<h2 id="cta-heading" class="m3-headline">
-						Probá <span class="cta-premium">Premium</span> 14 días, sin tarjeta
+						Probá <span class="cta-premium">Premium</span> 14 días
 					</h2>
 					<p class="m3-body-large">
 						Creá tu espacio, configurá horarios y compartí tu página pública hoy mismo.
@@ -884,7 +884,7 @@ const jsonLd = [
 		--radius-lg: 20px;
 		--radius-pill: 9999px;
 		--ease: cubic-bezier(0.16, 1, 0.3, 1);
-		--landing-max: 72rem;
+		--landing-max: 88rem;
 		--landing-pad-x: 1.25rem;
 		--landing-topbar-h: var(--app-topbar-h, 4rem);
 
@@ -1209,24 +1209,39 @@ const jsonLd = [
 	}
 
 	.hero-visual {
+		position: relative;
 		width: 100%;
 		min-width: 0;
 	}
 
 	.hero-desk {
-		overflow: hidden;
-		border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
-		border-radius: 1.15rem;
-		background: var(--surface-raised);
-		box-shadow:
-			0 1px 0 color-mix(in srgb, #fff 62%, transparent) inset,
-			0 22px 48px rgb(15 23 42 / 0.06);
+		position: relative;
+		overflow: visible;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		box-shadow: none;
 	}
 
-	:global(html[data-theme='dark']) .hero-desk {
-		box-shadow:
-			0 1px 0 rgba(255, 255, 255, 0.035) inset,
-			0 22px 48px rgb(0 0 0 / 0.32);
+	.hero-desk::after {
+		content: '';
+		position: absolute;
+		inset: -6% -8% -24% -2%;
+		z-index: 2;
+		pointer-events: none;
+		background:
+			linear-gradient(
+				90deg,
+				transparent 42%,
+				color-mix(in srgb, var(--surface) 35%, transparent) 68%,
+				var(--surface) 94%
+			),
+			linear-gradient(
+				180deg,
+				transparent 48%,
+				color-mix(in srgb, var(--surface) 40%, transparent) 78%,
+				var(--surface) 100%
+			);
 	}
 
 	.hero-inbox {
@@ -1234,9 +1249,9 @@ const jsonLd = [
 		--toast-muted: var(--text-secondary);
 		display: grid;
 		gap: 0;
-		padding: 0.7rem 1.1rem 0.85rem;
-		border-top: 1px solid var(--border);
-		background: color-mix(in srgb, var(--surface) 78%, var(--surface-raised));
+		padding: 0.55rem 1.1rem 0.2rem;
+		border: 0;
+		background: transparent;
 	}
 
 	.hero-inbox__live {
@@ -1371,8 +1386,31 @@ const jsonLd = [
 			align-items: center;
 		}
 
+		.hero-visual {
+			margin-right: calc(var(--landing-pad-x) * -0.45);
+		}
+
+		.hero-desk::after {
+			inset: -8% -10% -34% -4%;
+			background:
+				linear-gradient(
+					90deg,
+					transparent 18%,
+					color-mix(in srgb, var(--surface) 20%, transparent) 42%,
+					color-mix(in srgb, var(--surface) 72%, transparent) 68%,
+					var(--surface) 86%
+				),
+				linear-gradient(
+					180deg,
+					transparent 22%,
+					color-mix(in srgb, var(--surface) 18%, transparent) 50%,
+					color-mix(in srgb, var(--surface) 70%, transparent) 76%,
+					var(--surface) 96%
+				);
+		}
+
 		.hero-desk {
-			max-width: 32rem;
+			max-width: 40rem;
 			margin-left: auto;
 		}
 	}
