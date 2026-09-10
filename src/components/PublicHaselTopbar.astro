@@ -134,9 +134,12 @@ const logoLabel = logoHref === '/' ? 'Hasel — Inicio' : 'Hasel — Buscar nego
 
 <style>
 	.public-hasel-topbar {
+		--public-chrome-max: 88rem;
+		--public-chrome-pad-x: 1.25rem;
 		position: sticky;
 		top: 0;
 		z-index: 40;
+		flex-shrink: 0;
 		height: var(--app-topbar-h, 4rem);
 		border-bottom: 1px solid transparent;
 		background: #f6f7f9;
@@ -146,6 +149,18 @@ const logoLabel = logoHref === '/' ? 'Hasel — Inicio' : 'Hasel — Buscar nego
 			border-color 200ms ease,
 			box-shadow 200ms ease,
 			background 200ms ease;
+	}
+
+	@media (min-width: 768px) {
+		.public-hasel-topbar {
+			--public-chrome-pad-x: 2rem;
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.public-hasel-topbar {
+			--public-chrome-pad-x: 2.5rem;
+		}
 	}
 
 	:global(html[data-theme='dark']) .public-hasel-topbar {
@@ -164,15 +179,17 @@ const logoLabel = logoHref === '/' ? 'Hasel — Inicio' : 'Hasel — Buscar nego
 	}
 
 	.public-hasel-topbar__inner {
-		max-width: var(--hub-max, 1120px);
+		width: min(var(--public-chrome-max), 100%);
+		max-width: none;
 		margin: 0 auto;
 		height: 100%;
-		padding: 0 max(var(--hub-pad-x, 1.25rem), env(safe-area-inset-right, 0px)) 0
-			max(var(--hub-pad-x, 1.25rem), env(safe-area-inset-left, 0px));
+		padding: 0 max(var(--public-chrome-pad-x), env(safe-area-inset-right, 0px)) 0
+			max(var(--public-chrome-pad-x), env(safe-area-inset-left, 0px));
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: 1rem;
+		box-sizing: border-box;
 	}
 
 	.public-hasel-topbar__brand {
@@ -268,11 +285,6 @@ const logoLabel = logoHref === '/' ? 'Hasel — Inicio' : 'Hasel — Buscar nego
 
 	.public-hasel-topbar__cta:hover {
 		background: #5a82e8;
-	}
-
-	.public-hasel-topbar--marketing .public-hasel-topbar__inner {
-		width: min(var(--landing-max, 88rem), 100%);
-		max-width: none;
 	}
 
 	.public-hasel-topbar__links {

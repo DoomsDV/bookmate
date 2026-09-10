@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import PublicHaselTopbar from '../components/PublicHaselTopbar.astro';
+import HaselPublicFooter from '../components/HaselPublicFooter.astro';
 import LandingScene from '../components/landing/LandingScene.astro';
 import { searchOrgDirectory, type OrgDirectoryItem } from '../lib/public-org-directory';
 import '../styles/global.css';
@@ -489,31 +490,9 @@ const jsonLd = [
 					</a>
 				</div>
 			</section>
-
-			<footer id="soporte" class="m3-footer">
-				<div class="m3-footer-brand">
-					<p class="m3-footer-copy">© {new Date().getFullYear()} Hasel</p>
-					<p class="m3-footer-tagline">Software de reservas</p>
-				</div>
-				<div class="m3-footer-links">
-					<p class="m3-footer-support">
-						<span>¿Necesitás ayuda? Escribinos al correo</span>
-						<a href="mailto:support@hasel.app" class="m3-footer-link no-underline">support@hasel.app</a>
-					</p>
-					<nav class="m3-footer-nav" aria-label="Enlaces legales">
-						<a href="/politicas-y-privacidad" class="m3-footer-link no-underline">
-							Políticas y privacidad
-						</a>
-						<a href="/terminos-y-condiciones" class="m3-footer-link no-underline">
-							Términos y condiciones
-						</a>
-						<a href="/politicas-de-cancelacion-y-reembolso" class="m3-footer-link no-underline">
-							Cancelación y reembolso
-						</a>
-					</nav>
-				</div>
-			</footer>
 		</div>
+
+		<HaselPublicFooter id="soporte" />
 	</main>
 </Layout>
 
@@ -1010,11 +989,6 @@ const jsonLd = [
 	}
 
 	/* Top bar: PublicHaselTopbar (marketing) */
-
-	.m3-footer-link:focus-visible {
-		outline: 2px solid var(--accent);
-		outline-offset: 3px;
-	}
 
 	/* Buttons */
 	.m3-btn {
@@ -2230,115 +2204,6 @@ const jsonLd = [
 			align-items: center;
 			padding: 3.5rem 0;
 			gap: 2.5rem;
-		}
-	}
-
-	/* Footer */
-	.m3-footer {
-		width: 100%;
-		padding: 2rem 0 1.5rem;
-		color: var(--text-muted);
-		font-size: 0.875rem;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		text-align: center;
-		gap: 1.15rem;
-		border-top: 1px solid var(--border);
-	}
-
-	.m3-footer-brand,
-	.m3-footer-support,
-	.m3-footer-nav {
-		width: 100%;
-		margin: 0;
-	}
-
-	.m3-footer-links {
-		display: contents;
-	}
-
-	.m3-footer-brand {
-		display: grid;
-		gap: 0.15rem;
-	}
-
-	.m3-footer-copy,
-	.m3-footer-tagline {
-		margin: 0;
-	}
-
-	.m3-footer-copy {
-		color: var(--text-primary);
-		font-weight: 700;
-	}
-
-	.m3-footer-support {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 0.25rem;
-	}
-
-	.m3-footer-nav {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 0.65rem;
-	}
-
-	.m3-footer-link {
-		color: var(--accent);
-		font-weight: 700;
-		transition: color 200ms var(--ease);
-	}
-
-	.m3-footer-link:hover {
-		color: var(--accent-hover);
-	}
-
-	@media (min-width: 640px) {
-		.m3-footer-support {
-			flex-direction: row;
-			flex-wrap: wrap;
-			justify-content: center;
-			gap: 0.35rem;
-		}
-
-		.m3-footer-nav {
-			flex-direction: row;
-			flex-wrap: wrap;
-			justify-content: center;
-			gap: 0.35rem 1.25rem;
-		}
-	}
-
-	@media (min-width: 1024px) {
-		.m3-footer {
-			flex-direction: row;
-			align-items: center;
-			justify-content: space-between;
-			text-align: left;
-			padding-bottom: 2rem;
-		}
-
-		.m3-footer-brand {
-			text-align: left;
-		}
-
-		.m3-footer-links {
-			display: flex;
-			flex-direction: column;
-			align-items: flex-end;
-			gap: 0.5rem;
-		}
-
-		.m3-footer-support {
-			justify-content: flex-end;
-		}
-
-		.m3-footer-nav {
-			justify-content: flex-end;
 		}
 	}
 </style>

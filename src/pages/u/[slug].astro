@@ -3,6 +3,7 @@ export const prerender = false;
 
 import Layout from '../../layouts/Layout.astro';
 import PublicHaselTopbar from '../../components/PublicHaselTopbar.astro';
+import HaselPublicFooter from '../../components/HaselPublicFooter.astro';
 import PublicSipapDepositPanel from '../../components/PublicSipapDepositPanel.astro';
 import {
 	buildPublicUserProfileMetaDescription,
@@ -459,6 +460,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 				</section>
 			)
 		}
+		<HaselPublicFooter />
 	</main>
 </Layout>
 

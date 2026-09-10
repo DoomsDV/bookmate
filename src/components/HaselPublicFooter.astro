@@ -1,0 +1,192 @@
+---
+interface Props {
+	/** Ancla opcional (p. ej. `soporte` en la landing). */
+	id?: string;
+}
+
+const { id: footerId } = Astro.props;
+const year = new Date().getFullYear();
+---
+
+<footer id={footerId} class="hasel-public-footer">
+	<div class="hasel-public-footer__inner">
+		<div class="hasel-public-footer__brand">
+			<p class="hasel-public-footer__copy">© {year} Hasel</p>
+			<p class="hasel-public-footer__tagline">Software de reservas</p>
+		</div>
+		<div class="hasel-public-footer__links">
+			<p class="hasel-public-footer__support">
+				<span>¿Necesitás ayuda? Escribinos al correo</span>
+				<a href="mailto:support@hasel.app" class="hasel-public-footer__link no-underline">
+					support@hasel.app
+				</a>
+			</p>
+			<nav class="hasel-public-footer__nav" aria-label="Enlaces legales">
+				<a href="/politicas-y-privacidad" class="hasel-public-footer__link no-underline">
+					Políticas y privacidad
+				</a>
+				<a href="/terminos-y-condiciones" class="hasel-public-footer__link no-underline">
+					Términos y condiciones
+				</a>
+				<a href="/politicas-de-cancelacion-y-reembolso" class="hasel-public-footer__link no-underline">
+					Cancelación y reembolso
+				</a>
+			</nav>
+		</div>
+	</div>
+</footer>
+
+<style>
+	.hasel-public-footer {
+		--public-chrome-max: 88rem;
+		--public-chrome-pad-x: 1.25rem;
+		--footer-text: var(--text-primary, var(--on-surface, #141820));
+		--footer-muted: var(--text-muted, var(--on-surface-variant, #7a8190));
+		--footer-border: var(--border, var(--shell-border, rgba(15, 23, 42, 0.08)));
+		--footer-accent: var(--accent, var(--hub-primary, #426edb));
+		--footer-accent-hover: var(--accent-hover, #5a82e8);
+
+		width: 100%;
+		margin-top: auto;
+		flex-shrink: 0;
+		color: var(--footer-muted);
+		font-size: 0.875rem;
+	}
+
+	:global(html[data-theme='dark']) .hasel-public-footer {
+		--footer-text: var(--text-primary, #eef0f4);
+		--footer-muted: var(--text-muted, #7a8190);
+		--footer-border: var(--border, rgba(255, 255, 255, 0.08));
+	}
+
+	.hasel-public-footer__inner {
+		width: min(var(--public-chrome-max), 100%);
+		margin: 0 auto;
+		padding: 2rem max(var(--public-chrome-pad-x), env(safe-area-inset-right, 0px))
+			calc(1.5rem + env(safe-area-inset-bottom, 0px))
+			max(var(--public-chrome-pad-x), env(safe-area-inset-left, 0px));
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+		gap: 1.15rem;
+		border-top: 1px solid var(--footer-border);
+		box-sizing: border-box;
+	}
+
+	.hasel-public-footer__brand,
+	.hasel-public-footer__support,
+	.hasel-public-footer__nav {
+		width: 100%;
+		margin: 0;
+	}
+
+	.hasel-public-footer__links {
+		display: contents;
+	}
+
+	.hasel-public-footer__brand {
+		display: grid;
+		gap: 0.15rem;
+	}
+
+	.hasel-public-footer__copy,
+	.hasel-public-footer__tagline {
+		margin: 0;
+	}
+
+	.hasel-public-footer__copy {
+		color: var(--footer-text);
+		font-weight: 700;
+	}
+
+	.hasel-public-footer__support {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.25rem;
+	}
+
+	.hasel-public-footer__nav {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.65rem;
+	}
+
+	.hasel-public-footer__link {
+		color: var(--footer-accent);
+		font-weight: 700;
+		transition: color 200ms ease;
+	}
+
+	.hasel-public-footer__link:hover {
+		color: var(--footer-accent-hover);
+	}
+
+	.hasel-public-footer__link:focus-visible {
+		outline: 2px solid var(--footer-accent);
+		outline-offset: 3px;
+	}
+
+	@media (min-width: 640px) {
+		.hasel-public-footer__support {
+			flex-direction: row;
+			flex-wrap: wrap;
+			justify-content: center;
+			gap: 0.35rem;
+		}
+
+		.hasel-public-footer__nav {
+			flex-direction: row;
+			flex-wrap: wrap;
+			justify-content: center;
+			gap: 0.35rem 1.25rem;
+		}
+	}
+
+	@media (min-width: 768px) {
+		.hasel-public-footer {
+			--public-chrome-pad-x: 2rem;
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.hasel-public-footer {
+			--public-chrome-pad-x: 2.5rem;
+		}
+
+		.hasel-public-footer__inner {
+			flex-direction: row;
+			align-items: center;
+			justify-content: space-between;
+			text-align: left;
+			padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
+		}
+
+		.hasel-public-footer__brand {
+			text-align: left;
+		}
+
+		.hasel-public-footer__links {
+			display: flex;
+			flex-direction: column;
+			align-items: flex-end;
+			gap: 0.5rem;
+		}
+
+		.hasel-public-footer__support {
+			justify-content: flex-end;
+		}
+
+		.hasel-public-footer__nav {
+			justify-content: flex-end;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.hasel-public-footer__link {
+			transition: none;
+		}
+	}
+</style>

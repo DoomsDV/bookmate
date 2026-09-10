@@ -3,6 +3,7 @@ export const prerender = false;
 
 import Layout from '../../layouts/Layout.astro';
 import PublicHaselTopbar from '../../components/PublicHaselTopbar.astro';
+import HaselPublicFooter from '../../components/HaselPublicFooter.astro';
 import { formatBusinessHoursForDisplay } from '../../lib/business-hours';
 import { PublicBookingApiError, getPublicProfileSpecialtyLabel } from '../../lib/public-booking';
 import { buildGoogleMapsUrl } from '../../lib/public-booking-locations';
@@ -164,7 +165,7 @@ const serializedProfessionals = professionals.length
 		{
 			hub ? (
 				<>
-					<PublicHaselTopbar variant="marketplace" />
+					<PublicHaselTopbar variant="marketplace" logoHref="/" />
 
 					{hub.maintenance ? (
 						<p class="hub-maintenance" role="status">
@@ -801,7 +802,7 @@ const serializedProfessionals = professionals.length
 				</>
 			) : (
 				<>
-					<PublicHaselTopbar variant="marketplace" />
+					<PublicHaselTopbar variant="marketplace" logoHref="/" />
 					<div class="hub-error">
 						<h1>No encontramos este negocio</h1>
 						<p>{loadError || 'El enlace puede ser incorrecto o el negocio ya no está disponible.'}</p>
@@ -810,6 +811,7 @@ const serializedProfessionals = professionals.length
 				</>
 			)
 		}
+		<HaselPublicFooter />
 	</main>
 </Layout>
 

@@ -15,10 +15,13 @@ html[data-theme='dark']:has(.public-booking-shell) body {
 
 .public-booking-shell {
 	min-height: 100vh;
+	min-height: 100dvh;
 	width: 100%;
 	max-width: 100%;
 	box-sizing: border-box;
 	overflow-x: clip;
+	display: flex;
+	flex-direction: column;
 	background: var(--surface-background);
 	color: var(--on-surface);
 	--surface-background: #f6f7f9;
@@ -139,6 +142,7 @@ html[data-theme='dark'] .public-booking-shell {
 	width: 100%;
 	max-width: 100%;
 	min-width: 0;
+	flex: 1 0 auto;
 	box-sizing: border-box;
 	overflow-x: clip;
 	overflow-y: visible;
@@ -920,17 +924,18 @@ html[data-theme='dark'] .booking-ticket__value {
 	min-height: 100dvh;
 	display: flex;
 	flex-direction: column;
-	justify-content: center;
-	justify-content: safe center;
-	padding-block: clamp(1rem, 4vh, 2rem);
+	justify-content: flex-start;
+	padding-block: 0;
 	box-sizing: border-box;
 }
 
 .public-booking-shell:has(.public-booking-sheet.is-booking-success) .public-booking-sheet,
 .public-booking-shell:has(.public-booking-sheet [data-step-panel='6']:not(.hidden)) .public-booking-sheet {
-	flex: 0 1 auto;
+	flex: 1 1 auto;
 	width: 100%;
 	min-height: 0;
+	align-content: center;
+	padding-block: clamp(1rem, 4vh, 2rem);
 }
 
 .public-booking-shell:has(.public-booking-sheet.is-booking-success) .public-booking-shell__canvas,
