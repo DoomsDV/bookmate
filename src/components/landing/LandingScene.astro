@@ -10,17 +10,17 @@ const { kind } = Astro.props;
 const weekDays = ['L', 'M', 'X', 'J', 'V'] as const;
 const heroHours = ['09', '11', '13', '15'] as const;
 const heroBlocks = [
-	{ day: 0, start: 16, span: 18, tone: 'soft' },
-	{ day: 1, start: 42, span: 16, tone: 'soft' },
-	{ day: 2, start: 12, span: 22, tone: 'on' },
-	{ day: 3, start: 48, span: 15, tone: 'soft' },
-	{ day: 4, start: 28, span: 18, tone: 'soft' },
+	{ id: 'a', day: 0, start: 16, span: 18, tone: 'soft' },
+	{ id: 'b', day: 1, start: 42, span: 16, tone: 'soft' },
+	{ id: 'c', day: 2, start: 12, span: 22, tone: 'on' },
+	{ id: 'd', day: 3, start: 48, span: 15, tone: 'soft' },
+	{ id: 'e', day: 4, start: 28, span: 18, tone: 'soft' },
 ] as const;
 ---
 
 {
 	kind === 'hero-cal' ? (
-		<div class="ls-cal ls-cal--hero">
+		<div class="ls-cal ls-cal--hero" data-hero-cal>
 			<div class="ls-cal__bar">
 				<strong>Hoy</strong>
 				<span class="ls-cal__meta">5 turnos</span>
@@ -40,17 +40,21 @@ const heroBlocks = [
 					<div class="ls-cal__grid">
 						<span class="ls-cal__now" />
 						{weekDays.map((_, day) => (
-							<div class:list={['ls-cal__col', { 'is-now': day === 2 }]}>
-								{heroBlocks
-									.filter((block) => block.day === day)
-									.map((block) => (
-										<span
-											class:list={['ls-chip', `ls-chip--${block.tone}`]}
-											style={`top: ${block.start}%; height: ${block.span}%`}
-										/>
-									))}
-							</div>
+							<div class:list={['ls-cal__col', { 'is-now': day === 2 }]} />
 						))}
+						<div class="ls-cal__chips">
+							{heroBlocks.map((block) => (
+								<span
+									class:list={['ls-chip', `ls-chip--${block.tone}`]}
+									data-chip={block.id}
+									data-home-d={block.day}
+									data-home-t={block.start}
+									data-home-h={block.span}
+									data-home-tone={block.tone}
+									style={`--d: ${block.day}; --t: ${block.start}; --h: ${block.span}`}
+								/>
+							))}
+						</div>
 					</div>
 				</div>
 			</div>
@@ -93,6 +97,8 @@ const heroBlocks = [
 
 <style>
 	.ls-cal {
+		--ls-ease: cubic-bezier(0.16, 1, 0.3, 1);
+		--ls-gap: 0.28rem;
 		position: relative;
 		width: 100%;
 		min-height: 0;
@@ -166,7 +172,7 @@ const heroBlocks = [
 		position: relative;
 		display: grid;
 		grid-template-columns: repeat(5, minmax(0, 1fr));
-		gap: 0.28rem;
+		gap: var(--ls-gap);
 		height: 11.25rem;
 		background-image: repeating-linear-gradient(
 			to bottom,
@@ -210,20 +216,87 @@ const heroBlocks = [
 		background: color-mix(in srgb, var(--accent) 3.5%, transparent);
 	}
 
-	.ls-chip {
+	.ls-cal__chips {
 		position: absolute;
-		left: 0.12rem;
-		right: 0.12rem;
+		inset: 0;
+		z-index: 1;
+		pointer-events: none;
+	}
+
+	.ls-chip {
+		--d: 0;
+		--t: 0;
+		--h: 16;
+		--cols: 5;
+		--inset: 0.12rem;
+		--col-w: calc((100% - (var(--cols) - 1) * var(--ls-gap)) / var(--cols));
+		position: absolute;
+		left: calc(var(--d) * (var(--col-w) + var(--ls-gap)) + var(--inset));
+		width: calc(var(--col-w) - var(--inset) * 2);
+		top: calc(var(--t) * 1%);
+		height: calc(var(--h) * 1%);
 		z-index: 1;
 		border-radius: 0.22rem;
-	}
-
-	.ls-chip--soft {
+		overflow: hidden;
 		background: color-mix(in srgb, var(--text-primary) 8%, var(--surface-raised));
+		transform-origin: center;
+		transition:
+			left 0.85s var(--ls-ease),
+			top 0.85s var(--ls-ease),
+			height 0.55s var(--ls-ease),
+			transform 0.45s var(--ls-ease),
+			filter 0.45s ease;
 	}
 
-	.ls-chip--on {
-		background: color-mix(in srgb, var(--accent) 22%, var(--surface-raised));
+	.ls-chip::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		border-radius: inherit;
+		background: color-mix(in srgb, var(--accent) 52%, var(--surface-raised));
+		transform: scaleX(0);
+		transform-origin: left center;
+		transition: transform 0.72s var(--ls-ease);
+		pointer-events: none;
+	}
+
+	.ls-chip--on::after,
+	.ls-chip.is-filled::after {
+		transform: scaleX(1);
+	}
+
+	.ls-chip.is-lift {
+		z-index: 4;
+		transform: translateY(-3px) scale(1.05);
+		filter: brightness(1.12);
+	}
+
+	.ls-chip.is-pulse {
+		animation: ls-chip-pulse 0.62s var(--ls-ease);
+	}
+
+	@keyframes ls-chip-pulse {
+		0%,
+		100% {
+			transform: scale(1);
+		}
+		42% {
+			transform: scale(1.07);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.ls-chip,
+		.ls-chip.is-pulse {
+			animation: none;
+			transition: none;
+			transform: none;
+			filter: none;
+		}
+
+		.ls-chip::after {
+			transition: none;
+		}
 	}
 
 	.ls-mini {

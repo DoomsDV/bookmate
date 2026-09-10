@@ -652,6 +652,11 @@ const jsonLd = [
 				void prepareHeroFonts().then(runHeroReveal);
 			}
 
+			/** @type {() => void} */
+			let rotateInbox = () => {};
+			/** @type {() => void} */
+			let playHeroCal = () => {};
+
 			const inboxStack = root.querySelector('[data-hero-inbox]');
 			const inboxSource = document.getElementById('hero-inbox-notes');
 			if (inboxStack instanceof HTMLElement && inboxSource && !prefersReducedMotion) {
@@ -697,8 +702,7 @@ const jsonLd = [
 						return fallback;
 					};
 
-					const rotateInbox = () => {
-						if (document.hidden) return;
+					rotateInbox = () => {
 						const incoming = nextNote();
 						if (!incoming) return;
 
@@ -717,10 +721,119 @@ const jsonLd = [
 							paintSlot(slot, nextVisible[index], index, index === 0);
 						});
 					};
-
-					const inboxTimer = window.setInterval(rotateInbox, 4800);
-					signal.addEventListener('abort', () => window.clearInterval(inboxTimer));
 				}
+			}
+
+			const heroCal = root.querySelector('[data-hero-cal]');
+			if (heroCal instanceof HTMLElement && !prefersReducedMotion) {
+				const chipNodes = Array.from(heroCal.querySelectorAll('[data-chip]'));
+				/** @type {Record<string, HTMLElement>} */
+				const byId = {};
+				chipNodes.forEach((node) => {
+					if (!(node instanceof HTMLElement)) return;
+					const id = node.getAttribute('data-chip');
+					if (id) byId[id] = node;
+				});
+
+				const setPos = (el, d, t, h) => {
+					el.style.setProperty('--d', String(d));
+					el.style.setProperty('--t', String(t));
+					el.style.setProperty('--h', String(h));
+				};
+
+				const clearMotion = (el) => {
+					el.classList.remove('is-pulse', 'is-lift');
+				};
+
+				const replay = (el, className) => {
+					el.classList.remove(className);
+					void el.offsetWidth;
+					el.classList.add(className);
+				};
+
+				const fillChip = (id) => {
+					const el = byId[id];
+					if (!el) return;
+					clearMotion(el);
+					el.classList.add('is-filled');
+				};
+
+				const pulseChip = (id) => {
+					const el = byId[id];
+					if (!el) return;
+					replay(el, 'is-pulse');
+				};
+
+				const moveChip = (id, d, t, h) => {
+					const el = byId[id];
+					if (!el) return;
+					clearMotion(el);
+					el.classList.add('is-lift');
+					void el.offsetWidth;
+					setPos(el, d, t, h);
+					later(() => el.classList.remove('is-lift'), 920);
+				};
+
+				const resetChips = () => {
+					chipNodes.forEach((node) => {
+						if (!(node instanceof HTMLElement)) return;
+						clearMotion(node);
+						node.classList.remove('is-filled');
+						setPos(
+							node,
+							node.getAttribute('data-home-d') || '0',
+							node.getAttribute('data-home-t') || '0',
+							node.getAttribute('data-home-h') || '16'
+						);
+					});
+				};
+
+				const runStep = (step) => {
+					if (step.type === 'fill' && step.id) fillChip(step.id);
+					else if (step.type === 'pulse' && step.id) pulseChip(step.id);
+					else if (step.type === 'move' && step.id) moveChip(step.id, step.d, step.t, step.h);
+					else if (step.type === 'reset') resetChips();
+				};
+
+				const beats = [
+					[{ type: 'fill', id: 'a' }],
+					[
+						{ type: 'fill', id: 'd' },
+						{ type: 'move', id: 'e', d: 3, t: 18, h: 16, wait: 820 },
+					],
+					[
+						{ type: 'pulse', id: 'c' },
+						{ type: 'move', id: 'b', d: 4, t: 32, h: 16, wait: 640 },
+					],
+					[{ type: 'fill', id: 'e' }],
+					[
+						{ type: 'move', id: 'a', d: 1, t: 8, h: 18 },
+						{ type: 'move', id: 'e', d: 0, t: 16, h: 18, wait: 180 },
+						{ type: 'fill', id: 'b', wait: 900 },
+					],
+					[{ type: 'reset' }],
+				];
+
+				let beat = 0;
+				playHeroCal = () => {
+					const group = beats[beat % beats.length];
+					beat += 1;
+					group.forEach((step) => {
+						const wait = Number(step.wait) || 0;
+						if (wait) later(() => runStep(step), wait);
+						else runStep(step);
+					});
+				};
+			}
+
+			if (!prefersReducedMotion) {
+				later(playHeroCal, 1600);
+				const liveTimer = window.setInterval(() => {
+					if (document.hidden) return;
+					rotateInbox();
+					playHeroCal();
+				}, 4800);
+				signal.addEventListener('abort', () => window.clearInterval(liveTimer));
 			}
 
 			const revealNodes = root.querySelectorAll('.reveal-on-scroll');
