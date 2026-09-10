@@ -100,12 +100,6 @@ type InboxNote = {
 	detail: string;
 };
 
-const inboxIcons: Record<InboxKind, string> = {
-	book: 'chat',
-	pay: 'payments',
-	ok: 'event_available',
-};
-
 const inboxNotes: InboxNote[] = [
 	{ kind: 'book', title: 'Nueva reserva', detail: 'Ana Ríos, masaje' },
 	{ kind: 'pay', title: 'Seña recibida', detail: 'HASEL-4K2P, ₲ 50.000' },
@@ -121,7 +115,7 @@ const inboxNotes: InboxNote[] = [
 	{ kind: 'ok', title: 'Turno confirmado', detail: 'Camila Núñez, fisioterapia' },
 ];
 
-const inboxVisible = inboxNotes.slice(0, 3);
+const inboxVisible = inboxNotes.slice(0, 2);
 const inboxTimes = ['ahora', '2 min', '5 min'] as const;
 
 const pageTitle = 'Hasel - Software de citas, agenda y reservas online para tu negocio';
@@ -161,17 +155,14 @@ const usefulServices = [
 
 const steps = [
 	{
-		icon: 'tune',
 		title: 'Configurá servicios y horarios',
 		text: 'Definí tu catálogo, profesionales y disponibilidad en minutos.',
 	},
 	{
-		icon: 'share',
 		title: 'Compartí tu enlace',
 		text: 'Pegalo en WhatsApp, Instagram o tu bio. Reservas sin ida y vuelta.',
 	},
 	{
-		icon: 'calendar_month',
 		title: 'Controlá desde el calendario',
 		text: 'Todo se actualiza solo. Hasel envía recordatorios por vos.',
 	},
@@ -248,21 +239,18 @@ const jsonLd = [
 				</div>
 
 				<div class="hero-visual" data-hero-reveal data-hero-reveal-delay="220">
-					<div class="hero-scene">
-						<div class="hero-scene__canvas" aria-hidden="true">
-							<LandingScene kind="hero-cal" />
-						</div>
-						<div class="hero-inbox" aria-hidden="true">
+					<div class="hero-desk" aria-hidden="true">
+						<LandingScene kind="hero-cal" />
+						<div class="hero-inbox">
 							<p class="hero-inbox__live">
 								<span class="hero-inbox__dot"></span>
-								Reservas entrando
+								Entrando ahora
 							</p>
-
 							<ol class="hero-inbox__stack" data-hero-inbox>
 								{
 									inboxVisible.map((note, index) => (
 										<li class="hero-toast" data-kind={note.kind} style={`--i: ${index}`}>
-											<span class="hero-toast__mark material-symbols-rounded">{inboxIcons[note.kind]}</span>
+											<span class="hero-toast__mark"></span>
 											<div class="hero-toast__copy">
 												<strong>{note.title}</strong>
 												<span>{note.detail}</span>
@@ -272,7 +260,7 @@ const jsonLd = [
 									))
 								}
 							</ol>
-							<script type="application/json" id="hero-inbox-notes" set:html={JSON.stringify({ notes: inboxNotes, icons: inboxIcons, times: inboxTimes })} />
+							<script type="application/json" id="hero-inbox-notes" set:html={JSON.stringify({ notes: inboxNotes, times: inboxTimes })} />
 						</div>
 					</div>
 				</div>
@@ -360,29 +348,6 @@ const jsonLd = [
 				) : null
 			}
 
-			<section id="producto" class="m3-section product-proof" aria-labelledby="producto-heading">
-				<div class="product-proof__intro reveal-on-scroll">
-					<h2 id="producto-heading" class="m3-headline">El panel y el link que usa tu cliente</h2>
-					<p class="m3-body product-proof__lead">
-						Vos ves la agenda. Ellos eligen horario en tu página, sin WhatsApp de ida y vuelta.
-					</p>
-				</div>
-				<div class="product-proof__grid">
-					<figure class="product-proof__frame reveal-on-scroll">
-						<div class="scene-frame" aria-hidden="true">
-							<LandingScene kind="calendar" />
-						</div>
-						<figcaption>Agenda compartida</figcaption>
-					</figure>
-					<figure class="product-proof__frame reveal-on-scroll" style="--reveal-i: 1">
-						<div class="scene-frame" aria-hidden="true">
-							<LandingScene kind="booking" />
-						</div>
-						<figcaption>El cliente elige horario</figcaption>
-					</figure>
-				</div>
-			</section>
-
 			<section id="funciones" class="m3-section features-section" aria-labelledby="funciones-heading">
 				<div class="features-intro reveal-on-scroll">
 					<h2 id="funciones-heading" class="m3-headline">
@@ -428,10 +393,10 @@ const jsonLd = [
 
 				<ol class="workflow-rail">
 					{
-						steps.map((item) => (
+						steps.map((item, index) => (
 							<li class="workflow-rail__step reveal-on-scroll">
-								<span class="workflow-rail__icon material-symbols-rounded" aria-hidden="true">
-									{item.icon}
+								<span class="workflow-rail__index" aria-hidden="true">
+									{String(index + 1).padStart(2, '0')}
 								</span>
 								<div class="workflow-rail__copy">
 									<h3 class="m3-title">{item.title}</h3>
@@ -690,7 +655,7 @@ const jsonLd = [
 			const inboxStack = root.querySelector('[data-hero-inbox]');
 			const inboxSource = document.getElementById('hero-inbox-notes');
 			if (inboxStack instanceof HTMLElement && inboxSource && !prefersReducedMotion) {
-				/** @type {{ notes?: Array<{ kind: string, title: string, detail: string }>, icons?: Record<string, string>, times?: string[] }} */
+				/** @type {{ notes?: Array<{ kind: string, title: string, detail: string }>, times?: string[] }} */
 				let inboxData = {};
 				try {
 					inboxData = JSON.parse(inboxSource.textContent || '{}');
@@ -699,7 +664,6 @@ const jsonLd = [
 				}
 
 				const notes = Array.isArray(inboxData.notes) ? inboxData.notes : [];
-				const icons = inboxData.icons && typeof inboxData.icons === 'object' ? inboxData.icons : {};
 				const times = Array.isArray(inboxData.times) ? inboxData.times : ['ahora', '2 min', '5 min'];
 				const slots = Array.from(inboxStack.querySelectorAll('.hero-toast'));
 
@@ -709,11 +673,9 @@ const jsonLd = [
 
 					const paintSlot = (slot, note, index, entering) => {
 						slot.dataset.kind = note.kind;
-						const mark = slot.querySelector('.hero-toast__mark');
 						const title = slot.querySelector('strong');
 						const detail = slot.querySelector('.hero-toast__copy span');
 						const time = slot.querySelector('time');
-						if (mark) mark.textContent = icons[note.kind] || 'chat';
 						if (title) title.textContent = note.title;
 						if (detail) detail.textContent = note.detail;
 						if (time) time.textContent = times[index] || '';
@@ -1138,78 +1100,62 @@ const jsonLd = [
 		min-width: 0;
 	}
 
-	.hero-scene {
-		position: relative;
-		isolation: isolate;
+	.hero-desk {
+		overflow: hidden;
+		border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+		border-radius: 1.15rem;
+		background: var(--surface-raised);
+		box-shadow:
+			0 1px 0 color-mix(in srgb, #fff 62%, transparent) inset,
+			0 22px 48px rgb(15 23 42 / 0.06);
 	}
 
-	.hero-scene__canvas {
-		position: relative;
-		padding: 0.85rem;
-		border-radius: var(--radius-lg);
-		background:
-			radial-gradient(ellipse 80% 70% at 20% 0%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 58%),
-			var(--surface-overlay);
-		border: 1px solid var(--border);
-	}
-
-	.scene-frame {
-		height: 100%;
-		min-height: 16rem;
-		padding: 0.75rem;
-		border-radius: var(--radius-lg);
-		background:
-			radial-gradient(ellipse 90% 80% at 80% 0%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 60%),
-			var(--surface-overlay);
-		border: 1px solid var(--border);
+	:global(html[data-theme='dark']) .hero-desk {
+		box-shadow:
+			0 1px 0 rgba(255, 255, 255, 0.035) inset,
+			0 22px 48px rgb(0 0 0 / 0.32);
 	}
 
 	.hero-inbox {
-		--toast-bg: var(--surface-raised);
 		--toast-ink: var(--text-primary);
 		--toast-muted: var(--text-secondary);
-		--toast-line: var(--border);
-		position: relative;
-		z-index: 2;
 		display: grid;
-		justify-items: center;
-		align-content: start;
-		gap: 0.7rem;
-		margin-top: 0.85rem;
-		padding: 0.25rem 0;
+		gap: 0;
+		padding: 0.7rem 1.1rem 0.85rem;
+		border-top: 1px solid var(--border);
+		background: color-mix(in srgb, var(--surface) 78%, var(--surface-raised));
 	}
 
 	.hero-inbox__live {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.38rem;
-		justify-self: center;
-		margin: 0;
+		gap: 0.4rem;
+		margin: 0 0 0.2rem;
 		padding: 0;
 		border: 0;
 		background: transparent;
-		color: var(--text-secondary);
-		font-size: 0.7rem;
-		font-weight: 700;
-		letter-spacing: 0.01em;
+		color: var(--text-muted);
+		font-size: 0.66rem;
+		font-weight: 650;
+		letter-spacing: 0.02em;
 	}
 
 	.hero-inbox__dot {
-		width: 0.38rem;
-		height: 0.38rem;
+		width: 0.3rem;
+		height: 0.3rem;
 		border-radius: 999px;
-		background: #22c55e;
-		box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.45);
-		animation: hero-live-pulse 2.4s ease-out infinite;
+		background: var(--accent);
+		box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 35%, transparent);
+		animation: hero-live-pulse 2.8s ease-out infinite;
 	}
 
 	.hero-inbox__stack {
 		display: grid;
-		gap: 0.45rem;
+		gap: 0;
 		margin: 0;
 		padding: 0;
 		list-style: none;
-		width: min(100%, 23.5rem);
+		width: 100%;
 	}
 
 	.hero-toast {
@@ -1217,11 +1163,17 @@ const jsonLd = [
 		grid-template-columns: auto 1fr auto;
 		align-items: center;
 		gap: 0.65rem;
-		padding: 0.72rem 0.8rem;
-		border-radius: 0.9rem;
-		background: var(--toast-bg);
-		border: 1px solid var(--toast-line);
-		box-shadow: 0 8px 20px rgb(12 16 28 / 0.14);
+		padding: 0.58rem 0;
+		border-radius: 0;
+		background: transparent;
+		border: 0;
+		border-bottom: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+		box-shadow: none;
+	}
+
+	.hero-toast:last-child {
+		border-bottom: 0;
+		padding-bottom: 0.1rem;
 	}
 
 	.hero-toast.is-enter {
@@ -1229,13 +1181,14 @@ const jsonLd = [
 	}
 
 	.hero-toast__mark {
-		width: 1.35rem;
-		height: 1.35rem;
-		display: grid;
-		place-items: center;
-		font-size: 1.15rem;
-		color: var(--toast-muted);
-		font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+		width: 0.34rem;
+		height: 0.34rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--text-muted) 55%, transparent);
+	}
+
+	.hero-toast:first-child .hero-toast__mark {
+		background: var(--accent);
 	}
 
 	.hero-toast__copy {
@@ -1280,13 +1233,13 @@ const jsonLd = [
 
 	@keyframes hero-live-pulse {
 		0% {
-			box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+			box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 40%, transparent);
 		}
 		70% {
-			box-shadow: 0 0 0 0.38rem rgba(34, 197, 94, 0);
+			box-shadow: 0 0 0 0.34rem transparent;
 		}
 		100% {
-			box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+			box-shadow: 0 0 0 0 transparent;
 		}
 	}
 
@@ -1305,27 +1258,9 @@ const jsonLd = [
 			align-items: center;
 		}
 
-		.hero-scene {
-			padding-bottom: 4.25rem;
-		}
-
-		.hero-inbox {
-			position: absolute;
-			right: 0.85rem;
-			bottom: -0.15rem;
-			margin-top: 0;
-			justify-items: stretch;
-			width: min(88%, 19.5rem);
-			transform: none;
-		}
-
-		.hero-inbox__live {
-			justify-self: center;
-			color: var(--text-secondary);
-		}
-
-		.hero-inbox__stack {
-			width: 100%;
+		.hero-desk {
+			max-width: 32rem;
+			margin-left: auto;
 		}
 	}
 
@@ -1340,44 +1275,8 @@ const jsonLd = [
 			transform: none;
 		}
 
-		.hero-scene__canvas {
+		.hero-desk {
 			transform: none;
-		}
-	}
-
-	.product-proof__intro {
-		margin-bottom: 1.5rem;
-	}
-
-	.product-proof__lead {
-		max-width: 36rem;
-		margin-top: 0.55rem;
-	}
-
-	.product-proof__grid {
-		display: grid;
-		gap: 1rem;
-	}
-
-	.product-proof__frame {
-		margin: 0;
-		display: grid;
-		gap: 0.7rem;
-	}
-
-	.product-proof__frame figcaption {
-		margin: 0;
-		font-size: 0.9rem;
-		font-weight: 700;
-		letter-spacing: -0.02em;
-		color: var(--text-primary);
-	}
-
-	@media (min-width: 800px) {
-		.product-proof__grid {
-			grid-template-columns: 1.15fr 0.85fr;
-			gap: 1.15rem;
-			align-items: end;
 		}
 	}
 
@@ -1461,12 +1360,12 @@ const jsonLd = [
 		overflow: hidden;
 		display: grid;
 		align-content: start;
-		border-radius: var(--radius-lg);
+		border-radius: var(--radius-md);
 		border: 1px solid var(--border);
 		background: var(--surface-raised);
-		flex: 0 0 min(82vw, 17.5rem);
+		flex: 0 0 min(72vw, 15.5rem);
 		scroll-snap-align: start;
-		min-height: 8.75rem;
+		min-height: 0;
 		transition:
 			border-color 200ms var(--ease),
 			transform 200ms var(--ease);
@@ -1480,7 +1379,12 @@ const jsonLd = [
 	}
 
 	.features-bento__art {
-		padding: 0.75rem 0.75rem 0;
+		padding: 0.65rem 0.65rem 0;
+	}
+
+	.features-bento__art :global(.ls-mini) {
+		max-height: 3.75rem;
+		width: 100%;
 	}
 
 	.features-bento__cell--tint {
@@ -1488,24 +1392,23 @@ const jsonLd = [
 	}
 
 	.features-bento__cell--featured {
-		flex-basis: min(86vw, 19rem);
-		min-height: 10.5rem;
+		flex-basis: min(74vw, 16rem);
 	}
 
 	.features-bento__content {
 		position: relative;
 		z-index: 1;
 		display: grid;
-		gap: 0.45rem;
-		padding: 0.85rem 1rem 1.1rem;
+		gap: 0.28rem;
+		padding: 0.65rem 0.8rem 0.85rem;
 		align-content: start;
 	}
 
 	.features-bento__icon {
 		display: grid;
 		place-items: center;
-		width: 2.4rem;
-		height: 2.4rem;
+		width: 1.85rem;
+		height: 1.85rem;
 		border-radius: var(--radius-sm);
 		background: var(--accent-soft);
 		color: #8eb4ff;
@@ -1513,12 +1416,12 @@ const jsonLd = [
 	}
 
 	.features-bento__icon .material-symbols-rounded {
-		font-size: 1.2rem;
+		font-size: 1.05rem;
 	}
 
 	.features-bento__title {
 		margin: 0;
-		font-size: 1rem;
+		font-size: 0.92rem;
 		font-weight: 800;
 		letter-spacing: -0.02em;
 		color: var(--text-primary);
@@ -1526,10 +1429,9 @@ const jsonLd = [
 
 	.features-bento__text {
 		margin: 0;
-		font-size: 0.8125rem;
-		line-height: 1.45;
+		font-size: 0.78rem;
+		line-height: 1.4;
 		color: var(--text-secondary);
-		max-width: 28rem;
 		display: -webkit-box;
 		-webkit-line-clamp: 3;
 		-webkit-box-orient: vertical;
@@ -1540,7 +1442,7 @@ const jsonLd = [
 		.features-bento {
 			display: grid;
 			grid-template-columns: repeat(2, minmax(0, 1fr));
-			gap: 0.75rem;
+			gap: 0.65rem;
 			overflow: visible;
 			margin-inline: 0;
 			padding-inline: 0;
@@ -1552,42 +1454,41 @@ const jsonLd = [
 
 		.features-bento__cell {
 			flex: unset;
-			min-height: 9.5rem;
+			min-height: 0;
 			scroll-snap-align: unset;
 		}
 
 		.features-bento__cell--featured {
 			flex-basis: unset;
-			min-height: 12rem;
 		}
 
 		.features-bento__content {
-			padding: 1.15rem 1.1rem 1.25rem;
-			gap: 0.5rem;
+			padding: 0.7rem 0.85rem 0.9rem;
+			gap: 0.3rem;
 		}
 
 		.features-bento__title {
-			font-size: 1.05rem;
+			font-size: 0.95rem;
 		}
 
 		.features-bento__text {
-			font-size: 0.875rem;
-			line-height: 1.5;
-			-webkit-line-clamp: unset;
-			overflow: visible;
-			display: block;
+			font-size: 0.8rem;
+			line-height: 1.4;
 		}
 	}
 
 	@media (min-width: 1024px) {
 		.features-bento {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-			gap: 0.85rem;
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			gap: 0.7rem;
 		}
 
-		.features-bento__cell--featured,
-		.features-bento__cell--visual {
-			min-height: 12.5rem;
+		.features-bento__art :global(.ls-mini) {
+			max-height: 3.25rem;
+		}
+
+		.features-bento__text {
+			-webkit-line-clamp: 3;
 		}
 	}
 
@@ -1613,47 +1514,85 @@ const jsonLd = [
 		margin: 0;
 		padding: 0;
 		display: grid;
-		gap: 1rem;
+		gap: 0;
 	}
 
 	.workflow-rail__step {
+		position: relative;
 		display: grid;
-		grid-template-columns: auto 1fr;
-		gap: 1rem;
+		grid-template-columns: 2.1rem minmax(0, 1fr);
+		gap: 0.95rem;
 		align-items: start;
-		padding: 1.25rem 1.15rem;
-		border-radius: var(--radius-lg);
-		border: 1px solid var(--border);
-		background: var(--surface-raised);
+		padding: 0 0 1.65rem;
+		background: transparent;
+		border: 0;
+		border-radius: 0;
 	}
 
-	.workflow-rail__icon {
-		display: grid;
-		place-items: center;
-		width: 2.75rem;
-		height: 2.75rem;
-		border-radius: var(--radius-md);
-		background: var(--accent-soft);
-		color: #8eb4ff;
-		font-size: 1.35rem;
+	.workflow-rail__step:last-child {
+		padding-bottom: 0;
+	}
+
+	.workflow-rail__step::before {
+		content: '';
+		position: absolute;
+		left: 0.7rem;
+		top: 1.15rem;
+		bottom: 0;
+		width: 1px;
+		background: var(--border);
+	}
+
+	.workflow-rail__step:last-child::before {
+		display: none;
+	}
+
+	.workflow-rail__index {
+		position: relative;
+		z-index: 1;
+		display: block;
+		padding-top: 0.12rem;
+		color: var(--accent);
+		font-size: 0.72rem;
+		font-weight: 750;
+		letter-spacing: 0.06em;
+		font-variant-numeric: tabular-nums;
+		line-height: 1.2;
 	}
 
 	.workflow-rail__copy {
 		display: grid;
 		gap: 0.35rem;
 		min-width: 0;
+		padding-bottom: 0.15rem;
+	}
+
+	.workflow-rail__copy .m3-title {
+		margin: 0;
+	}
+
+	.workflow-rail__copy .m3-body {
+		margin: 0;
+		max-width: 28rem;
+		color: var(--text-muted);
 	}
 
 	@media (min-width: 900px) {
-		.workflow-rail {
-			grid-template-columns: repeat(3, minmax(0, 1fr));
-			gap: 1rem;
-			align-items: stretch;
+		.workflow-section {
+			display: grid;
+			grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
+			gap: 3.5rem;
+			align-items: start;
 		}
 
-		.workflow-rail__step {
-			grid-template-columns: 1fr;
-			padding: 1.5rem 1.25rem;
+		.workflow-intro {
+			margin-bottom: 0;
+			position: sticky;
+			top: calc(var(--landing-topbar-h) + 1.25rem);
+		}
+
+		.workflow-rail__copy .m3-body {
+			max-width: 28rem;
 		}
 	}
 
@@ -2067,13 +2006,12 @@ const jsonLd = [
 	.m3-cta-split {
 		display: grid;
 		gap: 1.5rem;
-		padding: 2.5rem 1.25rem;
-		margin-bottom: 1rem;
-		border-radius: var(--radius-lg);
-		border: 1px solid rgba(66, 110, 219, 0.25);
-		background:
-			radial-gradient(ellipse 80% 80% at 100% 0%, rgba(66, 110, 219, 0.15), transparent 55%),
-			var(--surface-raised);
+		padding: 3rem 0;
+		margin: 0;
+		border: 0;
+		border-top: 1px solid var(--border);
+		border-radius: 0;
+		background: transparent;
 	}
 
 	.cta-split__copy {
@@ -2097,15 +2035,10 @@ const jsonLd = [
 	.cta-split__panel {
 		display: grid;
 		gap: 1.25rem;
-		padding: 1.25rem;
-		border-radius: var(--radius-md);
-		background: var(--surface);
-		border: 1px solid var(--border);
-		box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
-	}
-
-	:global(html[data-theme='dark']) .cta-split__panel {
-		background: rgba(0, 0, 0, 0.22);
+		padding: 0;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
 		box-shadow: none;
 	}
 
@@ -2144,8 +2077,8 @@ const jsonLd = [
 		.m3-cta-split {
 			grid-template-columns: 1fr 1fr;
 			align-items: center;
-			padding: 2.75rem 2rem;
-			gap: 2rem;
+			padding: 3.5rem 0;
+			gap: 2.5rem;
 		}
 	}
 

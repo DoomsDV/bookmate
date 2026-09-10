@@ -1,12 +1,5 @@
 ---
-export type LandingSceneKind =
-	| 'hero-cal'
-	| 'calendar'
-	| 'booking'
-	| 'feat-book'
-	| 'feat-metrics'
-	| 'feat-team'
-	| 'feat-page';
+export type LandingSceneKind = 'hero-cal' | 'feat-book' | 'feat-metrics' | 'feat-team' | 'feat-page';
 
 interface Props {
 	kind: LandingSceneKind;
@@ -15,88 +8,51 @@ interface Props {
 const { kind } = Astro.props;
 
 const weekDays = ['L', 'M', 'X', 'J', 'V'] as const;
+const heroHours = ['09', '11', '13', '15'] as const;
 const heroBlocks = [
-	{ day: 0, start: 18, span: 28, tone: 'ok', label: 'Ana · masaje' },
-	{ day: 1, start: 32, span: 24, tone: 'wait', label: 'Ramón' },
-	{ day: 2, start: 12, span: 30, tone: 'ok', label: 'Lucía · fisio' },
-	{ day: 3, start: 40, span: 22, tone: 'pay', label: 'Seña' },
-	{ day: 4, start: 20, span: 26, tone: 'ok', label: 'Carlos' },
+	{ day: 0, start: 16, span: 18, tone: 'soft' },
+	{ day: 1, start: 42, span: 16, tone: 'soft' },
+	{ day: 2, start: 12, span: 22, tone: 'on' },
+	{ day: 3, start: 48, span: 15, tone: 'soft' },
+	{ day: 4, start: 28, span: 18, tone: 'soft' },
 ] as const;
-
-const calBlocks = [
-	{ day: 0, start: 10, span: 22, tone: 'ok' },
-	{ day: 0, start: 42, span: 20, tone: 'wait' },
-	{ day: 1, start: 18, span: 26, tone: 'ok' },
-	{ day: 2, start: 8, span: 18, tone: 'pay' },
-	{ day: 2, start: 36, span: 24, tone: 'ok' },
-	{ day: 3, start: 22, span: 20, tone: 'wait' },
-	{ day: 4, start: 14, span: 28, tone: 'ok' },
-] as const;
-
-const bookServices = [
-	{ name: 'Consulta', mins: '30 min', price: '₲ 80.000' },
-	{ name: 'Masaje', mins: '45 min', price: '₲ 120.000' },
-	{ name: 'Evaluación', mins: '40 min', price: '₲ 90.000' },
-] as const;
-
-const bookSlots = ['09:00', '10:30', '15:00'] as const;
 ---
 
 {
-	kind === 'hero-cal' || kind === 'calendar' ? (
-		<div class:list={['ls-cal', { 'ls-cal--hero': kind === 'hero-cal' }]} aria-hidden="true">
+	kind === 'hero-cal' ? (
+		<div class="ls-cal ls-cal--hero">
 			<div class="ls-cal__bar">
-				<span class="ls-cal__dot" />
-				<span class="ls-cal__dot" />
-				<span class="ls-cal__dot" />
-				<strong>{kind === 'hero-cal' ? 'Agenda de hoy' : 'Semana del equipo'}</strong>
+				<strong>Hoy</strong>
+				<span class="ls-cal__meta">5 turnos</span>
 			</div>
-			<div class="ls-cal__days">
-				{weekDays.map((day) => (
-					<span>{day}</span>
-				))}
-			</div>
-			<div class="ls-cal__grid">
-				{weekDays.map((_, day) => (
-					<div class="ls-cal__col">
-						{(kind === 'hero-cal' ? heroBlocks : calBlocks)
-							.filter((block) => block.day === day)
-							.map((block) => (
-								<span
-									class:list={['ls-chip', `ls-chip--${block.tone}`]}
-									style={`top: ${block.start}%; height: ${block.span}%`}
-								>
-									{'label' in block ? block.label : ''}
-								</span>
-							))}
-					</div>
-				))}
-			</div>
-		</div>
-	) : kind === 'booking' ? (
-		<div class="ls-book" aria-hidden="true">
-			<div class="ls-book__who">
-				<span class="ls-book__avatar">DV</span>
-				<div>
-					<strong>Dann Villasanti</strong>
-					<span>Quiropraxia · Capiatá</span>
+			<div class="ls-cal__board">
+				<div class="ls-cal__hours">
+					{heroHours.map((hour) => (
+						<span>{hour}</span>
+					))}
 				</div>
-			</div>
-			<ol class="ls-book__list">
-				{bookServices.map((item) => (
-					<li>
-						<span>
-							<b>{item.name}</b>
-							<small>{item.mins}</small>
-						</span>
-						<em>{item.price}</em>
-					</li>
-				))}
-			</ol>
-			<div class="ls-book__slots">
-				{bookSlots.map((slot, index) => (
-					<span class:list={{ 'is-on': index === 1 }}>{slot}</span>
-				))}
+				<div class="ls-cal__week">
+					<div class="ls-cal__days">
+						{weekDays.map((day, index) => (
+							<span class:list={{ 'is-now': index === 2 }}>{day}</span>
+						))}
+					</div>
+					<div class="ls-cal__grid">
+						<span class="ls-cal__now" />
+						{weekDays.map((_, day) => (
+							<div class:list={['ls-cal__col', { 'is-now': day === 2 }]}>
+								{heroBlocks
+									.filter((block) => block.day === day)
+									.map((block) => (
+										<span
+											class:list={['ls-chip', `ls-chip--${block.tone}`]}
+											style={`top: ${block.start}%; height: ${block.span}%`}
+										/>
+									))}
+							</div>
+						))}
+					</div>
+				</div>
 			</div>
 		</div>
 	) : kind === 'feat-book' ? (
@@ -136,192 +92,138 @@ const bookSlots = ['09:00', '10:30', '15:00'] as const;
 }
 
 <style>
-	.ls-cal,
-	.ls-book {
+	.ls-cal {
 		position: relative;
 		width: 100%;
-		height: 100%;
-		min-height: 16rem;
-		padding: 1rem 1rem 1.1rem;
-		border-radius: calc(var(--radius-lg) - 2px);
-		background: var(--surface-raised);
-		border: 1px solid var(--border);
-		box-shadow: 0 10px 28px rgb(15 23 42 / 0.06);
+		min-height: 0;
+		padding: 1.05rem 1.1rem 0.95rem;
 		overflow: hidden;
-	}
-
-	.ls-cal--hero {
-		min-height: 18rem;
 	}
 
 	.ls-cal__bar {
 		display: flex;
-		align-items: center;
-		gap: 0.35rem;
-		margin-bottom: 0.85rem;
-		color: var(--text-primary);
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 0.75rem;
+		margin-bottom: 0.95rem;
 	}
 
 	.ls-cal__bar strong {
-		margin-left: 0.35rem;
-		font-size: 0.82rem;
-		font-weight: 750;
-		letter-spacing: -0.02em;
+		font-size: 0.8rem;
+		font-weight: 700;
+		letter-spacing: -0.03em;
+		color: var(--text-primary);
 	}
 
-	.ls-cal__dot {
-		width: 0.42rem;
-		height: 0.42rem;
-		border-radius: 999px;
-		background: var(--border-strong);
+	.ls-cal__meta {
+		font-size: 0.68rem;
+		font-weight: 600;
+		color: var(--text-muted);
+		font-variant-numeric: tabular-nums;
 	}
 
-	.ls-cal__dot:first-child {
-		background: #ef6b6b;
+	.ls-cal__board {
+		display: grid;
+		grid-template-columns: 1.45rem minmax(0, 1fr);
+		gap: 0.55rem;
+		align-items: stretch;
+	}
+
+	.ls-cal__hours {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		padding-top: 1.35rem;
+		color: var(--text-muted);
+		font-size: 0.58rem;
+		font-weight: 650;
+		letter-spacing: 0.02em;
+		font-variant-numeric: tabular-nums;
+		line-height: 1;
+	}
+
+	.ls-cal__week {
+		min-width: 0;
 	}
 
 	.ls-cal__days {
 		display: grid;
 		grid-template-columns: repeat(5, minmax(0, 1fr));
-		gap: 0.4rem;
-		margin-bottom: 0.55rem;
+		gap: 0.28rem;
+		margin-bottom: 0.4rem;
 		color: var(--text-muted);
-		font-size: 0.68rem;
-		font-weight: 750;
+		font-size: 0.62rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
 		text-align: center;
 	}
 
+	.ls-cal__days .is-now {
+		color: var(--accent);
+	}
+
 	.ls-cal__grid {
+		position: relative;
 		display: grid;
 		grid-template-columns: repeat(5, minmax(0, 1fr));
-		gap: 0.4rem;
-		height: 11.5rem;
+		gap: 0.28rem;
+		height: 11.25rem;
 		background-image: repeating-linear-gradient(
 			to bottom,
 			transparent,
-			transparent 23px,
-			color-mix(in srgb, var(--border) 80%, transparent) 23px,
-			color-mix(in srgb, var(--border) 80%, transparent) 24px
+			transparent 27px,
+			color-mix(in srgb, var(--border) 80%, transparent) 27px,
+			color-mix(in srgb, var(--border) 80%, transparent) 28px
 		);
+	}
+
+	.ls-cal__now {
+		position: absolute;
+		left: -0.2rem;
+		right: 0;
+		top: 38%;
+		z-index: 2;
+		height: 1px;
+		background: color-mix(in srgb, var(--accent) 72%, transparent);
+		pointer-events: none;
+	}
+
+	.ls-cal__now::before {
+		content: '';
+		position: absolute;
+		left: -0.18rem;
+		top: 50%;
+		width: 0.28rem;
+		height: 0.28rem;
+		border-radius: 999px;
+		background: var(--accent);
+		transform: translateY(-50%);
 	}
 
 	.ls-cal__col {
 		position: relative;
 		min-width: 0;
+		border-radius: 0.28rem;
 	}
 
-	.ls-cal--hero .ls-cal__grid {
-		height: 13rem;
+	.ls-cal__col.is-now {
+		background: color-mix(in srgb, var(--accent) 3.5%, transparent);
 	}
 
 	.ls-chip {
 		position: absolute;
-		left: 0;
-		right: 0;
-		display: grid;
-		align-content: center;
-		padding: 0.28rem 0.35rem;
-		border-radius: 0.55rem;
-		font-size: 0.58rem;
-		font-weight: 750;
-		letter-spacing: -0.02em;
-		line-height: 1.15;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
+		left: 0.12rem;
+		right: 0.12rem;
+		z-index: 1;
+		border-radius: 0.22rem;
 	}
 
-	.ls-chip--ok {
-		background: color-mix(in srgb, #059669 18%, var(--surface-raised));
-		color: #047857;
+	.ls-chip--soft {
+		background: color-mix(in srgb, var(--text-primary) 8%, var(--surface-raised));
 	}
 
-	.ls-chip--wait {
-		background: color-mix(in srgb, #d97706 18%, var(--surface-raised));
-		color: #b45309;
-	}
-
-	.ls-chip--pay {
-		background: color-mix(in srgb, var(--accent) 18%, var(--surface-raised));
-		color: var(--accent);
-	}
-
-	.ls-book__who {
-		display: flex;
-		align-items: center;
-		gap: 0.7rem;
-		margin-bottom: 1rem;
-	}
-
-	.ls-book__avatar {
-		display: grid;
-		place-items: center;
-		width: 2.4rem;
-		height: 2.4rem;
-		border-radius: 999px;
-		background: var(--accent);
-		color: #fff;
-		font-size: 0.72rem;
-		font-weight: 800;
-	}
-
-	.ls-book__who strong,
-	.ls-book li b {
-		display: block;
-		font-size: 0.86rem;
-		font-weight: 750;
-		letter-spacing: -0.02em;
-		color: var(--text-primary);
-	}
-
-	.ls-book__who span,
-	.ls-book li small,
-	.ls-book li em {
-		font-size: 0.72rem;
-		font-weight: 650;
-		color: var(--text-muted);
-		font-style: normal;
-	}
-
-	.ls-book__list {
-		display: grid;
-		gap: 0.55rem;
-		margin: 0 0 1rem;
-		padding: 0;
-		list-style: none;
-	}
-
-	.ls-book__list li {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		gap: 0.75rem;
-		padding: 0.55rem 0.65rem;
-		border-radius: 0.75rem;
-		background: var(--surface);
-		border: 1px solid var(--border);
-	}
-
-	.ls-book__slots {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.4rem;
-	}
-
-	.ls-book__slots span {
-		padding: 0.38rem 0.7rem;
-		border-radius: 999px;
-		border: 1px solid var(--border);
-		background: var(--surface);
-		color: var(--text-secondary);
-		font-size: 0.72rem;
-		font-weight: 750;
-	}
-
-	.ls-book__slots .is-on {
-		background: var(--accent);
-		border-color: var(--accent);
-		color: #fff;
+	.ls-chip--on {
+		background: color-mix(in srgb, var(--accent) 22%, var(--surface-raised));
 	}
 
 	.ls-mini {
@@ -353,10 +255,5 @@ const bookSlots = ['09:00', '10:30', '15:00'] as const;
 
 	.ls-mini__bar {
 		fill: color-mix(in srgb, var(--accent) 42%, var(--surface-raised));
-	}
-
-	:global(html[data-theme='dark']) .ls-cal,
-	:global(html[data-theme='dark']) .ls-book {
-		box-shadow: 0 12px 32px rgb(0 0 0 / 0.28);
 	}
 </style>
