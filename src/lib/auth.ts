@@ -21,6 +21,16 @@ export const LOGOUT_URL = resolveOrdsApiUrl(
 	'ORDS_AUTH_LOGOUT_URL',
 	'/auth/logout'
 );
+export const SESSIONS_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_AUTH_SESSIONS_URL,
+	'ORDS_AUTH_SESSIONS_URL',
+	'/auth/sessions'
+);
+export const SESSIONS_REVOKE_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_AUTH_SESSIONS_REVOKE_URL,
+	'ORDS_AUTH_SESSIONS_REVOKE_URL',
+	'/auth/sessions/revoke'
+);
 export const CHANGE_PASSWORD_URL =
 	resolveOrdsApiUrl(
 		import.meta.env.ORDS_AUTH_CHANGE_PASSWORD_URL,
@@ -779,6 +789,73 @@ export const isTransientRefreshFailure = (error: unknown): boolean => {
 	return error.status >= 500 || error.status === 408 || error.status === 429;
 };
 
+export interface AuthSessionItem {
+	session_family: string;
+	user_agent: string;
+	last_seen_at: string;
+	created_at: string;
+	is_current: boolean;
+}
+
+export const listSessionsWithOrds = async (token: string, refreshToken?: string) => {
+	if (!token) {
+		throw new AuthApiError('Token de acceso requerido.', 401);
+	}
+
+	const response = await fetch(SESSIONS_URL, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+		},
+		body: JSON.stringify({ refresh_token: refreshToken ?? null }),
+	});
+
+	const data = await parseBasicResponse(response);
+	const raw = Array.isArray((data as { data?: unknown }).data)
+		? ((data as { data: Array<Record<string, unknown>> }).data)
+		: [];
+
+	return raw
+		.map((item) => {
+			const family = String(item.session_family || '').trim();
+			if (!family) return null;
+			return {
+				session_family: family,
+				user_agent: String(item.user_agent || '').trim(),
+				last_seen_at: String(item.last_seen_at || '').trim(),
+				created_at: String(item.created_at || '').trim(),
+				is_current: item.is_current === 1 || item.is_current === true || item.is_current === '1',
+			} satisfies AuthSessionItem;
+		})
+		.filter((item): item is AuthSessionItem => item !== null);
+};
+
+export const revokeSessionWithOrds = async (
+	token: string,
+	payload: { session_family: string; refresh_token?: string }
+) => {
+	if (!token) {
+		throw new AuthApiError('Token de acceso requerido.', 401);
+	}
+
+	const response = await fetch(SESSIONS_REVOKE_URL, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+		},
+		body: JSON.stringify({
+			session_family: payload.session_family,
+			refresh_token: payload.refresh_token ?? null,
+		}),
+	});
+
+	return parseBasicResponse(response);
+};
+
 export const logoutWithOrds = async (refreshToken?: string) => {
 	const response = await fetch(LOGOUT_URL, {
 		method: 'POST',
@@ -1292,6 +1369,7 @@ export const isPublicPath = (pathname: string) => {
 		pathname === '/explorar' ||
 		pathname === '/politicas-y-privacidad' ||
 		pathname === '/politicas-de-cancelacion-y-reembolso' ||
+		pathname === '/terminos-y-condiciones' ||
 		pathname.startsWith('/auth') ||
 		pathname.startsWith('/api/auth') ||
 		pathname.startsWith('/api/public') ||

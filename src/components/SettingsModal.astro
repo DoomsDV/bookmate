@@ -31,6 +31,7 @@ const globalPublicProfilePrefix = buildGlobalPublicProfilePrefix(
 );
 const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(globalPublicProfilePrefix);
 const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
+const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0.0.1';
 ---
 
 <settings-manager
@@ -50,18 +51,13 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			: 'm-0 mt-auto mb-0 h-[92dvh] w-screen max-w-none sm:m-0 sm:ml-auto sm:mr-0 sm:mt-0 sm:mb-0 sm:h-[100dvh] sm:max-h-[100dvh] sm:w-[70vw] sm:max-w-[70vw] open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-none border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:border-y-0 sm:border-r-0 sm:shadow-none',
 	]}
 >
-	<div class="panel-modal-header panel-modal-header--shadow">
-		<div class="panel-modal-header__row">
-			<div class="panel-modal-header__leading">
-				<div class="panel-modal-header__icon">
-					<span class="material-symbols-rounded">settings</span>
+	{
+		isPage ? (
+			<div class="settings-page-header">
+				<div class="settings-page-header__text">
+					<h2 class="settings-page-header__title">Ajustes</h2>
+					<p class="settings-page-header__subtitle">Perfil y preferencias de la cuenta.</p>
 				</div>
-				<div class="panel-modal-header__text">
-					<h2 class="panel-modal-header__title">Ajustes</h2>
-					<p class="panel-modal-header__subtitle">Perfil y preferencias de la cuenta.</p>
-				</div>
-			</div>
-			<div class="panel-modal-header__actions">
 				<button
 					type="button"
 					class="settings-toolbar-help inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-(--shell-border) bg-(--surface-bright) px-3 text-[0.82rem] font-bold text-(--on-surface) transition focus:outline-none focus:ring-2 focus:ring-(--primary)/25"
@@ -72,14 +68,38 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 					<span class="material-symbols-rounded text-[1.12rem]">help</span>
 					<span class="hidden sm:inline">Guía</span>
 				</button>
-				{isPage ? null : (
-					<button type="button" class="panel-modal-header__close" data-settings-close aria-label="Cerrar">
-						<span class="material-symbols-rounded">close</span>
-					</button>
-				)}
 			</div>
-		</div>
-	</div>
+		) : (
+			<div class="panel-modal-header panel-modal-header--shadow">
+				<div class="panel-modal-header__row">
+					<div class="panel-modal-header__leading">
+						<div class="panel-modal-header__icon">
+							<span class="material-symbols-rounded">settings</span>
+						</div>
+						<div class="panel-modal-header__text">
+							<h2 class="panel-modal-header__title">Ajustes</h2>
+							<p class="panel-modal-header__subtitle">Perfil y preferencias de la cuenta.</p>
+						</div>
+					</div>
+					<div class="panel-modal-header__actions">
+						<button
+							type="button"
+							class="settings-toolbar-help inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-(--shell-border) bg-(--surface-bright) px-3 text-[0.82rem] font-bold text-(--on-surface) transition focus:outline-none focus:ring-2 focus:ring-(--primary)/25"
+							data-settings-modal-tour-help
+							aria-label="Guía de la sección actual"
+							hidden
+						>
+							<span class="material-symbols-rounded text-[1.12rem]">help</span>
+							<span class="hidden sm:inline">Guía</span>
+						</button>
+						<button type="button" class="panel-modal-header__close" data-settings-close aria-label="Cerrar">
+							<span class="material-symbols-rounded">close</span>
+						</button>
+					</div>
+				</div>
+			</div>
+		)
+	}
 
 	<div
 		class:list={[
@@ -128,6 +148,9 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 						</>
 					) : null
 				}
+				<button type="button" data-settings-tab-trigger data-settings-tab="legal" class="settings-tab">
+					<span class="material-symbols-rounded">balance</span>Ayuda y legal
+				</button>
 			</div>
 			<div class="settings-tabs-scroll-edge" aria-hidden="true"></div>
 		</nav>
@@ -167,29 +190,35 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 					<span>Cargando ajustes...</span>
 				</div>
 			</div>
-			<section data-settings-panel="profile" class="grid gap-6">
-				<form id="settings-profile-form" data-settings-profile-form class="grid gap-5">
-					<div class="settings-profile-hero settings-profile-hero--top" data-settings-tour-photo>
-						<div class="profile-photo-uploader" data-settings-profile-dropzone>
-							<div class="profile-photo-uploader__stack">
-								<div class="profile-photo-uploader__avatar-wrap">
-									<div class="profile-photo-uploader__avatar">
-										<img
-											data-settings-profile-preview
-											alt="Foto de perfil personal"
-											class="absolute inset-0 hidden h-full w-full rounded-full object-cover object-center"
-										/>
-										<div class="absolute inset-0 grid place-items-center" data-settings-profile-placeholder>
-											<span class="material-symbols-rounded text-[2rem] sm:text-[2.15rem]">account_circle</span>
+			<section data-settings-panel="profile" class="grid gap-4">
+				<form id="settings-profile-form" data-settings-profile-form class="grid gap-4">
+					<div class="settings-card settings-photo-card" data-settings-tour-photo>
+						<div class="settings-card__intro">
+							<h3 class="settings-card__title">Foto de perfil</h3>
+							<p class="settings-card__hint">Información básica de tu cuenta</p>
+						</div>
+						<div class="settings-photo-card__actions">
+							<div class="profile-photo-uploader" data-settings-profile-dropzone>
+								<div class="profile-photo-uploader__stack">
+									<div class="profile-photo-uploader__avatar-wrap">
+										<div class="profile-photo-uploader__avatar">
+											<img
+												data-settings-profile-preview
+												alt="Foto de perfil personal"
+												class="absolute inset-0 hidden h-full w-full rounded-full object-cover object-center"
+											/>
+											<div class="absolute inset-0 grid place-items-center" data-settings-profile-placeholder>
+												<span class="material-symbols-rounded text-[2rem] sm:text-[2.15rem]">account_circle</span>
+											</div>
 										</div>
-									</div>
-									<label
-										for="settings-profile-image-input"
-										class="profile-photo-uploader__edit"
-										aria-label="Cambiar foto personal. JPG o PNG, máximo 2 MB"
-										title="Cambiar foto"
-									>
-										<span class="material-symbols-rounded">edit</span>
+										<label
+											for="settings-profile-image-input"
+											class="profile-photo-uploader__edit"
+											aria-label="Cambiar foto personal. JPG o PNG, máximo 2 MB"
+											title="Cambiar foto"
+										>
+											<span class="material-symbols-rounded">edit</span>
+										</label>
 										<input
 											id="settings-profile-image-input"
 											type="file"
@@ -197,20 +226,27 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 											accept=".jpg,.jpeg,.png"
 											class="sr-only"
 										/>
-									</label>
+									</div>
 								</div>
 							</div>
+							<div class="settings-photo-card__meta">
+								<label
+									for="settings-profile-image-input"
+									class="settings-photo-change-btn"
+								>
+									Cambiar imagen
+								</label>
+								<p class="settings-profile-photo-hint">JPG o PNG, máximo 2 MB</p>
+							</div>
 						</div>
-						<p class="settings-profile-photo-label">Foto personal</p>
-						<p class="settings-profile-photo-hint">JPG o PNG, máximo 2 MB</p>
 					</div>
 
-					<div class="grid gap-5 border-t border-(--shell-border) border-dashed pt-4">
-						<div class="grid gap-1">
-							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Información personal</h3>
-							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Solo para tu cuenta y acceso interno.</p>
+					<div class="settings-card grid gap-5">
+						<div class="settings-card__intro">
+							<h3 class="settings-card__title">Información personal</h3>
+							<p class="settings-card__hint">Solo para tu cuenta y acceso interno.</p>
 						</div>
-						<div class="grid gap-5 sm:grid-cols-2">
+						<div class="settings-card__fields grid gap-5 sm:grid-cols-2">
 							<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"><span>Nombre <span class="text-rose-500">*</span></span><input name="first_name" maxlength="50" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
 							<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"><span>Apellido <span class="text-rose-500">*</span></span><input name="last_name" maxlength="50" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
 						</div>
@@ -218,7 +254,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 
 						{!isAdmin ? (
 							<div
-								class="settings-push-card rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-4 shadow-sm"
+								class="settings-push-card settings-row"
 								data-settings-push-notifications
 							>
 								<div class="flex items-start justify-between gap-4">
@@ -254,10 +290,10 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 						) : null}
 					</div>
 
-					<div class="grid gap-5 border-t border-(--shell-border) border-dashed pt-6">
-						<div class="grid gap-1">
-							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Perfil público personal</h3>
-							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">
+					<div class="settings-card grid gap-5">
+						<div class="settings-card__intro">
+							<h3 class="settings-card__title">Perfil público personal</h3>
+							<p class="settings-card__hint">
 								Tu enlace único y contacto para compartir en Hasel. La foto visible en la agenda de cada negocio la gestiona el administrador.
 							</p>
 						</div>
@@ -320,65 +356,101 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 				</form>
 			</section>
 
-			<section data-settings-panel="security" class="settings-panel hidden gap-6">
-				<form id="settings-security-form" data-settings-security-form class="grid gap-8">
-					<div class="grid gap-5">
-						<div class="grid gap-1">
-							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Cambio de contraseña</h3>
-							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Asegúrate de usar una contraseña fuerte y segura.</p>
+			<section data-settings-panel="security" class="settings-panel hidden gap-4">
+				<div class="settings-card">
+					<div class="settings-row">
+						<div class="settings-row__icon" aria-hidden="true">
+							<span class="material-symbols-rounded">key</span>
 						</div>
-					<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-						<span>Contraseña actual <span class="text-rose-500">*</span></span>
-						<input
-							type="password"
-							name="current_password"
-							autocomplete="current-password"
-							required
-							class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-						/>
-						<a
-							href="/auth/forgot-password"
-							class="justify-self-start text-[0.85rem] font-semibold text-(--primary) no-underline transition hover:underline"
+						<div class="settings-row__text">
+							<h3 class="settings-card__title">Cambiar contraseña</h3>
+							<p class="settings-card__hint">Actualizá tu contraseña con regularidad para mayor seguridad</p>
+						</div>
+						<button
+							type="button"
+							class="settings-row__action"
+							data-settings-password-toggle
+							aria-expanded="false"
+							aria-controls="settings-security-form"
 						>
-							¿Olvidaste tu contraseña?
-						</a>
-					</label>
-					<div class="grid gap-5 sm:grid-cols-2">
-						<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-						<span>Nueva contraseña <span class="text-rose-500">*</span></span>
-						<input
-							type="password"
-							name="new_password"
-							autocomplete="new-password"
-							required
-							minlength="8"
-							class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-						/>
-					</label>
-						<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-						<span>Confirmar nueva contraseña <span class="text-rose-500">*</span></span>
-						<input
-							type="password"
-							name="confirm_password"
-							autocomplete="new-password"
-							required
-							minlength="8"
-							class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-						/>
-					</label>
+							Cambiar
+						</button>
 					</div>
-					<p class="settings-field__help text-[0.85rem] font-medium text-(--on-surface-variant) -mt-2">
-						La nueva contraseña debe tener al menos 8 caracteres.
+					<form
+						id="settings-security-form"
+						data-settings-security-form
+						class="settings-password-form hidden grid gap-5"
+						data-settings-password-form
+					>
+						<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+							<span>Contraseña actual <span class="text-rose-500">*</span></span>
+							<input
+								type="password"
+								name="current_password"
+								autocomplete="current-password"
+								required
+								class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+							/>
+							<a
+								href="/auth/forgot-password"
+								class="justify-self-start text-[0.85rem] font-semibold text-(--primary) no-underline transition hover:underline"
+							>
+								¿Olvidaste tu contraseña?
+							</a>
+						</label>
+						<div class="grid gap-5 sm:grid-cols-2">
+							<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+								<span>Nueva contraseña <span class="text-rose-500">*</span></span>
+								<input
+									type="password"
+									name="new_password"
+									autocomplete="new-password"
+									required
+									minlength="8"
+									class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+								/>
+							</label>
+							<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+								<span>Confirmar nueva contraseña <span class="text-rose-500">*</span></span>
+								<input
+									type="password"
+									name="confirm_password"
+									autocomplete="new-password"
+									required
+									minlength="8"
+									class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+								/>
+							</label>
+						</div>
+						<p class="settings-field__help text-[0.85rem] font-medium text-(--on-surface-variant) -mt-2">
+							La nueva contraseña debe tener al menos 8 caracteres.
+						</p>
+					</form>
+				</div>
+
+				<div class="settings-card settings-sessions-card" data-settings-sessions>
+					<div class="settings-card__intro">
+						<h3 class="settings-card__title">Sesiones activas</h3>
+						<p class="settings-card__hint">Dispositivos donde está iniciada tu cuenta</p>
+					</div>
+					<div class="settings-sessions-loading hidden" data-settings-sessions-loading>
+						<span class="material-symbols-rounded animate-spin">progress_activity</span>
+						<span>Cargando sesiones…</span>
+					</div>
+					<p class="settings-sessions-error hidden" data-settings-sessions-error role="alert"></p>
+					<ul class="settings-sessions-list" data-settings-sessions-list></ul>
+					<p class="settings-sessions-empty hidden" data-settings-sessions-empty>
+						No hay otras sesiones activas.
 					</p>
-					</div>
-				</form>
+					<p class="settings-sessions-footnote hidden" data-settings-sessions-footnote></p>
+				</div>
 			</section>
 
-			<section data-settings-panel="preferences" class="settings-panel hidden gap-8">
-				<form id="settings-preferences-form" data-settings-preferences-form class="grid gap-6">
-					<div class="grid gap-1">
-						<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Tu panel de control</h3>
-						<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Personaliza la apariencia y el comportamiento de tu vista.</p>
+			<section data-settings-panel="preferences" class="settings-panel hidden gap-4">
+				<form id="settings-preferences-form" data-settings-preferences-form class="settings-card grid gap-5">
+					<div class="settings-card__intro">
+						<h3 class="settings-card__title">Tu panel de control</h3>
+						<p class="settings-card__hint">Personalizá la apariencia y el comportamiento de tu vista.</p>
 					</div>
 					<div class="grid gap-5">
 						<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"><span>Tema del panel <span class="text-rose-500">*</span></span>
@@ -395,10 +467,10 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 
 				{
 					isAdmin ? (
-						<div class="grid gap-3 border-t border-(--shell-border) border-dashed pt-8">
+						<div class="settings-card grid gap-3">
 							<a
 								href="/panel/perfil-publico"
-								class="flex items-start gap-3 rounded-2xl border border-(--shell-border) bg-(--control-surface) px-4 py-3.5 transition hover:border-(--primary)/40 hover:bg-(--surface-bright)"
+								class="settings-row no-underline"
 							>
 								<span class="material-symbols-rounded mt-0.5 text-(--primary)" aria-hidden="true">public</span>
 								<span class="grid min-w-0 gap-0.5">
@@ -418,11 +490,11 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			{
 				isAdmin ? (
 					<>
-						<section data-settings-panel="workspace" class="settings-panel hidden gap-6">
-							<form id="settings-workspace-form" data-settings-workspace-form class="grid gap-6">
-								<div class="grid gap-1">
-									<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Información del negocio</h3>
-									<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Detalles principales de tu organización.</p>
+						<section data-settings-panel="workspace" class="settings-panel hidden gap-4">
+							<form id="settings-workspace-form" data-settings-workspace-form class="settings-card grid gap-6">
+								<div class="settings-card__intro">
+									<h3 class="settings-card__title">Información del negocio</h3>
+									<p class="settings-card__hint">Detalles principales de tu organización.</p>
 								</div>
 								<div class="grid gap-5">
 									<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"><span>Nombre del negocio <span class="text-rose-500">*</span></span><input name="name" maxlength="100" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
@@ -487,7 +559,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 
 						{
 							showPaymentsTab ? (
-								<section data-settings-panel="payments" class="settings-panel hidden gap-6">
+								<section data-settings-panel="payments" class="settings-panel hidden gap-4">
 									<div
 										data-payments-loading
 										class="hidden grid place-items-center gap-2 py-10 text-(--on-surface-variant)"
@@ -496,10 +568,10 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 										<span class="text-[0.9rem] font-semibold">Cargando cobros…</span>
 									</div>
 
-									<form id="settings-payments-form" data-settings-payments-form data-payments-body class="hidden grid gap-6">
-										<div class="grid gap-1">
-											<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Cobro de señas</h3>
-											<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">
+									<form id="settings-payments-form" data-settings-payments-form data-payments-body class="settings-card hidden grid gap-6">
+										<div class="settings-card__intro">
+											<h3 class="settings-card__title">Cobro de señas</h3>
+											<p class="settings-card__hint">
 												Asegurá tus turnos cobrando una seña por transferencia bancaria (SIPAP) directamente a tu cuenta.
 											</p>
 										</div>
@@ -638,8 +710,8 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 							) : null
 						}
 
-						<section data-settings-panel="system" class="settings-panel hidden gap-6">
-							<form id="settings-system-form" data-settings-system-form class="grid gap-6">
+						<section data-settings-panel="system" class="settings-panel hidden gap-4">
+							<form id="settings-system-form" data-settings-system-form class="settings-card grid gap-6">
 								<div class="grid gap-8">
 									<div class="grid gap-5">
 										<div class="grid gap-1">
@@ -878,10 +950,10 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 
 						{
 							showPlanTab ? (
-						<section data-settings-panel="plan" class="settings-panel hidden gap-6">
-							<div class="grid gap-1">
-								<h4 class="text-[0.98rem] font-bold text-(--on-surface)">Plan y suscripción</h4>
-								<p class="text-[0.85rem] font-medium text-(--on-surface-variant)">
+						<section data-settings-panel="plan" class="settings-panel hidden gap-4">
+							<div class="settings-card__intro">
+								<h3 class="settings-card__title">Plan y suscripción</h3>
+								<p class="settings-card__hint">
 									Estado de tu suscripción, uso de almacenamiento y funciones incluidas.
 								</p>
 							</div>
@@ -959,9 +1031,9 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 									href="/panel/plan"
 									data-astro-reload
 									data-astro-prefetch="false"
-									class="inline-flex items-center justify-center gap-2 rounded-full bg-(--primary) px-5 py-3 text-[0.9rem] font-bold text-white no-underline transition hover:brightness-105"
+									class="inline-flex w-fit items-center justify-center gap-2 justify-self-start rounded-full bg-(--primary) px-4 py-2 text-[0.82rem] font-bold text-white no-underline transition hover:brightness-105"
 								>
-									<span class="material-symbols-rounded text-[1.1rem]">workspace_premium</span>
+									<span class="material-symbols-rounded text-[1.05rem]">workspace_premium</span>
 									Gestionar plan y facturación
 								</a>
 							</div>
@@ -971,6 +1043,66 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 					</>
 				) : null
 			}
+
+			<section data-settings-panel="legal" class="settings-panel hidden gap-4">
+				<div class="settings-card settings-legal-list">
+					<button type="button" class="settings-row settings-row--link" data-atc-button>
+						<span class="settings-row__icon" aria-hidden="true">
+							<span class="material-symbols-rounded">help</span>
+						</span>
+						<span class="settings-row__text">
+							<span class="settings-card__title">Centro de ayuda</span>
+							<span class="settings-card__hint">Preguntas frecuentes y asistencia en el panel</span>
+						</span>
+						<span class="material-symbols-rounded settings-row__chevron" aria-hidden="true">chevron_right</span>
+					</button>
+					<a href="/politicas-y-privacidad" target="_blank" rel="noopener noreferrer" class="settings-row settings-row--link no-underline">
+						<span class="settings-row__icon" aria-hidden="true">
+							<span class="material-symbols-rounded">policy</span>
+						</span>
+						<span class="settings-row__text">
+							<span class="settings-card__title">Políticas y privacidad</span>
+							<span class="settings-card__hint">Cómo protegemos tus datos</span>
+						</span>
+						<span class="material-symbols-rounded settings-row__chevron" aria-hidden="true">open_in_new</span>
+					</a>
+					<a href="/terminos-y-condiciones" target="_blank" rel="noopener noreferrer" class="settings-row settings-row--link no-underline">
+						<span class="settings-row__icon" aria-hidden="true">
+							<span class="material-symbols-rounded">description</span>
+						</span>
+						<span class="settings-row__text">
+							<span class="settings-card__title">Términos y condiciones</span>
+							<span class="settings-card__hint">Condiciones de uso de Hasel</span>
+						</span>
+						<span class="material-symbols-rounded settings-row__chevron" aria-hidden="true">open_in_new</span>
+					</a>
+					<a href="/politicas-de-cancelacion-y-reembolso" target="_blank" rel="noopener noreferrer" class="settings-row settings-row--link no-underline">
+						<span class="settings-row__icon" aria-hidden="true">
+							<span class="material-symbols-rounded">replay</span>
+						</span>
+						<span class="settings-row__text">
+							<span class="settings-card__title">Cancelación y reembolso</span>
+							<span class="settings-card__hint">Señas SIPAP y políticas Flexible, Moderada y Estricta</span>
+						</span>
+						<span class="material-symbols-rounded settings-row__chevron" aria-hidden="true">open_in_new</span>
+					</a>
+					<a href="mailto:support@hasel.app" class="settings-row settings-row--link no-underline">
+						<span class="settings-row__icon" aria-hidden="true">
+							<span class="material-symbols-rounded">chat</span>
+						</span>
+						<span class="settings-row__text">
+							<span class="settings-card__title">Contactar soporte</span>
+							<span class="settings-card__hint">Escribinos a support@hasel.app</span>
+						</span>
+						<span class="material-symbols-rounded settings-row__chevron" aria-hidden="true">mail</span>
+					</a>
+				</div>
+				<p class="settings-legal-footnote">
+					Hasel versión {appVersion}
+					<span aria-hidden="true"> · </span>
+					© {new Date().getFullYear()} Hasel. Todos los derechos reservados.
+				</p>
+			</section>
 		</div>
 		<div class="settings-content-scroll-edge" aria-hidden="true"></div>
 		<p class="settings-content-scroll-hint" aria-hidden="true">
@@ -1532,6 +1664,20 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			if (copyOrgHubBtn && this.contains(copyOrgHubBtn)) {
 				event.preventDefault();
 				void this.copyOrgHubUrl(copyOrgHubBtn);
+				return;
+			}
+
+			const passwordToggle = target.closest<HTMLButtonElement>('[data-settings-password-toggle]');
+			if (passwordToggle && this.contains(passwordToggle)) {
+				event.preventDefault();
+				this.setPasswordFormOpen(!this.isPasswordFormOpen());
+				return;
+			}
+
+			const revokeSessionBtn = target.closest<HTMLButtonElement>('[data-settings-session-revoke]');
+			if (revokeSessionBtn && this.contains(revokeSessionBtn)) {
+				event.preventDefault();
+				void this.revokeSession(revokeSessionBtn);
 				return;
 			}
 
@@ -2292,6 +2438,8 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			if (tabId === 'preferences') this.syncPanelThemeSelect();
 			if (tabId === 'plan') void this.loadSubscription();
 			if (tabId === 'payments') void this.loadPayments();
+			if (tabId === 'security') void this.loadSessions();
+			else this.setPasswordFormOpen(false);
 			this.syncTourHelpVisibility(tabId);
 			this.syncSettingsActions(tabId);
 			this.syncTabInUrl(tabId);
@@ -2315,9 +2463,29 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			});
 
 			const hasFooter = Boolean(dock.querySelector(`[data-settings-footer="${tabId}"]`));
-			const hideDock = !hasFooter || (tabId === 'payments' && this.shouldHidePaymentsFooter());
+			const hideDock =
+				!hasFooter ||
+				(tabId === 'payments' && this.shouldHidePaymentsFooter()) ||
+				(tabId === 'security' && !this.isPasswordFormOpen());
 			dock.classList.toggle('hidden', hideDock);
 			dock.hidden = hideDock;
+		}
+
+		private isPasswordFormOpen() {
+			const form = this.querySelector<HTMLElement>('[data-settings-password-form]');
+			return Boolean(form && !form.classList.contains('hidden'));
+		}
+
+		private setPasswordFormOpen(open: boolean) {
+			const form = this.querySelector<HTMLElement>('[data-settings-password-form]');
+			const toggle = this.querySelector<HTMLButtonElement>('[data-settings-password-toggle]');
+			if (form) form.classList.toggle('hidden', !open);
+			if (toggle) {
+				toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+				toggle.textContent = open ? 'Cancelar' : 'Cambiar';
+			}
+			if (!open) this.resetSecurityForm();
+			if (this.getActiveTabId() === 'security') this.syncSettingsActions('security');
 		}
 
 		private syncTourHelpVisibility(tabId = this.getActiveTabId()) {
@@ -2334,6 +2502,157 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			if (current) current.value = '';
 			if (next) next.value = '';
 			if (confirm) confirm.value = '';
+		}
+
+		private formatRelativeTime(iso: string) {
+			const date = new Date(iso);
+			if (Number.isNaN(date.getTime())) return '';
+			const diffMs = Date.now() - date.getTime();
+			const minutes = Math.round(diffMs / 60000);
+			if (minutes < 1) return 'hace un momento';
+			if (minutes < 60) return `hace ${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}`;
+			const hours = Math.round(minutes / 60);
+			if (hours < 24) return `hace ${hours} ${hours === 1 ? 'hora' : 'horas'}`;
+			const days = Math.round(hours / 24);
+			if (days < 30) return `hace ${days} ${days === 1 ? 'día' : 'días'}`;
+			return date.toLocaleDateString('es-PY', { day: 'numeric', month: 'short', year: 'numeric' });
+		}
+
+		private describeUserAgent(userAgent: string) {
+			const ua = String(userAgent || '').trim();
+			if (!ua) return { device: 'Dispositivo desconocido', detail: '' };
+			const browser = /Edg\//.test(ua)
+				? 'Edge'
+				: /OPR\/|Opera/.test(ua)
+					? 'Opera'
+					: /Chrome\//.test(ua) && !/Edg\//.test(ua)
+						? 'Chrome'
+						: /Firefox\//.test(ua)
+							? 'Firefox'
+							: /Safari\//.test(ua) && !/Chrome\//.test(ua)
+								? 'Safari'
+								: 'Navegador';
+			const os = /iPhone|iPad|iPod/.test(ua)
+				? /iPad/.test(ua) ? 'iPad' : 'iPhone'
+				: /Android/.test(ua)
+					? 'Android'
+					: /Windows/.test(ua)
+						? 'Windows'
+						: /Mac OS X/.test(ua)
+							? 'Mac'
+							: /Linux/.test(ua)
+								? 'Linux'
+								: '';
+			return {
+				device: os ? `${browser} en ${os}` : browser,
+				detail: '',
+			};
+		}
+
+		private async loadSessions() {
+			const list = this.querySelector<HTMLElement>('[data-settings-sessions-list]');
+			const loading = this.querySelector<HTMLElement>('[data-settings-sessions-loading]');
+			const error = this.querySelector<HTMLElement>('[data-settings-sessions-error]');
+			const empty = this.querySelector<HTMLElement>('[data-settings-sessions-empty]');
+			const footnote = this.querySelector<HTMLElement>('[data-settings-sessions-footnote]');
+			if (!list) return;
+
+			loading?.classList.remove('hidden');
+			error?.classList.add('hidden');
+			empty?.classList.add('hidden');
+			footnote?.classList.add('hidden');
+			list.replaceChildren();
+
+			try {
+				const data = await this.requestApi(
+					'/api/profile/sessions',
+					{ method: 'GET', headers: { Accept: 'application/json' } },
+					'No fue posible cargar las sesiones activas.'
+				);
+				const sessions = Array.isArray((data as { data?: unknown })?.data)
+					? ((data as { data: Array<Record<string, unknown>> }).data)
+					: Array.isArray((data as { sessions?: unknown }).sessions)
+						? ((data as { sessions: Array<Record<string, unknown>> }).sessions)
+						: [];
+
+				loading?.classList.add('hidden');
+				if (!sessions.length) {
+					empty?.classList.remove('hidden');
+					if (empty) empty.textContent = 'No hay sesiones activas.';
+					return;
+				}
+
+				for (const session of sessions) {
+					const family = String(session.session_family || session.id || '').trim();
+					const isCurrent = Boolean(session.is_current);
+					const ua = this.describeUserAgent(String(session.user_agent || ''));
+					const lastSeen = String(session.last_seen_at || session.created_at || '');
+					const item = document.createElement('li');
+					item.className = 'settings-session-item';
+					item.innerHTML = `
+						<span class="settings-row__icon" aria-hidden="true"><span class="material-symbols-rounded">devices</span></span>
+						<div class="settings-row__text">
+							<div class="settings-session-item__title">
+								<span>${ua.device}</span>
+								${isCurrent ? '<span class="settings-session-badge">Actual</span>' : ''}
+							</div>
+							<p class="settings-card__hint">${lastSeen ? `Última actividad ${this.formatRelativeTime(lastSeen)}` : 'Sesión activa'}</p>
+						</div>
+						${
+							isCurrent
+								? ''
+								: `<button type="button" class="settings-session-revoke" data-settings-session-revoke data-session-family="${family}">Cerrar sesión</button>`
+						}
+					`;
+					list.appendChild(item);
+				}
+
+				const current = sessions.find((session) => session.is_current);
+				if (current && footnote) {
+					const ua = this.describeUserAgent(String(current.user_agent || ''));
+					const lastSeen = String(current.last_seen_at || current.created_at || '');
+					footnote.textContent = lastSeen
+						? `Último acceso: ${this.formatRelativeTime(lastSeen)} · ${ua.device}`
+						: `Esta sesión: ${ua.device}`;
+					footnote.classList.remove('hidden');
+				}
+			} catch (caught) {
+				loading?.classList.add('hidden');
+				if (error) {
+					error.textContent =
+						caught instanceof Error ? caught.message : 'No fue posible cargar las sesiones activas.';
+					error.classList.remove('hidden');
+				}
+			}
+		}
+
+		private async revokeSession(button: HTMLButtonElement) {
+			const family = String(button.dataset.sessionFamily || '').trim();
+			if (!family) return;
+			if (!window.confirm('¿Cerrar esta sesión? El dispositivo tendrá que volver a iniciar sesión.')) {
+				return;
+			}
+			button.disabled = true;
+			try {
+				await this.requestApi(
+					'/api/profile/sessions/revoke',
+					{
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+						body: JSON.stringify({ session_family: family }),
+					},
+					'No fue posible cerrar esa sesión.'
+				);
+				this.showFeedback('security', 'Sesión cerrada correctamente.', 'success');
+				await this.loadSessions();
+			} catch (caught) {
+				button.disabled = false;
+				this.showFeedback(
+					'security',
+					caught instanceof Error ? caught.message : 'No fue posible cerrar esa sesión.',
+					'error'
+				);
+			}
 		}
 
 		private fillProfile(profile: any) {
@@ -3426,6 +3745,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 					'success'
 				);
 				this.resetSecurityForm();
+				this.setPasswordFormOpen(false);
 			} catch (error) {
 				this.showFeedback(
 					'security',
@@ -3815,17 +4135,317 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 		to { opacity: 0; transform: translateX(100%); }
 	}
 
+	.settings-page-header {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 1rem;
+		padding: 0.15rem 0 1.15rem;
+	}
+
+	.settings-page-header__title {
+		margin: 0;
+		font-size: 1.55rem;
+		font-weight: 800;
+		letter-spacing: -0.03em;
+		color: var(--on-surface);
+	}
+
+	.settings-page-header__subtitle {
+		margin: 0.25rem 0 0;
+		font-size: 0.92rem;
+		font-weight: 500;
+		color: var(--on-surface-variant);
+	}
+
+	.settings-card {
+		display: grid;
+		gap: 1.1rem;
+		padding: 1.2rem 1.25rem;
+		border: 1px solid var(--shell-border);
+		border-radius: 1.15rem;
+		background: var(--surface-bright);
+	}
+
+	.settings-card__intro {
+		display: grid;
+		gap: 0.2rem;
+	}
+
+	.settings-card__title {
+		margin: 0;
+		font-size: 0.98rem;
+		font-weight: 750;
+		color: var(--on-surface);
+	}
+
+	.settings-card__hint {
+		margin: 0;
+		font-size: 0.84rem;
+		font-weight: 500;
+		line-height: 1.45;
+		color: var(--on-surface-variant);
+	}
+
+	.settings-card__fields {
+		min-width: 0;
+	}
+
+	.settings-row {
+		display: flex;
+		align-items: center;
+		gap: 0.85rem;
+		min-width: 0;
+	}
+
+	.settings-row__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.35rem;
+		height: 2.35rem;
+		flex: 0 0 auto;
+		border-radius: 0.8rem;
+		background: color-mix(in srgb, var(--primary) 10%, var(--surface-container-low));
+		color: var(--primary);
+	}
+
+	.settings-row__icon .material-symbols-rounded {
+		font-size: 1.2rem;
+	}
+
+	.settings-row__text {
+		display: grid;
+		gap: 0.15rem;
+		min-width: 0;
+		flex: 1 1 auto;
+	}
+
+	.settings-row__action,
+	.settings-photo-change-btn,
+	.settings-session-revoke {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex: 0 0 auto;
+		min-height: 2.25rem;
+		padding: 0.45rem 0.95rem;
+		border-radius: 999px;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		font-size: 0.82rem;
+		font-weight: 750;
+		color: var(--on-surface);
+		cursor: pointer;
+		transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+	}
+
+	.settings-row__action:hover,
+	.settings-photo-change-btn:hover {
+		background: var(--surface-container-high);
+		border-color: color-mix(in srgb, var(--primary) 28%, var(--shell-border));
+	}
+
+	.settings-session-revoke {
+		border-color: transparent;
+		background: transparent;
+		color: #e11d48;
+	}
+
+	.settings-session-revoke:hover {
+		background: color-mix(in srgb, #e11d48 8%, transparent);
+	}
+
+	.settings-row--link {
+		padding: 0.85rem 0.75rem;
+		margin: 0 -0.6rem;
+		width: calc(100% + 1.2rem);
+		border: 0;
+		border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 80%, transparent);
+		background: transparent;
+		text-align: left;
+		color: inherit;
+		cursor: pointer;
+		border-radius: 0.85rem;
+		transition: background 160ms ease;
+	}
+
+	.settings-legal-list > .settings-row--link:last-child {
+		border-bottom: 0;
+	}
+
+	.settings-row--link:hover {
+		background: color-mix(in srgb, var(--on-surface) 5%, transparent);
+		color: inherit;
+	}
+
+	.settings-row--link:hover .settings-row__chevron {
+		color: var(--on-surface);
+	}
+
+	.settings-row__chevron {
+		margin-left: auto;
+		color: var(--on-surface-variant);
+		font-size: 1.2rem;
+	}
+
+	.settings-photo-card {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem 1.5rem;
+	}
+
+	.settings-photo-card__actions {
+		display: flex;
+		align-items: center;
+		gap: 0.9rem;
+	}
+
+	.settings-photo-card__meta {
+		display: grid;
+		gap: 0.25rem;
+	}
+
+	.settings-password-form {
+		padding-top: 0.35rem;
+		border-top: 1px solid var(--shell-border);
+	}
+
+	.settings-password-form.hidden {
+		display: none;
+	}
+
+	.settings-sessions-list {
+		display: grid;
+		gap: 0;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.settings-session-item {
+		display: flex;
+		align-items: center;
+		gap: 0.85rem;
+		padding: 0.95rem 0;
+		border-top: 1px solid color-mix(in srgb, var(--shell-border) 80%, transparent);
+	}
+
+	.settings-session-item:first-child {
+		border-top: 0;
+		padding-top: 0.2rem;
+	}
+
+	.settings-session-item__title {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.45rem;
+		font-size: 0.95rem;
+		font-weight: 750;
+		color: var(--on-surface);
+	}
+
+	.settings-session-badge {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.1rem 0.5rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, #16a34a 14%, transparent);
+		color: #15803d;
+		font-size: 0.68rem;
+		font-weight: 800;
+		letter-spacing: 0.02em;
+		text-transform: uppercase;
+	}
+
+	.settings-sessions-loading,
+	.settings-sessions-error,
+	.settings-sessions-empty,
+	.settings-sessions-footnote,
+	.settings-legal-footnote {
+		margin: 0;
+		font-size: 0.84rem;
+		font-weight: 550;
+		color: var(--on-surface-variant);
+	}
+
+	.settings-sessions-loading:not(.hidden) {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+	}
+
+	.settings-sessions-loading.hidden,
+	.settings-sessions-error.hidden,
+	.settings-sessions-empty.hidden,
+	.settings-sessions-footnote.hidden {
+		display: none;
+	}
+
+	.settings-sessions-error {
+		color: #be123c;
+	}
+
+	.settings-legal-footnote {
+		padding: 0.25rem 0.35rem 0;
+		text-align: center;
+	}
+
 	@media (min-width: 769px) {
 		.settings-layout {
 			flex-direction: row;
+			align-items: flex-start;
+			gap: 1.25rem;
 		}
 
 		.settings-nav {
-			width: 15rem;
+			width: 15.5rem;
 			overflow-y: auto;
 			border-bottom: 0;
 			border-right: 1px solid var(--shell-border);
 			padding: 1.25rem;
+		}
+
+		.settings-page .settings-layout {
+			background: transparent;
+			box-shadow: none;
+			gap: 1.5rem;
+		}
+
+		.settings-page .settings-nav {
+			position: sticky;
+			top: 1rem;
+			width: 16rem;
+			border: 1px solid var(--shell-border);
+			border-radius: 1.25rem;
+			background: var(--surface-bright);
+			padding: 0.7rem;
+		}
+
+		.settings-page .settings-tab {
+			border-radius: 0.85rem;
+		}
+
+		.settings-page .settings-tab.is-active {
+			box-shadow: none;
+		}
+
+		.settings-page .settings-content-shell {
+			min-width: 0;
+			flex: 1 1 auto;
+		}
+
+		.settings-page .settings-content {
+			padding: 0 0 1.5rem;
+		}
+
+		.settings-page .settings-actions {
+			border: 1px solid var(--shell-border);
+			border-radius: 1.15rem;
+			margin-top: 0.75rem;
 		}
 
 		.settings-content {
@@ -4534,6 +5154,27 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 		font-size: 0.74rem;
 		font-weight: 500;
 		color: var(--on-surface-variant);
+	}
+
+	.settings-photo-card .profile-photo-uploader {
+		justify-content: flex-start;
+		padding: 0;
+	}
+
+	.settings-photo-card .profile-photo-uploader__stack {
+		width: auto;
+	}
+
+	@media (min-width: 640px) {
+		.settings-photo-card .profile-photo-uploader__edit {
+			display: none;
+		}
+	}
+
+	@media (max-width: 639px) {
+		.settings-photo-change-btn {
+			display: none;
+		}
 	}
 
 	[data-settings-modal] .profile-photo-uploader {

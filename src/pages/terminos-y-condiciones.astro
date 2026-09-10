@@ -1,0 +1,255 @@
+---
+import Layout from '../layouts/Layout.astro';
+import '../styles/global.css';
+import '../styles/legal-page.css';
+
+const updatedAt = '9 de septiembre de 2026';
+const pageTitle = 'Términos y condiciones - Hasel';
+const pageDescription =
+	'Condiciones de uso de Hasel: cuentas, reservas, señas SIPAP, responsabilidades y límites del servicio.';
+
+const toc = [
+	{ id: 'aceptacion', label: 'Aceptación' },
+	{ id: 'servicio', label: 'El servicio' },
+	{ id: 'cuentas', label: 'Cuentas y negocios' },
+	{ id: 'reservas', label: 'Reservas y clientes' },
+	{ id: 'senas', label: 'Señas y cobros' },
+	{ id: 'uso-aceptable', label: 'Uso aceptable' },
+	{ id: 'propiedad', label: 'Propiedad intelectual' },
+	{ id: 'responsabilidad', label: 'Responsabilidad' },
+	{ id: 'suspension', label: 'Suspensión y cierre' },
+	{ id: 'cambios', label: 'Cambios y contacto' },
+] as const;
+---
+
+<Layout
+	pageTitle={pageTitle}
+	metaDescription={pageDescription}
+	canonicalPath="/terminos-y-condiciones"
+>
+	<main class="policy-root">
+		<a href="#policy-content" class="policy-skip-link">Saltar al contenido principal</a>
+		<div class="policy-scroll-sentinel" data-scroll-sentinel aria-hidden="true"></div>
+
+		<header class="policy-topbar" data-policy-topbar>
+			<div class="policy-topbar-inner">
+				<a href="/" class="policy-brand no-underline" aria-label="Hasel - Inicio">
+					<img
+						src="/icons/icon-64.png"
+						alt=""
+						class="policy-brand-logo"
+						width="64"
+						height="64"
+						loading="eager"
+						decoding="async"
+					/>
+					<span class="policy-brand-text">Hasel</span>
+				</a>
+				<a href="/" class="policy-back-link m3-btn m3-btn-tonal no-underline">
+					<span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
+					Volver al inicio
+				</a>
+			</div>
+		</header>
+
+		<div class="policy-shell">
+			<header class="policy-doc-header" id="policy-content">
+				<p class="policy-kicker">Documentación legal</p>
+				<h1>Términos y condiciones de Hasel</h1>
+				<p class="policy-lead">
+					Estos términos regulan el uso del sitio web, el panel y las páginas públicas de reserva de
+					Hasel, un software de agenda para negocios en Paraguay y la región. Al crear una cuenta,
+					invitar a un miembro del equipo o reservar un turno, aceptás estas condiciones.
+				</p>
+				<p class="policy-updated">Última actualización: {updatedAt}</p>
+			</header>
+
+			<div class="policy-layout">
+				<aside class="policy-toc" aria-label="Índice del artículo">
+					<details class="policy-toc-mobile">
+						<summary>En este artículo</summary>
+						<nav class="policy-toc-nav">
+							{
+								toc.map((item) => (
+									<a href={`#${item.id}`} class="policy-toc-link" data-toc-link={item.id}>
+										{item.label}
+									</a>
+								))
+							}
+						</nav>
+					</details>
+					<nav class="policy-toc-desktop" aria-label="Secciones">
+						<p class="policy-toc-title">En este artículo</p>
+						{
+							toc.map((item) => (
+								<a href={`#${item.id}`} class="policy-toc-link" data-toc-link={item.id}>
+									{item.label}
+								</a>
+							))
+						}
+					</nav>
+				</aside>
+
+				<article class="policy-article">
+					<section id="aceptacion" class="policy-section" data-policy-section>
+						<h2>Aceptación de los términos</h2>
+						<p>
+							Hasel es operado por Daniel Ramon Villasanti Vergara. Si no estás de acuerdo con
+							estos términos, no uses el servicio. El uso continuado después de una actualización
+							publicada en esta página implica la aceptación de la versión vigente.
+						</p>
+						<p>
+							El tratamiento de datos personales se describe en
+							<a href="/politicas-y-privacidad" class="policy-inline-link">Políticas y privacidad</a>.
+							Las señas, cancelaciones y reembolsos se detallan en
+							<a href="/politicas-de-cancelacion-y-reembolso" class="policy-inline-link">
+								Cancelación y reembolso
+							</a>.
+						</p>
+					</section>
+
+					<section id="servicio" class="policy-section" data-policy-section>
+						<h2>El servicio</h2>
+						<p>
+							Hasel ofrece herramientas de agenda, reserva pública, gestión de clientes, cobro de
+							señas por transferencia SIPAP y funciones conexas (notificaciones, recordatorios y
+							complementos según el plan). El servicio se presta «tal cual» está disponible, con
+							esfuerzo razonable de continuidad, pero sin garantía de disponibilidad ininterrumpida.
+						</p>
+						<p>
+							Hasel no es un banco, una pasarela de pago ni un depositario de fondos. El dinero de
+							las señas circula entre el cliente y el comercio por los canales que cada negocio
+							habilite (por ejemplo, transferencia SIPAP). Hasel no custodia esos fondos.
+						</p>
+					</section>
+
+					<section id="cuentas" class="policy-section" data-policy-section>
+						<h2>Cuentas y negocios</h2>
+						<p>
+							Quien crea o administra un negocio es responsable de la veracidad de los datos de la
+							organización, de los miembros que invita y de las acciones que realizan con su
+							acceso. Debés mantener la confidencialidad de la contraseña y cerrar sesiones en
+							dispositivos compartidos.
+						</p>
+						<p>
+							Los planes, límites de almacenamiento y complementos vigentes se muestran en el
+							panel. Algunas funciones pueden estar deshabilitadas en producción o reservadas a
+							determinados planes.
+						</p>
+					</section>
+
+					<section id="reservas" class="policy-section" data-policy-section>
+						<h2>Reservas y clientes</h2>
+						<p>
+							El negocio es responsable frente a sus clientes por la prestación del servicio
+							agendado, los horarios publicados, los precios y la atención. Hasel facilita la
+							herramienta de reserva; no es parte del contrato entre el comercio y el cliente
+							final, salvo cuando estas políticas o las de reembolso lo indiquen expresamente.
+						</p>
+						<p>
+							Quien reserva por la página pública debe proporcionar datos reales y usar el código
+							de referencia que Hasel asigne cuando corresponda. El abuso de reservas, el spam o
+							la suplantación pueden derivar en el bloqueo del turno o de la cuenta.
+						</p>
+					</section>
+
+					<section id="senas" class="policy-section" data-policy-section>
+						<h2>Señas y cobros</h2>
+						<p>
+							Si el comercio habilita señas, aplica la política elegida (Flexible, Moderada o
+							Estricta) y las reglas de reembolso publicadas. El comercio debe transferir los
+							reembolsos debidos en los plazos indicados. El incumplimiento reiterado puede
+							activar el sistema de reclamos y las restricciones descritas en la política de
+							cancelación.
+						</p>
+						<p>
+							Las suscripciones a Hasel (facturación de la plataforma) son independientes de las
+							señas del comercio. Los medios, montos y condiciones de esa facturación se informan
+							en el panel cuando la función está habilitada.
+						</p>
+					</section>
+
+					<section id="uso-aceptable" class="policy-section" data-policy-section>
+						<h2>Uso aceptable</h2>
+						<p>No está permitido:</p>
+						<ul class="policy-list">
+							<li>Usar Hasel para actividades ilegales o para eludir obligaciones fiscales o regulatorias.</li>
+							<li>Intentar acceder a cuentas, datos o sistemas ajenos, ni sobrecargar de forma abusiva la plataforma.</li>
+							<li>Cargar contenido ofensivo, engañoso o que viole derechos de terceros.</li>
+							<li>Revender el acceso al panel o automatizar reservas de forma que perjudique a otros usuarios.</li>
+						</ul>
+					</section>
+
+					<section id="propiedad" class="policy-section" data-policy-section>
+						<h2>Propiedad intelectual</h2>
+						<p>
+							Hasel, su marca, diseño e interfaces pertenecen a su titular. El negocio conserva
+							los derechos sobre su logo, textos y datos de clientes que carga. Al usar el
+							servicio, nos das una licencia limitada para alojar y mostrar ese contenido solo
+							con el fin de prestar Hasel.
+						</p>
+					</section>
+
+					<section id="responsabilidad" class="policy-section" data-policy-section>
+						<h2>Limitación de responsabilidad</h2>
+						<p>
+							En la medida permitida por la ley paraguaya, Hasel no responde por lucro cesante,
+							pérdida de datos ajena a una falla atribuible y demostrable del servicio, ni por
+							disputas entre el comercio y sus clientes (incluyendo señas no reembolsadas por el
+							comercio). Nuestra responsabilidad agregada, si existiera, se limita a los importes
+							efectivamente pagados a Hasel por el plan o complemento en los tres meses anteriores
+							al reclamo, o a un monto equivalente razonable si no hubo cargo.
+						</p>
+					</section>
+
+					<section id="suspension" class="policy-section" data-policy-section>
+						<h2>Suspensión y cierre</h2>
+						<p>
+							Podemos suspender o cerrar una cuenta si hay incumplimiento grave de estos términos,
+							fraude, abuso de reclamos o riesgo para otros usuarios. El negocio puede dejar de
+							usar Hasel en cualquier momento; la conservación o eliminación de datos sigue las
+							reglas de privacidad y las obligaciones legales aplicables.
+						</p>
+					</section>
+
+					<section id="cambios" class="policy-section policy-section--last" data-policy-section>
+						<h2>Cambios y contacto</h2>
+						<p>
+							Podemos actualizar estos términos cuando cambien funciones o requisitos legales. La
+							fecha de vigencia aparece al inicio de esta página. Para consultas:
+							<a href="mailto:support@hasel.app" class="policy-inline-link">support@hasel.app</a>.
+						</p>
+					</section>
+				</article>
+			</div>
+
+			<footer class="policy-footer">
+				<div class="policy-footer-brand">
+					<p class="policy-footer-copy">© {new Date().getFullYear()} Hasel</p>
+					<p class="policy-footer-tagline">Software de reservas</p>
+				</div>
+				<div class="policy-footer-links">
+					<p class="policy-footer-support">
+						<span>¿Necesitás ayuda? Escribinos al correo</span>
+						<a href="mailto:support@hasel.app" class="policy-footer-link no-underline">support@hasel.app</a>
+					</p>
+					<nav class="policy-footer-nav" aria-label="Enlaces legales">
+						<a href="/politicas-y-privacidad" class="policy-footer-link no-underline">
+							Políticas y privacidad
+						</a>
+						<a href="/terminos-y-condiciones" class="policy-footer-link no-underline" aria-current="page">
+							Términos y condiciones
+						</a>
+						<a href="/politicas-de-cancelacion-y-reembolso" class="policy-footer-link no-underline">
+							Cancelación y reembolso
+						</a>
+					</nav>
+				</div>
+			</footer>
+		</div>
+	</main>
+</Layout>
+
+<script>
+	import '../scripts/legal-page.ts';
+</script>

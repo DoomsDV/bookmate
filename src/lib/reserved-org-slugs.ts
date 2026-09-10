@@ -10,6 +10,7 @@ export const RESERVED_ORG_SLUGS = new Set([
 	'reserva-exitosa',
 	'politicas-y-privacidad',
 	'politicas-de-cancelacion-y-reembolso',
+	'terminos-y-condiciones',
 	'icons',
 	'assets',
 	'static',
