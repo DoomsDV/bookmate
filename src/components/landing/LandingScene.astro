@@ -106,6 +106,30 @@ const heroBlocks = [
 		overflow: hidden;
 	}
 
+	.ls-cal--hero {
+		padding: 0.85rem 0.35rem 0.4rem 0.15rem;
+	}
+
+	.ls-cal--hero .ls-cal__bar strong {
+		font-size: 0.92rem;
+	}
+
+	.ls-cal--hero .ls-cal__meta {
+		font-size: 0.74rem;
+	}
+
+	.ls-cal--hero .ls-cal__hours {
+		font-size: 0.66rem;
+	}
+
+	.ls-cal--hero .ls-cal__days {
+		font-size: 0.7rem;
+	}
+
+	.ls-cal--hero .ls-cal__grid {
+		height: 15.25rem;
+	}
+
 	.ls-cal__bar {
 		display: flex;
 		align-items: baseline;
@@ -213,7 +237,7 @@ const heroBlocks = [
 	}
 
 	.ls-cal__col.is-now {
-		background: color-mix(in srgb, var(--accent) 3.5%, transparent);
+		background: color-mix(in srgb, var(--accent) 7%, transparent);
 	}
 
 	.ls-cal__chips {
@@ -261,11 +285,11 @@ const heroBlocks = [
 	}
 
 	:global(html[data-theme='dark']) .ls-chip {
-		background: color-mix(in srgb, var(--text-primary) 8%, var(--surface-raised));
+		background: color-mix(in srgb, var(--accent) 28%, var(--surface-raised));
 	}
 
 	:global(html[data-theme='dark']) .ls-chip::after {
-		background: color-mix(in srgb, var(--accent) 52%, var(--surface-raised));
+		background: color-mix(in srgb, var(--accent) 78%, #8eafff);
 	}
 
 	.ls-chip--on::after,
