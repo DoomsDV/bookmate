@@ -99,8 +99,9 @@ input[type='search']::-ms-clear {
 	--primary-container: color-mix(in srgb, #426edb 12%, #ffffff);
 	--secondary: #57534e;
 	--secondary-container: #f8f7f6;
-	--on-surface: #1c1917;
-	--on-surface-variant: #78716c;
+	/* Neoxa: text-50 / text-100 (gray-700 / gray-500). Títulos y nombres, no stone-900. */
+	--on-surface: #374151;
+	--on-surface-variant: #6b7280;
 	--hero-gradient: linear-gradient(135deg, #2f6fdd 0%, #3b82f6 45%, #6aa7ff 100%);
 	--hero-shadow: rgba(47, 111, 221, 0.24);
 	--hero-glow: radial-gradient(circle at center, rgba(255, 255, 255, 0.18), transparent 55%);
@@ -246,8 +247,9 @@ html[data-theme='dark'] {
 	--primary-container: rgba(66, 110, 219, 0.16);
 	--secondary: #a0a0a0;
 	--secondary-container: rgba(160, 160, 160, 0.12);
-	--on-surface: #ffffff;
-	--on-surface-variant: #a0a0a0;
+	/* Neoxa dark: title ~white/80, text-50 gray-400. Evita blanco puro. */
+	--on-surface: #e5e7eb;
+	--on-surface-variant: #9ca3af;
 	--hero-gradient: linear-gradient(135deg, #141416 0%, #0e0e10 100%);
 	--hero-shadow: rgba(0, 0, 0, 0.5);
 	--hero-glow: radial-gradient(circle at center, rgba(26, 115, 232, 0.03), transparent 60%);
@@ -1268,7 +1270,7 @@ html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header).is-scrol
 }
 
 .panel-modal-header__subtitle {
-	margin: 0.1rem 0 0;
+	margin: 0.4rem 0 0;
 	font-size: 0.8125rem;
 	font-weight: 500;
 	line-height: 1.15;

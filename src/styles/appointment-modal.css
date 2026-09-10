@@ -917,18 +917,14 @@ html[data-theme='dark'] .appointment-history-lock {
 	color: var(--on-surface-variant);
 }
 
-dialog[data-appointment-modal] [data-modal-professional-wrap] .bookmate-searchable-select.ts-wrapper.single .ts-control,
-dialog[data-appointment-modal] [data-modal-professional-wrap] .bookmate-searchable-select.ts-wrapper.single .ts-control > input,
-dialog[data-appointment-modal] [data-modal-professional-wrap] .bookmate-searchable-select.ts-wrapper.single .item,
-dialog[data-appointment-modal] [data-modal-status-wrap] .bookmate-searchable-select.ts-wrapper.single .ts-control,
-dialog[data-appointment-modal] [data-modal-status-wrap] .bookmate-searchable-select.ts-wrapper.single .ts-control > input,
-dialog[data-appointment-modal] [data-modal-status-wrap] .bookmate-searchable-select.ts-wrapper.single .item {
+dialog[data-appointment-modal] [data-appointment-tab-panel='details'] .bookmate-searchable-select.ts-wrapper.single .ts-control,
+dialog[data-appointment-modal] [data-appointment-tab-panel='details'] .bookmate-searchable-select.ts-wrapper.single .ts-control > input,
+dialog[data-appointment-modal] [data-appointment-tab-panel='details'] .bookmate-searchable-select.ts-wrapper.single .item {
 	font-weight: 500;
 }
 
 dialog[data-appointment-modal] [data-modal-status-wrap],
-dialog[data-appointment-modal] [data-modal-status-wrap] .ts-wrapper,
-dialog[data-appointment-modal] [data-modal-professional-wrap] .ts-wrapper {
+dialog[data-appointment-modal] [data-appointment-tab-panel='details'] .bookmate-searchable-select.ts-wrapper {
 	width: 100%;
 	min-width: 0;
 	max-width: 100%;

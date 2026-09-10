@@ -488,6 +488,16 @@ class AppointmentModal extends HTMLElement {
 			placeholder: 'Buscar profesional...',
 			dropdownParent: requiredNodes.modal,
 		});
+		ensureSearchableSelect(requiredNodes.modalLocation, {
+			placeholder: 'Selecciona una sucursal',
+			dropdownParent: requiredNodes.modal,
+			searchable: false,
+		});
+		ensureSearchableSelect(requiredNodes.modalService, {
+			placeholder: 'Selecciona un servicio',
+			dropdownParent: requiredNodes.modal,
+			searchable: false,
+		});
 		ensureSearchableSelect(requiredNodes.statusInput, {
 			placeholder: 'Estado',
 			dropdownParent: requiredNodes.modal,
@@ -587,6 +597,8 @@ class AppointmentModal extends HTMLElement {
 		this.clearMobileSheetLock();
 		this.releasePanelScrollLock();
 		destroySearchableSelect(this.modalProfessional);
+		destroySearchableSelect(this.modalLocation);
+		destroySearchableSelect(this.modalService);
 		destroySearchableSelect(this.statusInput);
 	}
 
@@ -666,9 +678,9 @@ class AppointmentModal extends HTMLElement {
 			}
 
 			if (context.locationId && context.locationId > 0) {
-				requiredNodes.modalLocation.value = String(context.locationId);
+				setSearchableSelectValue(requiredNodes.modalLocation, context.locationId);
 			} else if (this.locations.length > 0) {
-				requiredNodes.modalLocation.value = String(this.locations[0].id);
+				setSearchableSelectValue(requiredNodes.modalLocation, this.locations[0].id);
 			}
 
 			this.ensureModalProfessionalValue();
@@ -800,8 +812,15 @@ class AppointmentModal extends HTMLElement {
 	}
 
 	private syncModalProfessionalDisabledState() {
-		if (!this.modalProfessional) return;
-		setSearchableSelectDisabled(this.modalProfessional, this.modalProfessional.disabled);
+		if (this.modalProfessional) {
+			setSearchableSelectDisabled(this.modalProfessional, this.modalProfessional.disabled);
+		}
+		if (this.modalLocation) {
+			setSearchableSelectDisabled(this.modalLocation, this.modalLocation.disabled);
+		}
+		if (this.modalService) {
+			setSearchableSelectDisabled(this.modalService, this.modalService.disabled);
+		}
 	}
 
 	private hideCustomerResults() {
@@ -1059,6 +1078,9 @@ class AppointmentModal extends HTMLElement {
 		requiredNodes.endInput.min = '';
 		setSearchableSelectValue(requiredNodes.statusInput, 'CONFIRMADO');
 		setSearchableSelectDisabled(requiredNodes.statusInput, true);
+		syncSearchableSelect(requiredNodes.modalProfessional);
+		syncSearchableSelect(requiredNodes.modalLocation);
+		syncSearchableSelect(requiredNodes.modalService);
 		if (requiredNodes.paymentStatusInput) requiredNodes.paymentStatusInput.value = 'NONE';
 		this.selectedCustomer = null;
 		this.customers = [];
@@ -2314,7 +2336,7 @@ class AppointmentModal extends HTMLElement {
 				}
 			: null;
 		setSearchableSelectValue(requiredNodes.modalProfessional, appointment.pro_id_professional || '');
-		requiredNodes.modalLocation.value = String(appointment.loc_id_location || '');
+		setSearchableSelectValue(requiredNodes.modalLocation, appointment.loc_id_location || '');
 		this.ensureModalProfessionalValue();
 		this.refreshServicesForProfessional(this.getSelectedProfessionalId(), {
 			preferredServiceId: toPositiveInt(appointment.ser_id_service, 0),
@@ -2386,7 +2408,7 @@ class AppointmentModal extends HTMLElement {
 			setSearchableSelectValue(requiredNodes.modalProfessional, draft.pro_id_professional);
 		}
 		if (toPositiveInt(draft.loc_id_location, 0) > 0) {
-			requiredNodes.modalLocation.value = String(draft.loc_id_location);
+			setSearchableSelectValue(requiredNodes.modalLocation, draft.loc_id_location);
 		}
 
 		this.ensureModalProfessionalValue();
@@ -2623,7 +2645,10 @@ class AppointmentModal extends HTMLElement {
 			preferredServiceId > 0 && filtered.some((service) => service.id === preferredServiceId)
 				? preferredServiceId
 				: filtered[0]?.id || 0;
-		requiredNodes.modalService.value = nextServiceId > 0 ? String(nextServiceId) : '';
+		setSearchableSelectValue(
+			requiredNodes.modalService,
+			nextServiceId > 0 ? String(nextServiceId) : ''
+		);
 
 		const hint = requiredNodes.modalServiceHint;
 		if (hint) {
