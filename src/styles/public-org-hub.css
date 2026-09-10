@@ -5,6 +5,17 @@ html:has(.hub-root):not(:has(.app-shell)) {
 	scrollbar-gutter: stable;
 }
 
+html:has(.hub-root):not(:has(.app-shell)),
+html:has(.hub-root):not(:has(.app-shell)) body {
+	background: #f6f7f9;
+}
+
+html[data-theme='dark']:has(.hub-root):not(:has(.app-shell)),
+html[data-theme='dark']:has(.hub-root):not(:has(.app-shell)) body {
+	--page-background: #0e0e10;
+	background: #0e0e10;
+}
+
 .hub-root {
 	--hub-max: 1120px;
 	--hub-pad-x: 1.35rem;
@@ -17,31 +28,16 @@ html:has(.hub-root):not(:has(.app-shell)) {
 	isolation: isolate;
 	min-height: 100vh;
 	min-height: 100dvh;
-	/* Mesh dashboard: azul → celeste → verde agua */
 	background:
-		radial-gradient(ellipse 70% 50% at 6% 36%, rgba(147, 197, 253, 0.14), transparent 62%),
-		radial-gradient(ellipse 80% 55% at 55% 18%, rgba(186, 230, 253, 0.28), transparent 60%),
-		radial-gradient(ellipse 70% 50% at 92% 42%, rgba(165, 243, 252, 0.28), transparent 55%),
-		radial-gradient(ellipse 75% 55% at 78% 82%, rgba(167, 243, 208, 0.26), transparent 58%),
-		radial-gradient(ellipse 60% 45% at 35% 88%, rgba(204, 251, 241, 0.2), transparent 62%),
-		linear-gradient(165deg, #f8fbfe 0%, #eef5fa 32%, #e8f5f8 58%, #eaf8f4 82%, #f4faf8 100%);
+		radial-gradient(ellipse 120% 70% at 50% -15%, rgba(66, 110, 219, 0.07), transparent 55%),
+		#f6f7f9;
 	color: var(--on-surface, #1e293b);
-	font-family: var(--font-body, 'Nunito Sans', sans-serif);
+	font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif);
 	transition: background 300ms ease;
 }
 
 .hub-root::before {
-	content: '';
-	position: absolute;
-	inset: 0;
-	z-index: 0;
-	pointer-events: none;
-	background:
-		radial-gradient(ellipse 40% 30% at 10% 46%, rgba(96, 165, 250, 0.06), transparent 72%),
-		radial-gradient(ellipse 52% 38% at 88% 58%, rgba(34, 211, 238, 0.1), transparent 68%),
-		radial-gradient(ellipse 45% 40% at 72% 90%, rgba(52, 211, 153, 0.12), transparent 70%);
-	filter: blur(44px);
-	opacity: 0.55;
+	display: none;
 }
 
 .hub-root > * {
@@ -50,39 +46,22 @@ html:has(.hub-root):not(:has(.app-shell)) {
 }
 
 html[data-theme='dark'] .hub-root {
-	background:
-		radial-gradient(ellipse 70% 50% at 6% 36%, rgba(59, 130, 246, 0.028), transparent 62%),
-		radial-gradient(ellipse 80% 55% at 55% 18%, rgba(56, 189, 248, 0.04), transparent 60%),
-		radial-gradient(ellipse 75% 55% at 78% 82%, rgba(45, 212, 191, 0.04), transparent 58%),
-		var(--page-background, #0c0e14);
+	--page-background: #0e0e10;
+	background: #0e0e10;
 }
 
 html[data-theme='dark'] .hub-root::before {
-	opacity: 0.16;
-	background:
-		radial-gradient(ellipse 40% 30% at 10% 46%, rgba(96, 165, 250, 0.028), transparent 72%),
-		radial-gradient(ellipse 52% 38% at 88% 58%, rgba(34, 211, 238, 0.035), transparent 68%),
-		radial-gradient(ellipse 45% 40% at 72% 90%, rgba(52, 211, 153, 0.04), transparent 70%);
+	display: none;
 }
 
 /* Touch/iOS (+ viewport estrecho): sin blur fullscreen (mismo criterio que el dashboard). */
 @media (hover: none) and (pointer: coarse), (max-width: 1023px) {
 	.hub-root::before {
-		filter: none;
-		opacity: 0.45;
-		background:
-			radial-gradient(ellipse 55% 42% at 8% 40%, rgba(96, 165, 250, 0.05), transparent 70%),
-			radial-gradient(ellipse 62% 48% at 92% 55%, rgba(34, 211, 238, 0.055), transparent 68%),
-			radial-gradient(ellipse 58% 50% at 70% 92%, rgba(52, 211, 153, 0.06), transparent 72%);
+		display: none;
 	}
 
 	html[data-theme='dark'] .hub-root::before {
-		filter: none;
-		opacity: 0.1;
-		background:
-			radial-gradient(ellipse 55% 42% at 8% 40%, rgba(96, 165, 250, 0.02), transparent 70%),
-			radial-gradient(ellipse 62% 48% at 92% 55%, rgba(34, 211, 238, 0.022), transparent 68%),
-			radial-gradient(ellipse 58% 50% at 70% 92%, rgba(52, 211, 153, 0.025), transparent 72%);
+		display: none;
 	}
 }
 
@@ -100,23 +79,15 @@ html[data-theme='dark'] .hub-root::before {
 
 @media (max-width: 639px) {
 	.hub-root::before {
-		opacity: 0.32;
+		display: none;
 	}
 
 	html[data-theme='dark'] .hub-root {
-		background:
-			radial-gradient(ellipse 70% 50% at 6% 36%, rgba(59, 130, 246, 0.015), transparent 62%),
-			radial-gradient(ellipse 80% 55% at 55% 18%, rgba(56, 189, 248, 0.02), transparent 60%),
-			radial-gradient(ellipse 75% 55% at 78% 82%, rgba(45, 212, 191, 0.02), transparent 58%),
-			var(--page-background, #0c0e14);
+		background: #0e0e10;
 	}
 
 	html[data-theme='dark'] .hub-root::before {
-		opacity: 0.06;
-		background:
-			radial-gradient(ellipse 50% 40% at 12% 42%, rgba(96, 165, 250, 0.014), transparent 72%),
-			radial-gradient(ellipse 55% 45% at 88% 58%, rgba(34, 211, 238, 0.016), transparent 70%),
-			radial-gradient(ellipse 50% 45% at 70% 90%, rgba(52, 211, 153, 0.018), transparent 72%);
+		display: none;
 	}
 
 	.hub-hero {

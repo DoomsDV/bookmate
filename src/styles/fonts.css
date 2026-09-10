@@ -1,7 +1,47 @@
-/* Nunito Sans — self-hosted en /public/fonts (latin subset, v19).
-   Cargar vía Layout.astro para que @font-face esté disponible antes del CSS de página.
-   font-display: swap + preload asegura Nunito en todo el panel (sin optional que deja sistema). */
+/* Plus Jakarta Sans — self-hosted en /public/fonts (latin subset).
+   Cargar vía Layout.astro para que @font-face esté disponible antes del CSS de página. */
 
+@font-face {
+	font-family: "Plus Jakarta Sans";
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url("/fonts/plus-jakarta-sans-latin-400.woff2") format("woff2");
+}
+
+@font-face {
+	font-family: "Plus Jakarta Sans";
+	font-style: normal;
+	font-weight: 500;
+	font-display: swap;
+	src: url("/fonts/plus-jakarta-sans-latin-500.woff2") format("woff2");
+}
+
+@font-face {
+	font-family: "Plus Jakarta Sans";
+	font-style: normal;
+	font-weight: 600;
+	font-display: swap;
+	src: url("/fonts/plus-jakarta-sans-latin-600.woff2") format("woff2");
+}
+
+@font-face {
+	font-family: "Plus Jakarta Sans";
+	font-style: normal;
+	font-weight: 700;
+	font-display: swap;
+	src: url("/fonts/plus-jakarta-sans-latin-700.woff2") format("woff2");
+}
+
+@font-face {
+	font-family: "Plus Jakarta Sans";
+	font-style: normal;
+	font-weight: 800;
+	font-display: swap;
+	src: url("/fonts/plus-jakarta-sans-latin-800.woff2") format("woff2");
+}
+
+/* Nunito Sans se mantiene por páginas que aún la referencian de forma explícita. */
 @font-face {
 	font-family: "Nunito Sans";
 	font-style: normal;

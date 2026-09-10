@@ -1,6 +1,6 @@
 export const PANEL_THEME_KEY = 'bookmate-theme';
-export const THEME_COLOR_DARK = '#0c0e14';
-export const THEME_COLOR_LIGHT = '#f6f7f9';
+export const THEME_COLOR_DARK = '#0e0e10';
+export const THEME_COLOR_LIGHT = '#f9fafb';
 
 export type ResolvedTheme = 'light' | 'dark';
 export type PanelThemePref = 'light' | 'dark' | 'system';

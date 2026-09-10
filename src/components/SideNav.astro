@@ -12,8 +12,6 @@ interface NavItem {
 	active?: boolean;
 	/** Si true, muestra badge de pendientes (Cobros). */
 	pendingBadge?: boolean;
-	/** Badge de producto «Nuevo». */
-	newBadge?: boolean;
 	/** Gate de entitlement en cliente. */
 	requiresFeature?: string;
 }
@@ -56,6 +54,7 @@ const prefetchTapPaths = new Set([
 	"/panel/calendar",
 	"/panel/customers",
 	"/panel/cobros",
+	"/panel/ajustes",
 	"/panel/services",
 	"/panel/locations",
 	"/panel/perfil-publico",
@@ -76,19 +75,18 @@ const primaryItems: NavItem[] = [
 		icon: "payments",
 		href: "/panel/cobros",
 		pendingBadge: true,
-		newBadge: true,
 		requiresFeature: "DEPOSIT_COLLECTION",
 	},
 	{ label: "Servicios", icon: "inventory_2", href: "/panel/services" },
 	{ label: "Sucursales", icon: "storefront", href: "/panel/locations" },
-	{ label: "Perfil Público", icon: "public", href: "/panel/perfil-publico", newBadge: true },
-	{ label: "Complementos", icon: "extension", href: "/panel/complementos", newBadge: true },
+	{ label: "Perfil Público", icon: "public", href: "/panel/perfil-publico" },
+	{ label: "Complementos", icon: "extension", href: "/panel/complementos" },
 ];
 
 const teamItems: NavItem[] = [
-	{ label: "Especialidades", href: "/panel/specialties" },
-	{ label: "Personal", href: "/panel/professionals" },
-	{ label: "Horarios", href: "/panel/schedules" },
+	{ label: "Especialidades", icon: "category", href: "/panel/specialties" },
+	{ label: "Personal", icon: "badge", href: "/panel/professionals" },
+	{ label: "Horarios", icon: "schedule", href: "/panel/schedules" },
 ];
 
 const visiblePrimaryItems = primaryItems.filter((item) =>
@@ -237,6 +235,9 @@ if (showPlanFooter) {
 		<div class="more-sheet__body flex min-h-0 flex-1 flex-col px-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-4">
 			<nav aria-label="Más opciones" class="more-sheet__nav min-h-0 flex-1 overflow-y-auto overscroll-contain">
 				<ul class="more-sheet__list">
+					<li class="more-sheet__heading" aria-hidden="true">
+						<p class="more-sheet__section">Menú</p>
+					</li>
 					{
 						mobileSheetPrimaryItems.map((item) => (
 							<li
@@ -257,22 +258,13 @@ if (showPlanFooter) {
 									</span>
 									<span class="more-sheet__label">
 										<span class="truncate">{item.label}</span>
-										{(item.newBadge || item.pendingBadge) && (
-											<span class="sidebar-nav-badges flex shrink-0 items-center gap-1.5">
-												{item.newBadge ? (
-													<span class="sidebar-nav-new-badge" aria-hidden="true">
-														Nuevo
-													</span>
-												) : null}
-												{item.pendingBadge ? (
-													<span
-														class="hidden min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 py-0.5 text-[0.68rem] font-extrabold leading-none text-white"
-														data-cobros-nav-badge
-														aria-label="Pendientes de revisión"
-													></span>
-												) : null}
-											</span>
-										)}
+										{item.pendingBadge ? (
+											<span
+												class="hidden min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 py-0.5 text-[0.68rem] font-extrabold leading-none text-white"
+												data-cobros-nav-badge
+												aria-label="Pendientes de revisión"
+											></span>
+										) : null}
 									</span>
 								</a>
 							</li>
@@ -280,58 +272,48 @@ if (showPlanFooter) {
 					}
 
 					<li class="more-sheet__item">
-						<button
-							type="button"
-							class="more-sheet__link w-full text-left"
-							data-open-settings-modal
+						<a
+							href="/panel/ajustes"
+							class:list={["more-sheet__link", activePath === "/panel/ajustes" && "is-active"]}
 							data-side-nav-close
+							data-astro-prefetch="tap"
 						>
 							<span class="material-symbols-rounded more-sheet__icon" aria-hidden="true">
 								settings
 							</span>
 							<span class="more-sheet__label">
-								<span>Configuración</span>
+								<span>Ajustes</span>
 							</span>
-						</button>
+						</a>
 					</li>
 
 					{
 						visibleTeamItems.length > 0 && (
-							<li class="more-sheet__item more-sheet__item--team">
-								<details open class="more-sheet__team group">
-									<summary class="more-sheet__link more-sheet__team-summary">
-										<span class="material-symbols-rounded more-sheet__icon" aria-hidden="true">
-											groups
-										</span>
-										<span class="more-sheet__label">
-											<span>Equipo</span>
-										</span>
-										<span class="material-symbols-rounded more-sheet__chevron more-sheet__chevron--expand transition group-open:rotate-180" aria-hidden="true">
-											expand_more
-										</span>
-									</summary>
-
-									<ul class="more-sheet__sublist">
-										{visibleTeamItems.map((item) => (
-											<li>
-												<a
-													href={item.href}
-													data-astro-prefetch={getPrefetchMode(item)}
-													class:list={[
-														"more-sheet__sublink",
-														isItemActive(item) && "is-active",
-													]}
-													data-side-nav-close
-												>
-													<span class="more-sheet__label">
-														<span>{item.label}</span>
-													</span>
-												</a>
-											</li>
-										))}
-									</ul>
-								</details>
-							</li>
+							<>
+								<li class="more-sheet__heading more-sheet__heading--team" aria-hidden="true">
+									<p class="more-sheet__section">Equipo</p>
+								</li>
+								{visibleTeamItems.map((item) => (
+									<li class="more-sheet__item">
+										<a
+											href={item.href}
+											data-astro-prefetch={getPrefetchMode(item)}
+											class:list={[
+												"more-sheet__link",
+												isItemActive(item) && "is-active",
+											]}
+											data-side-nav-close
+										>
+											<span class="material-symbols-rounded more-sheet__icon" aria-hidden="true">
+												{item.icon}
+											</span>
+											<span class="more-sheet__label">
+												<span class="truncate">{item.label}</span>
+											</span>
+										</a>
+									</li>
+								))}
+							</>
 						)
 					}
 				</ul>
@@ -358,7 +340,7 @@ if (showPlanFooter) {
 								workspace_premium
 							</span>
 							<span class="min-w-0 flex-1">
-								<span class="block truncate text-[0.98rem] font-bold" data-plan-label>
+								<span class="block truncate text-[0.98rem] font-medium" data-plan-label>
 									{planDisplayName}
 								</span>
 								<span class="block text-[0.78rem] font-medium text-(--on-surface-variant)">
@@ -450,6 +432,9 @@ if (showPlanFooter) {
 	>
 		<nav aria-label="Side navigation desktop">
 			<ul class="space-y-2">
+				<li class="sidebar-nav-heading" aria-hidden="true">
+					<p class="sidebar-nav-section">Menú</p>
+				</li>
 				{
 					visiblePrimaryItems.map((item) => (
 						<li data-requires-feature={item.requiresFeature || undefined}>
@@ -458,10 +443,10 @@ if (showPlanFooter) {
 								data-astro-prefetch={getPrefetchMode(item)}
 								data-sidebar-item
 								class:list={[
-									"sidebar-nav-link flex items-center gap-3 rounded-full px-4 py-2.5 text-[0.9rem] font-semibold no-underline transition",
+									"sidebar-nav-link flex items-center gap-3 rounded-full px-4 py-2.5 text-[0.9rem] font-medium no-underline transition",
 									isItemActive(item)
-										? "is-active bg-(--primary-container) text-(--primary) font-bold"
-										: "text-(--on-surface) font-semibold hover:bg-(--sidebar-hover)",
+										? "is-active bg-(--primary-container) text-(--primary)"
+										: "text-(--sidebar-nav) hover:bg-(--sidebar-hover)",
 								]}
 							>
 								<span class="sidebar-nav-icon material-symbols-rounded shrink-0 text-[1.25rem] leading-none">
@@ -469,22 +454,13 @@ if (showPlanFooter) {
 								</span>
 								<span class="sidebar-nav-label flex min-w-0 flex-1 items-center justify-between gap-2" data-sidebar-label>
 									<span class="truncate">{item.label}</span>
-									{(item.newBadge || item.pendingBadge) && (
-										<span class="sidebar-nav-badges flex shrink-0 items-center gap-1.5">
-											{item.newBadge ? (
-												<span class="sidebar-nav-new-badge" aria-hidden="true">
-													Nuevo
-												</span>
-											) : null}
-											{item.pendingBadge ? (
-												<span
-													class="hidden min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 py-0.5 text-[0.68rem] font-extrabold leading-none text-white"
-													data-cobros-nav-badge
-													aria-label="Pendientes de revisión"
-												></span>
-											) : null}
-										</span>
-									)}
+									{item.pendingBadge ? (
+										<span
+											class="hidden min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 py-0.5 text-[0.68rem] font-extrabold leading-none text-white"
+											data-cobros-nav-badge
+											aria-label="Pendientes de revisión"
+										></span>
+									) : null}
 								</span>
 							</a>
 						</li>
@@ -493,54 +469,33 @@ if (showPlanFooter) {
 
 				{
 					visibleTeamItems.length > 0 && (
-						<li class="pt-2">
-							<details open class="group">
-								<summary
-									class="sidebar-nav-link sidebar-nav-summary flex cursor-pointer list-none items-center justify-between rounded-full px-4 py-2.5 text-[0.9rem] font-semibold text-(--primary) transition hover:bg-(--sidebar-hover)"
-									data-sidebar-summary
-								>
-									<span class="sidebar-nav-summary-main flex min-w-0 items-center gap-3">
-										<span class="sidebar-nav-icon material-symbols-rounded shrink-0 text-[1.25rem] leading-none">
-											groups
-										</span>
-										<span class="sidebar-nav-label" data-sidebar-label>Equipo</span>
-									</span>
-									<span
-										class="sidebar-nav-trailing material-symbols-rounded shrink-0 text-[1.05rem] leading-none transition group-open:rotate-180"
-										data-sidebar-trailing
+						<>
+							<li class="sidebar-nav-heading sidebar-nav-heading--team" aria-hidden="true">
+								<p class="sidebar-nav-section">Equipo</p>
+							</li>
+							{visibleTeamItems.map((item) => (
+								<li>
+									<a
+										href={item.href}
+										data-sidebar-item
+										data-astro-prefetch={getPrefetchMode(item)}
+										class:list={[
+											"sidebar-nav-link flex items-center gap-3 rounded-full px-4 py-2.5 text-[0.9rem] font-medium no-underline transition",
+											isItemActive(item)
+												? "is-active bg-(--primary-container) text-(--primary)"
+												: "text-(--sidebar-nav) hover:bg-(--sidebar-hover)",
+										]}
 									>
-										expand_more
-									</span>
-								</summary>
-
-								<div
-									class="ml-5 mt-1 border-l border-(--shell-border) pl-4"
-									data-team-submenu
-								>
-									<ul class="space-y-1">
-										{visibleTeamItems.map((item) => (
-											<li>
-												<a
-													href={item.href}
-													data-sidebar-item
-													data-astro-prefetch={getPrefetchMode(item)}
-													class:list={[
-														"sidebar-nav-link sidebar-nav-link--sub flex rounded-full px-4 py-2.5 text-[0.88rem] font-medium no-underline transition",
-														isItemActive(item)
-															? "is-active bg-(--control-surface-strong) text-(--primary) font-semibold shadow-[0_2px_8px_rgba(15,23,42,0.08)]"
-															: "text-(--on-surface) hover:bg-(--sidebar-hover)",
-													]}
-												>
-													<span class="sidebar-nav-label" data-sidebar-label>
-														{item.label}
-													</span>
-												</a>
-											</li>
-										))}
-									</ul>
-								</div>
-							</details>
-						</li>
+										<span class="sidebar-nav-icon material-symbols-rounded shrink-0 text-[1.25rem] leading-none">
+											{item.icon}
+										</span>
+										<span class="sidebar-nav-label flex min-w-0 flex-1 items-center justify-between gap-2" data-sidebar-label>
+											<span class="truncate">{item.label}</span>
+										</span>
+									</a>
+								</li>
+							))}
+						</>
 					)
 				}
 			</ul>
@@ -556,10 +511,10 @@ if (showPlanFooter) {
 						data-sidebar-item
 						data-sidebar-footer
 						class:list={[
-							"sidebar-nav-link sidebar-nav-link--plan flex items-center gap-3 rounded-[1rem] px-4 py-2.5 text-[0.9rem] font-semibold no-underline transition",
+							"sidebar-nav-link sidebar-nav-link--plan flex items-center gap-3 rounded-[1rem] px-4 py-2.5 text-[0.9rem] font-medium no-underline transition",
 							planFooterActive
-								? "is-active bg-(--primary-container) text-(--primary) font-bold"
-								: "text-(--on-surface) font-semibold hover:bg-(--sidebar-hover)",
+								? "is-active bg-(--primary-container) text-(--primary)"
+								: "text-(--sidebar-nav) hover:bg-(--sidebar-hover)",
 						]}
 						aria-label="Ver plan y facturación"
 					>
@@ -567,7 +522,7 @@ if (showPlanFooter) {
 							workspace_premium
 						</span>
 						<span class="min-w-0 flex-1" data-sidebar-label>
-							<span class="sidebar-nav-label block truncate text-[0.9rem] font-bold" data-plan-label>
+							<span class="sidebar-nav-label block truncate text-[0.9rem] font-medium" data-plan-label>
 								{planDisplayName}
 							</span>
 							<span class="block text-[0.75rem] font-medium text-(--on-surface-variant)">
@@ -588,6 +543,19 @@ if (showPlanFooter) {
 <MobileBottomNav currentPath={currentPath} />
 
 <style>
+	/* Neoxa: texto gray-700 / ícono gray-500. Dark: gray-300 / gray-400. */
+	[data-desktop-sidebar],
+	.more-sheet {
+		--sidebar-nav: #374151;
+		--sidebar-nav-icon: #6b7280;
+	}
+
+	:global(html[data-theme='dark']) [data-desktop-sidebar],
+	:global(html[data-theme='dark']) .more-sheet {
+		--sidebar-nav: #d1d5db;
+		--sidebar-nav-icon: #9ca3af;
+	}
+
 	/* Entrada del SideNav en PC: slide solo en la primera visita de la sesión. */
 	@media (min-width: 1024px) {
 		[data-desktop-sidebar].is-first-visit {
@@ -671,10 +639,40 @@ if (showPlanFooter) {
 		list-style: none;
 	}
 
-	.more-sheet__item--team {
-		margin-top: 0.35rem;
-		padding-top: 0.35rem;
-		border-top: 1px solid color-mix(in srgb, var(--shell-border) 70%, transparent);
+	.more-sheet__heading {
+		list-style: none;
+		margin: 0;
+		padding: 0.55rem 0.8rem 0.2rem 0;
+	}
+
+	.more-sheet__heading--team {
+		margin-top: 0.65rem;
+	}
+
+	.more-sheet__section,
+	.sidebar-nav-section {
+		margin: 0;
+		font-size: 0.75rem;
+		font-weight: 500;
+		letter-spacing: 0.08em;
+		line-height: 1.2;
+		text-transform: uppercase;
+		color: #6b7280;
+	}
+
+	:global(html[data-theme='dark']) .more-sheet__section,
+	:global(html[data-theme='dark']) .sidebar-nav-section {
+		color: #9ca3af;
+	}
+
+	.sidebar-nav-heading {
+		list-style: none;
+		margin: 0;
+		padding: 0.35rem 0 0.4rem;
+	}
+
+	.sidebar-nav-heading--team {
+		padding-top: 1.15rem;
 	}
 
 	.more-sheet__link,
@@ -688,10 +686,10 @@ if (showPlanFooter) {
 		border: 0;
 		border-radius: 0.85rem;
 		background: transparent;
-		color: var(--on-surface);
+		color: var(--sidebar-nav);
 		font: inherit;
 		font-size: 0.94rem;
-		font-weight: 600;
+		font-weight: 500;
 		line-height: 1.25;
 		text-decoration: none;
 		cursor: pointer;
@@ -709,7 +707,7 @@ if (showPlanFooter) {
 	.more-sheet__sublink.is-active {
 		background: color-mix(in srgb, var(--primary) 16%, transparent);
 		color: var(--primary);
-		font-weight: 700;
+		font-weight: 500;
 	}
 
 	.more-sheet__icon {
@@ -720,7 +718,9 @@ if (showPlanFooter) {
 		justify-content: center;
 		font-size: 1.28rem;
 		line-height: 1;
-		color: color-mix(in srgb, var(--on-surface-variant) 88%, var(--on-surface) 12%);
+		font-weight: 300;
+		color: var(--sidebar-nav-icon);
+		font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
 	}
 
 	.more-sheet__link.is-active .more-sheet__icon {
@@ -743,32 +743,6 @@ if (showPlanFooter) {
 		flex-shrink: 0;
 	}
 
-	.more-sheet__team-summary {
-		list-style: none;
-		cursor: pointer;
-		color: var(--on-surface);
-		font-weight: 600;
-	}
-
-	.more-sheet__team-summary::-webkit-details-marker {
-		display: none;
-	}
-
-	.more-sheet__sublist {
-		display: flex;
-		flex-direction: column;
-		gap: 0.08rem;
-		margin: 0.15rem 0 0.35rem;
-		padding: 0 0 0 0.35rem;
-		list-style: none;
-	}
-
-	.more-sheet__sublink {
-		min-height: 2.75rem;
-		padding: 0.55rem 0.8rem 0.55rem 2.45rem;
-		font-size: 0.9rem;
-		font-weight: 600;
-	}
 
 	.more-sheet__divider {
 		margin: 0.65rem 0.35rem 0;
@@ -954,31 +928,28 @@ if (showPlanFooter) {
 		height: 1.25rem;
 		align-items: center;
 		justify-content: center;
+		font-weight: 300;
+		color: var(--sidebar-nav-icon);
+		font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+	}
+
+	:global([data-desktop-sidebar] .sidebar-nav-icon.material-symbols-rounded),
+	:global(.more-sheet__icon.material-symbols-rounded) {
+		font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+	}
+
+	.sidebar-nav-link.is-active .sidebar-nav-icon {
+		color: inherit;
+		font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+	}
+
+	.sidebar-nav-trailing {
+		color: var(--sidebar-nav-icon);
 	}
 
 	.sidebar-nav-label {
 		min-width: 0;
 		line-height: 1.25;
-	}
-
-	.sidebar-nav-new-badge {
-		display: inline-flex;
-		flex-shrink: 0;
-		align-items: center;
-		padding: 0.12rem 0.42rem;
-		border-radius: 999px;
-		font-size: 0.58rem;
-		font-weight: 800;
-		letter-spacing: 0.05em;
-		text-transform: uppercase;
-		line-height: 1.15;
-		background: color-mix(in srgb, var(--primary) 14%, transparent);
-		color: var(--primary);
-	}
-
-	.sidebar-nav-link.is-active .sidebar-nav-new-badge,
-	.more-sheet__link.is-active .sidebar-nav-new-badge {
-		background: color-mix(in srgb, var(--primary) 18%, transparent);
 	}
 </style>
 

@@ -51,11 +51,22 @@ if (!loadError) {
 <style is:global>
 	html:has(.public-booking-shell),
 	html:has(.public-booking-shell) body {
-		background: var(--page-background, #f6f7f9);
+		background: #f6f7f9;
+	}
+
+	html[data-theme='dark']:has(.public-booking-shell),
+	html[data-theme='dark']:has(.public-booking-shell) body {
+		--page-background: #0e0e10;
+		background: #0e0e10;
 	}
 
 	.public-booking-shell {
 		min-height: 100vh;
-		background: var(--page-background, #f6f7f9);
+		background: #f6f7f9;
+	}
+
+	html[data-theme='dark'] .public-booking-shell {
+		--page-background: #0e0e10;
+		background: #0e0e10;
 	}
 </style>

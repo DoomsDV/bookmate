@@ -42,6 +42,11 @@ const SETTINGS_TOUR_OPTIONS: Pick<
 	duration: 280,
 };
 
+const settingsTourShellOptions = () => ({
+	...SETTINGS_TOUR_OPTIONS,
+	useTopLayerShell: document.querySelector(SETTINGS_MODAL_SELECTOR) instanceof HTMLDialogElement,
+});
+
 export type SettingsModalTourContext = {
 	activateProfileTab?: () => void;
 	activatePaymentsTab?: () => void;
@@ -267,7 +272,7 @@ function runSettingsTour(steps: DriveStep[], onDestroyed?: () => void) {
 	if (steps.length === 0) return;
 
 	runBookmateTour(steps, {
-		...SETTINGS_TOUR_OPTIONS,
+		...settingsTourShellOptions(),
 		storageKey: 'bookmate_settings_modal_tour',
 		onDestroyed,
 	});

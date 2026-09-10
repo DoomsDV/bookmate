@@ -1,15 +1,13 @@
 ---
-import SettingsModal from './SettingsModal.astro';
 import AtcChatModal from './AtcChatModal.astro';
 import InboxBell from './InboxBell.astro';
+import { SETTINGS_PAGE_PATH } from '../lib/settings-page';
 
 interface Props {
 	userName?: string;
 }
 
 const { userName = 'Perfil' } = Astro.props;
-const roleId = Number(Astro.locals.roleId ?? 0);
-const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim();
 ---
 
 <header class="shell-header-zone relative z-40 pl-3 pr-3 sm:px-6" data-shell-topbar>
@@ -85,16 +83,16 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 						<p class="text-xs text-(--on-surface-variant)">Menú de cuenta</p>
 					</div>
 
-					<button
-						type="button"
-						class="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-(--on-surface) transition hover:bg-(--primary-container)/45"
-						data-open-settings-modal
+					<a
+						href={SETTINGS_PAGE_PATH}
+						class="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-(--on-surface) no-underline transition hover:bg-(--primary-container)/45"
+						data-astro-prefetch="tap"
 					>
 						<span class="material-symbols-rounded text-[1.15rem] text-(--on-surface-variant)">
 							settings
 						</span>
 						Ajustes
-					</button>
+					</a>
 
 					<button
 						type="button"
@@ -131,7 +129,6 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 	</div>
 </header>
 
-<SettingsModal roleId={roleId} organizationSlug={organizationSlug} />
 <AtcChatModal userName={userName} />
 
 <script>

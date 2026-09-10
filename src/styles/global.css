@@ -70,14 +70,14 @@ input[type='search']::-ms-clear {
 }
 
 :root {
-	--font-body: "Nunito Sans", sans-serif;
-	--font-logo: "Nunito Sans", sans-serif;
+	--font-body: "Plus Jakarta Sans", sans-serif;
+	--font-logo: "Plus Jakarta Sans", sans-serif;
 	/* Controles nativos (date/time) siguen el tema de la app */
 	color-scheme: light;
-	/* Modo claro: gris neutro de prueba */
-	--background: #f6f7f9;
+	/* Modo claro: canvas Neoxa gray-50 */
+	--background: #f9fafb;
 	--background-accent: #faf9f8;
-	--page-background: #f6f7f9;
+	--page-background: #f9fafb;
 	--surface: rgba(255, 255, 255, 0.97);
 	--surface-container: #f9f8f7;
 	--surface-container-low: #ffffff;
@@ -226,19 +226,19 @@ input[type='search']::-ms-clear {
 
 html[data-theme='dark'] {
 	color-scheme: dark;
-	--background: #0c0e14;
-	--background-accent: #08090c;
-	--page-background: #0c0e14;
-	--surface: rgba(12, 14, 20, 0.94);
+	--background: #0e0e10;
+	--background-accent: #0a0a0c;
+	--page-background: #0e0e10;
+	--surface: rgba(14, 14, 16, 0.94);
 	--surface-container: #121214;
 	--surface-container-low: #121214;
 	--surface-container-high: #1a1a1c;
 	--surface-container-highest: #222224;
 	--surface-bright: #121214;
 	--bar-outline: rgba(255, 255, 255, 0.08);
-	--shell-surface: #0c0e14;
+	--shell-surface: #0e0e10;
 	--sidebar-surface: #121214;
-	--content-surface: rgba(12, 14, 20, 0.88);
+	--content-surface: rgba(14, 14, 16, 0.88);
 	--shell-border: rgba(255, 255, 255, 0.08);
 	--primary: #426edb;
 	--primary-soft: rgba(66, 110, 219, 0.14);
@@ -248,12 +248,12 @@ html[data-theme='dark'] {
 	--secondary-container: rgba(160, 160, 160, 0.12);
 	--on-surface: #ffffff;
 	--on-surface-variant: #a0a0a0;
-	--hero-gradient: linear-gradient(135deg, #141820 0%, #0c0e14 100%);
+	--hero-gradient: linear-gradient(135deg, #141416 0%, #0e0e10 100%);
 	--hero-shadow: rgba(0, 0, 0, 0.5);
 	--hero-glow: radial-gradient(circle at center, rgba(26, 115, 232, 0.03), transparent 60%);
 	--control-surface: #1a1a1c;
 	--control-surface-strong: #222224;
-	--menu-surface: rgba(12, 14, 20, 0.98);
+	--menu-surface: rgba(14, 14, 16, 0.98);
 	--card-surface: var(--sidebar-surface);
 	--card-surface-strong: var(--sidebar-surface);
 	--card-border: rgba(255, 255, 255, 0.08);
@@ -672,7 +672,8 @@ professional-manager:has(.app-shell) {
 
 /* Perfil público / Horarios: el pane ya scrollea; no reservar un segundo riel a la derecha. */
 .app-shell > :last-child > main.ppe-main,
-.app-shell > :last-child > main.schedule-page-main {
+.app-shell > :last-child > main.schedule-page-main,
+.app-shell > :last-child > main.settings-page-main {
 	scrollbar-gutter: auto;
 }
 
@@ -976,6 +977,13 @@ html.panel-modal-open .app-shell > :last-child:not(:has(.ppe-main)) {
 	:is(
 		html[data-sidebar-pref='collapsed'] [data-app-shell],
 		[data-app-shell][data-sidebar-state='collapsed']
+	) [data-desktop-sidebar] .sidebar-nav-heading {
+		display: none;
+	}
+
+	:is(
+		html[data-sidebar-pref='collapsed'] [data-app-shell],
+		[data-app-shell][data-sidebar-state='collapsed']
 	) [data-desktop-sidebar] nav > ul > li {
 		display: flex;
 		justify-content: center;
@@ -1088,16 +1096,16 @@ button {
 	border-bottom: 1px solid var(--shell-border);
 }
 
-/* TopBar del panel: mismo tono que sidenav/shell; liquid glass al hacer scroll. */
+/* TopBar del panel: mismo canvas que el contenido, sin barra blanca. */
 .shell-header-zone:not(.sidebar-account-header) {
 	position: sticky;
 	top: 0;
 	z-index: 40;
-	background-color: var(--sidebar-surface, var(--page-background, #fefdfc));
-	border-bottom-color: color-mix(in srgb, var(--shell-border) 88%, transparent);
+	background-color: transparent;
+	border-bottom-color: transparent;
 	backdrop-filter: none;
 	-webkit-backdrop-filter: none;
-	box-shadow: 0 1px 0 color-mix(in srgb, var(--on-surface) 4%, transparent);
+	box-shadow: none;
 	transition:
 		background-color 220ms ease,
 		border-color 220ms ease,
@@ -1110,29 +1118,25 @@ html.is-theme-swapping .shell-header-zone:not(.sidebar-account-header) {
 }
 
 .shell-header-zone:not(.sidebar-account-header).is-scrolled {
-	background-color: color-mix(in srgb, var(--sidebar-surface, var(--page-background, #fefdfc)) 72%, transparent);
-	border-bottom-color: color-mix(in srgb, var(--shell-border) 45%, transparent);
-	backdrop-filter: blur(18px) saturate(1.15);
-	-webkit-backdrop-filter: blur(18px) saturate(1.15);
-	box-shadow:
-		0 8px 24px color-mix(in srgb, var(--on-surface) 6%, transparent),
-		inset 0 1px 0 rgba(255, 255, 255, 0.5);
+	background-color: color-mix(in srgb, var(--page-background, #f9fafb) 86%, transparent);
+	border-bottom-color: transparent;
+	backdrop-filter: blur(14px) saturate(1.08);
+	-webkit-backdrop-filter: blur(14px) saturate(1.08);
+	box-shadow: none;
 }
 
 html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header) {
-	background-color: var(--sidebar-surface, #121214);
-	border-bottom-color: color-mix(in srgb, var(--shell-border) 40%, transparent);
+	background-color: transparent;
+	border-bottom-color: transparent;
 	box-shadow: none;
 }
 
 html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header).is-scrolled {
-	background-color: color-mix(in srgb, var(--sidebar-surface, #121214) 72%, transparent);
-	border-bottom-color: rgba(255, 255, 255, 0.12);
-	backdrop-filter: blur(20px) saturate(1.35);
-	-webkit-backdrop-filter: blur(20px) saturate(1.35);
-	box-shadow:
-		0 8px 28px rgba(0, 0, 0, 0.28),
-		inset 0 1px 0 rgba(255, 255, 255, 0.12);
+	background-color: color-mix(in srgb, var(--page-background, #0e0e10) 86%, transparent);
+	border-bottom-color: transparent;
+	backdrop-filter: blur(16px) saturate(1.2);
+	-webkit-backdrop-filter: blur(16px) saturate(1.2);
+	box-shadow: none;
 }
 
 .shell-header-zone.sidebar-account-header {
@@ -1354,7 +1358,7 @@ html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header).is-scrol
 
 .topbar-brand-wordmark {
 	color: inherit;
-	font-family: var(--font-body, 'Nunito Sans', sans-serif);
+	font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif);
 	font-size: 1.15rem;
 	font-weight: 800;
 	letter-spacing: -0.02em;
@@ -3807,7 +3811,7 @@ html[data-theme='dark'] dialog[data-ai-summary-modal] .dashboard-ai-drawer__pane
 
 @media (min-width: 640px) {
 	dialog:not(.is-desktop-popover),
-	[data-settings-modal] {
+	[data-settings-modal]:not([data-settings-page]) {
 		box-shadow: var(--modal-shadow-dialog);
 	}
 }

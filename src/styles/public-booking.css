@@ -9,7 +9,8 @@ html:has(.public-booking-shell) body {
 
 html[data-theme='dark']:has(.public-booking-shell),
 html[data-theme='dark']:has(.public-booking-shell) body {
-	background: #121214;
+	--page-background: #0e0e10;
+	background: #0e0e10;
 }
 
 .public-booking-shell {
@@ -55,7 +56,8 @@ html[data-theme='dark']:has(.public-booking-shell) body {
 }
 
 html[data-theme='dark'] .public-booking-shell {
-	--surface-background: #121214;
+	--page-background: #0e0e10;
+	--surface-background: #0e0e10;
 	--surface-container-lowest: #141414;
 	--surface-container-low: #121214;
 	--surface-container: #121214;

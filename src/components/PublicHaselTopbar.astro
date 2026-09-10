@@ -139,7 +139,7 @@ const logoLabel = logoHref === '/' ? 'Hasel — Inicio' : 'Hasel — Buscar nego
 		z-index: 40;
 		height: var(--app-topbar-h, 4rem);
 		border-bottom: 1px solid transparent;
-		background: color-mix(in srgb, var(--surface, #fafbfc) 82%, transparent);
+		background: #f6f7f9;
 		backdrop-filter: blur(14px);
 		-webkit-backdrop-filter: blur(14px);
 		transition:
@@ -149,15 +149,17 @@ const logoLabel = logoHref === '/' ? 'Hasel — Inicio' : 'Hasel — Buscar nego
 	}
 
 	:global(html[data-theme='dark']) .public-hasel-topbar {
-		background: color-mix(in srgb, var(--page-background, #0c0e14) 78%, transparent);
+		background: var(--page-background, #0e0e10);
 	}
 
 	.public-hasel-topbar.is-scrolled {
 		border-bottom-color: var(--shell-border, rgba(148, 163, 184, 0.28));
+		background: #f6f7f9;
 		box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
 	}
 
 	:global(html[data-theme='dark']) .public-hasel-topbar.is-scrolled {
+		background: var(--page-background, #0e0e10);
 		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 	}
 
@@ -190,7 +192,7 @@ const logoLabel = logoHref === '/' ? 'Hasel — Inicio' : 'Hasel — Buscar nego
 	}
 
 	.public-hasel-topbar__wordmark {
-		font-family: var(--font-body, 'Nunito Sans', sans-serif);
+		font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif);
 		font-weight: 800;
 		font-size: 1.15rem;
 		letter-spacing: -0.02em;
@@ -342,13 +344,8 @@ const logoLabel = logoHref === '/' ? 'Hasel — Inicio' : 'Hasel — Buscar nego
 		outline-offset: 3px;
 	}
 
-	:global(.landing-root) .public-hasel-topbar--marketing {
-		background: color-mix(in srgb, var(--surface) 80%, transparent);
-	}
-
 	:global(.landing-root) .public-hasel-topbar--marketing.is-scrolled {
-		border-bottom-color: var(--border);
-		background: color-mix(in srgb, var(--surface) 92%, transparent);
+		border-bottom-color: var(--border, rgba(15, 23, 42, 0.08));
 	}
 
 	:global(.landing-root) .public-hasel-topbar--marketing .public-hasel-topbar__brand,
@@ -395,14 +392,16 @@ const logoLabel = logoHref === '/' ? 'Hasel — Inicio' : 'Hasel — Buscar nego
 	}
 
 	@media (prefers-reduced-transparency: reduce) {
-		:global(.landing-root) .public-hasel-topbar--marketing {
-			background: var(--surface);
+		.public-hasel-topbar,
+		.public-hasel-topbar.is-scrolled {
+			background: #f6f7f9;
 			backdrop-filter: none;
 			-webkit-backdrop-filter: none;
 		}
 
-		:global(.landing-root) .public-hasel-topbar--marketing.is-scrolled {
-			background: var(--surface);
+		:global(html[data-theme='dark']) .public-hasel-topbar,
+		:global(html[data-theme='dark']) .public-hasel-topbar.is-scrolled {
+			background: var(--page-background, #0e0e10);
 		}
 	}
 </style>

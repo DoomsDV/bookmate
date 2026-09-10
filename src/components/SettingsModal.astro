@@ -11,9 +11,12 @@ import {
 interface Props {
 	roleId?: number;
 	organizationSlug?: string;
+	variant?: 'modal' | 'page';
 }
 
-const { roleId = 0, organizationSlug = '' } = Astro.props;
+const { roleId = 0, organizationSlug = '', variant = 'modal' } = Astro.props;
+const isPage = variant === 'page';
+const RootTag = isPage ? 'div' : 'dialog';
 const isAdmin = Number(roleId) === ROLES.ADMIN;
 const canEditAppearance = isAdmin;
 const showPaymentsTab = isAdmin && FEATURE_FLAGS.PAYMENTS_SETTINGS;
@@ -36,10 +39,16 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 	data-organization-slug={organizationSlug}
 	data-global-public-profile-prefix={globalPublicProfilePrefix}
 	data-org-hub-origin={orgHubSiteOrigin || Astro.url.origin}
+	data-variant={variant}
 >
-<dialog
+<RootTag
 	data-settings-modal
-		class="m-0 mt-auto mb-0 h-[92dvh] w-screen max-w-none sm:m-0 sm:ml-auto sm:mr-0 sm:mt-0 sm:mb-0 sm:h-[100dvh] sm:max-h-[100dvh] sm:w-[70vw] sm:max-w-[70vw] open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-none border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:border-y-0 sm:border-r-0 sm:shadow-none"
+	{...(isPage ? { 'data-settings-page': '' } : {})}
+	class:list={[
+		isPage
+			? 'settings-page w-full text-(--on-surface)'
+			: 'm-0 mt-auto mb-0 h-[92dvh] w-screen max-w-none sm:m-0 sm:ml-auto sm:mr-0 sm:mt-0 sm:mb-0 sm:h-[100dvh] sm:max-h-[100dvh] sm:w-[70vw] sm:max-w-[70vw] open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-none border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:border-y-0 sm:border-r-0 sm:shadow-none',
+	]}
 >
 	<div class="panel-modal-header panel-modal-header--shadow">
 		<div class="panel-modal-header__row">
@@ -63,14 +72,21 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 					<span class="material-symbols-rounded text-[1.12rem]">help</span>
 					<span class="hidden sm:inline">Guía</span>
 				</button>
-				<button type="button" class="panel-modal-header__close" data-settings-close aria-label="Cerrar modal">
-					<span class="material-symbols-rounded">close</span>
-				</button>
+				{isPage ? null : (
+					<button type="button" class="panel-modal-header__close" data-settings-close aria-label="Cerrar">
+						<span class="material-symbols-rounded">close</span>
+					</button>
+				)}
 			</div>
 		</div>
 	</div>
 
-	<div class="settings-layout flex min-h-0 flex-1 flex-col overflow-hidden bg-(--surface)/30 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]">
+	<div
+		class:list={[
+			'settings-layout flex flex-col bg-(--surface)/30 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]',
+			isPage ? '' : 'min-h-0 flex-1 overflow-hidden',
+		]}
+	>
 		<nav class="settings-nav shrink-0 border-b border-(--shell-border) bg-(--surface-bright)/50 px-0 py-3" data-settings-nav>
 			<div class="settings-tabs-grid" data-settings-tabs-scroll>
 				<button type="button" data-settings-tab-trigger data-settings-tab="profile" class="settings-tab is-active">
@@ -116,9 +132,26 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			<div class="settings-tabs-scroll-edge" aria-hidden="true"></div>
 		</nav>
 
-		<div class="settings-content-shell flex min-h-0 flex-1 flex-col" data-settings-content-shell>
-		<div class="settings-scroll-wrap relative flex min-h-0 flex-1 flex-col">
-		<div class="settings-content relative flex-1 min-h-0 overflow-y-auto px-4 py-5 sm:p-6 overscroll-contain" data-settings-content>
+		<div
+			class:list={[
+				'settings-content-shell flex flex-col',
+				isPage ? '' : 'min-h-0 flex-1',
+			]}
+			data-settings-content-shell
+		>
+		<div
+			class:list={[
+				'settings-scroll-wrap relative flex flex-col',
+				isPage ? '' : 'min-h-0 flex-1',
+			]}
+		>
+		<div
+			class:list={[
+				'settings-content relative px-4 py-5 sm:p-6',
+				isPage ? '' : 'flex-1 min-h-0 overflow-y-auto overscroll-contain',
+			]}
+			data-settings-content
+		>
 			<div class="settings-feedback-sticky-wrap">
 				<div
 					data-settings-feedback-host
@@ -1029,7 +1062,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 		</div>
 		</div>
 	</div>
-</dialog>
+</RootTag>
 
 <dialog
 	class="profile-crop-modal w-[min(24rem,calc(100vw-1.5rem))] max-w-[min(24rem,calc(100vw-1.5rem))] rounded-[1.35rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_20px_60px_rgba(0,0,0,0.28)]"
@@ -1168,9 +1201,10 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 		private organizationSlug = '';
 		private globalPublicProfilePrefix = '';
 		private orgHubOrigin = '';
+		private isPageMode = false;
 
 		private els!: {
-			modal: HTMLDialogElement | null;
+			modal: HTMLDialogElement | HTMLElement | null;
 			closeBtn: HTMLButtonElement | null;
 			appearanceSaveBtn: HTMLButtonElement | null;
 			tabButtons: NodeListOf<HTMLElement>;
@@ -1238,6 +1272,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			this.organizationSlug = String(this.dataset.organizationSlug || '').trim();
 			this.globalPublicProfilePrefix = String(this.dataset.globalPublicProfilePrefix || '').trim();
 			this.orgHubOrigin = String(this.dataset.orgHubOrigin || '').trim();
+			this.isPageMode = this.dataset.variant === 'page';
 
 			this.els = {
 				modal: this.querySelector<HTMLDialogElement>('[data-settings-modal]'),
@@ -1336,6 +1371,10 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			this.bindScrollHints(signal);
 			this.bindSettingsSelects(signal);
 			this.syncPanelThemeSelect();
+			if (this.isPageMode) {
+				this.setActiveTab(this.resolveInitialTab());
+				void this.loadData();
+			}
 		}
 
 		disconnectedCallback() {
@@ -1353,6 +1392,32 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			if (this.feedbackHideTimer) window.clearTimeout(this.feedbackHideTimer);
 			this.scrollHintsObserver?.disconnect();
 			this.scrollHintsObserver = null;
+		}
+
+		private getDialog() {
+			return this.els.modal instanceof HTMLDialogElement ? this.els.modal : null;
+		}
+
+		private isHostOpen() {
+			if (this.isPageMode) return true;
+			return Boolean(this.getDialog()?.open);
+		}
+
+		private resolveInitialTab() {
+			const requested = new URLSearchParams(window.location.search).get('tab') || 'profile';
+			const exists = Array.from(this.els.tabButtons).some((btn) => btn.dataset.settingsTab === requested);
+			return exists ? requested : 'profile';
+		}
+
+		private syncTabInUrl(tabId: string) {
+			if (!this.isPageMode) return;
+			const url = new URL(window.location.href);
+			if (!tabId || tabId === 'profile') url.searchParams.delete('tab');
+			else url.searchParams.set('tab', tabId);
+			const next = `${url.pathname}${url.search}${url.hash}`;
+			if (`${window.location.pathname}${window.location.search}${window.location.hash}` !== next) {
+				history.replaceState(null, '', next);
+			}
 		}
 
 		private updateScrollHints = () => {};
@@ -1484,7 +1549,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 		}
 
 		private handleSettingsModalTourHelp = () => {
-			if (!this.els.modal?.open) return;
+			if (!this.isHostOpen()) return;
 			showSettingsModalTour({
 				getActiveTab: () => this.getActiveTabId(),
 				activateProfileTab: () => this.setActiveTab('profile'),
@@ -1506,6 +1571,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 		}
 
 		private openModal = () => {
+			if (this.isPageMode) return;
 			destroyActiveBookmateTour({ persistCompletion: false });
 			this.setActiveTab('profile');
 			this.clearFeedback();
@@ -1516,7 +1582,8 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 				window.clearTimeout(this.closingTimer);
 				this.closingTimer = null;
 			}
-			if (this.els.modal && !this.els.modal.open) openPanelModal(this.els.modal);
+			const dialog = this.getDialog();
+			if (dialog && !dialog.open) openPanelModal(dialog);
 			this.resetModalScroll();
 			this.syncPanelThemeSelect();
 			void this.loadData();
@@ -1620,13 +1687,15 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 		};
 
 		private closeModal = () => {
-			if (!this.els.modal?.open) return;
+			if (this.isPageMode) return;
+			const dialog = this.getDialog();
+			if (!dialog?.open) return;
 			destroyActiveBookmateTour();
-			this.els.modal.classList.add('is-closing');
+			dialog.classList.add('is-closing');
 
 			this.closingTimer = window.setTimeout(() => {
-				this.els.modal?.close();
-				this.els.modal?.classList.remove('is-closing', 'bookmate-tour-host');
+				dialog.close();
+				dialog.classList.remove('is-closing', 'bookmate-tour-host');
 				this.resetSecurityForm();
 				this.releaseProfilePreviewObjectUrl();
 				this.releaseLogoPreviewObjectUrl();
@@ -2225,6 +2294,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			if (tabId === 'payments') void this.loadPayments();
 			this.syncTourHelpVisibility(tabId);
 			this.syncSettingsActions(tabId);
+			this.syncTabInUrl(tabId);
 
 			const content = this.querySelector<HTMLElement>('[data-settings-content]');
 			if (content) content.scrollTop = 0;
@@ -3480,12 +3550,88 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 		display: contents;
 	}
 
-	[data-settings-modal]:not([open]) {
+	[data-settings-modal]:not([open]):not([data-settings-page]) {
 		display: none;
 	}
 
 	[data-settings-modal][open] {
 		display: flex;
+	}
+
+	.settings-page {
+		position: relative;
+		inset: auto;
+		z-index: auto;
+		flex: none;
+		height: auto;
+		max-height: none;
+		min-height: min-content;
+		width: 100%;
+		max-width: none;
+		margin: 0;
+		border: 0;
+		border-radius: 1.15rem;
+		background: var(--surface-bright);
+		box-shadow: none;
+		animation: none;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+	}
+
+	.settings-page .panel-modal-header {
+		height: auto;
+		min-height: 0;
+		max-height: none;
+		padding: 1.15rem 1.25rem 0.85rem;
+		background: transparent;
+		border-bottom: 0;
+		box-shadow: none;
+	}
+
+	.settings-page .panel-modal-header__title {
+		font-size: 1.45rem;
+		font-weight: 700;
+		letter-spacing: -0.03em;
+	}
+
+	.settings-page .panel-modal-header__icon {
+		display: none;
+	}
+
+	.settings-page [data-settings-close-action] {
+		display: none;
+	}
+
+	.settings-page .settings-layout {
+		flex: none;
+		height: auto;
+		min-height: 0;
+		background: transparent;
+		box-shadow: none;
+		overflow: visible;
+	}
+
+	.settings-page .settings-content {
+		max-width: 52rem;
+	}
+
+	.settings-page .modal-footer-actions {
+		justify-content: flex-end;
+	}
+
+	@media (min-width: 769px) {
+		.settings-page .settings-nav {
+			position: sticky;
+			top: 0;
+			align-self: stretch;
+			max-height: none;
+		}
+
+		.settings-page .settings-content {
+			max-width: none;
+			padding: 1.5rem 1.75rem 2.25rem;
+		}
 	}
 
 	[data-settings-modal] .panel-modal-header {
@@ -3511,6 +3657,84 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 		inset: 0;
 		z-index: 1200;
 		animation: settings-modal-in var(--modal-open-duration) var(--modal-easing);
+	}
+
+	[data-settings-modal][data-settings-page] {
+		position: relative;
+		inset: auto;
+		z-index: auto;
+		flex: none;
+		height: auto;
+		max-height: none;
+		min-height: min-content;
+		overflow: hidden;
+		animation: none;
+		background: var(--surface-bright);
+	}
+
+	[data-settings-modal][data-settings-page] .settings-layout,
+	[data-settings-modal][data-settings-page] .settings-content-shell,
+	[data-settings-modal][data-settings-page] .settings-scroll-wrap,
+	[data-settings-modal][data-settings-page] .settings-content {
+		overflow: visible;
+		min-height: 0;
+		height: auto;
+		flex: none;
+	}
+
+	[data-settings-modal][data-settings-page] .settings-content-scroll-edge,
+	[data-settings-modal][data-settings-page] .settings-content-scroll-hint {
+		display: none !important;
+	}
+
+	[data-settings-modal][data-settings-page] .panel-modal-header {
+		height: auto;
+		min-height: 0;
+		max-height: none;
+		padding: 1.15rem 1.25rem 0.85rem;
+		background: transparent;
+		border-bottom: 0;
+		box-shadow: none;
+	}
+
+	@media (min-width: 769px) {
+		[data-settings-modal][data-settings-page] .settings-layout {
+			display: grid;
+			grid-template-columns: 15rem minmax(0, 1fr);
+			align-items: stretch;
+			overflow: visible;
+			height: auto;
+			min-height: 0;
+		}
+
+		[data-settings-modal][data-settings-page] .settings-nav {
+			height: auto;
+			min-height: 100%;
+			overflow: visible;
+			max-height: none;
+		}
+
+		[data-settings-modal][data-settings-page] .settings-content-shell,
+		[data-settings-modal][data-settings-page] .settings-scroll-wrap {
+			display: flex;
+			flex-direction: column;
+			overflow: visible;
+			height: auto;
+			flex: none;
+			min-height: 0;
+		}
+
+		[data-settings-modal][data-settings-page] .settings-content {
+			padding-bottom: 1.5rem;
+			overflow: visible;
+		}
+
+		[data-settings-modal][data-settings-page] .settings-actions {
+			position: static;
+			margin-top: auto;
+			border-top: 1px solid var(--shell-border);
+			padding: 1rem 1.75rem 1.5rem;
+		}
 	}
 
 	[data-settings-modal]::backdrop {

@@ -51,7 +51,7 @@
 	min-height: 100dvh;
 	display: flex;
 	flex-direction: column;
-	font-family: var(--font-body, 'Nunito Sans', sans-serif);
+	font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif);
 	color-scheme: light;
 	color: var(--auth-on-surface);
 	background:
@@ -70,11 +70,11 @@ body:has(.auth-page) {
 
 html[data-theme='dark']:has(.auth-page),
 html[data-theme='dark'] body:has(.auth-page) {
-	background: #0c0e14;
+	background: #0e0e10;
 }
 
 html[data-theme='dark'] .auth-page {
-	--auth-bg: #0c0e14;
+	--auth-bg: #0e0e10;
 	--auth-surface: #1c1b1f;
 	--auth-surface-high: #201f23;
 	--auth-surface-highest: #2a292d;

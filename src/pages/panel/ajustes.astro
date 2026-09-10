@@ -1,0 +1,50 @@
+---
+import SettingsModal from '../../components/SettingsModal.astro';
+import SideNav from '../../components/SideNav.astro';
+import TopBar from '../../components/TopBar.astro';
+import Layout from '../../layouts/Layout.astro';
+import { panelPageTitle } from '../../lib/panel-page-title';
+import '../../styles/global.css';
+
+const roleId = Number(Astro.locals.roleId ?? 0);
+const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim();
+---
+
+<Layout pageTitle={panelPageTitle('Ajustes')}>
+	<div class="min-h-screen bg-(--page-background)">
+		<div
+			class="app-shell grid min-h-screen overflow-hidden bg-transparent"
+			data-app-shell
+			data-sidebar-state="expanded"
+		>
+			<SideNav currentPath={Astro.url.pathname} />
+
+			<div class="grid min-h-full min-w-0 grid-rows-[auto_1fr]">
+				<TopBar />
+
+				<main class="settings-page-main px-3 py-3 sm:px-5 sm:py-4 lg:px-6">
+					<SettingsModal
+						variant="page"
+						roleId={roleId}
+						organizationSlug={organizationSlug}
+					/>
+				</main>
+			</div>
+		</div>
+	</div>
+</Layout>
+
+<style>
+	.settings-page-main {
+		display: block;
+		height: auto;
+		min-height: 0;
+		overflow: visible;
+	}
+
+	.settings-page-main :global(.settings-page) {
+		flex: none;
+		height: auto;
+		min-height: min-content;
+	}
+</style>
