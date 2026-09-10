@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import PublicHaselTopbar from '../components/PublicHaselTopbar.astro';
+import LandingScene from '../components/landing/LandingScene.astro';
 import { searchOrgDirectory, type OrgDirectoryItem } from '../lib/public-org-directory';
 import '../styles/global.css';
 const siteOrigin = String(Astro.site ?? Astro.url.origin).replace(/\/+$/, '');
@@ -133,28 +134,28 @@ const usefulServices = [
 		title: 'Citas automáticas',
 		text: 'Tus clientes reservan 24/7. Recordatorios automáticos para reducir cancelaciones.',
 		variant: 'featured',
-		image: '/landing/salon.jpg',
-		imageAlt: 'Recepción de salón con agenda digital',
+		scene: 'feat-book',
 	},
 	{
 		icon: 'show_chart',
 		title: 'Métricas claras',
 		text: 'Ingresos, ticket promedio y tendencias en números simples para decidir con datos.',
 		variant: 'tint',
+		scene: 'feat-metrics',
 	},
 	{
 		icon: 'apartment',
 		title: 'Equipo y sucursales',
 		text: 'Disponibilidad en tiempo real, turnos y varias ubicaciones desde un solo panel.',
 		variant: 'default',
+		scene: 'feat-team',
 	},
 	{
 		icon: 'desktop_windows',
 		title: 'Página de reservas',
 		text: 'Link propio con disponibilidad real. Tus clientes eligen horario sin llamarte.',
 		variant: 'visual',
-		image: '/landing/barber.jpg',
-		imageAlt: 'Interior de barbería con espejo y sillón',
+		scene: 'feat-page',
 	},
 ] as const;
 
@@ -247,27 +248,32 @@ const jsonLd = [
 				</div>
 
 				<div class="hero-visual" data-hero-reveal data-hero-reveal-delay="220">
-					<div class="hero-inbox" aria-hidden="true">
-						<p class="hero-inbox__live">
-							<span class="hero-inbox__dot"></span>
-							Reservas entrando
-						</p>
+					<div class="hero-scene">
+						<div class="hero-scene__canvas" aria-hidden="true">
+							<LandingScene kind="hero-cal" />
+						</div>
+						<div class="hero-inbox" aria-hidden="true">
+							<p class="hero-inbox__live">
+								<span class="hero-inbox__dot"></span>
+								Reservas entrando
+							</p>
 
-						<ol class="hero-inbox__stack" data-hero-inbox>
-							{
-								inboxVisible.map((note, index) => (
-									<li class="hero-toast" data-kind={note.kind} style={`--i: ${index}`}>
-										<span class="hero-toast__mark material-symbols-rounded">{inboxIcons[note.kind]}</span>
-										<div class="hero-toast__copy">
-											<strong>{note.title}</strong>
-											<span>{note.detail}</span>
-										</div>
-										<time>{inboxTimes[index]}</time>
-									</li>
-								))
-							}
-						</ol>
-						<script type="application/json" id="hero-inbox-notes" set:html={JSON.stringify({ notes: inboxNotes, icons: inboxIcons, times: inboxTimes })} />
+							<ol class="hero-inbox__stack" data-hero-inbox>
+								{
+									inboxVisible.map((note, index) => (
+										<li class="hero-toast" data-kind={note.kind} style={`--i: ${index}`}>
+											<span class="hero-toast__mark material-symbols-rounded">{inboxIcons[note.kind]}</span>
+											<div class="hero-toast__copy">
+												<strong>{note.title}</strong>
+												<span>{note.detail}</span>
+											</div>
+											<time>{inboxTimes[index]}</time>
+										</li>
+									))
+								}
+							</ol>
+							<script type="application/json" id="hero-inbox-notes" set:html={JSON.stringify({ notes: inboxNotes, icons: inboxIcons, times: inboxTimes })} />
+						</div>
 					</div>
 				</div>
 			</section>
@@ -354,6 +360,29 @@ const jsonLd = [
 				) : null
 			}
 
+			<section id="producto" class="m3-section product-proof" aria-labelledby="producto-heading">
+				<div class="product-proof__intro reveal-on-scroll">
+					<h2 id="producto-heading" class="m3-headline">El panel y el link que usa tu cliente</h2>
+					<p class="m3-body product-proof__lead">
+						Vos ves la agenda. Ellos eligen horario en tu página, sin WhatsApp de ida y vuelta.
+					</p>
+				</div>
+				<div class="product-proof__grid">
+					<figure class="product-proof__frame reveal-on-scroll">
+						<div class="scene-frame" aria-hidden="true">
+							<LandingScene kind="calendar" />
+						</div>
+						<figcaption>Agenda compartida</figcaption>
+					</figure>
+					<figure class="product-proof__frame reveal-on-scroll" style="--reveal-i: 1">
+						<div class="scene-frame" aria-hidden="true">
+							<LandingScene kind="booking" />
+						</div>
+						<figcaption>El cliente elige horario</figcaption>
+					</figure>
+				</div>
+			</section>
+
 			<section id="funciones" class="m3-section features-section" aria-labelledby="funciones-heading">
 				<div class="features-intro reveal-on-scroll">
 					<h2 id="funciones-heading" class="m3-headline">
@@ -375,17 +404,9 @@ const jsonLd = [
 								]}
 								style={`--reveal-i: ${index}`}
 							>
-								{'image' in service && service.image ? (
-									<img
-										class="features-bento__photo"
-										src={service.image}
-										alt={service.imageAlt}
-										width={800}
-										height={600}
-										loading="lazy"
-										decoding="async"
-									/>
-								) : null}
+								<div class="features-bento__art" aria-hidden="true">
+									<LandingScene kind={service.scene} />
+								</div>
 								<div class="features-bento__content">
 									<span class="features-bento__icon" aria-hidden="true">
 										<span class="material-symbols-rounded">{service.icon}</span>
@@ -1117,26 +1138,45 @@ const jsonLd = [
 		min-width: 0;
 	}
 
+	.hero-scene {
+		position: relative;
+		isolation: isolate;
+	}
+
+	.hero-scene__canvas {
+		position: relative;
+		padding: 0.85rem;
+		border-radius: var(--radius-lg);
+		background:
+			radial-gradient(ellipse 80% 70% at 20% 0%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 58%),
+			var(--surface-overlay);
+		border: 1px solid var(--border);
+	}
+
+	.scene-frame {
+		height: 100%;
+		min-height: 16rem;
+		padding: 0.75rem;
+		border-radius: var(--radius-lg);
+		background:
+			radial-gradient(ellipse 90% 80% at 80% 0%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 60%),
+			var(--surface-overlay);
+		border: 1px solid var(--border);
+	}
+
 	.hero-inbox {
-		--toast-bg: color-mix(in srgb, var(--surface) 88%, #ffffff);
+		--toast-bg: var(--surface-raised);
 		--toast-ink: var(--text-primary);
 		--toast-muted: var(--text-secondary);
 		--toast-line: var(--border);
 		position: relative;
+		z-index: 2;
 		display: grid;
 		justify-items: center;
-		align-content: center;
+		align-content: start;
 		gap: 0.7rem;
-		min-height: 18.5rem;
+		margin-top: 0.85rem;
 		padding: 0.25rem 0;
-	}
-
-	:global(html[data-theme='dark']) .hero-inbox {
-		--toast-bg: color-mix(in srgb, var(--surface) 82%, #141416);
-	}
-
-	:global(html[data-theme='dark']) .hero-toast {
-		box-shadow: 0 2px 8px rgb(0 0 0 / 0.18);
 	}
 
 	.hero-inbox__live {
@@ -1181,7 +1221,7 @@ const jsonLd = [
 		border-radius: 0.9rem;
 		background: var(--toast-bg);
 		border: 1px solid var(--toast-line);
-		box-shadow: 0 2px 8px rgb(15 23 42 / 0.05);
+		box-shadow: 0 8px 20px rgb(12 16 28 / 0.14);
 	}
 
 	.hero-toast.is-enter {
@@ -1254,32 +1294,38 @@ const jsonLd = [
 		.m3-hero-content {
 			gap: 0.95rem;
 		}
-
-		.hero-inbox {
-			min-height: 16.5rem;
-		}
 	}
 
 	@media (min-width: 900px) {
 		.m3-hero {
-			grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
-			gap: 3rem;
-			padding: 1.75rem 0 3rem;
+			grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.15fr);
+			gap: 2.5rem;
+			padding: 1.75rem 0 4.5rem;
 			min-height: 0;
 			align-items: center;
 		}
 
+		.hero-scene {
+			padding-bottom: 4.25rem;
+		}
+
 		.hero-inbox {
-			min-height: 20rem;
-			justify-items: end;
+			position: absolute;
+			right: 0.85rem;
+			bottom: -0.15rem;
+			margin-top: 0;
+			justify-items: stretch;
+			width: min(88%, 19.5rem);
+			transform: none;
 		}
 
 		.hero-inbox__live {
-			justify-self: end;
+			justify-self: center;
+			color: var(--text-secondary);
 		}
 
 		.hero-inbox__stack {
-			width: min(100%, 24.5rem);
+			width: 100%;
 		}
 	}
 
@@ -1292,6 +1338,46 @@ const jsonLd = [
 		.hero-toast {
 			opacity: 1;
 			transform: none;
+		}
+
+		.hero-scene__canvas {
+			transform: none;
+		}
+	}
+
+	.product-proof__intro {
+		margin-bottom: 1.5rem;
+	}
+
+	.product-proof__lead {
+		max-width: 36rem;
+		margin-top: 0.55rem;
+	}
+
+	.product-proof__grid {
+		display: grid;
+		gap: 1rem;
+	}
+
+	.product-proof__frame {
+		margin: 0;
+		display: grid;
+		gap: 0.7rem;
+	}
+
+	.product-proof__frame figcaption {
+		margin: 0;
+		font-size: 0.9rem;
+		font-weight: 700;
+		letter-spacing: -0.02em;
+		color: var(--text-primary);
+	}
+
+	@media (min-width: 800px) {
+		.product-proof__grid {
+			grid-template-columns: 1.15fr 0.85fr;
+			gap: 1.15rem;
+			align-items: end;
 		}
 	}
 
@@ -1373,6 +1459,8 @@ const jsonLd = [
 	.features-bento__cell {
 		position: relative;
 		overflow: hidden;
+		display: grid;
+		align-content: start;
 		border-radius: var(--radius-lg);
 		border: 1px solid var(--border);
 		background: var(--surface-raised);
@@ -1391,44 +1479,12 @@ const jsonLd = [
 		}
 	}
 
-	.features-bento__photo {
-		position: absolute;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-	}
-
-	.features-bento__cell--featured::after,
-	.features-bento__cell--visual::after {
-		content: '';
-		position: absolute;
-		inset: 0;
-		pointer-events: none;
-		background: linear-gradient(
-			180deg,
-			transparent 62%,
-			rgba(12, 14, 20, 0.16) 82%,
-			rgba(12, 14, 20, 0.42) 100%
-		);
-	}
-
-	/* Foto + overlay oscuro: el texto siempre es claro, independiente del tema de la página. */
-	.features-bento__cell--featured,
-	.features-bento__cell--visual {
-		--text-primary: #eef0f4;
-		--text-secondary: #e4e7ee;
-	}
-
-	.features-bento__cell--featured .features-bento__title,
-	.features-bento__cell--featured .features-bento__text,
-	.features-bento__cell--visual .features-bento__title,
-	.features-bento__cell--visual .features-bento__text {
-		text-shadow: 0 1px 2px rgba(12, 14, 20, 0.55), 0 8px 18px rgba(12, 14, 20, 0.35);
+	.features-bento__art {
+		padding: 0.75rem 0.75rem 0;
 	}
 
 	.features-bento__cell--tint {
-		background: linear-gradient(145deg, rgba(66, 110, 219, 0.18), var(--surface-raised));
+		background: linear-gradient(145deg, rgba(66, 110, 219, 0.12), var(--surface-raised));
 	}
 
 	.features-bento__cell--featured {
@@ -1441,13 +1497,7 @@ const jsonLd = [
 		z-index: 1;
 		display: grid;
 		gap: 0.45rem;
-		padding: 1rem 1rem 1.1rem;
-		align-content: end;
-		min-height: 100%;
-	}
-
-	.features-bento__cell:not(.features-bento__cell--featured):not(.features-bento__cell--visual)
-		.features-bento__content {
+		padding: 0.85rem 1rem 1.1rem;
 		align-content: start;
 	}
 
@@ -1508,8 +1558,7 @@ const jsonLd = [
 
 		.features-bento__cell--featured {
 			flex-basis: unset;
-			grid-row: span 2;
-			min-height: 16rem;
+			min-height: 12rem;
 		}
 
 		.features-bento__content {
@@ -1532,21 +1581,13 @@ const jsonLd = [
 
 	@media (min-width: 1024px) {
 		.features-bento {
-			grid-template-columns: 1.15fr 1fr 1fr;
-			grid-template-rows: auto auto;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
 			gap: 0.85rem;
 		}
 
-		.features-bento__cell--featured {
-			grid-column: 1;
-			grid-row: 1 / 3;
-			min-height: 18rem;
-		}
-
+		.features-bento__cell--featured,
 		.features-bento__cell--visual {
-			grid-column: 2 / 4;
-			grid-row: 2;
-			min-height: 11rem;
+			min-height: 12.5rem;
 		}
 	}
 
