@@ -1206,6 +1206,22 @@ const jsonLd = [
 		background:
 			linear-gradient(
 				90deg,
+				transparent 62%,
+				color-mix(in srgb, var(--surface) 28%, transparent) 88%,
+				var(--surface) 100%
+			),
+			linear-gradient(
+				180deg,
+				transparent 70%,
+				color-mix(in srgb, var(--surface) 42%, transparent) 90%,
+				var(--surface) 100%
+			);
+	}
+
+	:global(html[data-theme='dark']) .hero-desk::after {
+		background:
+			linear-gradient(
+				90deg,
 				transparent 42%,
 				color-mix(in srgb, var(--surface) 35%, transparent) 68%,
 				var(--surface) 94%
@@ -1236,7 +1252,7 @@ const jsonLd = [
 		padding: 0;
 		border: 0;
 		background: transparent;
-		color: var(--text-muted);
+		color: var(--text-secondary);
 		font-size: 0.66rem;
 		font-weight: 650;
 		letter-spacing: 0.02em;
@@ -1366,6 +1382,23 @@ const jsonLd = [
 
 		.hero-desk::after {
 			inset: -8% -10% -34% -4%;
+			background:
+				linear-gradient(
+					90deg,
+					transparent 58%,
+					color-mix(in srgb, var(--surface) 22%, transparent) 82%,
+					color-mix(in srgb, var(--surface) 70%, transparent) 94%,
+					var(--surface) 100%
+				),
+				linear-gradient(
+					180deg,
+					transparent 64%,
+					color-mix(in srgb, var(--surface) 28%, transparent) 86%,
+					var(--surface) 100%
+				);
+		}
+
+		:global(html[data-theme='dark']) .hero-desk::after {
 			background:
 				linear-gradient(
 					90deg,

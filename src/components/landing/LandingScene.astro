@@ -124,7 +124,7 @@ const heroBlocks = [
 	.ls-cal__meta {
 		font-size: 0.68rem;
 		font-weight: 600;
-		color: var(--text-muted);
+		color: var(--text-secondary);
 		font-variant-numeric: tabular-nums;
 	}
 
@@ -140,9 +140,9 @@ const heroBlocks = [
 		flex-direction: column;
 		justify-content: space-between;
 		padding-top: 1.35rem;
-		color: var(--text-muted);
+		color: var(--text-secondary);
 		font-size: 0.58rem;
-		font-weight: 650;
+		font-weight: 700;
 		letter-spacing: 0.02em;
 		font-variant-numeric: tabular-nums;
 		line-height: 1;
@@ -157,7 +157,7 @@ const heroBlocks = [
 		grid-template-columns: repeat(5, minmax(0, 1fr));
 		gap: 0.28rem;
 		margin-bottom: 0.4rem;
-		color: var(--text-muted);
+		color: var(--text-secondary);
 		font-size: 0.62rem;
 		font-weight: 700;
 		letter-spacing: 0.06em;
@@ -178,8 +178,8 @@ const heroBlocks = [
 			to bottom,
 			transparent,
 			transparent 27px,
-			color-mix(in srgb, var(--border) 80%, transparent) 27px,
-			color-mix(in srgb, var(--border) 80%, transparent) 28px
+			color-mix(in srgb, var(--border-strong) 85%, transparent) 27px,
+			color-mix(in srgb, var(--border-strong) 85%, transparent) 28px
 		);
 	}
 
@@ -238,7 +238,7 @@ const heroBlocks = [
 		z-index: 1;
 		border-radius: 0.22rem;
 		overflow: hidden;
-		background: color-mix(in srgb, var(--text-primary) 8%, var(--surface-raised));
+		background: color-mix(in srgb, var(--accent) 32%, var(--surface));
 		transform-origin: center;
 		transition:
 			left 0.85s var(--ls-ease),
@@ -253,11 +253,19 @@ const heroBlocks = [
 		position: absolute;
 		inset: 0;
 		border-radius: inherit;
-		background: color-mix(in srgb, var(--accent) 52%, var(--surface-raised));
+		background: color-mix(in srgb, var(--accent) 78%, #c9d8ff);
 		transform: scaleX(0);
 		transform-origin: left center;
 		transition: transform 0.72s var(--ls-ease);
 		pointer-events: none;
+	}
+
+	:global(html[data-theme='dark']) .ls-chip {
+		background: color-mix(in srgb, var(--text-primary) 8%, var(--surface-raised));
+	}
+
+	:global(html[data-theme='dark']) .ls-chip::after {
+		background: color-mix(in srgb, var(--accent) 52%, var(--surface-raised));
 	}
 
 	.ls-chip--on::after,
