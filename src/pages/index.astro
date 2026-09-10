@@ -1,8 +1,128 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import PublicHaselTopbar from '../components/PublicHaselTopbar.astro';
+import { searchOrgDirectory, type OrgDirectoryItem } from '../lib/public-org-directory';
 import '../styles/global.css';
 const siteOrigin = String(Astro.site ?? Astro.url.origin).replace(/\/+$/, '');
+
+const orgInitial = (name: string) => {
+	const letter = String(name || '').trim().charAt(0);
+	return letter ? letter.toLocaleUpperCase('es') : 'H';
+};
+
+const CITY_DISPLAY: Record<string, string> = {
+	asuncion: 'Asunción',
+	capiata: 'Capiatá',
+	'ciudad del este': 'Ciudad del Este',
+	encarnacion: 'Encarnación',
+	itaugua: 'Itauguá',
+	lambare: 'Lambaré',
+	nemby: 'Ñemby',
+};
+
+const toDisplayCityName = (value: string) => {
+	const raw = String(value || '').trim();
+	if (!raw) return '';
+	const folded = raw
+		.normalize('NFD')
+		.replace(/\p{M}/gu, '')
+		.toLowerCase()
+		.replace(/\s+/g, ' ')
+		.trim();
+	if (CITY_DISPLAY[folded]) return CITY_DISPLAY[folded];
+	const particles = new Set(['de', 'del', 'la', 'las', 'los', 'y']);
+	return raw
+		.toLocaleLowerCase('es')
+		.split(/\s+/)
+		.map((word, index) =>
+			index > 0 && particles.has(word)
+				? word
+				: word.charAt(0).toLocaleUpperCase('es') + word.slice(1)
+		)
+		.join(' ');
+};
+
+let previewOrgs: OrgDirectoryItem[] = [];
+let previewSpecialties: { code: string; label: string }[] = [];
+try {
+	const directory = await searchOrgDirectory();
+	previewOrgs = directory.items.slice(0, 4).map((item) => ({
+		...item,
+		city_name: toDisplayCityName(item.city_name),
+	}));
+	previewSpecialties = directory.facets.specialties.slice(0, 4);
+} catch {
+	previewOrgs = [];
+	previewSpecialties = [];
+}
+
+type AppReview = {
+	name: string;
+	role: string;
+	org: string;
+	stars: 4 | 5;
+	quote: string;
+};
+
+const featuredReview: AppReview = {
+	name: 'Dann Villasanti',
+	role: 'Quiropráctico',
+	org: 'Consultorio General',
+	stars: 5,
+	quote: 'Dejé de coordinar turnos por WhatsApp. El cliente reserva y yo veo todo en el calendario.',
+};
+
+const moreReviews: AppReview[] = [
+	{
+		name: 'Ramón Villasanti',
+		role: 'Quiropráctico',
+		org: 'Consultorio General',
+		stars: 5,
+		quote: 'El equipo comparte la misma agenda. Ya no se pisan los horarios.',
+	},
+	{
+		name: 'Max Gómez',
+		role: 'Administrador',
+		org: 'Fisio Max',
+		stars: 4,
+		quote: 'El link de reservas me ahorra idas y vueltas. La gente elige horario y llega.',
+	},
+];
+
+const starSlots = [1, 2, 3, 4, 5] as const;
+
+type InboxKind = 'book' | 'pay' | 'ok';
+
+type InboxNote = {
+	kind: InboxKind;
+	title: string;
+	detail: string;
+};
+
+const inboxIcons: Record<InboxKind, string> = {
+	book: 'chat',
+	pay: 'payments',
+	ok: 'event_available',
+};
+
+const inboxNotes: InboxNote[] = [
+	{ kind: 'book', title: 'Nueva reserva', detail: 'Ana Ríos, masaje' },
+	{ kind: 'pay', title: 'Seña recibida', detail: 'HASEL-4K2P, ₲ 50.000' },
+	{ kind: 'ok', title: 'Turno confirmado', detail: 'Ramón, quiropraxia' },
+	{ kind: 'book', title: 'Nueva reserva', detail: 'Lucía Benítez, fisioterapia' },
+	{ kind: 'ok', title: 'Turno confirmado', detail: 'Carlos Duarte, consulta' },
+	{ kind: 'pay', title: 'Seña recibida', detail: 'HASEL-9M1C, ₲ 80.000' },
+	{ kind: 'book', title: 'Nueva reserva', detail: 'Sofía Acosta, evaluación' },
+	{ kind: 'ok', title: 'Turno confirmado', detail: 'Martín López, masaje' },
+	{ kind: 'book', title: 'Nueva reserva', detail: 'Elena Franco, quiropraxia' },
+	{ kind: 'pay', title: 'Seña recibida', detail: 'HASEL-7Q3L, ₲ 40.000' },
+	{ kind: 'book', title: 'Nueva reserva', detail: 'Diego Bareiro, consulta' },
+	{ kind: 'ok', title: 'Turno confirmado', detail: 'Camila Núñez, fisioterapia' },
+];
+
+const inboxVisible = inboxNotes.slice(0, 3);
+const inboxTimes = ['ahora', '2 min', '5 min'] as const;
+
 const pageTitle = 'Hasel - Software de citas, agenda y reservas online para tu negocio';
 const metaDescription =
 	'Organizá citas, equipo y clientes en un solo panel. Tus clientes reservan 24/7 con tu enlace personalizado. Probá Premium gratis 14 días.';
@@ -95,14 +215,6 @@ const jsonLd = [
 	ogImage="/icons/icon-512x512.png"
 	jsonLd={jsonLd}
 >
-	<link
-		slot="head"
-		rel="preload"
-		as="image"
-		type="image/jpeg"
-		href="/calendar/desktop/calendar-light.jpeg"
-		fetchpriority="high"
-	/>
 	<main class="landing-root">
 		<a href="#hero-heading" class="landing-skip-link">Saltar al contenido principal</a>
 		<div class="landing-scroll-sentinel" data-scroll-sentinel aria-hidden="true"></div>
@@ -113,9 +225,10 @@ const jsonLd = [
 			<section class="m3-hero" aria-labelledby="hero-heading">
 				<div class="m3-hero-content">
 					<div class="m3-hero-titleblock" data-hero-reveal data-hero-reveal-delay="0">
-						<p class="m3-kicker">Organización total para tu negocio</p>
 						<h1 id="hero-heading" class="m3-display">
-							Dejá que tus clientes<br />se agenden solos.
+							<span>Dejá que</span>
+							<span>tus clientes</span>
+							<span>se agenden solos.</span>
 						</h1>
 					</div>
 					<p class="m3-body-large" data-hero-reveal data-hero-reveal-delay="120">
@@ -134,128 +247,112 @@ const jsonLd = [
 				</div>
 
 				<div class="hero-visual" data-hero-reveal data-hero-reveal-delay="220">
-					<div class="hero-monitor">
-						<div class="hero-monitor__bezel">
-							<div class="hero-monitor__screen">
-								<div
-									class="hero-calendar-split"
-									data-calendar-compare
-									style="--split: 50%; --skew: 14%"
-									aria-label="Compará el calendario en modo claro y oscuro. Deslizá para revelar."
-								>
-									<div class="hero-calendar-split__pane hero-calendar-split__pane--light">
-										<img
-											src="/calendar/desktop/calendar-light.jpeg"
-											alt="Calendario Hasel en modo claro"
-											width="1763"
-											height="899"
-											loading="eager"
-											decoding="async"
-											draggable="false"
-										/>
-									</div>
-									<div class="hero-calendar-split__pane hero-calendar-split__pane--dark">
-										<img
-											src="/calendar/desktop/calendar-dark.jpeg"
-											alt="Calendario Hasel en modo oscuro"
-											width="1763"
-											height="899"
-											loading="eager"
-											decoding="async"
-											draggable="false"
-										/>
-									</div>
-									<div
-										class="hero-calendar-split__handle"
-										data-calendar-handle
-										role="slider"
-										tabindex="0"
-										aria-orientation="horizontal"
-										aria-valuemin="0"
-										aria-valuemax="100"
-										aria-valuenow="50"
-										aria-label="Deslizá para comparar modo claro y oscuro"
-									>
-										<span class="hero-calendar-split__handle-line" aria-hidden="true"></span>
-										<span class="hero-calendar-split__handle-knob material-symbols-rounded" aria-hidden="true"
-											>compare_arrows</span
-										>
-									</div>
-									<span class="hero-calendar-split__label hero-calendar-split__label--light">Claro</span>
-									<span class="hero-calendar-split__label hero-calendar-split__label--dark">Oscuro</span>
-								</div>
-							</div>
-						</div>
-						<div class="hero-monitor__stand" aria-hidden="true">
-							<span class="hero-monitor__neck"></span>
-							<span class="hero-monitor__base"></span>
-						</div>
-					</div>
+					<div class="hero-inbox" aria-hidden="true">
+						<p class="hero-inbox__live">
+							<span class="hero-inbox__dot"></span>
+							Reservas entrando
+						</p>
 
-					<div class="hero-phone">
-						<div class="hero-phone__bezel">
-							<span class="hero-phone__island" aria-hidden="true"></span>
-							<div class="hero-phone__screen">
-								<div
-									class="hero-calendar-split hero-calendar-split--mobile"
-									data-calendar-compare
-									style="--split: 50%; --skew: 12%"
-									aria-label="Compará el calendario móvil en modo claro y oscuro. Deslizá para revelar."
-								>
-									<div class="hero-calendar-split__pane hero-calendar-split__pane--light">
-										<picture>
-											<source type="image/avif" srcset="/calendar/mobile/calendario-light.avif" />
-											<source type="image/webp" srcset="/calendar/mobile/calendario-light.webp" />
-											<img
-												src="/calendar/mobile/calendario-light.png"
-												alt="Calendario Hasel móvil en modo claro"
-												width="780"
-												height="1691"
-												loading="eager"
-												decoding="async"
-												draggable="false"
-											/>
-										</picture>
-									</div>
-									<div class="hero-calendar-split__pane hero-calendar-split__pane--dark">
-										<picture>
-											<source type="image/avif" srcset="/calendar/mobile/calendario-dark.avif" />
-											<source type="image/webp" srcset="/calendar/mobile/calendario-dark.webp" />
-											<img
-												src="/calendar/mobile/calendario-dark.png"
-												alt="Calendario Hasel móvil en modo oscuro"
-												width="780"
-												height="1691"
-												loading="eager"
-												decoding="async"
-												draggable="false"
-											/>
-										</picture>
-									</div>
-									<div
-										class="hero-calendar-split__handle"
-										data-calendar-handle
-										role="slider"
-										tabindex="0"
-										aria-orientation="horizontal"
-										aria-valuemin="0"
-										aria-valuemax="100"
-										aria-valuenow="50"
-										aria-label="Deslizá para comparar modo claro y oscuro"
-									>
-										<span class="hero-calendar-split__handle-line" aria-hidden="true"></span>
-										<span class="hero-calendar-split__handle-knob material-symbols-rounded" aria-hidden="true"
-											>compare_arrows</span
-										>
-									</div>
-									<span class="hero-calendar-split__label hero-calendar-split__label--light">Claro</span>
-									<span class="hero-calendar-split__label hero-calendar-split__label--dark">Oscuro</span>
-								</div>
-							</div>
-						</div>
+						<ol class="hero-inbox__stack" data-hero-inbox>
+							{
+								inboxVisible.map((note, index) => (
+									<li class="hero-toast" data-kind={note.kind} style={`--i: ${index}`}>
+										<span class="hero-toast__mark material-symbols-rounded">{inboxIcons[note.kind]}</span>
+										<div class="hero-toast__copy">
+											<strong>{note.title}</strong>
+											<span>{note.detail}</span>
+										</div>
+										<time>{inboxTimes[index]}</time>
+									</li>
+								))
+							}
+						</ol>
+						<script type="application/json" id="hero-inbox-notes" set:html={JSON.stringify({ notes: inboxNotes, icons: inboxIcons, times: inboxTimes })} />
 					</div>
 				</div>
 			</section>
+
+			{
+				previewOrgs.length > 0 ? (
+					<section id="negocios" class="m3-section discover-section" aria-labelledby="negocios-heading">
+						<div class="discover-intro reveal-on-scroll">
+							<h2 id="negocios-heading" class="m3-headline">
+								Encontrá lo que necesitás
+							</h2>
+							<p class="m3-body discover-lead">
+								Reservá en negocios que ya reciben turnos con Hasel.
+							</p>
+						</div>
+
+						<div class="discover-toolbar reveal-on-scroll">
+							{
+								previewSpecialties.length > 0 ? (
+									<nav class="discover-chips" aria-label="Rubros">
+										<a href="/explorar" class="discover-chip is-active">
+											Todos
+										</a>
+										{previewSpecialties.map((item) => (
+											<a href={`/explorar?specialty=${encodeURIComponent(item.code)}`} class="discover-chip">
+												{item.label}
+											</a>
+										))}
+									</nav>
+								) : null
+							}
+							<a href="/explorar" class="discover-all no-underline">
+								<span class="discover-all__short">Ver todos</span>
+								<span class="discover-all__full">Ver todos los lugares</span>
+								<span class="material-symbols-rounded" aria-hidden="true">
+									arrow_forward
+								</span>
+							</a>
+						</div>
+
+						<div class="discover-grid" aria-label="Negocios en Hasel">
+							{previewOrgs.map((item, index) => {
+								const hubPath = `/${encodeURIComponent(item.slug)}`;
+								const bannerUrl = String(item.banner_url || '').trim();
+								const meta = [item.specialty.label, item.city_name].filter(Boolean).join(' · ');
+								return (
+									<a
+										href={hubPath}
+										class="discover-card reveal-on-scroll no-underline"
+										style={`--reveal-i: ${index}`}
+									>
+										<div class:list={['discover-card__cover', { 'has-banner': Boolean(bannerUrl) }]}>
+											{bannerUrl ? (
+												<img
+													class="discover-card__photo"
+													src={bannerUrl}
+													alt=""
+													width={640}
+													height={400}
+													loading="lazy"
+													decoding="async"
+												/>
+											) : (
+												<span class="discover-card__initial" aria-hidden="true">
+													{orgInitial(item.name)}
+												</span>
+											)}
+										</div>
+										<div class="discover-card__body">
+											<h3 class="discover-card__name">{item.name}</h3>
+											{meta ? <p class="discover-card__meta">{meta}</p> : null}
+											<span class="discover-card__cta">
+												Ver negocio
+												<span class="material-symbols-rounded" aria-hidden="true">
+													arrow_forward
+												</span>
+											</span>
+										</div>
+									</a>
+								);
+							})}
+						</div>
+					</section>
+				) : null
+			}
 
 			<section id="funciones" class="m3-section features-section" aria-labelledby="funciones-heading">
 				<div class="features-intro reveal-on-scroll">
@@ -323,6 +420,57 @@ const jsonLd = [
 						))
 					}
 				</ol>
+			</section>
+
+			<section id="opiniones" class="m3-section voices-section" aria-labelledby="voices-title">
+				<div class="voices-intro reveal-on-scroll">
+					<h2 id="voices-title" class="m3-headline">Lo que opinan de Hasel</h2>
+					<p class="m3-body voices-lead">Profesionales y administradores califican la app con la que atienden.</p>
+				</div>
+				<div class="voices-board">
+					<article class="voices-card voices-card--lead reveal-on-scroll">
+						<div class="voices-stars" aria-label={`${featuredReview.stars} de 5`}>
+							{starSlots.map((slot) => (
+								<span
+									class:list={['material-symbols-rounded', 'voices-star', { 'is-on': slot <= featuredReview.stars }]}
+									aria-hidden="true"
+								>
+									star
+								</span>
+							))}
+						</div>
+						<blockquote class="voices-quote">
+							<p>«{featuredReview.quote}»</p>
+						</blockquote>
+						<footer class="voices-who">
+							<strong>{featuredReview.name}</strong>
+							<span>{featuredReview.role}, {featuredReview.org}</span>
+						</footer>
+					</article>
+					<div class="voices-stack">
+						{moreReviews.map((review, index) => (
+							<article class="voices-card reveal-on-scroll" style={`--reveal-i: ${index + 1}`}>
+								<div class="voices-stars" aria-label={`${review.stars} de 5`}>
+									{starSlots.map((slot) => (
+										<span
+											class:list={['material-symbols-rounded', 'voices-star', { 'is-on': slot <= review.stars }]}
+											aria-hidden="true"
+										>
+											star
+										</span>
+									))}
+								</div>
+								<blockquote class="voices-quote">
+									<p>«{review.quote}»</p>
+								</blockquote>
+								<footer class="voices-who">
+									<strong>{review.name}</strong>
+									<span>{review.role}, {review.org}</span>
+								</footer>
+							</article>
+						))}
+					</div>
+				</div>
 			</section>
 
 			<section id="precios" class="m3-cta-split" aria-labelledby="cta-heading">
@@ -500,9 +648,9 @@ const jsonLd = [
 				try {
 					await Promise.race([
 						Promise.all([
-							document.fonts.load('800 3.5rem "Nunito Sans"'),
-							document.fonts.load('400 1.125rem "Nunito Sans"'),
-							document.fonts.load('700 1rem "Nunito Sans"'),
+							document.fonts.load('800 3.5rem "Plus Jakarta Sans"'),
+							document.fonts.load('400 1.125rem "Plus Jakarta Sans"'),
+							document.fonts.load('700 1rem "Plus Jakarta Sans"'),
 						]),
 						new Promise((resolve) => window.setTimeout(resolve, 300)),
 					]);
@@ -513,6 +661,80 @@ const jsonLd = [
 
 			if (heroRevealNodes.length) {
 				void prepareHeroFonts().then(runHeroReveal);
+			}
+
+			const inboxStack = root.querySelector('[data-hero-inbox]');
+			const inboxSource = document.getElementById('hero-inbox-notes');
+			if (inboxStack instanceof HTMLElement && inboxSource && !prefersReducedMotion) {
+				/** @type {{ notes?: Array<{ kind: string, title: string, detail: string }>, icons?: Record<string, string>, times?: string[] }} */
+				let inboxData = {};
+				try {
+					inboxData = JSON.parse(inboxSource.textContent || '{}');
+				} catch {
+					inboxData = {};
+				}
+
+				const notes = Array.isArray(inboxData.notes) ? inboxData.notes : [];
+				const icons = inboxData.icons && typeof inboxData.icons === 'object' ? inboxData.icons : {};
+				const times = Array.isArray(inboxData.times) ? inboxData.times : ['ahora', '2 min', '5 min'];
+				const slots = Array.from(inboxStack.querySelectorAll('.hero-toast'));
+
+				if (notes.length > slots.length && slots.length > 0) {
+					let cursor = slots.length;
+					const used = new Set(notes.slice(0, slots.length).map((note) => `${note.kind}|${note.detail}`));
+
+					const paintSlot = (slot, note, index, entering) => {
+						slot.dataset.kind = note.kind;
+						const mark = slot.querySelector('.hero-toast__mark');
+						const title = slot.querySelector('strong');
+						const detail = slot.querySelector('.hero-toast__copy span');
+						const time = slot.querySelector('time');
+						if (mark) mark.textContent = icons[note.kind] || 'chat';
+						if (title) title.textContent = note.title;
+						if (detail) detail.textContent = note.detail;
+						if (time) time.textContent = times[index] || '';
+						slot.classList.toggle('is-enter', Boolean(entering));
+					};
+
+					const nextNote = () => {
+						const topKind = slots[0]?.dataset.kind;
+						let fallback = notes[cursor % notes.length];
+						for (let step = 0; step < notes.length; step += 1) {
+							const note = notes[cursor % notes.length];
+							cursor += 1;
+							const key = `${note.kind}|${note.detail}`;
+							if (used.has(key)) continue;
+							if (!fallback) fallback = note;
+							if (note.kind === topKind) continue;
+							return note;
+						}
+						return fallback;
+					};
+
+					const rotateInbox = () => {
+						if (document.hidden) return;
+						const incoming = nextNote();
+						if (!incoming) return;
+
+						const current = slots.map((slot) => ({
+							kind: slot.dataset.kind || 'book',
+							title: slot.querySelector('strong')?.textContent || '',
+							detail: slot.querySelector('.hero-toast__copy span')?.textContent || '',
+						}));
+						const nextVisible = [incoming, ...current.slice(0, slots.length - 1)];
+						used.clear();
+						nextVisible.forEach((note) => used.add(`${note.kind}|${note.detail}`));
+
+						slots.forEach((slot, index) => {
+							slot.classList.remove('is-enter');
+							if (index === 0) void slot.offsetWidth;
+							paintSlot(slot, nextVisible[index], index, index === 0);
+						});
+					};
+
+					const inboxTimer = window.setInterval(rotateInbox, 4800);
+					signal.addEventListener('abort', () => window.clearInterval(inboxTimer));
+				}
 			}
 
 			const revealNodes = root.querySelectorAll('.reveal-on-scroll');
@@ -533,97 +755,6 @@ const jsonLd = [
 				revealNodes.forEach((node) => node.classList.add('is-visible'));
 			}
 
-			root.querySelectorAll('[data-calendar-compare]').forEach((compareRoot) => {
-				if (!(compareRoot instanceof HTMLElement)) return;
-				const handle = compareRoot.querySelector('[data-calendar-handle]');
-				const skewRaw = getComputedStyle(compareRoot).getPropertyValue('--skew').trim();
-				const SKEW = Number.parseFloat(skewRaw) || 14;
-				let split = 50;
-				let dragging = false;
-
-				const setSplit = (pct) => {
-					split = Math.min(100, Math.max(0, pct));
-					const splitTop = (split / 100) * (100 + SKEW);
-					compareRoot.style.setProperty('--split', `${splitTop}%`);
-					if (handle instanceof HTMLElement) {
-						handle.setAttribute('aria-valuenow', String(Math.round(split)));
-					}
-				};
-
-				const updateFromClientX = (clientX) => {
-					const rect = compareRoot.getBoundingClientRect();
-					if (rect.width <= 0) return;
-					const pct = ((clientX - rect.left) / rect.width) * 100;
-					setSplit(pct);
-				};
-
-				compareRoot.addEventListener(
-					'pointerdown',
-					(event) => {
-						if (!(event instanceof PointerEvent)) return;
-						dragging = true;
-						compareRoot.classList.add('is-dragging');
-						compareRoot.setPointerCapture?.(event.pointerId);
-						updateFromClientX(event.clientX);
-						event.preventDefault();
-					},
-					{ signal }
-				);
-				compareRoot.addEventListener(
-					'pointermove',
-					(event) => {
-						if (!dragging || !(event instanceof PointerEvent)) return;
-						updateFromClientX(event.clientX);
-					},
-					{ signal }
-				);
-				const onPointerUp = (event) => {
-					if (!dragging || !(event instanceof PointerEvent)) return;
-					dragging = false;
-					compareRoot.classList.remove('is-dragging');
-					try {
-						compareRoot.releasePointerCapture?.(event.pointerId);
-					} catch {
-						/* ignore */
-					}
-				};
-				compareRoot.addEventListener('pointerup', onPointerUp, { signal });
-				compareRoot.addEventListener('pointercancel', onPointerUp, { signal });
-				compareRoot.addEventListener(
-					'lostpointercapture',
-					() => {
-						dragging = false;
-						compareRoot.classList.remove('is-dragging');
-					},
-					{ signal }
-				);
-
-				if (handle instanceof HTMLElement) {
-					handle.addEventListener(
-						'keydown',
-						(event) => {
-							if (!(event instanceof KeyboardEvent)) return;
-							const step = event.shiftKey ? 10 : 3;
-							if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') {
-								event.preventDefault();
-								setSplit(split - step);
-							} else if (event.key === 'ArrowRight' || event.key === 'ArrowUp') {
-								event.preventDefault();
-								setSplit(split + step);
-							} else if (event.key === 'Home') {
-								event.preventDefault();
-								setSplit(0);
-							} else if (event.key === 'End') {
-								event.preventDefault();
-								setSplit(100);
-							}
-						},
-						{ signal }
-					);
-				}
-
-				setSplit(50);
-			});
 		};
 
 		if (!window.__haselLandingPageBound) {
@@ -665,20 +796,21 @@ const jsonLd = [
 			radial-gradient(ellipse 120% 70% at 50% -15%, rgba(66, 110, 219, 0.07), transparent 55%),
 			var(--surface);
 		color: var(--text-primary);
-		font-family: var(--font-body, 'Nunito Sans', system-ui, sans-serif);
+		font-family: var(--font-body, 'Plus Jakarta Sans', system-ui, sans-serif);
 		-webkit-font-smoothing: antialiased;
 	}
 
 	:global(html[data-theme='dark']) .landing-root {
-		--surface: #0c0e14;
-		--surface-raised: #141820;
-		--surface-overlay: #1a2030;
+		--surface: #0e0e10;
+		--surface-raised: #121214;
+		--surface-overlay: #1a1a1c;
 		--text-primary: #eef0f4;
 		--text-secondary: #a8adb8;
 		--text-muted: #7a8190;
 		--border: rgba(255, 255, 255, 0.08);
 		--border-strong: rgba(255, 255, 255, 0.14);
 		--control-hover: rgba(255, 255, 255, 0.06);
+		background: #0e0e10;
 	}
 
 	:global(html:has(.landing-root)),
@@ -691,7 +823,7 @@ const jsonLd = [
 
 	:global(html[data-theme='dark']:has(.landing-root)),
 	:global(html[data-theme='dark']) :global(body:has(.landing-root)) {
-		background: #0c0e14;
+		background: #0e0e10;
 	}
 
 	:global(body:has(.landing-root)) {
@@ -871,29 +1003,34 @@ const jsonLd = [
 
 	.m3-hero-titleblock {
 		display: grid;
-		gap: 0.45rem;
+		width: 100%;
 		min-width: 0;
-	}
-
-	.m3-kicker {
-		margin: 0;
-		font-size: 0.78rem;
-		font-weight: 650;
-		letter-spacing: 0.08em;
-		line-height: 1.3;
-		text-transform: uppercase;
-		color: color-mix(in srgb, var(--text-primary) 62%, #93c5fd);
+		container-type: inline-size;
 	}
 
 	/* Type */
 	.m3-display {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
 		margin: 0;
-		font-size: clamp(2rem, 5.5vw, 3.35rem);
+		font-size: clamp(2.2rem, 10cqi, 3.25rem);
 		font-weight: 800;
-		line-height: 1.12;
-		letter-spacing: -0.03em;
+		line-height: 1.06;
+		letter-spacing: -0.045em;
 		color: var(--text-primary);
-		text-wrap: balance;
+	}
+
+	.m3-display span {
+		white-space: nowrap;
+	}
+
+	@media (min-width: 900px) {
+		.m3-display {
+			font-size: clamp(2.85rem, 12.5cqi, 4.4rem);
+			line-height: 1.02;
+			letter-spacing: -0.05em;
+		}
 	}
 
 	.m3-headline {
@@ -977,249 +1114,181 @@ const jsonLd = [
 		min-width: 0;
 	}
 
-	.hero-monitor {
-		display: none;
-		flex-direction: column;
-		align-items: center;
-		width: 100%;
+	.hero-inbox {
+		--toast-bg: color-mix(in srgb, var(--surface) 88%, #ffffff);
+		--toast-ink: var(--text-primary);
+		--toast-muted: var(--text-secondary);
+		--toast-line: var(--border);
+		position: relative;
+		display: grid;
+		justify-items: center;
+		align-content: center;
+		gap: 0.7rem;
+		min-height: 18.5rem;
+		padding: 0.25rem 0;
 	}
 
-	.hero-phone {
-		display: flex;
-		flex-direction: column;
+	:global(html[data-theme='dark']) .hero-inbox {
+		--toast-bg: color-mix(in srgb, var(--surface) 82%, #141416);
+	}
+
+	:global(html[data-theme='dark']) .hero-toast {
+		box-shadow: 0 2px 8px rgb(0 0 0 / 0.18);
+	}
+
+	.hero-inbox__live {
+		display: inline-flex;
 		align-items: center;
-		width: min(100%, 14rem);
-		margin: 0 auto;
+		gap: 0.38rem;
+		justify-self: center;
+		margin: 0;
+		padding: 0;
+		border: 0;
+		background: transparent;
+		color: var(--text-secondary);
+		font-size: 0.7rem;
+		font-weight: 700;
+		letter-spacing: 0.01em;
+	}
+
+	.hero-inbox__dot {
+		width: 0.38rem;
+		height: 0.38rem;
+		border-radius: 999px;
+		background: #22c55e;
+		box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.45);
+		animation: hero-live-pulse 2.4s ease-out infinite;
+	}
+
+	.hero-inbox__stack {
+		display: grid;
+		gap: 0.45rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		width: min(100%, 23.5rem);
+	}
+
+	.hero-toast {
+		display: grid;
+		grid-template-columns: auto 1fr auto;
+		align-items: center;
+		gap: 0.65rem;
+		padding: 0.72rem 0.8rem;
+		border-radius: 0.9rem;
+		background: var(--toast-bg);
+		border: 1px solid var(--toast-line);
+		box-shadow: 0 2px 8px rgb(15 23 42 / 0.05);
+	}
+
+	.hero-toast.is-enter {
+		animation: hero-toast-enter 0.55s var(--ease) both;
+	}
+
+	.hero-toast__mark {
+		width: 1.35rem;
+		height: 1.35rem;
+		display: grid;
+		place-items: center;
+		font-size: 1.15rem;
+		color: var(--toast-muted);
+		font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+	}
+
+	.hero-toast__copy {
+		display: grid;
+		gap: 0.08rem;
+		min-width: 0;
+	}
+
+	.hero-toast__copy strong {
+		font-size: 0.86rem;
+		font-weight: 750;
+		color: var(--toast-ink);
+		letter-spacing: -0.02em;
+	}
+
+	.hero-toast__copy span {
+		font-size: 0.76rem;
+		font-weight: 600;
+		color: var(--toast-muted);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.hero-toast time {
+		font-size: 0.66rem;
+		font-weight: 700;
+		color: var(--toast-muted);
+		white-space: nowrap;
+	}
+
+	@keyframes hero-toast-enter {
+		from {
+			opacity: 0;
+			transform: translate3d(0, -8px, 0);
+		}
+		to {
+			opacity: 1;
+			transform: translate3d(0, 0, 0);
+		}
+	}
+
+	@keyframes hero-live-pulse {
+		0% {
+			box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+		}
+		70% {
+			box-shadow: 0 0 0 0.38rem rgba(34, 197, 94, 0);
+		}
+		100% {
+			box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+		}
 	}
 
 	@media (max-width: 380px) {
-		.hero-phone {
-			width: min(100%, 12.5rem);
-		}
-
 		.m3-hero-content {
 			gap: 0.95rem;
 		}
-	}
 
-	.hero-phone__bezel,
-	.hero-monitor__bezel {
-		width: 100%;
-		padding: 0.5rem;
-		border-radius: 1.5rem;
-		background: linear-gradient(160deg, #343842 0%, #181b22 55%, #101218 100%);
-		border: 1px solid var(--border-strong);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.07),
-			0 20px 50px rgba(0, 0, 0, 0.45);
-	}
-
-	.hero-phone__bezel {
-		position: relative;
-		border-radius: 1.85rem;
-	}
-
-	.hero-phone__island {
-		position: absolute;
-		z-index: 6;
-		top: 0.7rem;
-		left: 50%;
-		transform: translateX(-50%);
-		width: 28%;
-		height: 0.7rem;
-		border-radius: var(--radius-pill);
-		background: #08090c;
-		pointer-events: none;
-	}
-
-	.hero-phone__screen,
-	.hero-monitor__screen {
-		position: relative;
-		border-radius: 1rem;
-		overflow: hidden;
-		background: #08090c;
-		box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55) inset;
-	}
-
-	.hero-monitor__screen {
-		border-radius: 0.75rem;
-	}
-
-	.hero-monitor__stand {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		width: 100%;
-		pointer-events: none;
-	}
-
-	.hero-monitor__neck {
-		width: 16%;
-		height: 1rem;
-		background: linear-gradient(90deg, #181a20, #2a2e38 50%, #181a20);
-		border-radius: 0 0 0.15rem 0.15rem;
-	}
-
-	.hero-monitor__base {
-		width: 38%;
-		height: 0.5rem;
-		margin-top: -1px;
-		border-radius: 999px 999px 40% 40%;
-		background: linear-gradient(180deg, #2a2e38, #12141a);
-		border: 1px solid var(--border);
-	}
-
-	.hero-calendar-split {
-		--split: 50%;
-		--skew: 14%;
-		--split-angle: 12.5deg;
-		position: relative;
-		isolation: isolate;
-		width: 100%;
-		aspect-ratio: 16 / 10;
-		overflow: hidden;
-		background: var(--surface-raised);
-		touch-action: none;
-		cursor: ew-resize;
-		user-select: none;
-		-webkit-user-select: none;
-	}
-
-	.hero-calendar-split--mobile {
-		--skew: 12%;
-		--split-angle: 10deg;
-		aspect-ratio: 780 / 1691;
-	}
-
-	.hero-calendar-split.is-dragging {
-		cursor: grabbing;
-	}
-
-	.hero-calendar-split__pane {
-		position: absolute;
-		inset: 0;
-	}
-
-	.hero-calendar-split__pane picture {
-		display: block;
-		width: 100%;
-		height: 100%;
-	}
-
-	.hero-calendar-split__pane img {
-		display: block;
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-		object-position: left top;
-		pointer-events: none;
-		user-select: none;
-	}
-
-	.hero-calendar-split__pane--light {
-		z-index: 1;
-		clip-path: polygon(
-			0 0,
-			calc(var(--split) + 0.65%) 0,
-			calc(var(--split) - var(--skew) + 0.65%) 100%,
-			0 100%
-		);
-	}
-
-	.hero-calendar-split__pane--dark {
-		z-index: 2;
-		clip-path: polygon(
-			calc(var(--split) - 0.65%) 0,
-			100% 0,
-			100% 100%,
-			calc(var(--split) - var(--skew) - 0.65%) 100%
-		);
-	}
-
-	.hero-calendar-split__handle {
-		position: absolute;
-		z-index: 5;
-		top: 0;
-		bottom: 0;
-		left: calc(var(--split) - (var(--skew) * 0.5));
-		width: 44px;
-		transform: translateX(-50%) rotate(var(--split-angle));
-		display: grid;
-		place-items: center;
-		cursor: ew-resize;
-		outline: none;
-	}
-
-	.hero-calendar-split__handle-line {
-		display: none;
-	}
-
-	.hero-calendar-split__handle-knob {
-		display: grid;
-		place-items: center;
-		width: 2.25rem;
-		height: 2.25rem;
-		border-radius: var(--radius-pill);
-		background: #fff;
-		color: #1a1c22;
-		font-size: 1.1rem;
-		transform: rotate(-12.5deg);
-		box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-		pointer-events: none;
-	}
-
-	.hero-calendar-split__handle:focus-visible .hero-calendar-split__handle-knob {
-		outline: 2px solid var(--accent);
-		outline-offset: 3px;
-	}
-
-	.hero-calendar-split__label {
-		position: absolute;
-		z-index: 4;
-		padding: 0.25rem 0.55rem;
-		border-radius: var(--radius-sm);
-		font-size: 0.6875rem;
-		font-weight: 700;
-		letter-spacing: 0.01em;
-		pointer-events: none;
-	}
-
-	.hero-calendar-split__label--light {
-		top: 0.65rem;
-		left: 0.65rem;
-		background: rgba(255, 255, 255, 0.9);
-		color: #1a1a1a;
-	}
-
-	.hero-calendar-split__label--dark {
-		bottom: 0.65rem;
-		right: 0.65rem;
-		background: rgba(16, 18, 24, 0.9);
-		color: #e8eaef;
+		.hero-inbox {
+			min-height: 16.5rem;
+		}
 	}
 
 	@media (min-width: 900px) {
 		.m3-hero {
-			grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+			grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
 			gap: 3rem;
 			padding: 1.75rem 0 3rem;
 			min-height: 0;
 			align-items: center;
 		}
 
-		.hero-phone {
-			display: none;
+		.hero-inbox {
+			min-height: 20rem;
+			justify-items: end;
 		}
 
-		.hero-monitor {
-			display: flex;
-			align-self: center;
-			width: 100%;
+		.hero-inbox__live {
+			justify-self: end;
 		}
 
-		.hero-monitor__bezel {
-			padding: 0.65rem;
-			border-radius: 1.35rem;
+		.hero-inbox__stack {
+			width: min(100%, 24.5rem);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.hero-inbox__dot,
+		.hero-toast.is-enter {
+			animation: none;
+		}
+
+		.hero-toast {
+			opacity: 1;
+			transform: none;
 		}
 	}
 
@@ -1541,6 +1610,412 @@ const jsonLd = [
 		.workflow-rail__step {
 			grid-template-columns: 1fr;
 			padding: 1.5rem 1.25rem;
+		}
+	}
+
+	.voices-section {
+		padding-block: 3.5rem;
+		border-top: 1px solid var(--border);
+	}
+
+	.voices-intro {
+		display: grid;
+		gap: 0.5rem;
+		margin-bottom: 1.5rem;
+		max-width: 36rem;
+	}
+
+	.voices-lead {
+		color: var(--text-muted);
+	}
+
+	.voices-board {
+		display: flex;
+		align-items: stretch;
+		gap: 0.85rem;
+		margin-inline: calc(var(--landing-pad-x) * -1);
+		padding-inline: var(--landing-pad-x);
+		padding-bottom: 0.35rem;
+		overflow-x: auto;
+		overscroll-behavior-x: contain;
+		scroll-snap-type: x mandatory;
+		scroll-padding-inline: var(--landing-pad-x);
+		scrollbar-width: none;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.voices-board::-webkit-scrollbar {
+		display: none;
+	}
+
+	.voices-stack {
+		display: contents;
+	}
+
+	.voices-card {
+		display: grid;
+		align-content: start;
+		gap: 0.75rem;
+		flex: 0 0 min(78%, 22.5rem);
+		min-width: 0;
+		scroll-snap-align: start;
+		padding: 1.15rem 1.2rem;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-lg);
+		background: var(--surface-raised);
+	}
+
+	.voices-card--lead {
+		padding: 1.4rem 1.35rem;
+		background: color-mix(in srgb, var(--accent) 7%, var(--surface-raised));
+		border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+	}
+
+	.voices-stars {
+		display: flex;
+		gap: 0.12rem;
+		color: color-mix(in srgb, var(--text-muted) 70%, transparent);
+	}
+
+	.voices-star {
+		font-size: 1.15rem;
+		font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+		line-height: 1;
+	}
+
+	.voices-star.is-on {
+		color: #c59214;
+		font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+	}
+
+	.voices-quote {
+		margin: 0;
+	}
+
+	.voices-quote p {
+		margin: 0;
+		max-width: 38ch;
+		font-size: 1.05rem;
+		font-weight: 650;
+		line-height: 1.4;
+		letter-spacing: -0.02em;
+		color: var(--text-primary);
+	}
+
+	.voices-card--lead .voices-quote p {
+		max-width: none;
+		font-size: 1.12rem;
+		line-height: 1.35;
+	}
+
+	.voices-who {
+		display: grid;
+		gap: 0.15rem;
+	}
+
+	.voices-who strong {
+		font-size: 0.95rem;
+		font-weight: 750;
+		color: var(--text-primary);
+	}
+
+	.voices-who span {
+		font-size: 0.88rem;
+		color: var(--text-muted);
+	}
+
+	@media (min-width: 900px) {
+		.voices-board {
+			display: grid;
+			grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+			gap: 1rem;
+			align-items: stretch;
+			margin-inline: 0;
+			padding-inline: 0;
+			padding-bottom: 0;
+			overflow: visible;
+			scroll-snap-type: none;
+		}
+
+		.voices-stack {
+			display: grid;
+			gap: 0.85rem;
+			align-content: stretch;
+		}
+
+		.voices-card {
+			flex: unset;
+			scroll-snap-align: unset;
+		}
+
+		.voices-card--lead {
+			padding: 1.75rem 1.6rem;
+		}
+
+		.voices-card--lead .voices-quote p {
+			max-width: 28ch;
+			font-size: clamp(1.2rem, 2.4vw, 1.55rem);
+			line-height: 1.28;
+		}
+
+		.voices-stack .voices-card {
+			height: 100%;
+		}
+	}
+
+	/* Preview de negocios */
+	.discover-section {
+		padding-block: 3rem;
+		border-top: 1px solid var(--border);
+	}
+
+	.discover-intro {
+		display: grid;
+		gap: 0.5rem;
+		margin-bottom: 1.25rem;
+		max-width: 36rem;
+	}
+
+	.discover-lead {
+		color: var(--text-muted);
+	}
+
+	.discover-toolbar {
+		display: flex;
+		align-items: center;
+		gap: 0.65rem;
+		margin: 0 0 1.25rem;
+		min-width: 0;
+		overflow: hidden;
+	}
+
+	.discover-all {
+		display: inline-flex;
+		align-items: center;
+		flex: 0 0 auto;
+		gap: 0.3rem;
+		z-index: 1;
+		margin-left: 0;
+		padding-left: 0.55rem;
+		width: fit-content;
+		background: var(--surface);
+		box-shadow: -0.85rem 0 0.7rem 0.15rem var(--surface);
+		font-size: 0.86rem;
+		font-weight: 700;
+		color: var(--accent);
+		white-space: nowrap;
+	}
+
+	.discover-all .material-symbols-rounded {
+		font-size: 1.05rem;
+	}
+
+	.discover-all:hover {
+		color: var(--accent-hover);
+	}
+
+	.discover-all__full {
+		display: none;
+	}
+
+	@media (min-width: 640px) {
+		.discover-all__short {
+			display: none;
+		}
+
+		.discover-all__full {
+			display: inline;
+		}
+	}
+
+	.discover-chips {
+		display: flex;
+		flex: 1 1 auto;
+		flex-wrap: nowrap;
+		gap: 0.5rem;
+		margin: 0;
+		min-width: 0;
+		overflow-x: auto;
+		scrollbar-width: none;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.discover-chips::-webkit-scrollbar {
+		display: none;
+	}
+
+	.discover-chip {
+		flex: 0 0 auto;
+		padding: 0.45rem 0.95rem;
+		border-radius: var(--radius-pill);
+		border: 1px solid var(--border);
+		background: var(--surface-raised);
+		color: var(--text-secondary);
+		font-size: 0.8125rem;
+		font-weight: 700;
+		white-space: nowrap;
+		text-decoration: none;
+	}
+
+	.discover-chip.is-active,
+	.discover-chip:hover {
+		background: var(--accent);
+		border-color: transparent;
+		color: var(--accent-on);
+	}
+
+	.discover-grid {
+		display: flex;
+		gap: 0.85rem;
+		margin-inline: calc(var(--landing-pad-x) * -1);
+		padding-inline: var(--landing-pad-x);
+		padding-bottom: 0.4rem;
+		overflow-x: auto;
+		overscroll-behavior-x: contain;
+		scroll-snap-type: x mandatory;
+		scroll-padding-inline: var(--landing-pad-x);
+		scrollbar-width: none;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.discover-grid::-webkit-scrollbar {
+		display: none;
+	}
+
+	.discover-card {
+		display: grid;
+		grid-template-rows: auto 1fr;
+		flex: 0 0 min(78vw, 17.5rem);
+		min-width: 0;
+		scroll-snap-align: start;
+		overflow: hidden;
+		border-radius: var(--radius-lg);
+		border: 1px solid var(--border);
+		background: var(--surface-raised);
+		color: inherit;
+		box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+		transition:
+			transform 200ms var(--ease),
+			box-shadow 200ms var(--ease);
+	}
+
+	.discover-card:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 6px 16px rgb(15 23 42 / 0.07);
+	}
+
+	:global(html[data-theme='dark']) .discover-card {
+		box-shadow: 0 2px 8px rgb(0 0 0 / 0.18);
+	}
+
+	:global(html[data-theme='dark']) .discover-card:hover {
+		box-shadow: 0 6px 16px rgb(0 0 0 / 0.28);
+	}
+
+	.discover-card:active {
+		transform: scale(0.98);
+	}
+
+	.discover-card__cover {
+		position: relative;
+		aspect-ratio: 3 / 2;
+		overflow: hidden;
+		background:
+			radial-gradient(ellipse 70% 60% at 20% 18%, color-mix(in srgb, var(--text-primary) 7%, var(--surface)), transparent 64%),
+			linear-gradient(160deg, color-mix(in srgb, var(--text-primary) 11%, var(--surface)), color-mix(in srgb, var(--text-primary) 5%, var(--surface)));
+	}
+
+	.discover-card__cover.has-banner {
+		background: var(--surface);
+	}
+
+	.discover-card__photo {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.discover-card__initial {
+		position: absolute;
+		inset: 0;
+		display: grid;
+		place-items: center;
+		font-size: 2.5rem;
+		font-weight: 800;
+		color: color-mix(in srgb, var(--text-primary) 36%, var(--surface));
+	}
+
+	.discover-card__body {
+		display: grid;
+		gap: 0.35rem;
+		align-content: start;
+		padding: 1rem 1.05rem 1.1rem;
+	}
+
+	.discover-card__name {
+		margin: 0;
+		font-size: 1.05rem;
+		font-weight: 800;
+		letter-spacing: -0.02em;
+		color: var(--text-primary);
+	}
+
+	.discover-card__meta {
+		margin: 0;
+		font-size: 0.82rem;
+		font-weight: 600;
+		color: var(--text-muted);
+	}
+
+	.discover-card__cta {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.3rem;
+		margin-top: 0.55rem;
+		min-height: 2.4rem;
+		padding: 0.45rem 0.9rem;
+		border-radius: var(--radius-pill);
+		background: var(--accent);
+		color: var(--accent-on);
+		font-size: 0.8125rem;
+		font-weight: 700;
+	}
+
+	.discover-card__cta .material-symbols-rounded {
+		font-size: 1rem;
+	}
+
+	@media (min-width: 640px) {
+		.discover-grid {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 1rem;
+			margin-inline: 0;
+			padding-inline: 0;
+			padding-bottom: 0;
+			overflow: visible;
+			scroll-snap-type: none;
+		}
+
+		.discover-card {
+			flex: unset;
+			scroll-snap-align: unset;
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.discover-grid {
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+		}
+
+		.discover-grid:has(> :nth-child(2):last-child) {
+			grid-template-columns: repeat(2, minmax(0, 20rem));
+		}
+
+		.discover-grid:has(> :nth-child(3):last-child) {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
 		}
 	}
 
