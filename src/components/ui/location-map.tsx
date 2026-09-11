@@ -1,6 +1,6 @@
 import type { MouseEvent, ReactNode } from 'react';
 import { useEffect, useId, useRef, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 
 export const formatMapCoordinates = (latitude: number, longitude: number): string => {
 	if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return '';
@@ -34,9 +34,13 @@ export function LocationMap({
 	const gridId = `location-map-grid-${reactId}`;
 	const rootRef = useRef<HTMLDivElement>(null);
 	const mapElRef = useRef<HTMLDivElement>(null);
+	const mapRef = useRef<{ resize: () => void; remove: () => void } | null>(null);
 	const prefersReducedMotion = useReducedMotion();
 	const [isHovered, setIsHovered] = useState(false);
 	const [isExpanded, setIsExpanded] = useState(false);
+	const [mapMounted, setMapMounted] = useState(false);
+	const [mapReady, setMapReady] = useState(false);
+	const [sheetSettled, setSheetSettled] = useState(true);
 
 	const reduceMotion = Boolean(prefersReducedMotion);
 	const hasCoords =
@@ -45,13 +49,28 @@ export function LocationMap({
 		Number.isFinite(latitude) &&
 		Number.isFinite(longitude) &&
 		Boolean(stadiaKey);
-	const canShowRealMap = isExpanded && hasCoords;
+	const showMap = isExpanded && mapReady && sheetSettled;
 
 	const toggleExpanded = (event: MouseEvent<HTMLDivElement>) => {
 		const target = event.target;
 		if (target instanceof Element && target.closest('.hub-location-map__actions')) return;
+		setSheetSettled(false);
 		setIsExpanded((open) => !open);
 	};
+
+	const resizeMap = () => {
+		const map = mapRef.current;
+		if (!map) return;
+		try {
+			map.resize();
+		} catch {
+			// ignore
+		}
+	};
+
+	useEffect(() => {
+		if (isExpanded && hasCoords) setMapMounted(true);
+	}, [isExpanded, hasCoords]);
 
 	useEffect(() => {
 		if (!isExpanded) return;
@@ -59,6 +78,7 @@ export function LocationMap({
 			const root = rootRef.current;
 			const target = event.target;
 			if (!root || !(target instanceof Node) || root.contains(target)) return;
+			setSheetSettled(false);
 			setIsExpanded(false);
 		};
 		document.addEventListener('pointerdown', onPointerDown);
@@ -66,11 +86,12 @@ export function LocationMap({
 	}, [isExpanded]);
 
 	useEffect(() => {
-		if (!canShowRealMap || typeof latitude !== 'number' || typeof longitude !== 'number') return;
+		if (!mapMounted || !hasCoords || typeof latitude !== 'number' || typeof longitude !== 'number') {
+			return;
+		}
 
 		let cancelled = false;
 		let raf = 0;
-		let map: { remove: () => void } | null = null;
 		let disconnect: (() => void) | null = null;
 		let marker: { remove: () => void } | null = null;
 		const lat = latitude;
@@ -86,11 +107,11 @@ export function LocationMap({
 			}
 			marker = null;
 			try {
-				map?.remove();
+				mapRef.current?.remove();
 			} catch {
 				// ignore
 			}
-			map = null;
+			mapRef.current = null;
 		};
 
 		const start = async (container: HTMLDivElement) => {
@@ -107,18 +128,30 @@ export function LocationMap({
 				style: mod.getStadiaStyleUrl(theme, stadiaKey),
 				center: [lng, lat],
 				zoom: 16,
+				fadeDuration: 0,
 				attributionControl: { compact: true },
 				transformRequest: mod.createStadiaTransformRequest(stadiaKey),
 			});
-			map = instance;
+			mapRef.current = instance;
 			marker = mod
 				.createBrandMarker(maplibregl, center, {
 					title: location,
 				})
 				.addTo(instance);
-			disconnect = mod.observeMapContainerResize(container, instance, () => center);
-			instance.once('load', () => mod.scheduleMapLayout(instance, center));
-			mod.scheduleMapLayout(instance, center);
+			const reveal = () => {
+				if (cancelled) return;
+				try {
+					instance.resize();
+				} catch {
+					// ignore
+				}
+				setMapReady(true);
+			};
+			if (instance.loaded()) {
+				reveal();
+			} else {
+				instance.once('idle', reveal);
+			}
 		};
 
 		const waitForEl = () => {
@@ -135,47 +168,54 @@ export function LocationMap({
 			cancelled = true;
 			cancelAnimationFrame(raf);
 			destroy();
+			setMapReady(false);
 		};
-	}, [canShowRealMap, latitude, longitude, stadiaKey, location]);
+	}, [mapMounted, hasCoords, latitude, longitude, stadiaKey, location]);
 
 	return (
 		<motion.div
 			ref={rootRef}
 			className={`hub-location-map ${className}`.trim()}
-			onMouseEnter={() => setIsHovered(true)}
+			onMouseEnter={() => {
+				setIsHovered(true);
+				if (hasCoords) {
+					void import('../../lib/maplibre-interactive').then((mod) => {
+						void mod.loadMapLibre();
+					});
+				}
+			}}
 			onMouseLeave={() => setIsHovered(false)}
 			onClick={toggleExpanded}
 		>
 			<motion.div
 				className="hub-location-map__sheet"
-				animate={{ height: isExpanded ? 328 : 228 }}
+				animate={{ height: isExpanded ? 328 : 176 }}
 				transition={
 					reduceMotion
 						? { duration: 0 }
-						: { type: 'spring', stiffness: 400, damping: 35 }
+						: { duration: 0.32, ease: [0.22, 1, 0.36, 1] }
 				}
+				onAnimationComplete={() => {
+					resizeMap();
+					setSheetSettled(true);
+				}}
 			>
 				<div className="hub-location-map__wash" />
 
-				<AnimatePresence>
-					{canShowRealMap ? (
-						<motion.div
-							className="hub-location-map__real"
-							initial={reduceMotion ? false : { opacity: 0 }}
-							animate={{ opacity: 1 }}
-							exit={reduceMotion ? undefined : { opacity: 0 }}
-							transition={{ duration: reduceMotion ? 0 : 0.35 }}
-						>
-							<div ref={mapElRef} className="hub-location-map__canvas" />
-							<div className="hub-location-map__detail-fade" />
-						</motion.div>
-					) : null}
-				</AnimatePresence>
+				{mapMounted ? (
+					<div
+						className="hub-location-map__real"
+						style={{ opacity: showMap ? 1 : 0 }}
+					>
+						<div ref={mapElRef} className="hub-location-map__canvas" />
+						<div className="hub-location-map__detail-fade" />
+					</div>
+				) : null}
 
 				<motion.div
 					className="hub-location-map__grid"
-					animate={{ opacity: isExpanded ? 0 : 0.04 }}
-					transition={{ duration: reduceMotion ? 0 : 0.3 }}
+					animate={{ opacity: showMap ? 0 : 0.04 }}
+					transition={{ duration: reduceMotion ? 0 : 0.35 }}
 				>
 					<svg width="100%" height="100%" aria-hidden="true">
 						<defs>
@@ -218,19 +258,9 @@ export function LocationMap({
 
 						{address && !isExpanded ? <p className="hub-location-map__address">{address}</p> : null}
 
-						<AnimatePresence>
-							{isExpanded && coordinates ? (
-								<motion.p
-									className="hub-location-map__coords"
-									initial={reduceMotion ? false : { opacity: 0, y: -8, height: 0 }}
-									animate={{ opacity: 1, y: 0, height: 'auto' }}
-									exit={reduceMotion ? undefined : { opacity: 0, y: -8, height: 0 }}
-									transition={{ duration: reduceMotion ? 0 : 0.25 }}
-								>
-									{coordinates}
-								</motion.p>
-							) : null}
-						</AnimatePresence>
+						{isExpanded && coordinates ? (
+							<p className="hub-location-map__coords">{coordinates}</p>
+						) : null}
 
 						<motion.div
 							className="hub-location-map__rule"
