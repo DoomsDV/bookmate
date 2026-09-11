@@ -22,7 +22,12 @@ const avatarInitials =
 
 const defaultLogoHref = variant === 'marketing' ? '/' : '/explorar';
 const logoHref = logoHrefProp ?? defaultLogoHref;
-const logoLabel = logoHref === '/' ? 'Hasel — Inicio' : 'Hasel — Buscar negocios';
+const logoLabel =
+	logoHref === '/'
+		? 'Hasel — Inicio'
+		: logoHref === '/explorar'
+			? 'Hasel — Buscar negocios'
+			: 'Hasel — Volver al negocio';
 ---
 
 <header

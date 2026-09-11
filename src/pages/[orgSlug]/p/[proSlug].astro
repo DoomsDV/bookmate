@@ -13,6 +13,7 @@ import {
 	type PublicBookingProfile,
 } from '../../../lib/public-booking';
 import {
+	buildOrgHubPath,
 	buildPublicProfilePath,
 	resolveOgImageUrl,
 	resolvePublicSiteOrigin,
@@ -74,6 +75,7 @@ const serializedLocations = profile
 
 const siteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 const canonicalPath = buildPublicProfilePath(organizationSlug, professionalSlug) || Astro.url.pathname;
+const hubPath = buildOrgHubPath(organizationSlug) || '/explorar';
 
 const organizationName = profile?.organization_name?.trim() || organizationSlug;
 const professionalName = profile?.full_name?.trim() || professionalSlug;
@@ -106,7 +108,7 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 	robots={profile ? 'index, follow' : 'noindex, nofollow'}
 >
 	<main class="public-booking-shell">
-		<PublicHaselTopbar variant="marketplace" logoHref="/" />
+		<PublicHaselTopbar variant="marketplace" logoHref={hubPath} />
 		{
 			loadError || !profile ? (
 				<div class="public-booking-shell__canvas">
