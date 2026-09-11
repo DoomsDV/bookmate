@@ -6,9 +6,9 @@
 const defaults = {
 	bffBaseUrl: 'http://127.0.0.1:4321',
 	ordsPublicBaseUrl:
-		'https://g9549f707e8ebfa-aoxdev.adb.sa-saopaulo-1.oraclecloudapps.com/ords/aoxdev/public/v1',
+		'https://g9549f707e8ebfa-aoxdevelop.adb.sa-saopaulo-1.oraclecloudapps.com/ords/aoxdev/public/v1',
 	ordsApiBaseUrl:
-		'https://g9549f707e8ebfa-aoxdev.adb.sa-saopaulo-1.oraclecloudapps.com/ords/aoxdev/api/v1',
+		'https://g9549f707e8ebfa-aoxdevelop.adb.sa-saopaulo-1.oraclecloudapps.com/ords/aoxdev/api/v1',
 	userSlug: 'dann-villasanti',
 	orgSlug: 'consultorio-dann',
 	proSlug: 'dann-villasanti',
