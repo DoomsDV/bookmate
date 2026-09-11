@@ -12,7 +12,7 @@
 	max-width: none;
 	padding: 0;
 	border: 0;
-	border-radius: 1.6rem;
+	border-radius: var(--dashboard-card-radius, 0.75rem);
 	background: transparent;
 	box-shadow: none;
 }
@@ -29,7 +29,7 @@
 	overflow: hidden;
 	padding: 0.85rem 1.05rem 0.8rem;
 	border: 1px solid var(--shell-border);
-	border-radius: 1.25rem;
+	border-radius: var(--dashboard-card-radius, 0.75rem);
 	background: var(--surface-bright);
 	box-shadow: none;
 }

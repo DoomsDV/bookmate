@@ -496,7 +496,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 							{
 								loadError ? (
-									<div class="rounded-3xl bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-700 dark:bg-[#3B191E] dark:text-[#FFB4AB] shadow-sm">
+									<div class="rounded-xl bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-700 dark:bg-[#3B191E] dark:text-[#FFB4AB] shadow-sm">
 										{loadError}
 									</div>
 								) : (
@@ -590,7 +590,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 									<div class:list={['dashboard-floor', 'dashboard-floor--action', showAlertsPanel && 'dashboard-floor--split']}>
 										<div
 											id="dashboard-upcoming-appointments"
-											class="dashboard-report-shell dashboard-floor__panel rounded-4xl p-4 sm:p-6 transition-colors duration-300"
+											class="dashboard-report-shell dashboard-floor__panel p-4 sm:p-6 transition-colors duration-300"
 										>
 											<div class="dashboard-upcoming-head mb-4 flex items-center justify-between gap-3">
 												<div class="min-w-0">
@@ -635,7 +635,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 											{
 												dashboard.upcoming_appointments.length === 0 ? (
-													<div class="rounded-3xl bg-[#F8F9FA] dark:bg-(--surface-container) px-6 py-8 text-center transition-colors duration-300">
+													<div class="rounded-xl bg-[#F8F9FA] dark:bg-(--surface-container) px-6 py-8 text-center transition-colors duration-300">
 														<div class="w-14 h-14 bg-white dark:bg-[#2B2D31] rounded-full flex items-center justify-center mx-auto mb-3 shadow-[0_4px_15px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_15px_rgba(0,0,0,0.2)] transition-colors duration-300">
 															<span class="material-symbols-rounded text-[#BDC1C6] dark:text-[#C4C7C5] text-2xl">event_busy</span>
 														</div>
@@ -716,7 +716,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 										{showAlertsPanel && (
 											<aside
-												class="dashboard-alerts-shell dashboard-floor__panel rounded-4xl p-4 sm:p-6 transition-colors duration-300"
+												class="dashboard-alerts-shell dashboard-floor__panel p-4 sm:p-6 transition-colors duration-300"
 												data-dashboard-alerts
 											>
 												<div class="dashboard-alerts-head">
@@ -2328,6 +2328,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		position: relative;
 		isolation: isolate;
 		background: var(--page-background, #f9fafb);
+		--dashboard-card-radius: 0.75rem;
+		--dashboard-card-radius-inner: 0.55rem;
 	}
 
 	.dashboard-content-canvas > * {
@@ -3144,7 +3146,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		min-height: 0;
 		padding: 0;
 		border: 0;
-		border-radius: 1.25rem;
+		border-radius: var(--dashboard-card-radius, 0.75rem);
 		color: var(--on-surface, #202124);
 		background: transparent;
 		box-shadow: none;
@@ -3165,7 +3167,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		overflow: hidden;
 		padding: 0.85rem 1.05rem 0.85rem;
 		border: 1px solid var(--shell-border);
-		border-radius: 1.25rem;
+		border-radius: var(--dashboard-card-radius, 0.75rem);
 		background: var(--surface-bright);
 		box-shadow: none;
 	}
@@ -3337,7 +3339,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		gap: 0.18rem;
 		min-width: 0;
 		padding: 0.72rem 0.8rem 0.7rem;
-		border-radius: 1rem;
+		border-radius: var(--dashboard-card-radius-inner, 0.55rem);
 		background: var(--surface-container-high);
 		box-shadow: none;
 		animation: dashboard-day-rise 760ms var(--day-ease) both;
@@ -3629,6 +3631,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		display: flex;
 		flex-direction: column;
 		border: 1px solid var(--shell-border);
+		border-radius: var(--dashboard-card-radius, 0.75rem);
 		background: var(--surface-bright);
 		box-shadow: none;
 		min-height: 0;
@@ -3661,7 +3664,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		align-items: center;
 		gap: 0.7rem;
 		padding: 0.75rem 0.8rem;
-		border-radius: 0.95rem;
+		border-radius: var(--dashboard-card-radius-inner, 0.55rem);
 		border: 0;
 		background: var(--surface-container-high);
 	}
@@ -3768,7 +3771,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		width: 100%;
 		min-height: 100%;
 		padding: 1.5rem 1.15rem;
-		border-radius: 1.1rem;
+		border-radius: var(--dashboard-card-radius, 0.75rem);
 		background: var(--surface-container-high);
 		box-shadow: none;
 		text-align: center;
@@ -3881,7 +3884,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			align-self: stretch;
 			height: 100%;
 			padding: 1.15rem;
-			border-radius: 1.25rem;
+			border-radius: var(--dashboard-card-radius, 0.75rem);
 			background: var(--surface-bright);
 		}
 
@@ -4139,7 +4142,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		flex-direction: column;
 		min-width: 0;
 		border: 1px solid var(--shell-border);
-		border-radius: 1.25rem;
+		border-radius: var(--dashboard-card-radius, 0.75rem);
 		background: var(--surface-bright);
 		padding: 0.8rem 0.95rem 0.7rem;
 		box-shadow: none;
@@ -4732,7 +4735,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		width: 100%;
 		max-width: 100%;
 		padding: 0.3rem;
-		border-radius: 1.15rem;
+		border-radius: var(--dashboard-card-radius, 0.75rem);
 		background: var(--surface-container-high);
 		box-shadow: none;
 	}
@@ -4744,6 +4747,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	.dashboard-report-shell {
 		border: 1px solid var(--shell-border);
+		border-radius: var(--dashboard-card-radius, 0.75rem);
 		background: var(--surface-bright);
 		box-shadow: none;
 		scroll-margin-top: 0.75rem;
@@ -4763,7 +4767,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		min-width: 0;
 		padding: 0.85rem 0.8rem;
 		border: 0;
-		border-radius: 0.95rem;
+		border-radius: var(--dashboard-card-radius-inner, 0.55rem);
 		background: transparent;
 		box-shadow: none;
 		transition: background-color 280ms cubic-bezier(0.32, 0.72, 0, 1);
@@ -5202,7 +5206,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	.m3-card {
 		position: relative;
 		overflow: hidden;
-		border-radius: 1.25rem;
+		border-radius: var(--dashboard-card-radius, 0.75rem);
 		border: 1px solid var(--shell-border);
 		background: var(--surface-bright);
 		box-shadow: none;
