@@ -398,11 +398,11 @@ html[data-theme='dark'] .public-booking-shell {
 
 /* —— Card estilo referencia (solo páginas de reserva pública) —— */
 .public-booking-profile--card .public-booking-profile__inner {
-	align-items: center;
-	text-align: center;
+	align-items: stretch;
+	text-align: left;
 	gap: 0;
-	padding-top: 0.85rem;
-	padding-bottom: 0.75rem;
+	padding-top: 0.55rem;
+	padding-bottom: 0.4rem;
 }
 
 .public-booking-profile__card {
@@ -411,7 +411,7 @@ html[data-theme='dark'] .public-booking-shell {
 	align-content: center;
 	gap: 0;
 	min-height: 0;
-	padding: 1rem 0;
+	padding: 0.45rem 0;
 	border-radius: 0;
 	overflow: visible;
 	background: transparent;
@@ -433,6 +433,14 @@ html[data-theme='dark'] .public-booking-profile__card {
 	text-align: center;
 }
 
+.public-booking-profile--card .public-booking-profile__body {
+	flex-direction: row;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 0.8rem;
+	text-align: left;
+}
+
 /* Paso 1: sin espacio extra (aún no hay Volver) */
 .public-booking-sheet:has(.public-booking-panel[data-step-panel='1']:not(.hidden))
 	.public-booking-profile__body {
@@ -440,19 +448,24 @@ html[data-theme='dark'] .public-booking-profile__card {
 }
 
 .public-booking-profile--card .public-booking-profile__text {
+	flex: 1 1 auto;
 	align-self: center;
-	gap: 0.35rem;
+	width: auto;
+	min-width: 0;
+	gap: 0.12rem;
 	padding-top: 0;
 	z-index: 1;
-	text-align: center;
+	text-align: left;
 }
 
 .public-booking-profile--card .public-booking-profile__eyebrow {
 	max-height: none;
-	font-size: 0.92rem;
+	font-size: 0.8125rem;
 	font-weight: 500;
 	letter-spacing: 0.01em;
+	line-height: 1.25;
 	text-transform: none;
+	text-align: left;
 	color: color-mix(in srgb, var(--primary) 82%, #7eb0e6);
 }
 
@@ -474,10 +487,10 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-profile__e
 
 .public-booking-profile--card .public-booking-profile__title {
 	margin-top: 0;
-	font-size: clamp(1.75rem, 6vw, 2.35rem);
+	font-size: 1.5rem;
 	font-weight: 800;
 	letter-spacing: -0.03em;
-	line-height: 1.12;
+	line-height: 1.18;
 	color: var(--on-surface);
 	overflow-wrap: anywhere;
 }
@@ -487,9 +500,10 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-profile__t
 }
 
 .public-booking-profile--card .public-booking-profile__meta {
-	margin: 0.15rem 0 0;
-	font-size: 0.92rem;
-	font-weight: 500;
+	margin: 0.06rem 0 0;
+	font-size: 0.8rem;
+	font-weight: 400;
+	line-height: 1.3;
 	color: var(--on-surface-variant);
 	max-width: 100%;
 	overflow-wrap: anywhere;
@@ -502,6 +516,7 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-profile__m
 .public-booking-profile__media {
 	position: relative;
 	display: flex;
+	flex: 0 0 auto;
 	align-items: center;
 	justify-content: center;
 	min-height: 0;
@@ -509,8 +524,8 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-profile__m
 }
 
 .public-booking-profile--card .public-booking-avatar {
-	width: 8.75rem;
-	height: 8.75rem;
+	width: 5.25rem;
+	height: 5.25rem;
 	border-radius: 50%;
 	border: 0;
 	background: transparent;
@@ -520,8 +535,8 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-profile__m
 }
 
 .public-booking-profile--card .public-booking-avatar--empty {
-	width: 8.75rem;
-	height: 8.75rem;
+	width: 5.25rem;
+	height: 5.25rem;
 	border-radius: 50%;
 	background: color-mix(in srgb, var(--on-surface) 8%, transparent);
 	color: color-mix(in srgb, var(--on-surface) 55%, var(--primary));
@@ -533,30 +548,51 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 }
 
 .public-booking-profile--card .public-booking-avatar--empty .material-symbols-rounded {
-	font-size: 3.6rem;
+	font-size: 2.35rem;
 }
 
 @media (min-width: 640px) {
 	.public-booking-profile--card .public-booking-profile__inner {
-		padding-top: 1.15rem;
-		padding-bottom: 0.85rem;
+		align-items: center;
+		padding-top: 0.75rem;
+		padding-bottom: 0.45rem;
 	}
 
-	.public-booking-profile__card {
-		padding: 1.15rem 0;
+	.public-booking-profile--card .public-booking-profile__card {
+		padding: 0.5rem 0;
 	}
 
-	.public-booking-profile__body {
+	.public-booking-profile--card .public-booking-profile__body {
+		justify-content: center;
 		gap: 1rem;
 	}
 
+	.public-booking-profile--card .public-booking-profile__text {
+		flex: 0 1 auto;
+		max-width: 28rem;
+	}
+
 	.public-booking-profile--card .public-booking-profile__title {
+		font-size: 1.75rem;
+	}
+
+	.public-booking-profile--card .public-booking-profile__meta {
+		font-size: 0.88rem;
+		font-weight: 500;
+	}
+
+	.public-booking-profile--card .public-booking-avatar,
+	.public-booking-profile--card .public-booking-avatar--empty {
+		width: 5.75rem;
+		height: 5.75rem;
+	}
+
+	.public-booking-profile--card .public-booking-avatar--empty .material-symbols-rounded {
 		font-size: 2.5rem;
 	}
 
-	.public-booking-profile--card .public-booking-avatar {
-		width: 9.9rem;
-		height: 9.9rem;
+	.public-booking-stepper {
+		margin: 0.2rem 0 0.7rem;
 	}
 }
 
@@ -1138,75 +1174,11 @@ html:has(.sipap-deposit-panel:not(.hidden)) body,
 @media (max-width: 639px) {
 	/* Acercar stepper al header (todos los pasos, Detalles incluido). */
 	.public-booking-profile--card .public-booking-profile__inner {
-		padding-bottom: 0.4rem;
+		padding-bottom: 0.35rem;
 	}
 
 	.public-booking-profile--card .public-booking-profile__card {
-		padding-bottom: 0.55rem;
-	}
-
-	/* Compacto móvil fuera de Detalles (fecha, confirmación y seña SIPAP). */
-	.public-booking-sheet:not(:has(.public-booking-panel[data-step-panel='1']:not(.hidden))):not(:has(.public-booking-panel[data-step-panel='2']:not(.hidden))) {
-		.public-booking-profile--card .public-booking-profile__inner {
-			align-items: stretch;
-			padding-top: 0.55rem;
-			padding-bottom: 0.35rem;
-			text-align: left;
-		}
-
-		.public-booking-profile--card .public-booking-profile__card {
-			padding: 0.4rem 0;
-		}
-
-		.public-booking-profile--card .public-booking-profile__body {
-			flex-direction: row;
-			align-items: center;
-			justify-content: flex-start;
-			gap: 0.8rem;
-			text-align: left;
-		}
-
-		.public-booking-profile--card .public-booking-profile__media {
-			flex: 0 0 auto;
-		}
-
-		.public-booking-profile--card .public-booking-profile__text {
-			flex: 1 1 auto;
-			align-self: center;
-			width: auto;
-			min-width: 0;
-			gap: 0.12rem;
-			text-align: left;
-		}
-
-		.public-booking-profile--card .public-booking-profile__eyebrow {
-			font-size: 0.8125rem;
-			line-height: 1.25;
-			text-align: left;
-		}
-
-		.public-booking-profile--card .public-booking-profile__title {
-			font-size: 1.5rem;
-			line-height: 1.18;
-		}
-
-		.public-booking-profile--card .public-booking-profile__meta {
-			margin-top: 0.06rem;
-			font-size: 0.75rem;
-			font-weight: 400;
-			line-height: 1.3;
-			color: color-mix(in srgb, #c4c6d0 48%, transparent);
-		}
-
-		.public-booking-profile--card .public-booking-avatar,
-		.public-booking-profile--card .public-booking-avatar--empty {
-			width: 5.25rem;
-			height: 5.25rem;
-		}
-
-		.public-booking-profile--card .public-booking-avatar--empty .material-symbols-rounded {
-			font-size: 2.35rem;
-		}
+		padding-bottom: 0.4rem;
 	}
 
 	.public-booking-shell__canvas {
@@ -1272,6 +1244,11 @@ html:has(.sipap-deposit-panel:not(.hidden)) body,
 
 	.public-booking-panel:has(.public-booking-actions:not(.hidden)) {
 		padding-bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
+	}
+
+	.public-booking-shell:has(.public-booking-panel:not(.hidden) .public-booking-actions:not(.hidden))
+		.hasel-public-footer__inner {
+		padding-bottom: calc(6.25rem + env(safe-area-inset-bottom, 0px));
 	}
 
 	.public-booking-actions {
@@ -1372,21 +1349,22 @@ html:has(.sipap-deposit-panel:not(.hidden)) body,
 
 	.public-booking-profile--card .public-booking-profile__card {
 		min-height: 0;
-		padding: 0.9rem 0;
+		padding: 0.4rem 0;
 	}
 
 	.public-booking-profile--card .public-booking-profile__body {
 		min-height: 0;
-		gap: 0.75rem;
+		gap: 0.85rem;
 	}
 
-	.public-booking-profile--card .public-booking-avatar {
-		width: 7.9rem;
-		height: 7.9rem;
+	.public-booking-profile--card .public-booking-avatar,
+	.public-booking-profile--card .public-booking-avatar--empty {
+		width: 5.25rem;
+		height: 5.25rem;
 	}
 
 	.public-booking-profile--card .public-booking-profile__title {
-		font-size: 2rem;
+		font-size: 1.55rem;
 	}
 
 	.public-booking-stepper {

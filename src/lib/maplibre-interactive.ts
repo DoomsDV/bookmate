@@ -39,10 +39,43 @@ let mapLibrePromise: Promise<MapLibreModule> | null = null;
 let cssInjected = false;
 let workerConfigured = false;
 
+const MAPLIBRE_THEME_CSS = `
+html[data-theme='dark'] .maplibregl-ctrl-attrib,
+html[data-theme='dark'] .maplibregl-ctrl-attrib.maplibregl-compact,
+html[data-theme='dark'] .maplibregl-ctrl-attrib.maplibregl-compact-show {
+	background-color: rgba(12, 12, 14, 0.78) !important;
+	color: rgba(255, 255, 255, 0.82) !important;
+}
+html[data-theme='dark'] .maplibregl-ctrl-attrib a {
+	color: rgba(255, 255, 255, 0.88) !important;
+}
+html[data-theme='dark'] .maplibregl-ctrl-attrib-button {
+	background-color: transparent !important;
+	filter: invert(1);
+}
+html[data-theme='dark'] .maplibregl-ctrl-attrib.maplibregl-compact-show .maplibregl-ctrl-attrib-button {
+	background-color: rgba(255, 255, 255, 0.08) !important;
+}
+html[data-theme='light'] .maplibregl-ctrl-attrib,
+html[data-theme='light'] .maplibregl-ctrl-attrib.maplibregl-compact,
+html[data-theme='light'] .maplibregl-ctrl-attrib.maplibregl-compact-show {
+	background-color: rgba(255, 255, 255, 0.92) !important;
+	color: rgba(17, 17, 17, 0.82) !important;
+}
+html[data-theme='light'] .maplibregl-ctrl-attrib a {
+	color: rgba(17, 17, 17, 0.78) !important;
+}
+`;
+
 const ensureMapLibreCss = async () => {
 	if (cssInjected || typeof document === 'undefined') return;
 	cssInjected = true;
 	await import('maplibre-gl/dist/maplibre-gl.css');
+	if (document.head.querySelector('style[data-bookmate-maplibre-theme]')) return;
+	const style = document.createElement('style');
+	style.dataset.bookmateMaplibreTheme = 'true';
+	style.textContent = MAPLIBRE_THEME_CSS;
+	document.head.appendChild(style);
 };
 
 const resolveWorkerUrl = (rawUrl: string): string => {

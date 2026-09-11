@@ -1269,24 +1269,12 @@ html[data-theme='dark'] .hub-location-map__canvas {
 	pointer-events: none;
 }
 
-.hub-location-map__canvas .maplibregl-ctrl-bottom-left {
-	display: none;
-}
-
-.hub-location-map__canvas .maplibregl-ctrl-bottom-right {
-	top: 0.55rem;
-	right: 0.55rem;
-	bottom: auto;
-}
-
-.hub-location-map__canvas .maplibregl-ctrl-attrib {
-	background: color-mix(in srgb, #0a0a0a 62%, transparent);
-	color: rgba(255, 255, 255, 0.72);
-	backdrop-filter: blur(8px);
-}
-
-.hub-location-map__canvas .maplibregl-ctrl-attrib a {
-	color: rgba(255, 255, 255, 0.8);
+.hub-location-map__canvas .maplibregl-ctrl,
+.hub-location-map__canvas .maplibregl-ctrl-bottom-left,
+.hub-location-map__canvas .maplibregl-ctrl-bottom-right,
+.hub-location-map__canvas .maplibregl-ctrl-top-left,
+.hub-location-map__canvas .maplibregl-ctrl-top-right {
+	display: none !important;
 }
 
 .hub-location-map__detail-fade {
@@ -1741,9 +1729,43 @@ html[data-theme='dark'] .hub-pro-card {
 	gap: 0;
 	padding: 1.05rem 0.7rem 0.95rem;
 	text-align: center;
+	overflow: hidden;
+	isolation: isolate;
+}
+
+.hub-pro-card--person::before,
+.hub-pro-card--person::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+	pointer-events: none;
+	z-index: 0;
+}
+
+.hub-pro-card--person::before {
+	opacity: 0.045;
+	background-color: var(--on-surface, #1e293b);
+	-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Cpath d='M 20 0 L 0 0 0 20' fill='none' stroke='black' stroke-width='0.5'/%3E%3C/svg%3E");
+	mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Cpath d='M 20 0 L 0 0 0 20' fill='none' stroke='black' stroke-width='0.5'/%3E%3C/svg%3E");
+	-webkit-mask-size: 20px 20px;
+	mask-size: 20px 20px;
+	-webkit-mask-repeat: repeat;
+	mask-repeat: repeat;
+}
+
+.hub-pro-card--person::after {
+	background: linear-gradient(
+		to bottom right,
+		color-mix(in srgb, var(--on-surface) 6%, transparent),
+		transparent 48%,
+		color-mix(in srgb, var(--on-surface) 8%, transparent)
+	);
 }
 
 .hub-pro-card--person .hub-pro-card__main {
+	position: relative;
+	z-index: 1;
 	flex: 1 1 auto;
 	flex-direction: column;
 	align-items: center;

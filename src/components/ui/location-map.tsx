@@ -129,7 +129,7 @@ export function LocationMap({
 				center: [lng, lat],
 				zoom: 16,
 				fadeDuration: 0,
-				attributionControl: { compact: true },
+				attributionControl: false,
 				transformRequest: mod.createStadiaTransformRequest(stadiaKey),
 			});
 			mapRef.current = instance;
