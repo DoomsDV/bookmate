@@ -3,6 +3,7 @@ export const prerender = false;
 
 import Layout from '../layouts/Layout.astro';
 import PublicHaselTopbar from '../components/PublicHaselTopbar.astro';
+import HaselPublicFooter from '../components/HaselPublicFooter.astro';
 import { PublicBookingApiError } from '../lib/public-booking';
 import {
 	searchOrgDirectory,
@@ -193,6 +194,7 @@ const clientPayload = JSON.stringify({
 	>
 		<PublicHaselTopbar variant="marketplace" showOwnerCta logoHref="/" />
 
+		<div class="explorar-shell">
 		<div class="explorar-hero">
 			<h1 class="explorar-hero__title">Descubrí lugares para cuidarte</h1>
 			<p class="explorar-hero__lead">Reservá tu turno en pocos minutos.</p>
@@ -495,6 +497,9 @@ const clientPayload = JSON.stringify({
 				</div>
 			) : null
 		}
+		</div>
+
+		<HaselPublicFooter />
 	</main>
 
 	<script src="../scripts/explorar-page.ts"></script>

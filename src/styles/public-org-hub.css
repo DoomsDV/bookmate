@@ -17,8 +17,8 @@ html[data-theme='dark']:has(.hub-root):not(:has(.app-shell)) body {
 }
 
 .hub-root {
-	--hub-max: 1120px;
-	--hub-pad-x: 1.35rem;
+	--hub-max: 88rem;
+	--hub-pad-x: 1.25rem;
 	--hub-topbar-h: var(--app-topbar-h, 4rem);
 	--hub-primary: #426edb;
 	--hub-accent: #5b9cff;
@@ -69,13 +69,13 @@ html[data-theme='dark'] .hub-root::before {
 
 @media (min-width: 768px) {
 	.hub-root {
-		--hub-pad-x: 1.5rem;
+		--hub-pad-x: 2rem;
 	}
 }
 
 @media (min-width: 1024px) {
 	.hub-root {
-		--hub-pad-x: 2rem;
+		--hub-pad-x: 2.5rem;
 	}
 }
 
