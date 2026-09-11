@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { formatPublicProfessionalRating } from '../lib/public-org-hub';
+import { formatPublicProfessionalRating } from '../lib/public-professional-rating';
 import {
 	PUBLIC_PROFILE_PREVIEW_EVENT,
 	type PublicProfilePreviewState,

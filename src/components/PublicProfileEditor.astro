@@ -1,5 +1,7 @@
 ---
 import {
+	BUSINESS_HOURS_DAY_LABELS,
+	BUSINESS_HOURS_MAX_INTERVALS,
 	formatBusinessHoursForDisplay,
 	parseBusinessHours,
 } from '../lib/business-hours';
@@ -518,7 +520,103 @@ const previewInitial = {
 									</span>
 								</button>
 							</div>
-							<ul class="ppe-hours-list" data-ppe-hours-list></ul>
+							<ul class="ppe-hours-list" data-ppe-hours-list>
+								{
+									businessHours.days.map((day) => {
+										const dayLabel = BUSINESS_HOURS_DAY_LABELS[day.day - 1] || `Día ${day.day}`;
+										const canAdd = !day.closed && day.intervals.length < BUSINESS_HOURS_MAX_INTERVALS;
+										return (
+											<li
+												class:list={['ppe-hours-day', day.closed ? 'is-closed' : 'is-open']}
+												data-day={day.day}
+											>
+												<div class="ppe-hours-day__mast">
+													<span class="ppe-hours-day__name">{dayLabel}</span>
+													<label class="ppe-hours-toggle">
+														<span class="ppe-switch">
+															<input
+																type="checkbox"
+																checked={!day.closed}
+																data-ppe-hours-open={day.day}
+																aria-label={`${dayLabel}: ${day.closed ? 'Cerrado' : 'Abierto'}`}
+															/>
+															<span class="ppe-switch__track" aria-hidden="true"></span>
+														</span>
+													</label>
+												</div>
+												{
+													day.closed ? (
+														<span class="ppe-hours-closed">Cerrado</span>
+													) : (
+														<div class="ppe-hours-intervals">
+															{day.intervals.map((interval, index) => (
+																<div class="ppe-hours-interval">
+																	<div class="ppe-hours-interval__range">
+																		<input
+																			class="ppe-input ppe-hours-interval__time"
+																			type="time"
+																			step="60"
+																			autocomplete="off"
+																			lang="en-GB"
+																			title="Formato 24 h (HH:mm)"
+																			value={interval.start}
+																			data-ppe-hours-start={day.day}
+																			data-index={index}
+																			aria-label={`${dayLabel}: inicio turno ${index + 1}`}
+																		/>
+																		<span class="ppe-hours-interval__sep" aria-hidden="true">–</span>
+																		<input
+																			class="ppe-input ppe-hours-interval__time"
+																			type="time"
+																			step="60"
+																			autocomplete="off"
+																			lang="en-GB"
+																			title="Formato 24 h (HH:mm)"
+																			value={interval.end}
+																			data-ppe-hours-end={day.day}
+																			data-index={index}
+																			aria-label={`${dayLabel}: fin turno ${index + 1}`}
+																		/>
+																	</div>
+																	{
+																		day.intervals.length > 1 ? (
+																			<button
+																				type="button"
+																				class="ppe-hours-remove"
+																				data-ppe-hours-remove={day.day}
+																				data-index={index}
+																				aria-label="Quitar turno"
+																			>
+																				<span class="material-symbols-rounded" aria-hidden="true">close</span>
+																			</button>
+																		) : null
+																	}
+																</div>
+															))}
+															{
+																canAdd ? (
+																	<button
+																		type="button"
+																		class="ppe-hours-add"
+																		data-ppe-hours-add={day.day}
+																		aria-label={`Agregar turno el ${dayLabel}`}
+																		title="Agregar turno"
+																	>
+																		<span>Agregar turno</span>
+																		<span class="ppe-hours-add__mark" aria-hidden="true">
+																			<span class="material-symbols-rounded">add</span>
+																		</span>
+																	</button>
+																) : null
+															}
+														</div>
+													)
+												}
+											</li>
+										);
+									})
+								}
+							</ul>
 						</div>
 					</section>
 				</form>
@@ -642,21 +740,39 @@ const previewInitial = {
 
 	let deferObserver: MutationObserver | null = null;
 
+	const editorIsReady = () => {
+		const root = document.querySelector('public-profile-editor[data-ppe-root]');
+		if (!root) return false;
+		const list = root.querySelector('[data-ppe-hours-list]');
+		return (
+			root.getAttribute('data-ppe-bound') === '1' &&
+			Boolean(list && list.childElementCount > 0)
+		);
+	};
+
 	const boot = () => {
 		ensurePublicProfileTabDelegation();
 		document.querySelectorAll<HTMLElement>('public-profile-editor[data-ppe-root]').forEach((el) => {
 			initializePublicProfileEditor(el);
 		});
-		return Boolean(document.querySelector('public-profile-editor[data-ppe-root][data-ppe-bound="1"]'));
+		return editorIsReady();
+	};
+
+	const stopObserver = () => {
+		deferObserver?.disconnect();
+		deferObserver = null;
 	};
 
 	const watchUntilBound = () => {
-		if (boot() || typeof MutationObserver === 'undefined') return;
-		if (deferObserver) return;
+		if (boot()) {
+			stopObserver();
+			return;
+		}
+		if (typeof MutationObserver === 'undefined') return;
+		stopObserver();
 		deferObserver = new MutationObserver(() => {
 			if (!boot()) return;
-			deferObserver?.disconnect();
-			deferObserver = null;
+			stopObserver();
 		});
 		if (document.body) {
 			deferObserver.observe(document.body, { childList: true, subtree: true });
@@ -665,5 +781,8 @@ const previewInitial = {
 
 	watchUntilBound();
 	document.addEventListener('astro:page-load', watchUntilBound);
-	document.addEventListener('astro:after-swap', watchUntilBound);
+	document.addEventListener('astro:after-swap', () => {
+		stopObserver();
+		watchUntilBound();
+	});
 </script>

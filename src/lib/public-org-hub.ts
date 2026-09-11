@@ -1,14 +1,21 @@
 import type { BusinessHours } from './business-hours';
 import { parseBusinessHours } from './business-hours';
 import { resolveOrdsPublicApiUrl } from './env-urls';
+import { PublicBookingApiError } from './public-booking-error';
 import { normalizePublicBookingLocations } from './public-booking-locations';
-import { PublicBookingApiError } from './public-booking';
+import { normalizePublicProfessionalRating } from './public-professional-rating';
 
-const PUBLIC_ORG_HUB_API_BASE = resolveOrdsPublicApiUrl(
-	import.meta.env.ORDS_PUBLIC_ORG_HUB_URL,
-	'ORDS_PUBLIC_ORG_HUB_URL',
-	'org'
-);
+export {
+	formatPublicProfessionalRating,
+	normalizePublicProfessionalRating,
+} from './public-professional-rating';
+
+const publicOrgHubApiBase = () =>
+	resolveOrdsPublicApiUrl(
+		import.meta.env.ORDS_PUBLIC_ORG_HUB_URL,
+		'ORDS_PUBLIC_ORG_HUB_URL',
+		'org'
+	);
 
 const toPositiveInt = (value: unknown, fallback = 0) => {
 	const parsed = Number(value);
@@ -35,39 +42,6 @@ export interface PublicOrgHubProfessional {
 	rating_avg: number | null;
 	rating_count: number;
 }
-
-export const normalizePublicProfessionalRating = (
-	avg: unknown,
-	count: unknown
-): { rating_avg: number | null; rating_count: number } => {
-	const parsedCount = Number(count);
-	const rating_count =
-		Number.isInteger(parsedCount) && parsedCount > 0 ? parsedCount : 0;
-	const parsedAvg = Number(avg);
-	const rating_avg =
-		rating_count > 0 &&
-		Number.isFinite(parsedAvg) &&
-		parsedAvg >= 1 &&
-		parsedAvg <= 5
-			? Math.round(parsedAvg * 10) / 10
-			: null;
-	return { rating_avg, rating_count };
-};
-
-export const formatPublicProfessionalRating = (
-	avg: number | null,
-	count: number
-): { hasRating: boolean; label: string; aria: string } => {
-	if (count > 0 && avg != null) {
-		const label = avg.toFixed(1);
-		return {
-			hasRating: true,
-			label,
-			aria: `${label} de 5`,
-		};
-	}
-	return { hasRating: false, label: '-', aria: 'Sin reseñas todavía' };
-};
 
 export interface PublicOrgHubGalleryImage {
 	id: number;
@@ -229,7 +203,7 @@ export const getPublicOrgHubWithOrds = async (orgSlug: string): Promise<PublicOr
 		throw new PublicBookingApiError('Slug de organización requerido.', 400);
 	}
 
-	const base = PUBLIC_ORG_HUB_API_BASE.replace(/\/+$/, '');
+	const base = publicOrgHubApiBase().replace(/\/+$/, '');
 	const url = base.endsWith('/org')
 		? `${base}/${encodeURIComponent(safeSlug)}`
 		: `${base}/org/${encodeURIComponent(safeSlug)}`;

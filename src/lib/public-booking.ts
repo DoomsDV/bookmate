@@ -1,8 +1,10 @@
 import { resolveOrdsPublicApiUrl } from './env-urls';
+import { PublicBookingApiError } from './public-booking-error';
 import { normalizePublicBookingLocations } from './public-booking-locations';
 import type { PublicReservationNoRefundReason } from './public-reservation-refund';
 import { isReceiptRejected } from './public-receipt-reconcile';
 
+export { PublicBookingApiError } from './public-booking-error';
 export { normalizePublicBookingLocations } from './public-booking-locations';
 export {
 	buildPublicProfileMetaDescription,
@@ -331,18 +333,6 @@ const normalizePublicApiStatus = (
 
 	return parsedStatus;
 };
-
-export class PublicBookingApiError extends Error {
-	status: number;
-	details?: unknown;
-
-	constructor(message: string, status = 400, details?: unknown) {
-		super(message);
-		this.name = 'PublicBookingApiError';
-		this.status = status;
-		this.details = details;
-	}
-}
 
 const extractJsonCandidates = (rawBody: string) => {
 	const candidates: string[] = [];

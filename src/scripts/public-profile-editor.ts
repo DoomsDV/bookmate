@@ -17,7 +17,7 @@ import {
 	type ProfileCropMode,
 } from '../lib/profile-image-crop';
 import { emitPublicProfilePreviewUpdate } from '../lib/public-profile-preview-events';
-import { normalizePublicProfessionalRating } from '../lib/public-org-hub';
+import { normalizePublicProfessionalRating } from '../lib/public-professional-rating';
 import type {
 	PublicProfilePreviewLocation,
 	PublicProfilePreviewProfessional,
@@ -221,12 +221,17 @@ export const activatePublicProfileTab = (
 		}
 	}
 
-	if (!alreadyActive) {
+	if (!alreadyActive || nextId === 'horario') {
 		root.dispatchEvent(new CustomEvent('ppe:tab-shown', { detail: { tabId: nextId } }));
 	}
 };
 
 let ppeTabDelegationBound = false;
+
+/** Listeners del init anterior (mismo custom element tras View Transitions). */
+const editorAborts = new WeakMap<HTMLElement, AbortController>();
+/** `<ul data-ppe-hours-list>` al que este módulo ya enganchó el pintado. */
+const boundHoursLists = new WeakSet<Element>();
 
 /** Delegación global: funciona aunque el init del editor falle a mitad. */
 export const ensurePublicProfileTabDelegation = () => {
@@ -276,7 +281,15 @@ export const ensurePublicProfileTabDelegation = () => {
 
 export const initializePublicProfileEditor = (root: HTMLElement) => {
 	ensurePublicProfileTabDelegation();
-	if (root.dataset.ppeBound === '1') return;
+	const liveHoursList = root.querySelector('[data-ppe-hours-list]');
+	const hoursBoundToThisDom = Boolean(liveHoursList) && boundHoursLists.has(liveHoursList as Element);
+	if (
+		root.dataset.ppeBound === '1' &&
+		hoursBoundToThisDom &&
+		(liveHoursList?.childElementCount || 0) > 0
+	) {
+		return;
+	}
 
 	let bootstrap: Bootstrap;
 	try {
@@ -285,6 +298,11 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	} catch {
 		return;
 	}
+
+	editorAborts.get(root)?.abort();
+	const abort = new AbortController();
+	editorAborts.set(root, abort);
+	const { signal } = abort;
 
 	// Evita listeners duplicados del form; las pestañas van por delegación global.
 	root.dataset.ppeBound = '1';
@@ -305,7 +323,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	}
 	const facebookInput = root.querySelector<HTMLInputElement>('[data-ppe-facebook]');
 	const instagramInput = root.querySelector<HTMLInputElement>('[data-ppe-instagram]');
-	const hoursList = root.querySelector<HTMLElement>('[data-ppe-hours-list]');
+	let hoursList = root.querySelector<HTMLElement>('[data-ppe-hours-list]');
 	const saveBtn = root.querySelector<HTMLButtonElement>('[data-ppe-save]');
 	const openPublic = root.querySelector<HTMLAnchorElement>('[data-ppe-open-public]');
 	const copyBtn = root.querySelector<HTMLButtonElement>('[data-ppe-copy-url]');
@@ -657,7 +675,9 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	};
 
 	const renderBusinessHours = () => {
+		hoursList = root.querySelector<HTMLElement>('[data-ppe-hours-list]');
 		if (!hoursList) return;
+		boundHoursLists.add(hoursList);
 		hoursList.replaceChildren();
 
 		for (const day of businessHours.days) {
@@ -769,14 +789,21 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		}
 	};
 
-	root.addEventListener('ppe:tab-shown', (event) => {
-		const tabId = (event as CustomEvent<{ tabId?: string }>).detail?.tabId;
-		if (tabId !== 'horario' || !hoursList) return;
-		// Solo armar el listado si está vacío (carrera init / click). Si ya hay
-		// días, el CSS de panel visible los muestra sin destruir inputs.
-		if (hoursList.childElementCount > 0) return;
-		renderBusinessHours();
-	});
+	root.addEventListener(
+		'ppe:tab-shown',
+		(event) => {
+			const tabId = (event as CustomEvent<{ tabId?: string }>).detail?.tabId;
+			if (tabId !== 'horario') return;
+			hoursList = root.querySelector<HTMLElement>('[data-ppe-hours-list]');
+			if (!hoursList) return;
+			// Solo armar el listado si está vacío (carrera init / click / swap SPA).
+			if (hoursList.childElementCount > 0) return;
+			renderBusinessHours();
+		},
+		{ signal }
+	);
+
+	renderBusinessHours();
 
 	const getDay = (dayNum: number): BusinessHoursDay =>
 		businessHours.days[dayNum - 1] || emptyBusinessHours().days[dayNum - 1];
@@ -1158,9 +1185,9 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		void leaveTo(next.href);
 	};
 
-	window.addEventListener('beforeunload', onBeforeUnload);
-	document.addEventListener('astro:before-preparation', onAstroBeforePreparation);
-	document.addEventListener('click', onDocumentClick, true);
+	window.addEventListener('beforeunload', onBeforeUnload, { signal });
+	document.addEventListener('astro:before-preparation', onAstroBeforePreparation, { signal });
+	document.addEventListener('click', onDocumentClick, { capture: true, signal });
 	document.addEventListener(
 		'astro:before-swap',
 		() => {
@@ -1168,7 +1195,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			document.removeEventListener('astro:before-preparation', onAstroBeforePreparation);
 			document.removeEventListener('click', onDocumentClick, true);
 		},
-		{ once: true }
+		{ once: true, signal }
 	);
 
 	const clearPendingGalleryFiles = () => {
@@ -1506,18 +1533,23 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		} finally {
 			if (saveBtn) saveBtn.disabled = false;
 		}
-	});
+	}, { signal });
 
-	root.querySelector<HTMLButtonElement>('[data-ppe-hours-copy-weekdays]')?.addEventListener(
+	root.addEventListener(
 		'click',
-		() => {
+		(event) => {
+			const target = event.target as HTMLElement | null;
+			if (!target?.closest('[data-ppe-hours-copy-weekdays]')) return;
 			copyMondayToWeekdays();
-		}
+		},
+		{ signal }
 	);
 
-	hoursList?.addEventListener('change', (event) => {
+	root.addEventListener(
+		'change',
+		(event) => {
 		const target = event.target as HTMLElement | null;
-		if (!target) return;
+		if (!target?.closest('[data-ppe-hours-list]')) return;
 
 		const openToggle = target.closest<HTMLInputElement>('[data-ppe-hours-open]');
 		if (openToggle) {
@@ -1564,11 +1596,16 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 				syncPreview();
 			}
 		}
-	});
+		},
+		{ signal }
+	);
 
-	hoursList?.addEventListener('blur', (event) => {
+	root.addEventListener(
+		'blur',
+		(event) => {
 		const target = event.target as HTMLElement | null;
-		const timeInput = target?.closest<HTMLInputElement>(
+		if (!target?.closest('[data-ppe-hours-list]')) return;
+		const timeInput = target.closest<HTMLInputElement>(
 			'[data-ppe-hours-start], [data-ppe-hours-end]'
 		);
 		if (!timeInput) return;
@@ -1577,11 +1614,15 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			timeInput.value = normalized;
 			timeInput.dispatchEvent(new Event('change', { bubbles: true }));
 		}
-	}, true);
+		},
+		{ capture: true, signal }
+	);
 
-	hoursList?.addEventListener('click', (event) => {
+	root.addEventListener(
+		'click',
+		(event) => {
 		const target = event.target as HTMLElement | null;
-		if (!target) return;
+		if (!target?.closest('[data-ppe-hours-list]')) return;
 
 		const addBtn = target.closest<HTMLElement>('[data-ppe-hours-add]');
 		if (addBtn) {
@@ -1611,13 +1652,15 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			renderBusinessHours();
 			syncPreview();
 		}
-	});
+		},
+		{ signal }
+	);
 
 	slugInput?.addEventListener('input', () => {
 		scheduleSlugCheck();
 		syncPreview();
-	});
-	descInput?.addEventListener('input', syncPreview);
+	}, { signal });
+	descInput?.addEventListener('input', syncPreview, { signal });
 	const handleWhatsappInput = () => {
 		if (waInput) {
 			waInput.value = formatParaguayMobilePhoneInput(waInput.value);

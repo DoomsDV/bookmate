@@ -254,7 +254,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 							<section class="dashboard-summary-card mb-0 transition-all duration-300">
 								<div class="flex flex-col justify-between gap-3 lg:flex-row lg:items-center lg:gap-4">
 									<div class="flex min-w-0 flex-col gap-2 lg:flex-row lg:items-center lg:gap-4">
-										<div class="dashboard-greeting grid min-w-0 gap-2" data-dashboard-intro>
+										<div class="dashboard-greeting flex min-w-0 flex-col gap-1" data-dashboard-intro>
 											<h1
 												class="dashboard-greeting__title font-semibold text-[#1e293b] dark:text-[#E5E7EB] tracking-tight"
 												data-dashboard-greeting
@@ -293,7 +293,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 												) : null}
 											</h1>
 											<p
-												class="dashboard-greeting__sub font-medium text-[#5f6368] dark:text-[#C4C7C5]"
+												class="dashboard-greeting__sub"
 												data-dashboard-greeting-sub
 											>
 												{greetingSubtitle}
@@ -348,15 +348,11 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 									class="dashboard-profitability-shell is-loading transition-colors duration-300"
 									data-profitability-panel
 									aria-busy="true"
+									aria-label={roleId === ROLES.PROFESIONAL ? 'Resumen de tu consultorio' : 'Resumen del consultorio'}
 								>
-									<div class="mb-2 flex min-w-0 items-center justify-between gap-2 sm:gap-3 dashboard-profitability-head">
-										<div class="flex min-w-0 items-center gap-1.5 sm:gap-2">
-											<span class="material-symbols-rounded shrink-0 text-[1.3rem] text-(--primary)" aria-hidden="true">trending_up</span>
-											<h2 class="dashboard-profitability-title min-w-0 text-xl font-semibold text-[#1e293b] dark:text-[#E5E7EB]">
-												{roleId === ROLES.PROFESIONAL ? 'Tu rentabilidad del mes' : 'Rentabilidad del mes'}
-											</h2>
-										</div>
-									</div>
+									<h2 class="sr-only">
+										{roleId === ROLES.PROFESIONAL ? 'Resumen de tu consultorio' : 'Resumen del consultorio'}
+									</h2>
 
 									<div class="dashboard-carousel">
 									<div class="dashboard-profit-metrics-track">
@@ -716,61 +712,103 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 										{showAlertsPanel && (
 											<aside
-												class="dashboard-alerts-shell dashboard-floor__panel p-4 sm:p-6 transition-colors duration-300"
+												class:list={[
+													'dashboard-alerts-shell',
+													'dashboard-inbox',
+													'dashboard-floor__panel',
+													'p-4 sm:p-6',
+													'transition-colors duration-300',
+													pendingConfirmAlerts.length === 0 && 'is-clear',
+												]}
 												data-dashboard-alerts
 											>
 												<div class="dashboard-alerts-head">
 													<div class="min-w-0">
 														<h2 class="text-xl font-semibold text-[#1e293b] dark:text-[#E5E7EB]">Pendientes</h2>
-														<p class="dashboard-appointments-subtitle">Confirmaciones y cobros</p>
+														<p class="dashboard-inbox__pulse" data-dashboard-inbox-status>
+															{pendingConfirmAlerts.length === 0
+																? 'Todo al día'
+																: pendingConfirmAlerts.length === 1
+																	? '1 cita por confirmar'
+																	: `${pendingConfirmAlerts.length} citas por confirmar`}
+														</p>
 													</div>
 												</div>
 
-												<ul
-													class:list={[
-														'dashboard-alerts-list m-0 grid list-none gap-2.5 p-0',
-														pendingConfirmAlerts.length === 0 && 'hidden',
-													]}
-													data-dashboard-alerts-list
-												>
-													{
-														pendingConfirmAlerts.map((appointment) => (
-															<li class="dashboard-alert-item">
-																<span class="dashboard-alert-icon dashboard-alert-icon--amber material-symbols-rounded" aria-hidden="true">
-																	schedule
-																</span>
-																<div class="dashboard-alert-body">
-																	<p class="dashboard-alert-title">{appointment.customer_name}</p>
-																	<p class="dashboard-alert-meta">Cita pendiente de confirmar</p>
-																</div>
-																<a href="/panel/calendar" class="dashboard-alert-action">Revisar</a>
-															</li>
-														))
-													}
-													<li class="dashboard-alert-item dashboard-alert-item--loading" data-dashboard-cobros-alert-slot hidden>
-														<span class="dashboard-alert-icon dashboard-alert-icon--rose material-symbols-rounded" aria-hidden="true">
-															warning
-														</span>
-														<div class="dashboard-alert-body">
-															<p class="dashboard-alert-title" data-dashboard-cobros-alert-title>Comprobantes por validar</p>
-															<p class="dashboard-alert-meta" data-dashboard-cobros-alert-meta>Cargando…</p>
-														</div>
-														<a href="/panel/cobros?status=pending" class="dashboard-alert-action" data-dashboard-cobros-alert-action>Validar</a>
-													</li>
-												</ul>
+												<div class="dashboard-inbox__trays">
+													<section
+														class:list={[
+															'dashboard-inbox-tray',
+															pendingConfirmAlerts.length > 0 ? 'is-hot' : 'is-clear',
+														]}
+														data-inbox-tray="confirm"
+													>
+														<header class="dashboard-inbox-tray__head">
+															<h3>Confirmaciones</h3>
+															<span class="dashboard-inbox-tray__count" data-inbox-confirm-count>
+																{pendingConfirmAlerts.length}
+															</span>
+														</header>
+														<p
+															class:list={[
+																'dashboard-inbox-tray__idle',
+																pendingConfirmAlerts.length > 0 && 'hidden',
+															]}
+															data-inbox-confirm-idle
+														>
+															Nadie espera confirmación
+														</p>
+														<ul
+															class:list={[
+																'dashboard-alerts-list m-0 grid list-none gap-2 p-0',
+																pendingConfirmAlerts.length === 0 && 'hidden',
+															]}
+															data-dashboard-alerts-list
+														>
+															{
+																pendingConfirmAlerts.map((appointment) => {
+																	const when = [
+																		formatUpcomingAppointmentDate(appointment.appointment_date || ''),
+																		appointment.time_start,
+																	]
+																		.filter(Boolean)
+																		.join(' · ');
 
-												<div
-													class:list={[
-														'dashboard-alerts-empty',
-														pendingConfirmAlerts.length > 0 && 'hidden',
-													]}
-													data-dashboard-alerts-empty
-												>
-													<div class="dashboard-alerts-empty__well">
-														<span class="dashboard-alerts-empty__icon material-symbols-rounded" aria-hidden="true">task_alt</span>
-														<p class="dashboard-alerts-empty__title">Todo al día</p>
-														<p class="dashboard-alerts-empty__text">No hay confirmaciones ni cobros por revisar.</p>
-													</div>
+																	return (
+																		<li class="dashboard-alert-item">
+																			<div class="dashboard-alert-body">
+																				<p class="dashboard-alert-title">{appointment.customer_name}</p>
+																				<p class="dashboard-alert-meta">{when || 'Cita pendiente de confirmar'}</p>
+																			</div>
+																			<a href="/panel/calendar" class="dashboard-alert-action">Revisar</a>
+																		</li>
+																	);
+																})
+															}
+														</ul>
+													</section>
+
+													<section
+														class="dashboard-inbox-tray is-clear is-loading"
+														data-inbox-tray="cobros"
+														data-dashboard-cobros-alert-slot
+													>
+														<header class="dashboard-inbox-tray__head">
+															<h3>Cobros</h3>
+															<span class="dashboard-inbox-tray__count" data-dashboard-cobros-alert-count>0</span>
+														</header>
+														<p class="dashboard-inbox-tray__idle" data-dashboard-cobros-alert-title>
+															Revisando señas y reembolsos
+														</p>
+														<p class="dashboard-inbox-tray__note hidden" data-dashboard-cobros-alert-meta></p>
+														<a
+															href="/panel/cobros?status=pending"
+															class="dashboard-inbox-tray__action hidden"
+															data-dashboard-cobros-alert-action
+														>
+															Validar
+														</a>
+													</section>
 												</div>
 											</aside>
 										)}
@@ -1762,16 +1800,53 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		return `Gs. ${safe.toLocaleString('es-PY')}`;
 	};
 
-	const syncDashboardAlertsEmpty = () => {
-		const list = document.querySelector<HTMLElement>('[data-dashboard-alerts-list]');
-		const empty = document.querySelector<HTMLElement>('[data-dashboard-alerts-empty]');
-		if (!list || !empty) return;
-		const visibleItems = Array.from(list.children).filter(
-			(node) => node instanceof HTMLElement && !node.hidden
-		);
-		const hasItems = visibleItems.length > 0;
-		empty.classList.toggle('hidden', hasItems);
-		list.classList.toggle('hidden', !hasItems);
+	const syncDashboardInbox = () => {
+		const shell = document.querySelector<HTMLElement>('[data-dashboard-alerts]');
+		if (!shell) return;
+
+		const confirmTray = shell.querySelector<HTMLElement>('[data-inbox-tray="confirm"]');
+		const cobrosTray = shell.querySelector<HTMLElement>('[data-dashboard-cobros-alert-slot]');
+		const list = shell.querySelector<HTMLElement>('[data-dashboard-alerts-list]');
+		const idle = shell.querySelector<HTMLElement>('[data-inbox-confirm-idle]');
+		const status = shell.querySelector<HTMLElement>('[data-dashboard-inbox-status]');
+		const confirmCountNode = shell.querySelector<HTMLElement>('[data-inbox-confirm-count]');
+
+		const confirmCount = list
+			? Array.from(list.children).filter((node) => node instanceof HTMLElement && !node.hidden).length
+			: 0;
+		const cobrosHot = Boolean(cobrosTray && !cobrosTray.hidden && cobrosTray.classList.contains('is-hot'));
+		const cobrosCount = Number(cobrosTray?.querySelector('[data-dashboard-cobros-alert-count]')?.textContent ?? 0);
+
+		if (confirmCountNode) confirmCountNode.textContent = String(confirmCount);
+		confirmTray?.classList.toggle('is-hot', confirmCount > 0);
+		confirmTray?.classList.toggle('is-clear', confirmCount === 0);
+		idle?.classList.toggle('hidden', confirmCount > 0);
+		list?.classList.toggle('hidden', confirmCount === 0);
+
+		const total = confirmCount + (cobrosHot ? Math.max(cobrosCount, 1) : 0);
+		shell.classList.toggle('is-clear', total === 0);
+		if (status) {
+			if (total === 0) status.textContent = 'Todo al día';
+			else if (confirmCount > 0 && cobrosHot) status.textContent = `${total} por revisar`;
+			else if (confirmCount === 1) status.textContent = '1 cita por confirmar';
+			else if (confirmCount > 1) status.textContent = `${confirmCount} citas por confirmar`;
+			else status.textContent = cobrosCount === 1 ? '1 cobro por revisar' : `${Math.max(cobrosCount, 1)} cobros por revisar`;
+		}
+	};
+
+	const setCobrosTrayClear = (slot: HTMLElement, title: string) => {
+		const countNode = slot.querySelector<HTMLElement>('[data-dashboard-cobros-alert-count]');
+		const titleNode = slot.querySelector<HTMLElement>('[data-dashboard-cobros-alert-title]');
+		const meta = slot.querySelector<HTMLElement>('[data-dashboard-cobros-alert-meta]');
+		const action = slot.querySelector<HTMLAnchorElement>('[data-dashboard-cobros-alert-action]');
+		if (countNode) countNode.textContent = '0';
+		if (titleNode) titleNode.textContent = title;
+		titleNode?.classList.remove('hidden');
+		meta?.classList.add('hidden');
+		action?.classList.add('hidden');
+		slot.hidden = false;
+		slot.classList.remove('is-hot', 'is-loading');
+		slot.classList.add('is-clear');
 	};
 
 	const loadDashboardCobrosAlert = async (options?: { force?: boolean }) => {
@@ -1781,7 +1856,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		const hasFeature = window.HaselSubscription?.hasFeature?.('DEPOSIT_COLLECTION');
 		if (hasFeature === false) {
 			slot.hidden = true;
-			syncDashboardAlertsEmpty();
+			syncDashboardInbox();
 			return;
 		}
 
@@ -1796,21 +1871,25 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 					.catch(() => null),
 			]);
 			if (count === null) {
-				slot.hidden = true;
-				syncDashboardAlertsEmpty();
+				setCobrosTrayClear(slot, 'Nada por validar');
+				syncDashboardInbox();
 				return;
 			}
 
 			const receiptCount = Number(pendingPayload?.meta?.total ?? 0) || 0;
-			if (receiptCount <= 0 && count <= 0) {
-				slot.hidden = true;
-				syncDashboardAlertsEmpty();
-				return;
-			}
-
 			const title = slot.querySelector<HTMLElement>('[data-dashboard-cobros-alert-title]');
 			const meta = slot.querySelector<HTMLElement>('[data-dashboard-cobros-alert-meta]');
 			const action = slot.querySelector<HTMLAnchorElement>('[data-dashboard-cobros-alert-action]');
+			const countNode = slot.querySelector<HTMLElement>('[data-dashboard-cobros-alert-count]');
+
+			if (receiptCount <= 0 && count <= 0) {
+				setCobrosTrayClear(slot, 'Nada por validar');
+				syncDashboardInbox();
+				return;
+			}
+
+			const hotCount = receiptCount > 0 ? receiptCount : count;
+			if (countNode) countNode.textContent = String(hotCount);
 			if (receiptCount > 0) {
 				if (title) {
 					title.textContent =
@@ -1818,10 +1897,14 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 							? '1 comprobante por validar'
 							: `${receiptCount} comprobantes por validar`;
 				}
-				if (meta) meta.textContent = 'Señas SIPAP pendientes de revisión.';
+				if (meta) {
+					meta.textContent = 'Señas SIPAP pendientes de revisión.';
+					meta.classList.remove('hidden');
+				}
 				if (action) {
 					action.textContent = 'Validar';
 					action.href = '/panel/cobros?status=pending';
+					action.classList.remove('hidden');
 				}
 			} else {
 				if (title) {
@@ -1830,18 +1913,21 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 				}
 				if (meta) {
 					meta.textContent = 'Hay devoluciones o disputas que requieren tu atención.';
+					meta.classList.remove('hidden');
 				}
 				if (action) {
 					action.textContent = 'Revisar';
 					action.href = '/panel/cobros?status=refunded';
+					action.classList.remove('hidden');
 				}
 			}
 			slot.hidden = false;
-			slot.classList.remove('dashboard-alert-item--loading');
+			slot.classList.remove('is-loading', 'is-clear');
+			slot.classList.add('is-hot');
 		} catch {
-			slot.hidden = true;
+			setCobrosTrayClear(slot, 'Nada por validar');
 		} finally {
-			syncDashboardAlertsEmpty();
+			syncDashboardInbox();
 		}
 	};
 
@@ -1911,7 +1997,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		loadProfitability();
 		loadDashboardCobrosAlert();
 		loadAiSummary();
-		syncDashboardAlertsEmpty();
+		syncDashboardInbox();
 		scrollToUpcomingAppointmentsIfNeeded();
 	};
 
@@ -2330,6 +2416,10 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		background: var(--page-background, #f9fafb);
 		--dashboard-card-radius: 0.75rem;
 		--dashboard-card-radius-inner: 0.55rem;
+		--dashboard-copy-size: 0.84rem;
+		--dashboard-copy-weight: 500;
+		--dashboard-copy-leading: 1.4;
+		--dashboard-copy-color: var(--on-surface-variant);
 	}
 
 	.dashboard-content-canvas > * {
@@ -2473,18 +2563,23 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	.dashboard-greeting__title {
 		display: flex;
-		flex-direction: column;
-		align-items: flex-start;
-		gap: 0.1em;
-		font-size: clamp(2.9rem, 6.8vw, 3.95rem);
+		flex-direction: row;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.22em 0.32em;
+		font-size: clamp(1.7rem, 2.4vw, 2.05rem);
 		font-weight: 600;
-		line-height: 1.06;
-		letter-spacing: -0.03em;
+		line-height: 1.15;
+		letter-spacing: -0.035em;
 	}
 
-	.dashboard-greeting__word,
+	.dashboard-greeting__word {
+		display: inline-block;
+		white-space: nowrap;
+	}
+
 	.dashboard-greeting__name {
-		display: block;
+		display: inline-block;
 		max-width: 100%;
 	}
 
@@ -2521,12 +2616,13 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	.dashboard-greeting__sub {
-		font-size: clamp(0.9rem, 2vw, 1rem);
-		line-height: 1.4;
+		font-size: 0.8125rem;
+		line-height: 1.35;
 		overflow-wrap: anywhere;
 		word-break: break-word;
 		opacity: 0;
-		transform: translate3d(0, 6px, 0);
+		transform: translate3d(0, 4px, 0);
+		color: color-mix(in srgb, var(--on-surface-variant) 88%, var(--on-surface) 12%);
 		transition:
 			opacity 0.35s cubic-bezier(0.2, 0, 0, 1),
 			transform 0.35s cubic-bezier(0.2, 0, 0, 1);
@@ -2535,6 +2631,10 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	.dashboard-greeting__sub.is-in {
 		opacity: 1;
 		transform: none;
+	}
+
+	html[data-theme='dark'] .dashboard-greeting__sub {
+		color: color-mix(in srgb, var(--on-surface-variant) 72%, #c4c7c5 28%);
 	}
 
 	@media (prefers-reduced-motion: reduce) {
@@ -3172,6 +3272,50 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		box-shadow: none;
 	}
 
+	.dashboard-day-progress.is-empty {
+		height: 100%;
+	}
+
+	.dashboard-day-progress.is-empty .dashboard-day-progress__inner {
+		min-height: 100%;
+		flex-direction: row;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: center;
+		gap: 0.45rem 1rem;
+		padding: 0.9rem 1.15rem;
+	}
+
+	.dashboard-day-progress.is-empty .dashboard-day-progress__head {
+		animation: none;
+		flex: 0 1 auto;
+	}
+
+	.dashboard-day-progress.is-empty .dashboard-day-progress__kicker {
+		display: none;
+	}
+
+	.dashboard-day-progress.is-empty .dashboard-day-progress__icon {
+		width: 1.85rem;
+		height: 1.85rem;
+	}
+
+	.dashboard-day-progress.is-empty .dashboard-day-progress__eyebrow {
+		font-size: 0.95rem;
+	}
+
+	.dashboard-day-progress.is-empty .dashboard-day-progress__metric--empty {
+		flex: 0 1 auto;
+		margin: 0;
+		max-width: 28rem;
+		font-size: var(--dashboard-copy-size, 0.84rem);
+		font-weight: var(--dashboard-copy-weight, 500);
+		letter-spacing: -0.01em;
+		line-height: var(--dashboard-copy-leading, 1.4);
+		color: var(--dashboard-copy-color, var(--on-surface-variant));
+		animation: none;
+	}
+
 	.dashboard-day-progress__head {
 		display: flex;
 		align-items: center;
@@ -3263,21 +3407,15 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	.dashboard-day-progress__metric--empty {
 		display: block;
 		max-width: none;
-		font-size: 0.98rem;
-		font-weight: 400;
-		letter-spacing: -0.015em;
-		line-height: 1.5;
+		font-size: var(--dashboard-copy-size, 0.84rem);
+		font-weight: var(--dashboard-copy-weight, 500);
+		letter-spacing: -0.01em;
+		line-height: var(--dashboard-copy-leading, 1.4);
 		font-variant-numeric: normal;
-		color: #475569;
+		color: var(--dashboard-copy-color, var(--on-surface-variant));
 		text-align: left;
 		text-wrap: pretty;
 		animation: dashboard-day-rise 720ms var(--day-ease) 50ms both;
-	}
-
-	@media (min-width: 641px) {
-		.dashboard-day-progress__metric--empty {
-			font-size: 1.02rem;
-		}
 	}
 
 	.dashboard-day-progress__of {
@@ -3643,7 +3781,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		align-items: flex-start;
 		justify-content: space-between;
 		gap: 0.75rem;
-		margin-bottom: 1.15rem;
+		margin-bottom: 0.85rem;
 		flex-shrink: 0;
 	}
 
@@ -3747,121 +3885,120 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		text-decoration: underline;
 	}
 
-	.dashboard-alerts-empty {
-		display: flex;
-		flex: 1 1 auto;
-		align-items: stretch;
-		justify-content: stretch;
-		min-height: 12rem;
-		margin: 0;
-		padding: 0.15rem;
+	.dashboard-inbox {
+		min-height: 0;
 	}
 
-	.dashboard-alerts-empty.hidden {
-		display: none;
-	}
-
-	.dashboard-alerts-empty__well {
-		display: flex;
-		flex: 1 1 auto;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: 0.4rem;
-		width: 100%;
-		min-height: 100%;
-		padding: 1.5rem 1.15rem;
-		border-radius: var(--dashboard-card-radius, 0.75rem);
-		background: var(--surface-container-high);
-		box-shadow: none;
-		text-align: center;
-	}
-
-	html[data-theme='dark'] .dashboard-alerts-empty__well {
-		background: var(--surface-container-high);
-		box-shadow: none;
-	}
-
-	.dashboard-alerts-empty__icon {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 2.6rem;
-		height: 2.6rem;
-		margin-bottom: 0.25rem;
-		border-radius: 0.85rem;
-		background: color-mix(in srgb, var(--primary) 14%, transparent);
-		color: var(--primary);
-		font-size: 1.45rem;
-	}
-
-	html[data-theme='dark'] .dashboard-alerts-empty__icon {
-		background: color-mix(in srgb, var(--primary) 18%, #1f2126);
-		color: color-mix(in srgb, var(--primary) 70%, white 30%);
-	}
-
-	.dashboard-alerts-empty__title {
-		margin: 0;
-		font-size: 1.05rem;
-		font-weight: 600;
-		letter-spacing: -0.02em;
-		color: var(--on-surface);
-	}
-
-	.dashboard-alerts-empty__text {
-		margin: 0;
-		max-width: 16rem;
-		font-size: 0.84rem;
-		font-weight: 600;
-		line-height: 1.45;
+	.dashboard-inbox__pulse {
+		margin: 0.18rem 0 0;
+		font-size: 0.8rem;
+		font-weight: 500;
+		letter-spacing: -0.01em;
 		color: var(--on-surface-variant);
 	}
 
-	.dashboard-alerts-empty__actions {
+	.dashboard-inbox.is-clear .dashboard-inbox__pulse {
+		color: color-mix(in srgb, var(--on-surface-variant) 78%, #86efac 22%);
+	}
+
+	.dashboard-inbox__trays {
 		display: flex;
 		flex-direction: column;
-		align-items: center;
+		flex: 1 1 auto;
+		min-height: 0;
+	}
+
+	.dashboard-inbox-tray {
+		display: flex;
+		flex-direction: column;
 		gap: 0.55rem;
+		flex: 1 1 0;
+		min-height: 0;
+		padding: 0.1rem 0 0.2rem;
+	}
+
+	.dashboard-inbox-tray + .dashboard-inbox-tray {
 		margin-top: 0.35rem;
+		padding-top: 0.95rem;
+		border-top: 1px solid var(--shell-border);
 	}
 
-	.dashboard-alerts-empty__cta {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.3rem;
-		min-height: 2.35rem;
-		padding: 0.4rem 1rem;
-		border-radius: 999px;
-		border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--shell-border) 72%);
-		background: color-mix(in srgb, var(--primary) 8%, transparent);
-		color: var(--primary);
-		font-size: 0.8rem;
+	.dashboard-inbox-tray[hidden] {
+		display: none;
+	}
+
+	.dashboard-inbox-tray__head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 0.75rem;
+	}
+
+	.dashboard-inbox-tray__head h3 {
+		margin: 0;
+		font-size: 0.78rem;
 		font-weight: 600;
-		text-decoration: none;
-		transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease;
+		letter-spacing: -0.01em;
+		color: color-mix(in srgb, var(--on-surface-variant) 82%, var(--on-surface) 18%);
 	}
 
-	.dashboard-alerts-empty__cta .material-symbols-rounded {
-		font-size: 1.05rem;
+	.dashboard-inbox-tray__count {
+		font-size: 1.45rem;
+		font-weight: 600;
+		letter-spacing: -0.05em;
 		line-height: 1;
+		font-variant-numeric: tabular-nums lining-nums;
+		color: var(--on-surface);
 	}
 
-	.dashboard-alerts-empty__cta:hover {
-		background: color-mix(in srgb, var(--primary) 14%, transparent);
-		border-color: color-mix(in srgb, var(--primary) 48%, var(--shell-border) 52%);
-		transform: translateY(-1px);
+	.dashboard-inbox-tray.is-clear .dashboard-inbox-tray__count {
+		color: color-mix(in srgb, var(--on-surface-variant) 62%, var(--on-surface) 38%);
+		opacity: 0.7;
 	}
 
-	html[data-theme='dark'] .dashboard-alerts-empty__cta {
-		border-color: color-mix(in srgb, #a8c7fa 32%, rgba(255, 255, 255, 0.12) 68%);
-		background: color-mix(in srgb, #a8c7fa 12%, transparent);
-		color: #a8c7fa;
+	.dashboard-inbox-tray.is-hot[data-inbox-tray='confirm'] .dashboard-inbox-tray__count {
+		color: #d97706;
 	}
 
-	html[data-theme='dark'] .dashboard-alerts-empty__cta:hover {
-		background: color-mix(in srgb, #a8c7fa 20%, transparent);
-		border-color: color-mix(in srgb, #a8c7fa 52%, transparent);
+	.dashboard-inbox-tray.is-hot[data-inbox-tray='cobros'] .dashboard-inbox-tray__count {
+		color: #e11d48;
+	}
+
+	html[data-theme='dark'] .dashboard-inbox-tray.is-hot[data-inbox-tray='confirm'] .dashboard-inbox-tray__count {
+		color: #fbbf24;
+	}
+
+	html[data-theme='dark'] .dashboard-inbox-tray.is-hot[data-inbox-tray='cobros'] .dashboard-inbox-tray__count {
+		color: #fb7185;
+	}
+
+	.dashboard-inbox-tray__idle,
+	.dashboard-inbox-tray__note {
+		margin: 0;
+		font-size: var(--dashboard-copy-size, 0.84rem);
+		font-weight: var(--dashboard-copy-weight, 500);
+		letter-spacing: -0.01em;
+		line-height: var(--dashboard-copy-leading, 1.4);
+		color: var(--dashboard-copy-color, var(--on-surface-variant));
+	}
+
+	.dashboard-inbox-tray__action {
+		align-self: flex-start;
+		margin-top: 0.15rem;
+		font-size: 0.78rem;
+		font-weight: 600;
+		color: var(--primary);
+		text-decoration: none;
+	}
+
+	.dashboard-inbox-tray__action:hover {
+		text-decoration: underline;
+	}
+
+	.dashboard-inbox-tray .dashboard-alerts-list {
+		flex: 1 1 auto;
+		overflow-y: auto;
+		min-height: 0;
 	}
 
 	@media (min-width: 1024px) {
@@ -3897,18 +4034,11 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 
 		.dashboard-floor--action .dashboard-alerts-list {
-			flex: none;
+			flex: 1 1 auto;
 		}
 
-		.dashboard-floor--action .dashboard-alerts-empty {
-			flex: none;
-			min-height: 0;
-			padding: 0;
-		}
-
-		.dashboard-floor--action .dashboard-alerts-empty__well {
-			min-height: 0;
-			padding: 1.1rem 1rem;
+		.dashboard-floor--action .dashboard-inbox__trays {
+			flex: 1 1 auto;
 		}
 
 		.dashboard-floor--today {
@@ -4103,7 +4233,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	.dashboard-profit-metrics-track > .dashboard-profit-card {
 		flex: 0 0 min(72%, 17.5rem);
 		scroll-snap-align: start;
-		min-height: 0;
+		min-height: 7.75rem;
 		min-width: 0;
 		max-width: 100%;
 		box-sizing: border-box;
@@ -4288,9 +4418,9 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	.dashboard-profit-card--simple {
 		align-items: stretch;
 		justify-content: flex-start;
-		gap: 0.32rem;
-		padding: 0.8rem 0.95rem 0.7rem;
-		min-height: 0;
+		gap: 0.22rem;
+		padding: 0.95rem 1.05rem 0.9rem;
+		min-height: 7.75rem;
 		text-align: left;
 		background: var(--surface-bright);
 	}
@@ -4298,7 +4428,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	.dashboard-profit-card--simple .dashboard-profit-card__head {
 		display: flex;
 		align-items: center;
-		gap: 0.65rem;
+		gap: 0.5rem;
 		min-width: 0;
 	}
 
@@ -4307,16 +4437,16 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	.dashboard-profit-card--simple .dashboard-profit-icon {
-		width: 2.15rem;
-		height: 2.15rem;
-		border-radius: 0.78rem;
+		width: 1.5rem;
+		height: 1.5rem;
+		border-radius: 0.45rem;
 		box-shadow: none;
 	}
 
 	.dashboard-profit-card--simple .dashboard-profit-icon .material-symbols-rounded {
-		font-size: 1.15rem;
+		font-size: 0.95rem;
 		line-height: 1;
-		font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+		font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
 	}
 
 	.dashboard-profit-card__go {
@@ -4338,37 +4468,50 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	.dashboard-profit-card--simple .dashboard-profit-label {
 		flex: 1 1 auto;
 		min-width: 0;
-		font-size: 0.88rem;
+		font-size: 0.78rem;
 		font-weight: 500;
-		letter-spacing: -0.02em;
+		letter-spacing: -0.01em;
 		line-height: 1.2;
-		color: #334155;
+		color: color-mix(in srgb, var(--on-surface-variant) 82%, var(--on-surface) 18%);
 	}
 
 	.dashboard-profit-card--simple .dashboard-profit-value {
-		margin: 0;
-		padding-left: 2.8rem;
-		font-size: clamp(1.7rem, 2.4vw, 2.05rem);
-		font-weight: 500;
-		letter-spacing: -0.045em;
+		margin: 0.28rem 0 0;
+		padding-left: 0;
+		font-size: clamp(1.85rem, 2.6vw, 2.35rem);
+		font-weight: 600;
+		letter-spacing: -0.05em;
 		line-height: 0.95;
 		text-wrap: balance;
+		color: #1e293b;
 	}
 
 	.dashboard-profit-card--simple .dashboard-profit-caption {
-		margin: 0.08rem 0 0;
-		padding-left: 2.8rem;
+		margin: 0.18rem 0 0;
+		padding-left: 0;
 		max-width: none;
+		font-size: 0.7rem;
+		font-weight: 450;
+		letter-spacing: -0.01em;
+		color: color-mix(in srgb, var(--on-surface-variant) 72%, var(--on-surface) 28%);
 	}
 
 	.dashboard-profit-card--simple.is-alert {
 		border-color: color-mix(in srgb, var(--profit-accent) 38%, transparent);
 	}
 
-	html[data-theme='dark'] .dashboard-profit-card--simple .dashboard-profit-label,
+	html[data-theme='dark'] .dashboard-profit-card--simple .dashboard-profit-label {
+		color: color-mix(in srgb, var(--on-surface-variant) 78%, #e5e7eb 22%);
+	}
+
 	html[data-theme='dark'] .dashboard-profit-label,
-	html[data-theme='dark'] .dashboard-profit-value {
+	html[data-theme='dark'] .dashboard-profit-value,
+	html[data-theme='dark'] .dashboard-profit-card--simple .dashboard-profit-value {
 		color: #e5e7eb;
+	}
+
+	html[data-theme='dark'] .dashboard-profit-card--simple .dashboard-profit-caption {
+		color: color-mix(in srgb, var(--on-surface-variant) 70%, #9aa0a6 30%);
 	}
 
 	html[data-theme='dark'] .dashboard-day-progress__eyebrow,
@@ -4377,7 +4520,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	html[data-theme='dark'] .dashboard-day-progress__metric--empty {
-		color: color-mix(in srgb, var(--on-surface) 88%, #e8eaed 12%);
+		color: var(--dashboard-copy-color, var(--on-surface-variant));
 	}
 
 	html[data-theme='dark'] .dashboard-profit-card--simple .dashboard-profit-icon {
@@ -5010,14 +5153,14 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	@media (max-width: 768px) {
 		.dashboard-greeting__title {
-			font-size: clamp(2.55rem, 9.6vw, 3.2rem);
-			line-height: 1.08;
-			gap: 0.08em;
+			font-size: clamp(1.55rem, 6.2vw, 1.85rem);
+			line-height: 1.18;
+			gap: 0.18em 0.28em;
 		}
 
 		.dashboard-greeting__sub {
-			font-size: clamp(0.88rem, 3.2vw, 0.95rem);
-			line-height: 1.4;
+			font-size: 0.78rem;
+			line-height: 1.35;
 		}
 
 		.dashboard-profitability-shell {
@@ -5065,6 +5208,10 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			word-break: break-word;
 		}
 
+		.dashboard-profit-card--simple .dashboard-profit-value {
+			font-size: clamp(1.6rem, 7vw, 1.95rem);
+		}
+
 		.dashboard-profit-viz--split {
 			width: 6.2rem;
 		}
@@ -5076,6 +5223,10 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			min-width: 0;
 		}
 
+		.dashboard-profit-card--simple .dashboard-profit-label {
+			font-size: 0.75rem;
+		}
+
 		.dashboard-day-progress {
 			min-height: 0;
 		}
@@ -5083,6 +5234,11 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		.dashboard-day-progress__inner {
 			padding: 0.75rem 0.8rem;
 			gap: 0.8rem;
+		}
+
+		.dashboard-day-progress.is-empty .dashboard-day-progress__inner {
+			padding: 0.7rem 0.85rem;
+			gap: 0.4rem 0.85rem;
 		}
 
 		.dashboard-day-progress__island {
@@ -5103,7 +5259,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 
 		.dashboard-day-progress__metric--empty {
-			font-size: 0.98rem;
+			font-size: var(--dashboard-copy-size, 0.84rem);
 		}
 
 		.dashboard-day-progress__hint {
@@ -5190,8 +5346,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 
 		.dashboard-profit-card.dashboard-profit-card--simple {
-			padding: 0.88rem 0.9rem 0.82rem;
-			min-height: 0;
+			padding: 1rem 0.95rem 0.9rem;
+			min-height: 7.15rem;
 		}
 
 		.dashboard-day-progress__inner {
