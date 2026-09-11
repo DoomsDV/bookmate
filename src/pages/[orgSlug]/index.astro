@@ -582,9 +582,15 @@ const serializedProfessionals = professionals.length
 															<div class="hub-pro-card__head">
 																<div class="hub-pro-card__identity">
 																	<h3 class="hub-pro-card__name">{pro.full_name}</h3>
-																	{specialty ? (
-																		<p class="hub-pro-card__specialty">{specialty}</p>
-																	) : null}
+																	<p
+																		class:list={[
+																			'hub-pro-card__specialty',
+																			!specialty && 'hub-pro-card__specialty--empty',
+																		]}
+																		aria-hidden={specialty ? undefined : true}
+																	>
+																		{specialty || '\u00a0'}
+																	</p>
 																</div>
 																<p
 																	class:list={[

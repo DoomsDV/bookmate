@@ -361,9 +361,12 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 												<div className="hub-pro-card__head">
 													<div className="hub-pro-card__identity">
 														<h3 className="hub-pro-card__name">{pro.fullName}</h3>
-														{pro.specialty ? (
-															<p className="hub-pro-card__specialty">{pro.specialty}</p>
-														) : null}
+														<p
+															className={`hub-pro-card__specialty${pro.specialty ? '' : ' hub-pro-card__specialty--empty'}`}
+															aria-hidden={pro.specialty ? undefined : true}
+														>
+															{pro.specialty || '\u00a0'}
+														</p>
 													</div>
 													<p
 														className={`hub-pro-card__rating${rating.hasRating ? '' : ' hub-pro-card__rating--empty'}`}
