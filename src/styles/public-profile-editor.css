@@ -2215,14 +2215,15 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 }
 
 .ppe-hours-day {
+	--calendar-surface: color-mix(in srgb, var(--surface-container-low) 86%, var(--surface-bright) 14%);
 	display: grid;
 	gap: 0.45rem;
 	min-width: 0;
-	padding: 0.62rem 0.72rem 0.58rem;
-	border: 1px solid color-mix(in srgb, var(--on-surface) 12%, var(--shell-border));
-	border-radius: 1rem;
-	background: var(--surface-bright);
-	box-shadow: none;
+	padding: 0.85rem 0.9rem 0.8rem;
+	border: 0;
+	border-radius: 1.2rem;
+	background: var(--calendar-surface);
+	box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 9%, transparent);
 }
 
 .ppe-hours-day__mast {
@@ -2598,13 +2599,13 @@ html[data-theme='dark'] .ppe-hours-interval__time {
 }
 
 html[data-theme='dark'] .ppe-hours-day {
-	background: #16161a;
-	border-color: rgba(255, 255, 255, 0.1);
-	box-shadow: none;
+	background: var(--calendar-surface);
+	border-color: transparent;
+	box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 html[data-theme='dark'] .ppe-hours-day.is-closed {
-	background: #141418;
+	background: var(--calendar-surface);
 }
 
 html[data-theme='dark'] .ppe-hours-intervals {
