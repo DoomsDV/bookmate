@@ -8,6 +8,7 @@ import { formatBusinessHoursForDisplay } from '../../lib/business-hours';
 import { PublicBookingApiError, getPublicProfileSpecialtyLabel } from '../../lib/public-booking';
 import { buildGoogleMapsUrl } from '../../lib/public-booking-locations';
 import {
+	formatPublicProfessionalRating,
 	getPublicOrgHubWithOrds,
 	type PublicOrgHub,
 } from '../../lib/public-org-hub';
@@ -504,20 +505,24 @@ const serializedProfessionals = professionals.length
 										{Array.from(
 											{ length: Math.min(4, Math.max(2, professionals.length)) },
 											(_, i) => (
-												<div class="hub-pro-card hub-pro-card--skeleton" aria-hidden="true">
+												<div class="hub-pro-card hub-pro-card--person hub-pro-card--skeleton" aria-hidden="true">
 													<div class="hub-pro-card__main">
 														<span class="hub-pro-card__avatar hub-skel-circle">
 															<span class="hub-skel hub-skel-circle hub-pro-card__avatar-face"></span>
-															<span class="hub-pro-card__status-dot hub-pro-card__status-dot--avatar" aria-hidden="true"></span>
 														</span>
 														<div class="hub-pro-card__text">
-															<span
-																class={`hub-skel hub-skel-line hub-skel-line--title${i % 2 === 1 ? ' hub-skel-line--short' : ''}`}
-															></span>
-															<span class="hub-skel hub-skel-line hub-skel-line--sub"></span>
+															<div class="hub-pro-card__head">
+																<div class="hub-pro-card__identity">
+																	<span
+																		class={`hub-skel hub-skel-line hub-skel-line--title${i % 2 === 1 ? ' hub-skel-line--short' : ''}`}
+																	></span>
+																	<span class="hub-skel hub-skel-line hub-skel-line--sub"></span>
+																</div>
+																<span class="hub-skel hub-pro-card__rating-skel"></span>
+															</div>
+															<span class="hub-skel hub-pro-card__btn-skel hub-pro-card__btn-skel--book"></span>
 														</div>
 													</div>
-													<span class="hub-skel hub-pro-card__btn-skel"></span>
 												</div>
 											)
 										)}
@@ -526,13 +531,17 @@ const serializedProfessionals = professionals.length
 										{professionals.map((pro) => {
 											const specialty = getPublicProfileSpecialtyLabel(pro.specialty);
 											const initials = initialsFromName(pro.full_name);
+											const rating = formatPublicProfessionalRating(
+												pro.rating_avg,
+												pro.rating_count
+											);
 											const cardLabel = specialty
-												? `Reservar con ${pro.full_name}, ${specialty}. Agenda abierta`
-												: `Reservar con ${pro.full_name}. Agenda abierta`;
+												? `Reservar con ${pro.full_name}, ${specialty}`
+												: `Reservar con ${pro.full_name}`;
 											return (
 												<a
 													href={bookingFromHub(pro.booking_path)}
-													class="hub-pro-card"
+													class="hub-pro-card hub-pro-card--person"
 													data-hub-pro-card
 													data-pro-id={String(pro.id_professional)}
 													data-booking-path={pro.booking_path}
@@ -568,22 +577,32 @@ const serializedProfessionals = professionals.length
 																	{initials}
 																</span>
 															)}
-															<span
-																class="hub-pro-card__status-dot hub-pro-card__status-dot--avatar"
-																aria-hidden="true"
-															></span>
 														</div>
 														<div class="hub-pro-card__text">
-															<h3 class="hub-pro-card__name">{pro.full_name}</h3>
-															{specialty ? (
-																<p class="hub-pro-card__specialty">{specialty}</p>
-															) : null}
+															<div class="hub-pro-card__head">
+																<div class="hub-pro-card__identity">
+																	<h3 class="hub-pro-card__name">{pro.full_name}</h3>
+																	{specialty ? (
+																		<p class="hub-pro-card__specialty">{specialty}</p>
+																	) : null}
+																</div>
+																<p
+																	class:list={[
+																		'hub-pro-card__rating',
+																		!rating.hasRating && 'hub-pro-card__rating--empty',
+																	]}
+																	aria-label={rating.aria}
+																>
+																	<span class="material-symbols-rounded" aria-hidden="true">star</span>
+																	<span>{rating.label}</span>
+																</p>
+															</div>
+															<span class="hub-pro-card__btn hub-pro-card__btn--book">
+																Reservar
+																<span class="material-symbols-rounded" aria-hidden="true">arrow_forward</span>
+															</span>
 														</div>
 													</div>
-													<span class="hub-pro-card__btn">
-														<span class="material-symbols-rounded" aria-hidden="true">event</span>
-														Reservar
-													</span>
 												</a>
 											);
 										})}

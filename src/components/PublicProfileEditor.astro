@@ -63,6 +63,8 @@ const previewProfessionals = (hub?.professionals || []).map((pro) => ({
 	specialty: getPublicProfileSpecialtyLabel(pro.specialty),
 	imageUrl: String(pro.image_url || '').trim(),
 	initials: personInitials(pro.full_name),
+	ratingAvg: pro.rating_avg,
+	ratingCount: pro.rating_count,
 }));
 
 const previewLocations = (hub?.locations || []).map((loc) => ({

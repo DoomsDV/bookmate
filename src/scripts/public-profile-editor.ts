@@ -17,6 +17,7 @@ import {
 	type ProfileCropMode,
 } from '../lib/profile-image-crop';
 import { emitPublicProfilePreviewUpdate } from '../lib/public-profile-preview-events';
+import { normalizePublicProfessionalRating } from '../lib/public-org-hub';
 import type {
 	PublicProfilePreviewLocation,
 	PublicProfilePreviewProfessional,
@@ -141,12 +142,15 @@ const mapPreviewProfessionals = (
 			const row = item as Record<string, unknown>;
 			const fullName = String(row.full_name || '').trim();
 			if (!fullName) return null;
+			const rating = normalizePublicProfessionalRating(row.rating_avg, row.rating_count);
 			return {
 				id: Number(row.id_professional) || 0,
 				fullName,
 				specialty: getPublicProfileSpecialtyLabel(String(row.specialty || '')),
 				imageUrl: String(row.image_url || '').trim(),
 				initials: initialsFromName(fullName),
+				ratingAvg: rating.rating_avg,
+				ratingCount: rating.rating_count,
 			} satisfies PublicProfilePreviewProfessional;
 		})
 		.filter((item): item is PublicProfilePreviewProfessional => item !== null);

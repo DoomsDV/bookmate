@@ -6,6 +6,8 @@ export type PublicProfilePreviewProfessional = {
 	specialty: string | null;
 	imageUrl: string;
 	initials: string;
+	ratingAvg: number | null;
+	ratingCount: number;
 };
 
 export type PublicProfilePreviewLocation = {

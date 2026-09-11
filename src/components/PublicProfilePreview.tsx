@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { formatPublicProfessionalRating } from '../lib/public-org-hub';
 import {
 	PUBLIC_PROFILE_PREVIEW_EVENT,
 	type PublicProfilePreviewState,
@@ -329,8 +330,13 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 						<h3 className="hub-section-title">Equipo</h3>
 						{professionals.length ? (
 							<div className="hub-team-grid" aria-label="Profesionales">
-								{professionals.map((pro) => (
-									<div className="hub-pro-card" key={pro.id}>
+								{professionals.map((pro) => {
+									const rating = formatPublicProfessionalRating(
+										pro.ratingAvg ?? null,
+										pro.ratingCount ?? 0
+									);
+									return (
+									<div className="hub-pro-card hub-pro-card--person" key={pro.id}>
 										<div className="hub-pro-card__main">
 											<div
 												className={`hub-pro-card__avatar${pro.imageUrl ? '' : ' hub-pro-card__avatar--ph'}`}
@@ -350,26 +356,36 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 														{pro.initials}
 													</span>
 												)}
-												<span
-													className="hub-pro-card__status-dot hub-pro-card__status-dot--avatar"
-													aria-hidden="true"
-												/>
 											</div>
 											<div className="hub-pro-card__text">
-												<h3 className="hub-pro-card__name">{pro.fullName}</h3>
-												{pro.specialty ? (
-													<p className="hub-pro-card__specialty">{pro.specialty}</p>
-												) : null}
+												<div className="hub-pro-card__head">
+													<div className="hub-pro-card__identity">
+														<h3 className="hub-pro-card__name">{pro.fullName}</h3>
+														{pro.specialty ? (
+															<p className="hub-pro-card__specialty">{pro.specialty}</p>
+														) : null}
+													</div>
+													<p
+														className={`hub-pro-card__rating${rating.hasRating ? '' : ' hub-pro-card__rating--empty'}`}
+														aria-label={rating.aria}
+													>
+														<span className="material-symbols-rounded" aria-hidden="true">
+															star
+														</span>
+														<span>{rating.label}</span>
+													</p>
+												</div>
+												<span className="hub-pro-card__btn hub-pro-card__btn--book">
+													Reservar
+													<span className="material-symbols-rounded" aria-hidden="true">
+														arrow_forward
+													</span>
+												</span>
 											</div>
 										</div>
-										<span className="hub-pro-card__btn">
-											<span className="material-symbols-rounded" aria-hidden="true">
-												event
-											</span>
-											Reservar
-										</span>
 									</div>
-								))}
+									);
+								})}
 							</div>
 						) : (
 							<p className="hub-empty">Todavía no hay profesionales.</p>
