@@ -493,6 +493,7 @@ html[data-theme='dark'] .explorar-suggest {
 	font-weight: 700;
 	text-decoration: none;
 	white-space: nowrap;
+	cursor: pointer;
 	transition:
 		border-color 160ms ease,
 		background 160ms ease,
@@ -576,6 +577,7 @@ html[data-theme='dark'] .explorar-view-toggle {
 	font-size: 0.82rem;
 	font-weight: 700;
 	text-decoration: none;
+	cursor: pointer;
 }
 
 .explorar-filter-pill__x {
@@ -668,9 +670,14 @@ html[data-theme='dark'] .explorar-view-toggle {
 	box-shadow: 0 2px 10px rgb(66 110 219 / 0.06);
 	text-decoration: none;
 	color: inherit;
+	cursor: pointer;
 	transition:
 		transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
 		box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.explorar-card * {
+	cursor: inherit;
 }
 
 html[data-theme='dark'] .explorar-card {

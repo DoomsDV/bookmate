@@ -258,9 +258,13 @@ html[data-theme='light'] .hub-hero__banner:not(.hub-hero__banner--photo) {
 	padding: 0;
 	border: 0;
 	background: transparent;
-	cursor: zoom-in;
+	cursor: pointer;
 	border-radius: 0.95rem;
 	overflow: hidden;
+}
+
+.hub-gallery-open * {
+	cursor: inherit;
 }
 
 .hub-gallery-open img,
@@ -1712,6 +1716,14 @@ html[data-theme='dark'] .hub-pro-card--skeleton .hub-skel {
 		border-color 180ms ease,
 		background 180ms ease,
 		box-shadow 220ms ease;
+}
+
+.hub-pro-card:not(.hub-pro-card--skeleton) {
+	cursor: pointer;
+}
+
+.hub-pro-card:not(.hub-pro-card--skeleton) * {
+	cursor: inherit;
 }
 
 html[data-theme='dark'] .hub-pro-card {
