@@ -118,9 +118,31 @@ const flashToneClass = `flash-message--${type}`;
 
 	type FlashTone = keyof typeof FLASH_TONE_META;
 
+	const hideTimers = new WeakMap<HTMLElement, number>();
+
+	const clearHideTimer = (node: HTMLElement) => {
+		const timer = hideTimers.get(node);
+		if (!timer) return;
+		window.clearTimeout(timer);
+		hideTimers.delete(node);
+	};
+
+	const removeFlashNode = (node: HTMLElement) => {
+		clearHideTimer(node);
+		node.remove();
+	};
+
+	const dismissExistingFlashes = (keep?: HTMLElement | null) => {
+		document.querySelectorAll<HTMLElement>('[data-flash-message]').forEach((node) => {
+			if (keep && node === keep) return;
+			removeFlashNode(node);
+		});
+	};
+
 	const hideMessage = (node: HTMLElement) => {
-		if (!node || node.dataset.isClosing === '1') return;
+		if (!node.isConnected || node.dataset.isClosing === '1') return;
 		node.dataset.isClosing = '1';
+		clearHideTimer(node);
 		node.classList.add('pointer-events-none');
 		node.animate(
 			[
@@ -133,7 +155,7 @@ const flashToneClass = `flash-message--${type}`;
 				fill: 'forwards',
 			}
 		).onfinish = () => {
-			node.remove();
+			removeFlashNode(node);
 			hideFlashStackIfEmpty(document.querySelector<HTMLElement>('[data-flash-stack]'));
 		};
 	};
@@ -147,7 +169,10 @@ const flashToneClass = `flash-message--${type}`;
 
 		const delay = Number(node.dataset.autoHideMs || '0');
 		if (Number.isFinite(delay) && delay > 0) {
-			window.setTimeout(() => hideMessage(node), delay);
+			hideTimers.set(
+				node,
+				window.setTimeout(() => hideMessage(node), delay)
+			);
 		}
 	};
 
@@ -241,6 +266,7 @@ const flashToneClass = `flash-message--${type}`;
 	}) => {
 		const node = createDynamicMessage(detail);
 		if (!node) return;
+		dismissExistingFlashes();
 		const stack = ensureFlashStack();
 		stack.appendChild(node);
 		promoteFlashStack(stack);
@@ -251,9 +277,10 @@ const flashToneClass = `flash-message--${type}`;
 		stripFlashParamsFromUrl();
 		ensureFlashStack();
 
-		for (const node of document.querySelectorAll<HTMLElement>('[data-flash-message]')) {
-			initMessage(node);
-		}
+		const existing = [...document.querySelectorAll<HTMLElement>('[data-flash-message]')];
+		existing.slice(0, -1).forEach((node) => removeFlashNode(node));
+		const remaining = existing.at(-1);
+		if (remaining) initMessage(remaining);
 
 		const stashed = consumeStashedFlash();
 		if (stashed) showFlashMessage(stashed);

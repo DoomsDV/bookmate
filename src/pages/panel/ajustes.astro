@@ -22,7 +22,7 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 			<div class="grid min-h-full min-w-0 grid-rows-[auto_1fr]">
 				<TopBar />
 
-				<main class="settings-page-main px-3 py-3 sm:px-5 sm:py-4 lg:px-6">
+				<main class="settings-page-main">
 					<SettingsModal
 						variant="page"
 						roleId={roleId}
@@ -36,15 +36,31 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 
 <style>
 	.settings-page-main {
-		display: block;
-		height: auto;
+		--settings-page-inset: 1.25rem;
+		display: flex;
+		flex-direction: column;
 		min-height: 0;
-		overflow: visible;
+		height: 100%;
+		overflow: hidden;
+		padding: var(--settings-page-inset);
+	}
+
+	@media (min-width: 640px) {
+		.settings-page-main {
+			--settings-page-inset: 1.5rem;
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.settings-page-main {
+			--settings-page-inset: 1.75rem;
+		}
 	}
 
 	.settings-page-main :global(.settings-page) {
-		flex: none;
-		height: auto;
-		min-height: min-content;
+		flex: 1 1 auto;
+		min-height: 0;
+		height: 100%;
+		max-height: 100%;
 	}
 </style>

@@ -679,6 +679,10 @@ professional-manager:has(.app-shell) {
 	scrollbar-gutter: auto;
 }
 
+.app-shell > :last-child > main.settings-page-main {
+	overflow: hidden;
+}
+
 html.panel-modal-open .app-shell > :last-child > main,
 html.panel-modal-open .app-shell > :last-child:not(:has(.ppe-main)) {
 	overflow: hidden;
@@ -686,7 +690,7 @@ html.panel-modal-open .app-shell > :last-child:not(:has(.ppe-main)) {
 
 /* Mobile: el canvas scrollea (TopBar sticky + glass sobre el contenido). */
 @media (max-width: 1023.98px) {
-	.app-shell > :last-child:not(:has(.ppe-main)):not(:has(.schedule-page-main)) {
+	.app-shell > :last-child:not(:has(.ppe-main)):not(:has(.schedule-page-main)):not(:has(.settings-page-main)) {
 		display: block;
 		overflow-x: hidden;
 		overflow-y: auto;
@@ -713,7 +717,7 @@ html.panel-modal-open .app-shell > :last-child:not(:has(.ppe-main)) {
 		scrollbar-gutter: auto;
 	}
 
-	.app-shell > :last-child:not(:has(.ppe-main)) > main {
+	.app-shell > :last-child:not(:has(.ppe-main)) > main:not(.settings-page-main) {
 		overflow: visible;
 		height: auto;
 		max-height: none;

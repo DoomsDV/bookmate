@@ -18,7 +18,7 @@ export const FLASH_TONE_META: Record<
 
 const FLASH_NAV_STASH_KEY = 'bookmate_flash_nav_stash';
 
-const pendingFlashMessages: FlashMessageDetail[] = [];
+let pendingFlashMessage: FlashMessageDetail | null = null;
 
 export function normalizeFlashMessageText(message: string): string {
 	return message
@@ -63,14 +63,13 @@ export function consumeStashedFlash(): FlashMessageDetail | null {
 	}
 }
 
-/** Vacía mensajes emitidos antes de que FlashMessage registrara su handler. */
+/** Vacía el último mensaje emitido antes de que FlashMessage registrara su handler. */
 export function drainPendingFlashMessages() {
 	if (!window.BookmateFlash?.show) return;
 
-	while (pendingFlashMessages.length > 0) {
-		const next = pendingFlashMessages.shift();
-		if (next) window.BookmateFlash.show(next);
-	}
+	const next = pendingFlashMessage;
+	pendingFlashMessage = null;
+	if (next) window.BookmateFlash.show(next);
 }
 
 export function showFlashMessage(detail: FlashMessageDetail) {
@@ -84,7 +83,7 @@ export function showFlashMessage(detail: FlashMessageDetail) {
 		return;
 	}
 
-	pendingFlashMessages.push(payload);
+	pendingFlashMessage = payload;
 	document.dispatchEvent(
 		new CustomEvent('bookmate:flash', {
 			detail: payload,

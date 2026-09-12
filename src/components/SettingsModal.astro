@@ -102,10 +102,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 	}
 
 	<div
-		class:list={[
-			'settings-layout flex flex-col bg-(--surface)/30 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]',
-			isPage ? '' : 'min-h-0 flex-1 overflow-hidden',
-		]}
+		class="settings-layout flex min-h-0 flex-1 flex-col overflow-hidden bg-(--surface)/30 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]"
 	>
 		<nav class="settings-nav shrink-0 border-b border-(--shell-border) bg-(--surface-bright)/50 px-0 py-3" data-settings-nav>
 			<div class="settings-tabs-grid" data-settings-tabs-scroll>
@@ -158,21 +155,18 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		<div
 			class:list={[
 				'settings-content-shell flex flex-col',
-				isPage ? '' : 'min-h-0 flex-1',
+				isPage ? 'min-h-0 flex-1 overflow-hidden' : 'min-h-0 flex-1',
 			]}
 			data-settings-content-shell
 		>
 		<div
 			class:list={[
 				'settings-scroll-wrap relative flex flex-col',
-				isPage ? '' : 'min-h-0 flex-1',
+				isPage ? 'min-h-0 flex-1 overflow-hidden' : 'min-h-0 flex-1',
 			]}
 		>
 		<div
-			class:list={[
-				'settings-content relative px-4 py-5 sm:p-6',
-				isPage ? '' : 'flex-1 min-h-0 overflow-y-auto overscroll-contain',
-			]}
+			class="settings-content relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:p-6"
 			data-settings-content
 		>
 			<div class="settings-feedback-sticky-wrap">
@@ -1272,6 +1266,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		isAcceptedProfileImage,
 		ProfileImageCropper,
 	} from '../lib/profile-image-crop';
+	import { showFlashMessage } from '../lib/flash';
 	import { openPanelModal } from '../lib/panel-scroll-lock';
 	import {
 		applyResolvedTheme,
@@ -2311,39 +2306,8 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 
 		private showFeedback(_key: string, message: string, kind: 'success' | 'error' = 'success') {
 			const node = this.getFeedbackHost();
-			if (!node) return;
-			if (this.feedbackHideTimer) {
-				window.clearTimeout(this.feedbackHideTimer);
-				this.feedbackHideTimer = null;
-			}
-
-			const tone =
-				kind === 'success'
-					? { icon: 'check_circle', modifier: 'inline-feedback--success' }
-					: { icon: 'error', modifier: 'inline-feedback--error' };
-
-			node.hidden = false;
-			node.className = `settings-feedback-host inline-feedback ${tone.modifier}`;
-			node.innerHTML = `
-				<span class="material-symbols-rounded inline-feedback__icon">${tone.icon}</span>
-				<p class="inline-feedback__text"></p>
-				<button type="button" class="inline-feedback__close" aria-label="Cerrar mensaje" data-inline-feedback-close>
-					<span class="material-symbols-rounded">close</span>
-				</button>
-			`;
-
-			const textNode = node.querySelector('.inline-feedback__text');
-			if (textNode) textNode.textContent = message;
-
-			node.querySelector('[data-inline-feedback-close]')?.addEventListener('click', () => {
-				this.hideFeedbackNode(node);
-			});
-
-			if (kind === 'success') {
-				this.feedbackHideTimer = window.setTimeout(() => {
-					this.hideFeedbackNode(node);
-				}, 3200);
-			}
+			if (node) this.hideFeedbackNode(node);
+			showFlashMessage({ message, type: kind });
 		}
 
 		private clearFeedback() {
@@ -2629,9 +2593,16 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		private async revokeSession(button: HTMLButtonElement) {
 			const family = String(button.dataset.sessionFamily || '').trim();
 			if (!family) return;
-			if (!window.confirm('¿Cerrar esta sesión? El dispositivo tendrá que volver a iniciar sesión.')) {
-				return;
-			}
+			const confirmed = window.BookmateAlert?.confirm
+				? await window.BookmateAlert.confirm({
+						type: 'warning',
+						title: '¿Cerrar esta sesión?',
+						message: 'El dispositivo tendrá que volver a iniciar sesión.',
+						confirmText: 'Cerrar sesión',
+						cancelText: 'Cancelar',
+					})
+				: false;
+			if (!confirmed) return;
 			button.disabled = true;
 			try {
 				await this.requestApi(
@@ -3882,16 +3853,16 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		position: relative;
 		inset: auto;
 		z-index: auto;
-		flex: none;
-		height: auto;
-		max-height: none;
-		min-height: min-content;
+		flex: 1 1 auto;
+		height: 100%;
+		max-height: 100%;
+		min-height: 0;
 		width: 100%;
 		max-width: none;
 		margin: 0;
 		border: 0;
-		border-radius: 1.15rem;
-		background: var(--surface-bright);
+		border-radius: 0;
+		background: transparent;
 		box-shadow: none;
 		animation: none;
 		display: flex;
@@ -3924,12 +3895,12 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 	}
 
 	.settings-page .settings-layout {
-		flex: none;
+		flex: 1 1 auto;
 		height: auto;
 		min-height: 0;
 		background: transparent;
 		box-shadow: none;
-		overflow: visible;
+		overflow: hidden;
 	}
 
 	.settings-page .settings-content {
@@ -3942,15 +3913,15 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 
 	@media (min-width: 769px) {
 		.settings-page .settings-nav {
-			position: sticky;
-			top: 0;
-			align-self: stretch;
+			position: static;
+			align-self: start;
+			height: auto;
+			min-height: 0;
 			max-height: none;
 		}
 
 		.settings-page .settings-content {
 			max-width: none;
-			padding: 1.5rem 1.75rem 2.25rem;
 		}
 	}
 
@@ -3983,23 +3954,105 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		position: relative;
 		inset: auto;
 		z-index: auto;
-		flex: none;
-		height: auto;
-		max-height: none;
-		min-height: min-content;
+		flex: 1 1 auto;
+		height: 100%;
+		max-height: 100%;
+		min-height: 0;
 		overflow: hidden;
 		animation: none;
+		background: transparent;
+	}
+
+	[data-settings-modal][data-settings-page] .settings-layout {
+		display: flex;
+		flex-direction: column;
+		flex: 1 1 auto;
+		min-height: 0;
+		overflow: hidden;
+	}
+
+	[data-settings-modal][data-settings-page] .settings-nav {
+		flex: 0 0 auto;
+		height: auto;
+		min-height: 0;
+	}
+
+	[data-settings-modal][data-settings-page] .settings-content-shell {
+		display: flex;
+		flex-direction: column;
+		flex: 1 1 auto;
+		min-height: 0;
+		max-height: 100%;
+		overflow: hidden;
+		border: 1px solid var(--shell-border);
+		border-radius: 1.25rem;
 		background: var(--surface-bright);
 	}
 
-	[data-settings-modal][data-settings-page] .settings-layout,
-	[data-settings-modal][data-settings-page] .settings-content-shell,
-	[data-settings-modal][data-settings-page] .settings-scroll-wrap,
+	[data-settings-modal][data-settings-page] .settings-card {
+		padding: 0;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		box-shadow: none;
+	}
+
+	[data-settings-modal][data-settings-page] .settings-panel {
+		gap: 1.85rem;
+	}
+
+	[data-settings-modal][data-settings-page] .settings-card + .settings-card {
+		padding-top: 1.65rem;
+		border-top: 1px solid color-mix(in srgb, var(--shell-border) 92%, transparent);
+	}
+
+	[data-settings-modal][data-settings-page] [data-settings-org-specialties-list] {
+		border: 0;
+		background: transparent;
+		padding: 0.1rem 0;
+	}
+
+	[data-settings-modal][data-settings-page] [data-payments-tour-enable] {
+		border: 0;
+		background: transparent;
+		padding: 0.15rem 0;
+		border-radius: 0;
+	}
+
+	[data-settings-modal][data-settings-page] [data-payments-tour-policy] > label {
+		border: 0;
+		border-radius: 0;
+		padding: 0.85rem 0;
+		background: transparent;
+		border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 90%, transparent);
+	}
+
+	[data-settings-modal][data-settings-page] [data-payments-tour-policy] > label:last-of-type {
+		border-bottom: 0;
+		padding-bottom: 0.15rem;
+	}
+
+	[data-settings-modal][data-settings-page] [data-payments-tour-policy] > label:has(:checked) {
+		border-color: color-mix(in srgb, var(--shell-border) 90%, transparent);
+		background: transparent;
+	}
+
+	[data-settings-modal][data-settings-page] .settings-scroll-wrap {
+		display: flex;
+		flex-direction: column;
+		flex: 1 1 auto;
+		min-height: 0;
+		overflow: hidden;
+	}
+
 	[data-settings-modal][data-settings-page] .settings-content {
-		overflow: visible;
+		flex: 1 1 auto;
 		min-height: 0;
 		height: auto;
-		flex: none;
+		overflow-x: hidden;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		padding: 1.15rem 1.2rem 1.25rem;
 	}
 
 	[data-settings-modal][data-settings-page] .settings-content-scroll-edge,
@@ -4017,43 +4070,48 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		box-shadow: none;
 	}
 
+	[data-settings-modal][data-settings-page] .settings-actions {
+		position: static;
+		margin-top: 0;
+		flex: 0 0 auto;
+		border-top: 1px solid color-mix(in srgb, var(--shell-border) 92%, transparent);
+		background: transparent;
+		padding: 0.85rem 1.2rem 1rem;
+	}
+
 	@media (min-width: 769px) {
 		[data-settings-modal][data-settings-page] .settings-layout {
 			display: grid;
-			grid-template-columns: 15rem minmax(0, 1fr);
-			align-items: stretch;
-			overflow: visible;
-			height: auto;
-			min-height: 0;
+			grid-template-columns: 16rem minmax(0, 1fr);
+			grid-template-rows: minmax(0, 1fr);
+			align-items: start;
+			column-gap: 1.25rem;
+			overflow: hidden;
+			height: 100%;
 		}
 
 		[data-settings-modal][data-settings-page] .settings-nav {
+			align-self: start;
 			height: auto;
-			min-height: 100%;
-			overflow: visible;
+			min-height: 0;
 			max-height: none;
+			overflow: visible;
 		}
 
-		[data-settings-modal][data-settings-page] .settings-content-shell,
-		[data-settings-modal][data-settings-page] .settings-scroll-wrap {
-			display: flex;
-			flex-direction: column;
-			overflow: visible;
+		[data-settings-modal][data-settings-page] .settings-content-shell {
+			align-self: start;
+			width: 100%;
 			height: auto;
-			flex: none;
+			max-height: 100%;
 			min-height: 0;
 		}
 
 		[data-settings-modal][data-settings-page] .settings-content {
-			padding-bottom: 1.5rem;
-			overflow: visible;
+			padding: 1.35rem 1.5rem 1.5rem;
 		}
 
 		[data-settings-modal][data-settings-page] .settings-actions {
-			position: static;
-			margin-top: auto;
-			border-top: 1px solid var(--shell-border);
-			padding: 1rem 1.75rem 1.5rem;
+			padding: 0.9rem 1.5rem 1.05rem;
 		}
 	}
 
@@ -4137,10 +4195,17 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 
 	.settings-page-header {
 		display: flex;
-		align-items: flex-start;
+		align-items: center;
 		justify-content: space-between;
 		gap: 1rem;
-		padding: 0.15rem 0 1.15rem;
+		flex: 0 0 auto;
+		padding: 0.15rem 0.1rem 1rem;
+	}
+
+	@media (min-width: 769px) {
+		.settings-page-header {
+			padding: 0.2rem 0.15rem 1.1rem;
+		}
 	}
 
 	.settings-page-header__title {
@@ -4412,13 +4477,15 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		.settings-page .settings-layout {
 			background: transparent;
 			box-shadow: none;
-			gap: 1.5rem;
+			gap: 1.25rem;
 		}
 
 		.settings-page .settings-nav {
-			position: sticky;
-			top: 1rem;
+			position: static;
+			align-self: start;
 			width: 16rem;
+			height: auto;
+			min-height: 0;
 			border: 1px solid var(--shell-border);
 			border-radius: 1.25rem;
 			background: var(--surface-bright);
@@ -4438,14 +4505,9 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 			flex: 1 1 auto;
 		}
 
-		.settings-page .settings-content {
-			padding: 0 0 1.5rem;
-		}
-
 		.settings-page .settings-actions {
-			border: 1px solid var(--shell-border);
-			border-radius: 1.15rem;
-			margin-top: 0.75rem;
+			border-radius: 0;
+			margin-top: 0;
 		}
 
 		.settings-content {
