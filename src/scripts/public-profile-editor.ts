@@ -2,10 +2,10 @@ import {
 	BUSINESS_HOURS_DAY_LABELS,
 	BUSINESS_HOURS_DAY_LETTER,
 	BUSINESS_HOURS_MAX_INTERVALS,
-	businessHoursTrackPercent,
 	defaultOpenInterval,
 	describeBusinessHoursDay,
 	emptyBusinessHours,
+	formatBusinessHoursDayBrief,
 	formatBusinessHoursForDisplay,
 	getLocalDayAndMinutes,
 	parseBusinessHours,
@@ -120,6 +120,8 @@ const normalizeHoursTimeInput = (value: string): string => {
 const bindHoursTimeInput = (input: HTMLInputElement, value: string) => {
 	input.type = 'time';
 	input.step = '60';
+	input.min = '00:00';
+	input.max = '23:59';
 	input.autocomplete = 'off';
 	input.lang = 'en-GB';
 	input.setAttribute('title', 'Formato 24 h (HH:mm)');
@@ -687,33 +689,25 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 
 		for (const day of businessHours.days) {
 			const open = !day.closed && day.intervals.length > 0;
+			const isToday = day.day === todayDay;
 			const btn = document.createElement('button');
 			btn.type = 'button';
 			btn.className = `ppe-hours-week__day ${open ? 'is-open' : 'is-closed'}${
-				day.day === todayDay ? ' is-today' : ''
+				isToday ? ' is-today' : ''
 			}`;
 			btn.setAttribute('data-ppe-hours-jump', String(day.day));
 			btn.setAttribute('aria-label', describeBusinessHoursDay(day));
+			if (isToday) btn.setAttribute('aria-current', 'true');
 
 			const letter = document.createElement('span');
 			letter.className = 'ppe-hours-week__letter';
 			letter.textContent = BUSINESS_HOURS_DAY_LETTER[day.day - 1] || '';
 
-			const track = document.createElement('span');
-			track.className = 'ppe-hours-week__track';
-			track.setAttribute('aria-hidden', 'true');
-			if (open) {
-				for (const interval of day.intervals) {
-					const fill = document.createElement('span');
-					fill.className = 'ppe-hours-week__fill';
-					const pct = businessHoursTrackPercent(interval.start, interval.end);
-					fill.style.left = `${pct.left}%`;
-					fill.style.width = `${pct.width}%`;
-					track.appendChild(fill);
-				}
-			}
+			const meta = document.createElement('span');
+			meta.className = 'ppe-hours-week__meta';
+			meta.textContent = formatBusinessHoursDayBrief(day);
 
-			btn.append(letter, track);
+			btn.append(letter, meta);
 			hoursWeek.appendChild(btn);
 		}
 	};
@@ -759,7 +753,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			li.appendChild(mast);
 
 			if (day.closed) {
-				const closedLabel = document.createElement('span');
+				const closedLabel = document.createElement('p');
 				closedLabel.className = 'ppe-hours-closed';
 				closedLabel.textContent = 'Cerrado';
 				li.appendChild(closedLabel);
@@ -767,6 +761,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 				const intervalsWrap = document.createElement('div');
 				intervalsWrap.className = 'ppe-hours-intervals';
 				const canAdd = day.intervals.length < BUSINESS_HOURS_MAX_INTERVALS;
+				const ghostRemove = day.intervals.length < 2;
 
 				day.intervals.forEach((interval, index) => {
 					const row = document.createElement('div');
@@ -796,17 +791,16 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 					range.append(start, sep, end);
 					row.appendChild(range);
 
-					if (day.intervals.length > 1) {
-						const removeBtn = document.createElement('button');
-						removeBtn.type = 'button';
-						removeBtn.className = 'ppe-hours-remove';
-						removeBtn.setAttribute('data-ppe-hours-remove', String(day.day));
-						removeBtn.dataset.index = String(index);
-						removeBtn.setAttribute('aria-label', 'Quitar turno');
-						removeBtn.innerHTML =
-							'<span class="material-symbols-rounded" aria-hidden="true">close</span>';
-						row.appendChild(removeBtn);
-					}
+					const removeBtn = document.createElement('button');
+					removeBtn.type = 'button';
+					removeBtn.className = ghostRemove ? 'ppe-hours-remove is-ghost' : 'ppe-hours-remove';
+					removeBtn.setAttribute('data-ppe-hours-remove', String(day.day));
+					removeBtn.dataset.index = String(index);
+					removeBtn.setAttribute('aria-label', 'Quitar turno');
+					if (ghostRemove) removeBtn.tabIndex = -1;
+					removeBtn.innerHTML =
+						'<span class="material-symbols-rounded" aria-hidden="true">close</span>';
+					row.appendChild(removeBtn);
 
 					intervalsWrap.appendChild(row);
 				});

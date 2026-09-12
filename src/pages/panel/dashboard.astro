@@ -598,14 +598,12 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 													<h2 class="text-xl font-semibold text-[#1e293b] dark:text-[#E5E7EB]">Próximas citas</h2>
 													<p class="dashboard-appointments-subtitle">Siguientes 7 días</p>
 												</div>
-												<div class="dashboard-appointments-actions flex shrink-0 items-center gap-2">
+												<div class="dashboard-appointments-actions">
 													<a href="/panel/calendar" class="dashboard-upcoming-create-cta">
-														<span class="material-symbols-rounded text-[1.05rem]" aria-hidden="true">add</span>
+														<span class="material-symbols-rounded" aria-hidden="true">add</span>
 														Crear cita
 													</a>
-													<span class="dashboard-appointments-count whitespace-nowrap rounded-full bg-[#E8EAED] dark:bg-[#2B2D31] px-3 py-1.5 text-[0.75rem] font-semibold text-[#64748b] dark:text-[#C4C7C5] tracking-wide shadow-sm transition-colors duration-300">
-														{appointmentsCountText}
-													</span>
+													<span class="dashboard-appointments-count">{appointmentsCountText}</span>
 												</div>
 											</div>
 
@@ -4976,25 +4974,60 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		color: var(--on-surface-variant);
 	}
 
-	.dashboard-upcoming-create-cta {
+	.dashboard-appointments-actions {
+		display: flex;
+		flex-shrink: 0;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.dashboard-upcoming-create-cta,
+	.dashboard-appointments-count {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.2rem;
-		min-height: 2.15rem;
-		padding: 0.35rem 0.75rem;
+		justify-content: center;
+		box-sizing: border-box;
+		height: 2rem;
+		padding: 0 0.75rem;
+		border: 1px solid transparent;
 		border-radius: 999px;
-		border: 1px solid color-mix(in srgb, var(--primary) 28%, transparent);
+		font-size: 0.75rem;
+		font-weight: 600;
+		letter-spacing: 0.02em;
+		line-height: 1;
+		white-space: nowrap;
+	}
+
+	.dashboard-upcoming-create-cta {
+		gap: 0.25rem;
+		border-color: color-mix(in srgb, var(--primary) 28%, transparent);
 		background: color-mix(in srgb, var(--primary) 8%, #ffffff);
 		color: var(--primary);
 		text-decoration: none;
-		font-size: 0.78rem;
-		font-weight: 600;
-		letter-spacing: 0.02em;
-		white-space: nowrap;
 		transition:
 			background-color 140ms ease,
 			border-color 140ms ease,
 			transform 140ms ease;
+	}
+
+	.dashboard-upcoming-create-cta .material-symbols-rounded {
+		display: block;
+		font-size: 1rem;
+		line-height: 1;
+		width: 1rem;
+		height: 1rem;
+		overflow: hidden;
+	}
+
+	.dashboard-appointments-count {
+		background: #e8eaed;
+		color: #64748b;
+		transition: background-color 300ms ease, color 300ms ease;
+	}
+
+	html[data-theme='dark'] .dashboard-appointments-count {
+		background: #2b2d31;
+		color: #c4c7c5;
 	}
 
 	.dashboard-upcoming-create-cta:hover {
@@ -5292,14 +5325,10 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			font-size: 0.78rem;
 		}
 
+		.dashboard-upcoming-create-cta,
 		.dashboard-appointments-count {
-			padding: 0.3rem 0.7rem;
-			font-size: 0.72rem;
-		}
-
-		.dashboard-upcoming-create-cta {
-			min-height: 2rem;
-			padding: 0.28rem 0.6rem;
+			height: 1.85rem;
+			padding: 0 0.65rem;
 			font-size: 0.72rem;
 		}
 

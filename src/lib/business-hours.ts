@@ -54,22 +54,20 @@ export const BUSINESS_HOURS_DAY_LETTER = ['L', 'M', 'X', 'J', 'V', 'S', 'D'] as 
 
 export const BUSINESS_HOURS_MAX_INTERVALS = 3;
 
-const MINUTES_IN_DAY = 24 * 60;
+const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
-/** Posición del turno en una barra 0-24 h (para la vista semanal del editor). */
-export const businessHoursTrackPercent = (
-	start: string,
-	end: string
-): { left: number; width: number } => {
-	const startMin = timeToMinutes(start);
-	const endMin = timeToMinutes(end);
-	if (!Number.isFinite(startMin) || !Number.isFinite(endMin) || endMin <= startMin) {
-		return { left: 0, width: 0 };
-	}
-	return {
-		left: (startMin / MINUTES_IN_DAY) * 100,
-		width: ((endMin - startMin) / MINUTES_IN_DAY) * 100,
-	};
+const compactClock = (value: string): string => {
+	if (!TIME_RE.test(value)) return value;
+	return value.endsWith(':00') ? value.slice(0, 2) : value;
+};
+
+/** Resumen de un día para la tira semanal del editor (una línea). */
+export const formatBusinessHoursDayBrief = (day: BusinessHoursDay): string => {
+	if (day.closed || !day.intervals.length) return 'Cerrado';
+	const first = day.intervals[0];
+	const last = day.intervals[day.intervals.length - 1];
+	if (!first || !last) return 'Cerrado';
+	return `${compactClock(first.start)}-${compactClock(last.end)}`;
 };
 
 export const describeBusinessHoursDay = (day: BusinessHoursDay): string => {
@@ -78,8 +76,6 @@ export const describeBusinessHoursDay = (day: BusinessHoursDay): string => {
 	const slots = day.intervals.map((interval) => `${interval.start} a ${interval.end}`).join(', ');
 	return `${label}, ${slots}`;
 };
-
-const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 const cloneDay = (day: BusinessHoursDay): BusinessHoursDay => ({
 	day: day.day,

@@ -3,8 +3,8 @@ import {
 	BUSINESS_HOURS_DAY_LABELS,
 	BUSINESS_HOURS_DAY_LETTER,
 	BUSINESS_HOURS_MAX_INTERVALS,
-	businessHoursTrackPercent,
 	describeBusinessHoursDay,
+	formatBusinessHoursDayBrief,
 	formatBusinessHoursForDisplay,
 	getLocalDayAndMinutes,
 	parseBusinessHours,
@@ -520,7 +520,7 @@ const previewInitial = {
 								</div>
 								<button type="button" class="ppe-hours-copy" data-ppe-hours-copy-weekdays>
 									<span class="material-symbols-rounded" aria-hidden="true">content_copy</span>
-									<span>Aplicar lunes a Lun-Vie</span>
+									<span>Copiar lunes a Lun-Vie</span>
 								</button>
 							</div>
 							<div
@@ -533,36 +533,21 @@ const previewInitial = {
 									businessHours.days.map((day) => {
 										const letter = BUSINESS_HOURS_DAY_LETTER[day.day - 1];
 										const open = !day.closed && day.intervals.length > 0;
+										const isToday = day.day === businessHoursToday;
 										return (
 											<button
 												type="button"
 												class:list={[
 													'ppe-hours-week__day',
 													open ? 'is-open' : 'is-closed',
-													day.day === businessHoursToday ? 'is-today' : '',
+													isToday && 'is-today',
 												]}
 												data-ppe-hours-jump={day.day}
 												aria-label={describeBusinessHoursDay(day)}
+												aria-current={isToday ? 'true' : undefined}
 											>
 												<span class="ppe-hours-week__letter">{letter}</span>
-												<span class="ppe-hours-week__track" aria-hidden="true">
-													{
-														open
-															? day.intervals.map((interval) => {
-																	const track = businessHoursTrackPercent(
-																		interval.start,
-																		interval.end
-																	);
-																	return (
-																		<span
-																			class="ppe-hours-week__fill"
-																			style={`left:${track.left}%;width:${track.width}%`}
-																		></span>
-																	);
-																})
-															: null
-													}
-												</span>
+												<span class="ppe-hours-week__meta">{formatBusinessHoursDayBrief(day)}</span>
 											</button>
 										);
 									})
@@ -594,7 +579,7 @@ const previewInitial = {
 												</div>
 												{
 													day.closed ? (
-														<span class="ppe-hours-closed">Cerrado</span>
+														<p class="ppe-hours-closed">Cerrado</p>
 													) : (
 														<div class="ppe-hours-intervals">
 															{day.intervals.map((interval, index) => (
@@ -604,6 +589,8 @@ const previewInitial = {
 																			class="ppe-input ppe-hours-interval__time"
 																			type="time"
 																			step="60"
+																			min="00:00"
+																			max="23:59"
 																			autocomplete="off"
 																			lang="en-GB"
 																			title="Formato 24 h (HH:mm)"
@@ -617,6 +604,8 @@ const previewInitial = {
 																			class="ppe-input ppe-hours-interval__time"
 																			type="time"
 																			step="60"
+																			min="00:00"
+																			max="23:59"
 																			autocomplete="off"
 																			lang="en-GB"
 																			title="Formato 24 h (HH:mm)"
@@ -626,19 +615,19 @@ const previewInitial = {
 																			aria-label={`${dayLabel}: fin turno ${index + 1}`}
 																		/>
 																	</div>
-																	{
-																		day.intervals.length > 1 ? (
-																			<button
-																				type="button"
-																				class="ppe-hours-remove"
-																				data-ppe-hours-remove={day.day}
-																				data-index={index}
-																				aria-label="Quitar turno"
-																			>
-																				<span class="material-symbols-rounded" aria-hidden="true">close</span>
-																			</button>
-																		) : null
-																	}
+																	<button
+																		type="button"
+																		class:list={[
+																			'ppe-hours-remove',
+																			day.intervals.length < 2 && 'is-ghost',
+																		]}
+																		data-ppe-hours-remove={day.day}
+																		data-index={index}
+																		aria-label="Quitar turno"
+																		tabindex={day.intervals.length < 2 ? -1 : undefined}
+																	>
+																		<span class="material-symbols-rounded" aria-hidden="true">close</span>
+																	</button>
 																</div>
 															))}
 															{
