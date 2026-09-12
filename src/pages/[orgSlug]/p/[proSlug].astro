@@ -3,7 +3,6 @@ export const prerender = false;
 
 import Layout from '../../../layouts/Layout.astro';
 import PublicHaselTopbar from '../../../components/PublicHaselTopbar.astro';
-import HaselPublicFooter from '../../../components/HaselPublicFooter.astro';
 import PublicSipapDepositPanel from '../../../components/PublicSipapDepositPanel.astro';
 import {
 	buildPublicProfileMetaDescription,
@@ -482,7 +481,6 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 				</section>
 			)
 		}
-		<HaselPublicFooter />
 	</main>
 </Layout>
 

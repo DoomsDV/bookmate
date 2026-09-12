@@ -57,7 +57,6 @@ import type {
 import {
 	ApiClientError,
 	formatAttendanceReplyAt,
-	formatDateTimeDisplay,
 	formatDateTimeLocal,
 	getAttendanceReminderLabel,
 	getAttendanceStatusFromValue,
@@ -72,7 +71,6 @@ import {
 } from './utils';
 
 type ModalMode = 'create' | 'edit';
-type PickerField = 'start' | 'end';
 
 type BuildPayloadResult = { payload: AppointmentFormPayload } | { error: string };
 
@@ -105,11 +103,7 @@ type RequiredNodes = {
 	customerResults: HTMLElement;
 	clearCustomerButton: HTMLButtonElement;
 	startInput: HTMLInputElement;
-	startDisplayInput: HTMLInputElement;
-	openStartPickerButton: HTMLButtonElement;
 	endInput: HTMLInputElement;
-	endDisplayInput: HTMLInputElement;
-	openEndPickerButton: HTMLButtonElement;
 	statusInput: HTMLSelectElement;
 	paymentStatusInput: HTMLInputElement;
 	modalProfessionalWrap: HTMLElement;
@@ -117,18 +111,6 @@ type RequiredNodes = {
 	modalLocation: HTMLSelectElement;
 	modalService: HTMLSelectElement;
 	modalServiceHint: HTMLElement | null;
-	dateTimePicker: HTMLDialogElement;
-	pickerTargetLabel: HTMLElement;
-	pickerMonthSelect: HTMLSelectElement;
-	pickerYearSelect: HTMLSelectElement;
-	pickerPrevMonthButton: HTMLButtonElement;
-	pickerNextMonthButton: HTMLButtonElement;
-	pickerCloseButton: HTMLButtonElement;
-	pickerDaysGrid: HTMLElement;
-	pickerHourSelect: HTMLSelectElement;
-	pickerMinuteSelect: HTMLSelectElement;
-	pickerCancelButton: HTMLButtonElement;
-	pickerApplyButton: HTMLButtonElement;
 };
 
 class AppointmentModal extends HTMLElement {
@@ -188,11 +170,7 @@ class AppointmentModal extends HTMLElement {
 	customerResults: HTMLElement | null = null;
 	clearCustomerButton: HTMLButtonElement | null = null;
 	startInput: HTMLInputElement | null = null;
-	startDisplayInput: HTMLInputElement | null = null;
-	openStartPickerButton: HTMLButtonElement | null = null;
 	endInput: HTMLInputElement | null = null;
-	endDisplayInput: HTMLInputElement | null = null;
-	openEndPickerButton: HTMLButtonElement | null = null;
 	statusInput: HTMLSelectElement | null = null;
 	paymentStatusInput: HTMLInputElement | null = null;
 	modalStatusWrap: HTMLElement | null = null;
@@ -259,24 +237,8 @@ class AppointmentModal extends HTMLElement {
 	modalLocation: HTMLSelectElement | null = null;
 	modalService: HTMLSelectElement | null = null;
 	modalServiceHint: HTMLElement | null = null;
-	dateTimePicker: HTMLDialogElement | null = null;
-	pickerTargetLabel: HTMLElement | null = null;
-	pickerMonthSelect: HTMLSelectElement | null = null;
-	pickerYearSelect: HTMLSelectElement | null = null;
-	pickerPrevMonthButton: HTMLButtonElement | null = null;
-	pickerNextMonthButton: HTMLButtonElement | null = null;
-	pickerCloseButton: HTMLButtonElement | null = null;
-	pickerDaysGrid: HTMLElement | null = null;
-	pickerHourSelect: HTMLSelectElement | null = null;
-	pickerMinuteSelect: HTMLSelectElement | null = null;
-	pickerCancelButton: HTMLButtonElement | null = null;
-	pickerApplyButton: HTMLButtonElement | null = null;
 	formFields: NodeListOf<HTMLInputElement | HTMLSelectElement> | null = null;
 	fieldErrorNodes: NodeListOf<HTMLElement> | null = null;
-	activePickerField: PickerField | null = null;
-	pickerViewDate: Date = new Date();
-	pickerDraftDate: Date | null = null;
-	readonly pickerMinuteOptions = [0, 15, 30, 45];
 
 	connectedCallback() {
 		if (this.#bound) return;
@@ -312,13 +274,7 @@ class AppointmentModal extends HTMLElement {
 		this.clearCustomerButton =
 			this.form?.querySelector<HTMLButtonElement>('[data-clear-customer]') ?? null;
 		this.startInput = this.form?.querySelector<HTMLInputElement>('[name="start_time"]') ?? null;
-		this.startDisplayInput = this.form?.querySelector<HTMLInputElement>('[data-start-display]') ?? null;
-		this.openStartPickerButton =
-			this.form?.querySelector<HTMLButtonElement>('[data-open-start-picker]') ?? null;
 		this.endInput = this.form?.querySelector<HTMLInputElement>('[name="end_time"]') ?? null;
-		this.endDisplayInput = this.form?.querySelector<HTMLInputElement>('[data-end-display]') ?? null;
-		this.openEndPickerButton =
-			this.form?.querySelector<HTMLButtonElement>('[data-open-end-picker]') ?? null;
 		this.statusInput = this.form?.querySelector<HTMLSelectElement>('[data-modal-status]') ?? null;
 		this.paymentStatusInput =
 			this.form?.querySelector<HTMLInputElement>('[data-modal-payment-status]') ?? null;
@@ -443,29 +399,6 @@ class AppointmentModal extends HTMLElement {
 		this.modalLocation = this.form?.querySelector<HTMLSelectElement>('[data-modal-location]') ?? null;
 		this.modalService = this.form?.querySelector<HTMLSelectElement>('[data-modal-service]') ?? null;
 		this.modalServiceHint = this.form?.querySelector<HTMLElement>('[data-modal-service-hint]') ?? null;
-		this.dateTimePicker =
-			this.form?.querySelector<HTMLDialogElement>('[data-datetime-picker]') ?? null;
-		this.pickerTargetLabel =
-			this.form?.querySelector<HTMLElement>('[data-picker-target-label]') ?? null;
-		this.pickerMonthSelect =
-			this.form?.querySelector<HTMLSelectElement>('[data-picker-month-select]') ?? null;
-		this.pickerYearSelect =
-			this.form?.querySelector<HTMLSelectElement>('[data-picker-year-select]') ?? null;
-		this.pickerPrevMonthButton =
-			this.form?.querySelector<HTMLButtonElement>('[data-picker-prev-month]') ?? null;
-		this.pickerNextMonthButton =
-			this.form?.querySelector<HTMLButtonElement>('[data-picker-next-month]') ?? null;
-		this.pickerCloseButton =
-			this.form?.querySelector<HTMLButtonElement>('[data-picker-close]') ?? null;
-		this.pickerDaysGrid = this.form?.querySelector<HTMLElement>('[data-picker-days-grid]') ?? null;
-		this.pickerHourSelect =
-			this.form?.querySelector<HTMLSelectElement>('[data-picker-hour-select]') ?? null;
-		this.pickerMinuteSelect =
-			this.form?.querySelector<HTMLSelectElement>('[data-picker-minute-select]') ?? null;
-		this.pickerCancelButton =
-			this.form?.querySelector<HTMLButtonElement>('[data-picker-cancel]') ?? null;
-		this.pickerApplyButton =
-			this.form?.querySelector<HTMLButtonElement>('[data-picker-apply]') ?? null;
 		this.formFields = this.form?.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input, select') ?? null;
 
 		const requiredNodes = this.getRequiredNodes();
@@ -535,27 +468,8 @@ class AppointmentModal extends HTMLElement {
 		requiredNodes.customerPhoneInput.addEventListener('input', this.handlePhoneInput, { signal });
 		requiredNodes.customerPhoneInput.addEventListener('blur', this.handlePhoneBlur, { signal });
 		requiredNodes.modalProfessional.addEventListener('change', this.handleProfessionalChange, { signal });
-		requiredNodes.openStartPickerButton.addEventListener('click', this.handleOpenStartPicker, {
-			signal,
-		});
-		requiredNodes.openEndPickerButton.addEventListener('click', this.handleOpenEndPicker, {
-			signal,
-		});
-		requiredNodes.startDisplayInput.addEventListener('click', this.handleOpenStartPicker, { signal });
-		requiredNodes.endDisplayInput.addEventListener('click', this.handleOpenEndPicker, { signal });
-		requiredNodes.pickerMonthSelect.addEventListener('change', this.handlePickerMonthChange, { signal });
-		requiredNodes.pickerYearSelect.addEventListener('change', this.handlePickerYearChange, { signal });
-		requiredNodes.pickerPrevMonthButton.addEventListener('click', this.handlePrevMonth, { signal });
-		requiredNodes.pickerNextMonthButton.addEventListener('click', this.handleNextMonth, { signal });
-		requiredNodes.pickerCloseButton.addEventListener('click', this.closeDateTimePicker, { signal });
-		requiredNodes.pickerHourSelect.addEventListener('change', this.handlePickerTimeChange, { signal });
-		requiredNodes.pickerMinuteSelect.addEventListener('change', this.handlePickerTimeChange, { signal });
-		requiredNodes.pickerCancelButton.addEventListener('click', this.handlePickerToday, { signal });
-		requiredNodes.pickerApplyButton.addEventListener('click', this.applyDateTimePickerSelection, {
-			signal,
-		});
-		requiredNodes.dateTimePicker.addEventListener('click', this.handlePickerBackdropClick, { signal });
-		requiredNodes.dateTimePicker.addEventListener('close', this.handleNativePickerClose, { signal });
+		requiredNodes.startInput.addEventListener('change', this.handleStartTimeChange, { signal });
+		requiredNodes.endInput.addEventListener('change', this.handleEndTimeChange, { signal });
 
 		this.attachmentAddButton?.addEventListener('click', this.handleAttachmentAddClick, { signal });
 		this.attachmentInput?.addEventListener('change', this.handleAttachmentInputChange, { signal });
@@ -667,7 +581,6 @@ class AppointmentModal extends HTMLElement {
 			requiredNodes.startInput.value = formatDateTimeLocal(initialStart);
 			requiredNodes.endInput.value = formatDateTimeLocal(initialEnd);
 			this.syncDateBounds();
-			this.syncDateDisplayInputs();
 
 			if (this.roleId === ROLES.PROFESIONAL && this.currentProfessionalId > 0) {
 				setSearchableSelectValue(requiredNodes.modalProfessional, this.currentProfessionalId);
@@ -728,29 +641,13 @@ class AppointmentModal extends HTMLElement {
 			!this.customerResults ||
 			!this.clearCustomerButton ||
 			!this.startInput ||
-			!this.startDisplayInput ||
-			!this.openStartPickerButton ||
 			!this.endInput ||
-			!this.endDisplayInput ||
-			!this.openEndPickerButton ||
 			!this.statusInput ||
 			!this.paymentStatusInput ||
 			!this.modalProfessionalWrap ||
 			!this.modalProfessional ||
 			!this.modalLocation ||
-			!this.modalService ||
-			!this.dateTimePicker ||
-			!this.pickerTargetLabel ||
-			!this.pickerMonthSelect ||
-			!this.pickerYearSelect ||
-			!this.pickerPrevMonthButton ||
-			!this.pickerNextMonthButton ||
-			!this.pickerCloseButton ||
-			!this.pickerDaysGrid ||
-			!this.pickerHourSelect ||
-			!this.pickerMinuteSelect ||
-			!this.pickerCancelButton ||
-			!this.pickerApplyButton
+			!this.modalService
 		) {
 			return null;
 		}
@@ -769,11 +666,7 @@ class AppointmentModal extends HTMLElement {
 			customerResults: this.customerResults,
 			clearCustomerButton: this.clearCustomerButton,
 			startInput: this.startInput,
-			startDisplayInput: this.startDisplayInput,
-			openStartPickerButton: this.openStartPickerButton,
 			endInput: this.endInput,
-			endDisplayInput: this.endDisplayInput,
-			openEndPickerButton: this.openEndPickerButton,
 			statusInput: this.statusInput,
 			paymentStatusInput: this.paymentStatusInput,
 			modalProfessionalWrap: this.modalProfessionalWrap,
@@ -781,18 +674,6 @@ class AppointmentModal extends HTMLElement {
 			modalLocation: this.modalLocation,
 			modalService: this.modalService,
 			modalServiceHint: this.modalServiceHint,
-			dateTimePicker: this.dateTimePicker,
-			pickerTargetLabel: this.pickerTargetLabel,
-			pickerMonthSelect: this.pickerMonthSelect,
-			pickerYearSelect: this.pickerYearSelect,
-			pickerPrevMonthButton: this.pickerPrevMonthButton,
-			pickerNextMonthButton: this.pickerNextMonthButton,
-			pickerCloseButton: this.pickerCloseButton,
-			pickerDaysGrid: this.pickerDaysGrid,
-			pickerHourSelect: this.pickerHourSelect,
-			pickerMinuteSelect: this.pickerMinuteSelect,
-			pickerCancelButton: this.pickerCancelButton,
-			pickerApplyButton: this.pickerApplyButton,
 		};
 	}
 
@@ -1025,15 +906,6 @@ class AppointmentModal extends HTMLElement {
 			field.disabled = value;
 		}
 		this.syncModalProfessionalDisabledState();
-		this.openStartPickerButton && (this.openStartPickerButton.disabled = value);
-		this.openEndPickerButton && (this.openEndPickerButton.disabled = value);
-		this.pickerMonthSelect && (this.pickerMonthSelect.disabled = value);
-		this.pickerYearSelect && (this.pickerYearSelect.disabled = value);
-		this.pickerPrevMonthButton && (this.pickerPrevMonthButton.disabled = value);
-		this.pickerNextMonthButton && (this.pickerNextMonthButton.disabled = value);
-		this.pickerCancelButton && (this.pickerCancelButton.disabled = value);
-		this.pickerApplyButton && (this.pickerApplyButton.disabled = value);
-		if (value) this.closeDateTimePicker();
 		if (this.submitButton) this.submitButton.disabled = value;
 		if (this.mode === 'edit' && this.deleteButton) this.deleteButton.disabled = value;
 	}
@@ -1071,9 +943,7 @@ class AppointmentModal extends HTMLElement {
 		requiredNodes.customerPhoneInput.readOnly = false;
 		requiredNodes.clearCustomerButton.classList.add('hidden');
 		requiredNodes.startInput.value = '';
-		requiredNodes.startDisplayInput.value = '';
 		requiredNodes.endInput.value = '';
-		requiredNodes.endDisplayInput.value = '';
 		requiredNodes.startInput.min = '';
 		requiredNodes.endInput.min = '';
 		setSearchableSelectValue(requiredNodes.statusInput, 'CONFIRMADO');
@@ -1086,7 +956,6 @@ class AppointmentModal extends HTMLElement {
 		this.customers = [];
 		this.lastLoadedCustomerProfessionalId = null;
 		this.hideCustomerResults();
-		this.closeDateTimePicker();
 		this.hideAttendanceBlock();
 		this.hideScheduleMisalignedBlock();
 		this.hideHistorySection();
@@ -2180,8 +2049,6 @@ class AppointmentModal extends HTMLElement {
 			setSearchableSelectDisabled(this.modalProfessional, true);
 		}
 		requiredNodes.customerPhoneInput.readOnly = Number(requiredNodes.customerIdInput.value || 0) > 0;
-		requiredNodes.openStartPickerButton.disabled = false;
-		requiredNodes.openEndPickerButton.disabled = false;
 		requiredNodes.clearCustomerButton.disabled = false;
 	}
 
@@ -2249,8 +2116,6 @@ class AppointmentModal extends HTMLElement {
 		}
 		this.syncModalProfessionalDisabledState();
 		requiredNodes.customerPhoneInput.readOnly = true;
-		requiredNodes.openStartPickerButton.disabled = true;
-		requiredNodes.openEndPickerButton.disabled = true;
 		requiredNodes.clearCustomerButton.disabled = true;
 		this.hideAttendanceBlock();
 		this.hideScheduleMisalignedBlock();
@@ -2364,7 +2229,6 @@ class AppointmentModal extends HTMLElement {
 		requiredNodes.startInput.value = parseIsoToLocalInput(String(appointment.start_time || ''));
 		requiredNodes.endInput.value = parseIsoToLocalInput(String(appointment.end_time || ''));
 		this.syncDateBounds();
-		this.syncDateDisplayInputs();
 		this.ensureModalProfessionalValue();
 		void this.loadCustomersForCurrentProfessional(true);
 		this.showAttendanceBlock(appointment);
@@ -2438,7 +2302,6 @@ class AppointmentModal extends HTMLElement {
 		}
 
 		this.syncDateBounds();
-		this.syncDateDisplayInputs();
 		void this.loadCustomersForCurrentProfessional(true);
 
 		this.form?.querySelectorAll('[data-ai-draft-highlight]').forEach((node) => {
@@ -2495,7 +2358,7 @@ class AppointmentModal extends HTMLElement {
 		const endDate = parseLocalDateTime(endRaw);
 		if (startDate) requiredNodes.startInput.value = formatDateTimeLocal(startDate);
 		if (endDate) requiredNodes.endInput.value = formatDateTimeLocal(endDate);
-		this.syncDateDisplayInputs();
+		this.syncDateBounds();
 		const startIso = startDate ? toIsoWithOffset(startDate) : '';
 		const endIso = endDate ? toIsoWithOffset(endDate) : '';
 
@@ -2675,349 +2538,14 @@ class AppointmentModal extends HTMLElement {
 		}
 	}
 
-	syncDateDisplayInputs() {
-		const requiredNodes = this.getRequiredNodes();
-		if (!requiredNodes) return;
-
-		const startDate = parseLocalDateTime(requiredNodes.startInput.value);
-		const endDate = parseLocalDateTime(requiredNodes.endInput.value);
-		requiredNodes.startDisplayInput.value = startDate ? formatDateTimeDisplay(startDate) : '';
-		requiredNodes.endDisplayInput.value = endDate ? formatDateTimeDisplay(endDate) : '';
-	}
-
-	private getRoundedNowDate(stepMinutes = 5) {
-		const now = new Date();
-		now.setSeconds(0, 0);
-		const roundedMinute = Math.ceil(now.getMinutes() / stepMinutes) * stepMinutes;
-		now.setMinutes(roundedMinute, 0, 0);
-		return now;
-	}
-
-	private getPickerFieldDate(field: PickerField, fallbackToStart = false) {
-		const requiredNodes = this.getRequiredNodes();
-		if (!requiredNodes) return this.getRoundedNowDate();
-
-		const fieldValue = field === 'start' ? requiredNodes.startInput.value : requiredNodes.endInput.value;
-		const parsedFieldDate = parseLocalDateTime(fieldValue);
-		if (parsedFieldDate) return parsedFieldDate;
-
-		if (field === 'end' && fallbackToStart) {
-			const startDate = parseLocalDateTime(requiredNodes.startInput.value);
-			if (startDate) return new Date(startDate.getTime() + 60 * 60 * 1000);
-		}
-
-		return this.getRoundedNowDate();
-	}
-
-	private openDateTimePicker(field: PickerField) {
-		const requiredNodes = this.getRequiredNodes();
-		if (!requiredNodes || this.isLoading || this.isSubmitting) return;
-
-		this.activePickerField = field;
-		this.pickerDraftDate = this.getPickerFieldDate(field, true);
-		this.pickerViewDate = new Date(
-			this.pickerDraftDate.getFullYear(),
-			this.pickerDraftDate.getMonth(),
-			1,
-			0,
-			0,
-			0,
-			0
-		);
-
-		if (!requiredNodes.dateTimePicker.open) {
-			openPanelModal(requiredNodes.dateTimePicker);
-		}
-		requiredNodes.pickerTargetLabel.textContent =
-			field === 'start' ? 'Seleccionando inicio' : 'Seleccionando fin';
-		this.renderDateTimePicker();
-		this.setFieldError(field === 'start' ? 'start_time' : 'end_time', '');
-	}
-
-	closeDateTimePicker = () => {
-		const requiredNodes = this.getRequiredNodes();
-		if (!requiredNodes) return;
-		if (requiredNodes.dateTimePicker.open) {
-			requiredNodes.dateTimePicker.close();
-		}
-		this.activePickerField = null;
-		this.pickerDraftDate = null;
-	};
-
-	private renderDateTimePicker() {
-		const requiredNodes = this.getRequiredNodes();
-		if (!requiredNodes || !this.pickerDraftDate) return;
-
-		this.renderPickerMonthYearControls(requiredNodes);
-		this.renderPickerDays(requiredNodes);
-		this.renderPickerTimeSelects(requiredNodes);
-	}
-
-	private renderPickerMonthYearControls(requiredNodes: RequiredNodes) {
-		const monthSelect = requiredNodes.pickerMonthSelect;
-		if (monthSelect.options.length === 0) {
-			const monthFormatter = new Intl.DateTimeFormat('es-ES', { month: 'long' });
-			for (let month = 0; month < 12; month += 1) {
-				const option = document.createElement('option');
-				option.value = String(month);
-				const monthName = monthFormatter.format(new Date(2020, month, 1));
-				option.textContent = monthName.charAt(0).toUpperCase() + monthName.slice(1);
-				monthSelect.appendChild(option);
-			}
-		}
-		monthSelect.value = String(this.pickerViewDate.getMonth());
-
-		const yearSelect = requiredNodes.pickerYearSelect;
-		const viewYear = this.pickerViewDate.getFullYear();
-		const minYear = viewYear - 12;
-		const maxYear = viewYear + 12;
-		const firstYear = Number(yearSelect.options[0]?.value ?? Number.NaN);
-		const lastYear = Number(
-			yearSelect.options[yearSelect.options.length - 1]?.value ?? Number.NaN
-		);
-
-		if (yearSelect.options.length === 0 || firstYear !== minYear || lastYear !== maxYear) {
-			yearSelect.innerHTML = '';
-			for (let year = minYear; year <= maxYear; year += 1) {
-				const option = document.createElement('option');
-				option.value = String(year);
-				option.textContent = String(year);
-				yearSelect.appendChild(option);
-			}
-		}
-
-		yearSelect.value = String(viewYear);
-
-		const monthLabel = this.form?.querySelector<HTMLElement>('[data-picker-month-label]');
-		if (monthLabel) {
-			const labelFormatter = new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' });
-			const label = labelFormatter.format(this.pickerViewDate);
-			monthLabel.textContent = label.charAt(0).toUpperCase() + label.slice(1);
-		}
-	}
-
-	private renderPickerDays(requiredNodes: RequiredNodes) {
-		const selectedDate = this.pickerDraftDate;
-		if (!selectedDate) return;
-
-		const grid = requiredNodes.pickerDaysGrid;
-		grid.innerHTML = '';
-
-		const viewYear = this.pickerViewDate.getFullYear();
-		const viewMonth = this.pickerViewDate.getMonth();
-		const firstDay = new Date(viewYear, viewMonth, 1);
-		const firstWeekdayMondayBased = (firstDay.getDay() + 6) % 7;
-
-		const gridStart = new Date(viewYear, viewMonth, 1 - firstWeekdayMondayBased);
-		const today = new Date();
-		today.setHours(0, 0, 0, 0);
-
-		for (let index = 0; index < 42; index += 1) {
-			const date = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + index);
-			const inCurrentMonth = date.getMonth() === viewMonth;
-			const isSelected =
-				date.getFullYear() === selectedDate.getFullYear() &&
-				date.getMonth() === selectedDate.getMonth() &&
-				date.getDate() === selectedDate.getDate();
-			const isToday = date.getTime() === today.getTime();
-			const isPast = date.getTime() < today.getTime();
-
-			const button = document.createElement('button');
-			button.type = 'button';
-			button.textContent = String(date.getDate());
-			button.className = [
-				'dtp-day',
-				!inCurrentMonth ? 'dtp-day--out' : '',
-				isToday ? 'dtp-day--today' : '',
-				isSelected ? 'dtp-day--selected' : '',
-				isPast ? 'dtp-day--disabled' : '',
-			]
-				.filter(Boolean)
-				.join(' ');
-
-			if (isPast) {
-				button.disabled = true;
-				button.setAttribute('aria-disabled', 'true');
-			} else {
-				button.addEventListener('click', () => {
-					if (!this.pickerDraftDate) return;
-					this.pickerDraftDate = new Date(
-						date.getFullYear(),
-						date.getMonth(),
-						date.getDate(),
-						this.pickerDraftDate.getHours(),
-						this.pickerDraftDate.getMinutes(),
-						0,
-						0
-					);
-					this.renderDateTimePicker();
-				});
-			}
-
-			grid.appendChild(button);
-		}
-	}
-
-	private renderPickerTimeSelects(requiredNodes: RequiredNodes) {
-		const selectedDate = this.pickerDraftDate;
-		if (!selectedDate) return;
-
-		const hourSelect = requiredNodes.pickerHourSelect;
-		if (hourSelect.options.length === 0) {
-			for (let hour = 0; hour < 24; hour += 1) {
-				const option = document.createElement('option');
-				option.value = String(hour).padStart(2, '0');
-				option.textContent = String(hour).padStart(2, '0');
-				hourSelect.appendChild(option);
-			}
-		}
-
-		const minuteSelect = requiredNodes.pickerMinuteSelect;
-		if (minuteSelect.options.length === 0) {
-			for (const minute of this.pickerMinuteOptions) {
-				const option = document.createElement('option');
-				option.value = String(minute).padStart(2, '0');
-				option.textContent = String(minute).padStart(2, '0');
-				minuteSelect.appendChild(option);
-			}
-		}
-
-		hourSelect.value = String(selectedDate.getHours()).padStart(2, '0');
-
-		let minuteToUse = selectedDate.getMinutes();
-		if (!this.pickerMinuteOptions.includes(minuteToUse)) {
-			minuteToUse = this.pickerMinuteOptions.reduce((closest, current) =>
-				Math.abs(current - selectedDate.getMinutes()) < Math.abs(closest - selectedDate.getMinutes())
-					? current
-					: closest
-			);
-			selectedDate.setMinutes(minuteToUse, 0, 0);
-		}
-		minuteSelect.value = String(minuteToUse).padStart(2, '0');
-	}
-
-	handlePickerBackdropClick = (event: MouseEvent) => {
-		const requiredNodes = this.getRequiredNodes();
-		if (!requiredNodes || !this.activePickerField) return;
-
-		if (event.target === requiredNodes.dateTimePicker) this.closeDateTimePicker();
-	};
-
-	handleNativePickerClose = () => {
-		this.activePickerField = null;
-		this.pickerDraftDate = null;
-	};
-
-	handlePickerTimeChange = () => {
-		const requiredNodes = this.getRequiredNodes();
-		if (!requiredNodes || !this.pickerDraftDate) return;
-
-		const selectedHour = Number(requiredNodes.pickerHourSelect.value);
-		const selectedMinute = Number(requiredNodes.pickerMinuteSelect.value);
-		if (!Number.isFinite(selectedHour) || !Number.isFinite(selectedMinute)) return;
-
-		this.pickerDraftDate.setHours(selectedHour, selectedMinute, 0, 0);
-	};
-
-	handlePickerMonthChange = () => {
-		const requiredNodes = this.getRequiredNodes();
-		if (!requiredNodes) return;
-
-		const selectedMonth = Number(requiredNodes.pickerMonthSelect.value);
-		if (!Number.isInteger(selectedMonth) || selectedMonth < 0 || selectedMonth > 11) return;
-
-		this.pickerViewDate = new Date(
-			this.pickerViewDate.getFullYear(),
-			selectedMonth,
-			1,
-			0,
-			0,
-			0,
-			0
-		);
-		this.renderDateTimePicker();
-	};
-
-	handlePickerYearChange = () => {
-		const requiredNodes = this.getRequiredNodes();
-		if (!requiredNodes) return;
-
-		const selectedYear = Number(requiredNodes.pickerYearSelect.value);
-		if (!Number.isInteger(selectedYear)) return;
-
-		this.pickerViewDate = new Date(
-			selectedYear,
-			this.pickerViewDate.getMonth(),
-			1,
-			0,
-			0,
-			0,
-			0
-		);
-		this.renderDateTimePicker();
-	};
-
-	handlePickerToday = () => {
-		const now = this.getRoundedNowDate(15);
-		this.pickerDraftDate = now;
-		this.pickerViewDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-		this.renderDateTimePicker();
-	};
-
-	handleOpenStartPicker = (event?: Event) => {
-		void event;
-		this.openDateTimePicker('start');
-	};
-
-	handleOpenEndPicker = (event?: Event) => {
-		void event;
-		this.openDateTimePicker('end');
-	};
-
-	handlePrevMonth = () => {
-		this.pickerViewDate = new Date(
-			this.pickerViewDate.getFullYear(),
-			this.pickerViewDate.getMonth() - 1,
-			1,
-			0,
-			0,
-			0,
-			0
-		);
-		this.renderDateTimePicker();
-	};
-
-	handleNextMonth = () => {
-		this.pickerViewDate = new Date(
-			this.pickerViewDate.getFullYear(),
-			this.pickerViewDate.getMonth() + 1,
-			1,
-			0,
-			0,
-			0,
-			0
-		);
-		this.renderDateTimePicker();
-	};
-
-	applyDateTimePickerSelection = () => {
-		const requiredNodes = this.getRequiredNodes();
-		if (!requiredNodes || !this.activePickerField || !this.pickerDraftDate) {
-			this.closeDateTimePicker();
-			return;
-		}
-
-		const pickedDate = new Date(this.pickerDraftDate.getTime());
-		if (this.activePickerField === 'start') {
-			requiredNodes.startInput.value = formatDateTimeLocal(pickedDate);
-		} else {
-			requiredNodes.endInput.value = formatDateTimeLocal(pickedDate);
-		}
-
+	handleStartTimeChange = () => {
 		this.syncDateBounds();
-		this.syncDateDisplayInputs();
-		this.setFieldError(this.activePickerField === 'start' ? 'start_time' : 'end_time', '');
-		this.closeDateTimePicker();
+		this.setFieldError('start_time', '');
+	};
+
+	handleEndTimeChange = () => {
+		this.syncDateBounds();
+		this.setFieldError('end_time', '');
 	};
 
 	handlePhoneBlur = () => {

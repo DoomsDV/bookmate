@@ -3600,18 +3600,11 @@ const googleErrorMessage = hasGoogleError
 
 	html[data-theme='dark'] dialog[data-appointment-modal] input[type='datetime-local'] {
 		color-scheme: dark;
-		background: var(--surface-container, #1e1f22);
-		color: var(--on-surface);
-		border-color: rgba(255, 255, 255, 0.16);
-	}
-
-	html[data-theme='dark'] dialog[data-appointment-modal] input[type='datetime-local']:hover {
-		border-color: rgba(255, 255, 255, 0.26);
 	}
 
 	html[data-theme='dark'] dialog[data-appointment-modal] input[type='datetime-local']::-webkit-calendar-picker-indicator {
 		filter: invert(0.92) brightness(0.9);
-		opacity: 0.92;
+		opacity: 0.88;
 	}
 
 	html[data-theme='dark']
@@ -3620,6 +3613,7 @@ const googleErrorMessage = hasGoogleError
 	html[data-theme='dark']
 		dialog[data-appointment-modal]
 		input[type='datetime-local']:focus::-webkit-calendar-picker-indicator {
+		opacity: 1;
 		background-color: rgba(255, 255, 255, 0.1);
 	}
 

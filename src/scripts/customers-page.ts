@@ -1731,7 +1731,9 @@ class CustomerManager extends HTMLElement {
 				? workspaceTitle
 				: isClinica
 					? 'Ficha clínica'
-					: 'Perfil del cliente';
+					: this.isEditingProfile
+						? 'Editar datos'
+						: 'Perfil del cliente';
 		}
 		if (this.profileHeaderIcon) {
 			this.profileHeaderIcon.textContent = isClinica ? 'medical_services' : 'person';
@@ -3535,6 +3537,7 @@ class CustomerManager extends HTMLElement {
 		if (this.profileEditStatusNode) {
 			this.profileEditStatusNode.textContent = editing ? 'Editando datos del cliente' : '';
 		}
+		this.syncProfileHeaderChrome();
 	}
 
 	private setProfileSaveButtonLoading(loading: boolean) {
