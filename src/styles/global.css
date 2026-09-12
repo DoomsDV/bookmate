@@ -7,6 +7,35 @@
 
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
+/* Tailwind v4 deja los botones en cursor: default (UA). En Hasel, hover sobre
+ * un control clicable debe mostrar pointer. El CSS de componente (zoom-in, grab,
+ * not-allowed) sigue ganando porque está fuera de @layer. */
+@layer base {
+	a[href],
+	area[href],
+	button:not(:disabled):not([aria-disabled='true']),
+	[role='button']:not([aria-disabled='true']),
+	[role='tab']:not([aria-disabled='true']),
+	[role='menuitem']:not([aria-disabled='true']),
+	[role='option'],
+	[role='link'],
+	[role='switch']:not([aria-disabled='true']),
+	[role='checkbox']:not([aria-disabled='true']),
+	[role='radio']:not([aria-disabled='true']),
+	summary,
+	label[for],
+	select:not(:disabled),
+	input[type='button']:not(:disabled),
+	input[type='submit']:not(:disabled),
+	input[type='reset']:not(:disabled),
+	input[type='checkbox']:not(:disabled),
+	input[type='radio']:not(:disabled),
+	input[type='file']:not(:disabled),
+	input[type='image']:not(:disabled) {
+		cursor: pointer;
+	}
+}
+
 /* Evita la doble “x” nativa de Chrome/WebKit/Edge en input[type=search]. */
 input[type='search']::-webkit-search-decoration,
 input[type='search']::-webkit-search-cancel-button,

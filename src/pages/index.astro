@@ -1993,6 +1993,7 @@ const jsonLd = [
 		font-weight: 700;
 		white-space: nowrap;
 		text-decoration: none;
+		cursor: pointer;
 	}
 
 	.discover-chip.is-active,
@@ -2031,10 +2032,15 @@ const jsonLd = [
 		border: 1px solid var(--border);
 		background: var(--surface-raised);
 		color: inherit;
+		cursor: pointer;
 		box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
 		transition:
 			transform 200ms var(--ease),
 			box-shadow 200ms var(--ease);
+	}
+
+	.discover-card * {
+		cursor: inherit;
 	}
 
 	.discover-card:hover {
