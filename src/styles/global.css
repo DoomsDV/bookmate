@@ -36,6 +36,20 @@
 	}
 }
 
+/* Chromium trata <img> como draggable y no pinta pointer aunque el padre lo tenga.
+ * pointer-events: none deja el hover en el enlace/botón (zoom-in, grab, etc. siguen ganando). */
+:is(
+	a[href],
+	button:not(:disabled):not([aria-disabled='true']),
+	[role='button']:not([aria-disabled='true']),
+	[role='tab']:not([aria-disabled='true']),
+	[role='link']
+) img {
+	pointer-events: none;
+	-webkit-user-drag: none;
+	user-select: none;
+}
+
 /* Evita la doble “x” nativa de Chrome/WebKit/Edge en input[type=search]. */
 input[type='search']::-webkit-search-decoration,
 input[type='search']::-webkit-search-cancel-button,

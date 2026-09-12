@@ -680,6 +680,12 @@ html[data-theme='dark'] .explorar-view-toggle {
 	cursor: inherit;
 }
 
+.explorar-card img {
+	pointer-events: none;
+	-webkit-user-drag: none;
+	user-select: none;
+}
+
 html[data-theme='dark'] .explorar-card {
 	background: var(--surface-raised);
 	border-color: rgb(255 255 255 / 0.1);
