@@ -263,8 +263,12 @@ html[data-theme='light'] .hub-hero__banner:not(.hub-hero__banner--photo) {
 	overflow: hidden;
 }
 
-.hub-gallery-open * {
-	cursor: inherit;
+.hub-gallery-open *,
+.hub-gallery-open img {
+	cursor: pointer;
+	pointer-events: none;
+	-webkit-user-drag: none;
+	user-select: none;
 }
 
 .hub-gallery-open img,
@@ -1724,6 +1728,12 @@ html[data-theme='dark'] .hub-pro-card--skeleton .hub-skel {
 
 .hub-pro-card:not(.hub-pro-card--skeleton) * {
 	cursor: inherit;
+}
+
+.hub-pro-card:not(.hub-pro-card--skeleton) img {
+	pointer-events: none;
+	-webkit-user-drag: none;
+	user-select: none;
 }
 
 html[data-theme='dark'] .hub-pro-card {
