@@ -572,20 +572,21 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 
 				<div class="hidden grid gap-4" data-customer-profile-body>
 					<div
-						class="customer-profile-tab-panel grid gap-4"
+						class="customer-profile-tab-panel customer-profile-summary grid gap-5"
 						role="tabpanel"
 						id="customer-profile-panel-summary"
 						aria-labelledby="customer-profile-tab-summary"
 						data-customer-profile-tab-panel="summary"
 					>
 					<form
-						class="customer-profile-contact-form grid gap-4"
+						class="customer-profile-contact-form"
 						id="customer-profile-edit-form"
 						data-customer-profile-edit-form
 						novalidate
 					>
-						<section class="customer-profile-identity">
-							<div class="customer-profile-identity__inner">
+						<section class="customer-profile-ficha">
+							<div class="customer-profile-identity">
+								<div class="customer-profile-identity__inner">
 									<div
 										class="customer-card-avatar customer-card-avatar--tone-1 customer-profile-identity__avatar"
 										data-customer-profile-avatar
@@ -595,11 +596,15 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 									</div>
 									<div class="customer-profile-identity__body">
 										<h2
-											class="customer-profile-identity__name truncate"
+											class="customer-profile-identity__name"
 											data-customer-profile-name
 										>
 											Cliente
 										</h2>
+										<p class="customer-profile-identity__since">
+											Cliente desde
+											<span data-customer-profile-registered>—</span>
+										</p>
 										<p
 											class="customer-profile-scope hidden"
 											data-customer-profile-scope
@@ -616,269 +621,231 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 										</p>
 									</div>
 								</div>
-						</section>
-
-						<section class="customer-profile-meta">
-							<div class="customer-profile-field-pair">
-								<div class="customer-profile-field-cell">
-									<div class="customer-profile-field-row" data-customer-profile-first-name-row>
-										<span class="customer-profile-field-term">Nombre</span>
-										<span
-											class="customer-profile-field-value"
-											data-customer-profile-first-name
-										>—</span>
-										<input
-											id="customer-profile-name-input"
-											type="text"
-											maxlength="80"
-											placeholder="Ej: María"
-											class="customer-profile-field-input hidden"
-											data-customer-profile-name-input
-											autocomplete="given-name"
-										/>
-									</div>
-									<span
-										class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
-										data-field-error="customer_profile_name"
-										role="alert"
-									></span>
-								</div>
-								<div class="customer-profile-field-cell">
-									<div class="customer-profile-field-row" data-customer-profile-last-name-row>
-										<span class="customer-profile-field-term">Apellido</span>
-										<span
-											class="customer-profile-field-value"
-											data-customer-profile-last-name
-										>—</span>
-										<input
-											id="customer-profile-last-name-input"
-											type="text"
-											maxlength="80"
-											placeholder="Ej: Fernández"
-											class="customer-profile-field-input hidden"
-											data-customer-profile-last-name-input
-											autocomplete="family-name"
-										/>
-									</div>
-									<span
-										class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
-										data-field-error="customer_profile_last_name"
-										role="alert"
-									></span>
-								</div>
 							</div>
-							<div class="customer-profile-field-pair">
-								<div class="customer-profile-field-cell">
-									<div class="customer-profile-field-row" data-customer-profile-phone-row>
-										<span class="customer-profile-field-term">Teléfono</span>
-										<span
-											class="customer-profile-field-value customer-profile-field-value--emphasize"
-											data-customer-profile-phone
-										>—</span>
-										<div class="customer-profile-phone-field hidden" data-customer-profile-phone-field>
-											<span class="customer-profile-phone-field__prefix">+595</span>
+
+							<div class="customer-profile-contact">
+								<div class="customer-profile-field-pair customer-profile-field-pair--names">
+									<div class="customer-profile-field-cell">
+										<div class="customer-profile-field-row" data-customer-profile-first-name-row>
+											<label class="customer-profile-field-term" for="customer-profile-name-input">Nombre</label>
+											<span
+												class="customer-profile-field-value"
+												data-customer-profile-first-name
+											>—</span>
 											<input
+												id="customer-profile-name-input"
 												type="text"
-												maxlength="11"
-												inputmode="numeric"
-												autocomplete="new-password"
-												autocapitalize="off"
-												autocorrect="off"
-												spellcheck="false"
-												data-lpignore="true"
-												data-1p-ignore="true"
-												data-form-type="other"
-												placeholder="981 123 456"
-												class="customer-profile-phone-field__input"
-												data-customer-profile-phone-input
-												aria-label="Telefono del cliente"
+												maxlength="80"
+												placeholder="Ej: María"
+												class="customer-profile-field-input hidden"
+												data-customer-profile-name-input
+												autocomplete="given-name"
 											/>
 										</div>
-									</div>
-									<span
-										class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
-										data-field-error="customer_profile_phone"
-										role="alert"
-									></span>
-								</div>
-								<div class="customer-profile-field-cell">
-									<div class="customer-profile-field-row" data-customer-profile-document-row>
-										<span class="customer-profile-field-term">CI</span>
 										<span
-											class="customer-profile-field-value"
-											data-customer-profile-document
-										>—</span>
-										<input
-											type="text"
-											maxlength="12"
-											inputmode="numeric"
-											autocomplete="off"
-											placeholder="4567890"
-											class="customer-profile-field-input hidden"
-											data-customer-profile-document-input
-											aria-label="CI del cliente"
-										/>
+											class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
+											data-field-error="customer_profile_name"
+											role="alert"
+										></span>
 									</div>
-									<span
-										class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
-										data-field-error="customer_profile_document"
-										role="alert"
-									></span>
+									<div class="customer-profile-field-cell">
+										<div class="customer-profile-field-row" data-customer-profile-last-name-row>
+											<label class="customer-profile-field-term" for="customer-profile-last-name-input">Apellido</label>
+											<span
+												class="customer-profile-field-value"
+												data-customer-profile-last-name
+											>—</span>
+											<input
+												id="customer-profile-last-name-input"
+												type="text"
+												maxlength="80"
+												placeholder="Ej: Fernández"
+												class="customer-profile-field-input hidden"
+												data-customer-profile-last-name-input
+												autocomplete="family-name"
+											/>
+										</div>
+										<span
+											class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
+											data-field-error="customer_profile_last_name"
+											role="alert"
+										></span>
+									</div>
 								</div>
-							</div>
-							<div class="customer-profile-field-row" data-customer-profile-email-row>
-								<span class="customer-profile-field-term">Correo</span>
+								<div class="customer-profile-field-pair">
+									<div class="customer-profile-field-cell">
+										<div class="customer-profile-field-row" data-customer-profile-phone-row>
+											<span class="customer-profile-field-term">Teléfono</span>
+											<a
+												class="customer-profile-field-value customer-profile-field-value--phone"
+												data-customer-profile-phone
+											>—</a>
+											<div class="customer-profile-phone-field hidden" data-customer-profile-phone-field>
+												<span class="customer-profile-phone-field__prefix">+595</span>
+												<input
+													type="text"
+													maxlength="11"
+													inputmode="numeric"
+													autocomplete="new-password"
+													autocapitalize="off"
+													autocorrect="off"
+													spellcheck="false"
+													data-lpignore="true"
+													data-1p-ignore="true"
+													data-form-type="other"
+													placeholder="981 123 456"
+													class="customer-profile-phone-field__input"
+													data-customer-profile-phone-input
+													aria-label="Teléfono del cliente"
+												/>
+											</div>
+										</div>
+										<span
+											class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
+											data-field-error="customer_profile_phone"
+											role="alert"
+										></span>
+									</div>
+									<div class="customer-profile-field-cell">
+										<div class="customer-profile-field-row" data-customer-profile-document-row>
+											<span class="customer-profile-field-term">CI</span>
+											<span
+												class="customer-profile-field-value"
+												data-customer-profile-document
+											>—</span>
+											<input
+												type="text"
+												maxlength="12"
+												inputmode="numeric"
+												autocomplete="off"
+												placeholder="4567890"
+												class="customer-profile-field-input hidden"
+												data-customer-profile-document-input
+												aria-label="CI del cliente"
+											/>
+										</div>
+										<span
+											class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
+											data-field-error="customer_profile_document"
+											role="alert"
+										></span>
+									</div>
+								</div>
+								<div class="customer-profile-field-row" data-customer-profile-email-row>
+									<span class="customer-profile-field-term">Correo</span>
+									<a
+										class="customer-profile-field-value customer-profile-field-value--email"
+										data-customer-profile-email
+									>—</a>
+									<input
+										type="email"
+										maxlength="150"
+										autocomplete="email"
+										placeholder="nombre@correo.com"
+										class="customer-profile-field-input hidden"
+										data-customer-profile-email-input
+										aria-label="Correo del cliente"
+									/>
+								</div>
 								<span
-									class="customer-profile-field-value"
-									data-customer-profile-email
-								>—</span>
-								<input
-									type="email"
-									maxlength="150"
-									autocomplete="email"
-									placeholder="nombre@correo.com"
-									class="customer-profile-field-input hidden"
-									data-customer-profile-email-input
-									aria-label="Correo del cliente"
-								/>
-							</div>
-							<span
-								class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
-								data-field-error="customer_profile_email"
-								role="alert"
-							></span>
-							<div class="customer-profile-field-row">
-								<span class="customer-profile-field-term">Registrado</span>
-								<span
-									class="customer-profile-field-value"
-									data-customer-profile-registered
-								>—</span>
+									class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
+									data-field-error="customer_profile_email"
+									role="alert"
+								></span>
 							</div>
 						</section>
 					</form>
 
-					<section class="customer-profile-metrics">
-						<article class="customer-profile-stat-card">
-							<p class="text-[0.82rem] font-bold uppercase tracking-wide text-(--on-surface-variant)">
-								Asistencia
-							</p>
-							<div class="mt-1 flex items-center gap-3">
+					<section class="customer-profile-pulse" aria-label="Actividad del cliente">
+						<article class="customer-profile-pulse__cell">
+							<p class="customer-profile-pulse__label">Asistencia</p>
+							<p class="customer-profile-pulse__value">
 								<span
 									class="customer-profile-attendance-dot"
 									data-customer-profile-attendance-dot
+									hidden
 									aria-hidden="true"
 								></span>
-								<p
-									class="text-[1.5rem] font-extrabold leading-tight text-(--on-surface)"
-									data-customer-profile-attendance-rate
-								>
-									—
-								</p>
-							</div>
+								<span data-customer-profile-attendance-rate>—</span>
+							</p>
 							<p
-								class="customer-profile-stat-hint"
+								class="customer-profile-pulse__hint"
 								data-customer-profile-attendance-detail
 							></p>
 						</article>
-
-						<article class="customer-profile-stat-card">
-							<p class="text-[0.82rem] font-bold uppercase tracking-wide text-(--on-surface-variant)">
-								Ingresos totales
-							</p>
-							<p
-								class="mt-1 text-[1.5rem] font-extrabold leading-tight text-(--on-surface)"
-								data-customer-profile-ltv
-							>
-								Gs. 0
-							</p>
-							<p class="customer-profile-stat-hint">
-								Suma el precio de citas <strong>confirmadas</strong> o
-								<strong>completadas</strong> que ya ocurrieron. No incluye pendientes ni
-								canceladas.
-							</p>
+						<article
+							class="customer-profile-pulse__cell"
+							title="Suma el precio de citas confirmadas o completadas que ya ocurrieron. No incluye pendientes ni canceladas."
+						>
+							<p class="customer-profile-pulse__label">Ingresos</p>
+							<p class="customer-profile-pulse__value" data-customer-profile-ltv>Gs. 0</p>
+							<p class="customer-profile-pulse__hint">Citas ya atendidas</p>
 						</article>
 					</section>
 
 					<section
-						class="customer-profile-section hidden"
+						class="customer-profile-pulse hidden"
 						data-customer-profile-profitability-wrap
+						aria-label="Promedio y pérdidas"
 					>
-						<h3 class="customer-profile-section-title flex items-center gap-1.5">
-							<span class="material-symbols-rounded text-[1.1rem] text-(--primary)" aria-hidden="true">trending_up</span>
-							Rentabilidad
-						</h3>
-						<section class="customer-profile-metrics">
-							<article class="customer-profile-stat-card">
-								<p class="text-[0.82rem] font-bold uppercase tracking-wide text-(--on-surface-variant)">
-									Ingreso promedio
-								</p>
-								<p
-									class="mt-1 text-[1.5rem] font-extrabold leading-tight text-(--on-surface)"
-									data-customer-profile-avg-ticket
-								>
-									Gs. 0
-								</p>
-								<p class="customer-profile-stat-hint">Promedio por cita atendida.</p>
-							</article>
-
-							<article class="customer-profile-stat-card">
-								<p class="text-[0.82rem] font-bold uppercase tracking-wide text-(--on-surface-variant)">
-									Pérdida por ausencias
-								</p>
-								<p
-									class="mt-1 text-[1.5rem] font-extrabold leading-tight text-(--on-surface)"
-									data-customer-profile-lost-value
-								>
-									Gs. 0
-								</p>
-								<p class="customer-profile-stat-hint">Ingresos no realizados por cancelaciones.</p>
-							</article>
-						</section>
-					</section>
-
-					<section class="customer-profile-section">
-						<h3 class="customer-profile-section-title">Reservas</h3>
-						<div
-							class="customer-profile-reservation-cards"
-							data-customer-profile-reservations
+						<article
+							class="customer-profile-pulse__cell"
+							title="Promedio por cita atendida."
 						>
-							<article class="customer-profile-reservation-card">
-								<p class="customer-profile-reservation-card__label">Última cita</p>
-								<div
-									class="customer-profile-reservation-card__body"
-									data-customer-profile-last
-								>
-									<span class="customer-profile-reservation-card__empty">Sin reservas atendidas</span>
-								</div>
-							</article>
-							<article
-								class="customer-profile-reservation-card customer-profile-reservation-card--next"
+							<p class="customer-profile-pulse__label">Promedio por cita</p>
+							<p
+								class="customer-profile-pulse__value"
+								data-customer-profile-avg-ticket
 							>
-								<p
-									class="customer-profile-reservation-card__label customer-profile-reservation-card__label--next"
-								>
-									Próxima cita
-								</p>
-								<div
-									class="customer-profile-reservation-card__body"
-									data-customer-profile-next
-								>
-									<span class="customer-profile-reservation-card__empty">Sin reserva confirmada</span>
-								</div>
-							</article>
-						</div>
-						<div
-							class="customer-profile-pending-block hidden"
-							data-customer-profile-pending-wrap
+								Gs. 0
+							</p>
+						</article>
+						<article
+							class="customer-profile-pulse__cell"
+							title="Ingresos no realizados por cancelaciones."
 						>
-							<p class="customer-profile-reservation-card__label">Pendientes</p>
-							<div class="grid gap-2 mt-1.5" data-customer-profile-pending-list></div>
-						</div>
+							<p class="customer-profile-pulse__label">Perdido por ausencias</p>
+							<p
+								class="customer-profile-pulse__value"
+								data-customer-profile-lost-value
+							>
+								Gs. 0
+							</p>
+						</article>
 					</section>
 
-					<section class="customer-profile-section">
-						<h3 class="customer-profile-section-title">Servicios habituales</h3>
-						<div class="flex flex-wrap gap-2" data-customer-profile-services></div>
+					<section class="customer-profile-agenda" data-customer-profile-reservations>
+						<article class="customer-profile-agenda__cell">
+							<p class="customer-profile-agenda__label">Última cita</p>
+							<div
+								class="customer-profile-agenda__body"
+								data-customer-profile-last
+							>
+								<span class="customer-profile-agenda__empty">Todavía no tiene citas atendidas</span>
+							</div>
+						</article>
+						<article class="customer-profile-agenda__cell customer-profile-agenda__cell--next">
+							<p class="customer-profile-agenda__label">Próxima cita</p>
+							<div
+								class="customer-profile-agenda__body"
+								data-customer-profile-next
+							>
+								<span class="customer-profile-agenda__empty">Sin reserva confirmada</span>
+							</div>
+						</article>
+					</section>
+
+					<div
+						class="customer-profile-pending-block hidden"
+						data-customer-profile-pending-wrap
+					>
+						<p class="customer-profile-agenda__label">Pendientes</p>
+						<div class="grid gap-2 mt-1.5" data-customer-profile-pending-list></div>
+					</div>
+
+					<section class="customer-profile-habits">
+						<h3 class="customer-profile-habits__title">Suele pedir</h3>
+						<div class="customer-profile-habits__list" data-customer-profile-services></div>
 					</section>
 					</div>
 
@@ -1827,32 +1794,41 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		display: flex;
 	}
 
-	.customer-profile-identity {
-		border-radius: 1rem;
-		border: 1px solid var(--shell-border);
+	.customer-profile-ficha {
+		display: grid;
+		gap: 0;
+		border-radius: 1.35rem;
+		border: 1px solid color-mix(in srgb, var(--on-surface) 12%, transparent);
 		background: var(--surface-bright);
-		padding: 0.95rem 1rem;
+		overflow: hidden;
+	}
+
+	.customer-profile-identity {
+		padding: 1.15rem 1.15rem 1rem;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
 	}
 
 	.customer-profile-identity__inner {
 		display: flex;
 		align-items: center;
-		gap: 0.9rem;
+		gap: 1rem;
 		min-width: 0;
 	}
 
 	.customer-profile-identity__avatar {
 		flex-shrink: 0;
-		width: 3.25rem;
-		height: 3.25rem;
-		font-size: 0.95rem;
+		width: 3.6rem;
+		height: 3.6rem;
+		font-size: 0.92rem;
 	}
 
 	@media (min-width: 640px) {
 		.customer-profile-identity__avatar {
-			width: 3.5rem;
-			height: 3.5rem;
-			font-size: 1rem;
+			width: 3.85rem;
+			height: 3.85rem;
+			font-size: 0.98rem;
 		}
 	}
 
@@ -1860,22 +1836,31 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		min-width: 0;
 		flex: 1;
 		display: grid;
-		gap: 0.35rem;
+		gap: 0.22rem;
 	}
 
 	.customer-profile-identity__name {
 		margin: 0;
-		font-size: 1.15rem;
+		font-size: 1.28rem;
 		font-weight: 800;
-		letter-spacing: -0.02em;
-		line-height: 1.2;
+		letter-spacing: -0.035em;
+		line-height: 1.15;
 		color: var(--on-surface);
+		overflow-wrap: anywhere;
 	}
 
 	@media (min-width: 640px) {
 		.customer-profile-identity__name {
-			font-size: 1.25rem;
+			font-size: 1.4rem;
 		}
+	}
+
+	.customer-profile-identity__since {
+		margin: 0;
+		font-size: 0.8rem;
+		font-weight: 500;
+		line-height: 1.35;
+		color: var(--on-surface-variant);
 	}
 
 	.customer-profile-field-input {
@@ -1905,13 +1890,11 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
 	}
 
-	.customer-profile-meta {
+	.customer-profile-contact {
 		display: grid;
-		gap: 0.65rem;
-		border-radius: 1rem;
-		border: 1px solid var(--shell-border);
-		background: var(--surface-bright);
-		padding: 0.95rem 1rem;
+		gap: 0.85rem;
+		padding: 0.95rem 1.15rem 1.15rem;
+		border-top: 1px solid var(--shell-border);
 	}
 
 	.customer-profile-contact-form[data-editing='1'] .customer-profile-scope {
@@ -2194,17 +2177,21 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 	.customer-profile-scope {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.35rem;
-		margin: 0.1rem 0 0;
+		gap: 0.3rem;
+		margin: 0.05rem 0 0;
 		max-width: 100%;
-		padding: 0.3rem 0.7rem;
-		border-radius: 999px;
-		border: 1px solid var(--shell-border);
-		background: color-mix(in srgb, var(--surface-container-low) 55%, var(--surface-bright) 45%);
-		font-size: 0.76rem;
-		font-weight: 700;
-		line-height: 1.25;
+		padding: 0;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		font-size: 0.78rem;
+		font-weight: 500;
+		line-height: 1.3;
 		color: var(--on-surface-variant);
+	}
+
+	.customer-profile-scope.hidden {
+		display: none;
 	}
 
 	.customer-profile-scope-icon {
@@ -2218,8 +2205,8 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 	}
 
 	.customer-profile-scope[data-scope='professional'] {
-		background: color-mix(in srgb, var(--primary-soft) 52%, var(--surface-bright) 48%);
-		border-color: color-mix(in srgb, var(--primary) 22%, var(--shell-border) 78%);
+		background: transparent;
+		border: 0;
 		color: color-mix(in srgb, var(--on-surface) 72%, var(--primary) 28%);
 	}
 
@@ -2234,52 +2221,104 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		white-space: nowrap;
 	}
 
-	.customer-profile-metrics {
+	.customer-profile-pulse,
+	.customer-profile-agenda {
 		display: grid;
-		gap: 0.7rem;
 		grid-template-columns: 1fr;
 		align-items: stretch;
+		border-radius: 1.35rem;
+		border: 1px solid color-mix(in srgb, var(--on-surface) 12%, transparent);
+		background: var(--surface-bright);
+		overflow: hidden;
+	}
+
+	.customer-profile-pulse.hidden,
+	.customer-profile-agenda.hidden {
+		display: none;
 	}
 
 	@media (min-width: 520px) {
-		.customer-profile-metrics {
+		.customer-profile-pulse,
+		.customer-profile-agenda {
 			grid-template-columns: 1fr 1fr;
 		}
 	}
 
-	.customer-profile-stat-card {
+	.customer-profile-pulse__cell,
+	.customer-profile-agenda__cell {
 		display: flex;
 		flex-direction: column;
 		align-items: stretch;
 		justify-content: flex-start;
-		height: 100%;
-		min-height: 100%;
-		border-radius: 1rem;
-		border: 1px solid var(--shell-border);
-		background: color-mix(in srgb, var(--surface-bright) 88%, var(--surface-container-low) 12%);
-		padding: 0.85rem 1rem;
+		min-width: 0;
+		padding: 1rem 1.1rem 1.05rem;
 	}
 
-	.customer-profile-stat-hint {
-		margin: 0.4rem 0 0;
-		font-size: 0.78rem;
+	.customer-profile-pulse__cell + .customer-profile-pulse__cell,
+	.customer-profile-agenda__cell + .customer-profile-agenda__cell {
+		border-top: 1px solid var(--shell-border);
+	}
+
+	@media (min-width: 520px) {
+		.customer-profile-pulse__cell + .customer-profile-pulse__cell,
+		.customer-profile-agenda__cell + .customer-profile-agenda__cell {
+			border-top: 0;
+			border-left: 1px solid var(--shell-border);
+		}
+	}
+
+	.customer-profile-pulse__label,
+	.customer-profile-agenda__label {
+		margin: 0;
+		font-size: 0.8rem;
 		font-weight: 500;
-		line-height: 1.45;
+		line-height: 1.3;
 		color: var(--on-surface-variant);
 	}
 
-	.customer-profile-stat-hint strong {
-		font-weight: 700;
-		color: color-mix(in srgb, var(--on-surface-variant) 82%, var(--on-surface) 18%);
+	.customer-profile-pulse__value {
+		margin: 0.38rem 0 0;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 1.32rem;
+		font-weight: 800;
+		letter-spacing: -0.03em;
+		line-height: 1.15;
+		color: var(--on-surface);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.customer-profile-pulse__value.is-empty {
+		font-size: 1.02rem;
+		font-weight: 650;
+		letter-spacing: -0.015em;
+		color: var(--on-surface-variant);
+	}
+
+	.customer-profile-pulse__hint {
+		margin: 0.32rem 0 0;
+		font-size: 0.78rem;
+		font-weight: 500;
+		line-height: 1.4;
+		color: var(--on-surface-variant);
+	}
+
+	.customer-profile-pulse__hint:empty {
+		display: none;
 	}
 
 	.customer-profile-attendance-dot {
 		display: inline-block;
-		height: 0.85rem;
-		width: 0.85rem;
+		height: 0.62rem;
+		width: 0.62rem;
 		border-radius: 999px;
 		background: var(--on-surface-variant);
 		flex-shrink: 0;
+	}
+
+	.customer-profile-attendance-dot[hidden] {
+		display: none;
 	}
 
 	.customer-profile-attendance-dot.is-good {
@@ -2512,83 +2551,74 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		}
 	}
 
-	.customer-profile-reservation-cards {
+	.customer-profile-agenda__cell--next .customer-profile-agenda__label {
+		color: color-mix(in srgb, var(--primary) 70%, var(--on-surface-variant) 30%);
+	}
+
+	.customer-profile-agenda__body {
 		display: grid;
-		gap: 0.7rem;
-		grid-template-columns: 1fr;
-		align-items: stretch;
-	}
-
-	@media (min-width: 520px) {
-		.customer-profile-reservation-cards {
-			grid-template-columns: 1fr 1fr;
-		}
-	}
-
-	.customer-profile-reservation-card {
-		display: flex;
-		flex-direction: column;
-		align-items: stretch;
-		justify-content: flex-start;
-		height: 100%;
-		min-height: 100%;
+		gap: 0.32rem;
 		min-width: 0;
-		border-radius: 1rem;
-		border: 1px solid var(--shell-border);
-		background: color-mix(in srgb, var(--surface-bright) 88%, var(--surface-container-low) 12%);
-		padding: 0.85rem 1rem;
+		margin-top: 0.45rem;
 	}
 
-	.customer-profile-reservation-card__label {
-		margin: 0 0 0.55rem;
-		font-size: 0.78rem;
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.04em;
-		color: var(--on-surface-variant);
-	}
-
-	.customer-profile-reservation-card__label--next {
-		color: color-mix(in srgb, var(--primary) 72%, var(--on-surface-variant) 28%);
-	}
-
-	.customer-profile-reservation-card__body {
-		display: grid;
-		gap: 0.35rem;
-		min-width: 0;
-		flex: 1;
-	}
-
+	.customer-profile-agenda__service,
 	.customer-profile-reservation-card__service {
 		margin: 0;
-		font-size: 1.05rem;
-		font-weight: 800;
+		font-size: 1.02rem;
+		font-weight: 750;
+		letter-spacing: -0.02em;
 		line-height: 1.3;
 		color: var(--on-surface);
 		word-break: break-word;
 	}
 
+	.customer-profile-agenda__when,
 	.customer-profile-reservation-card__when {
 		margin: 0;
 		display: inline-flex;
 		align-items: center;
 		gap: 0.3rem;
-		font-size: 0.82rem;
-		font-weight: 600;
+		font-size: 0.8rem;
+		font-weight: 550;
 		line-height: 1.35;
 		color: var(--on-surface-variant);
 	}
 
+	.customer-profile-agenda__when .material-symbols-rounded,
 	.customer-profile-reservation-card__when .material-symbols-rounded {
 		font-size: 1rem;
 		line-height: 1;
 		flex-shrink: 0;
 	}
 
+	.customer-profile-agenda__empty,
 	.customer-profile-reservation-card__empty {
 		font-size: 0.9rem;
-		font-weight: 600;
+		font-weight: 550;
 		color: var(--on-surface-variant);
+	}
+
+	.customer-profile-habits {
+		display: grid;
+		gap: 0.55rem;
+	}
+
+	.customer-profile-habits.hidden {
+		display: none;
+	}
+
+	.customer-profile-habits__title {
+		margin: 0;
+		font-size: 0.8rem;
+		font-weight: 500;
+		color: var(--on-surface-variant);
+	}
+
+	.customer-profile-habits__list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.45rem;
 	}
 
 	.customer-profile-pending-block {
@@ -3044,10 +3074,31 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 
 	.customer-profile-field-pair {
 		display: grid;
-		grid-template-columns: max-content max-content;
+		grid-template-columns: 1fr;
 		justify-content: start;
-		gap: 0.4rem 2.25rem;
-		align-items: baseline;
+		gap: 0.85rem;
+		align-items: start;
+	}
+
+	.customer-profile-contact-form:not([data-editing='1']) .customer-profile-field-pair--names {
+		display: none;
+	}
+
+	.customer-profile-contact-form:not([data-editing='1']) .customer-profile-field-row.is-empty {
+		display: none;
+	}
+
+	.customer-profile-contact-form:not([data-editing='1']) [data-customer-profile-phone-row] .customer-profile-field-term,
+	.customer-profile-contact-form:not([data-editing='1']) [data-customer-profile-email-row] .customer-profile-field-term {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
 	}
 
 	.customer-create-field-pair {
@@ -3074,7 +3125,6 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 	}
 
 	@media (max-width: 639px) {
-		.customer-profile-field-pair,
 		.customer-create-field-pair,
 		.customer-profile-modal__panel[data-editing-profile='1'] .customer-profile-field-pair {
 			grid-template-columns: minmax(0, 1fr);
@@ -3082,11 +3132,12 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 	}
 
 	.customer-profile-field-row {
+		position: relative;
 		display: flex;
 		align-items: baseline;
 		justify-content: flex-start;
-		gap: 0.4rem;
-		font-size: 0.9rem;
+		gap: 0.45rem;
+		font-size: 0.95rem;
 	}
 
 	.customer-profile-field-row.hidden {
@@ -3095,30 +3146,52 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 
 	.customer-profile-field-term {
 		flex-shrink: 0;
+		font-size: 0.8rem;
 		font-weight: 500;
-		letter-spacing: 0.01em;
 		color: var(--on-surface-variant);
 	}
 
 	.customer-profile-field-value {
 		min-width: 0;
 		text-align: left;
-		font-weight: 600;
-		letter-spacing: -0.01em;
+		font-weight: 650;
+		letter-spacing: -0.015em;
 		color: var(--on-surface);
 		overflow-wrap: anywhere;
 		font-variant-numeric: tabular-nums;
 	}
 
+	a.customer-profile-field-value {
+		color: inherit;
+		text-decoration: none;
+	}
+
+	a.customer-profile-field-value[href]:hover {
+		color: var(--primary);
+	}
+
+	a.customer-profile-field-value:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--primary) 55%, transparent);
+		outline-offset: 3px;
+		border-radius: 0.25rem;
+	}
+
+	.customer-profile-contact-form:not([data-editing='1']) .customer-profile-field-value--phone {
+		font-size: 1.42rem;
+		font-weight: 800;
+		letter-spacing: -0.04em;
+		line-height: 1.15;
+	}
+
 	.customer-profile-field-value--emphasize {
-		font-weight: 600;
+		font-weight: 650;
 		color: var(--on-surface);
 	}
 
 	.customer-profile-field-row[data-editing] {
 		flex-direction: column;
 		align-items: stretch;
-		gap: 0.4rem;
+		gap: 0.38rem;
 	}
 
 	.customer-profile-modal__panel[data-editing-profile='1'] .customer-profile-tab:not(.is-active) {
@@ -3211,11 +3284,11 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		display: inline-flex;
 		align-items: center;
 		border-radius: 999px;
-		border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--shell-border));
-		background: color-mix(in srgb, var(--primary) 10%, transparent);
-		padding: 0.35rem 0.75rem;
-		font-size: 0.82rem;
-		font-weight: 700;
+		border: 1px solid var(--shell-border);
+		background: color-mix(in srgb, var(--surface-container-low) 70%, var(--surface-bright) 30%);
+		padding: 0.32rem 0.7rem;
+		font-size: 0.8rem;
+		font-weight: 600;
 		color: var(--on-surface);
 	}
 

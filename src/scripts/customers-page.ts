@@ -1609,14 +1609,14 @@ class CustomerManager extends HTMLElement {
 
 		if (!appointment) {
 			const empty = document.createElement('span');
-			empty.className = 'customer-profile-reservation-card__empty';
+			empty.className = 'customer-profile-agenda__empty';
 			empty.textContent = emptyLabel;
 			container.appendChild(empty);
 			return;
 		}
 
 		const service = document.createElement('p');
-		service.className = 'customer-profile-reservation-card__service';
+		service.className = 'customer-profile-agenda__service';
 		const serviceName = appointment.service_name || 'Servicio';
 		const professional = String(appointment.professional_name || '').trim();
 		service.textContent = professional
@@ -1624,7 +1624,7 @@ class CustomerManager extends HTMLElement {
 			: serviceName;
 
 		const when = document.createElement('p');
-		when.className = 'customer-profile-reservation-card__when';
+		when.className = 'customer-profile-agenda__when';
 		const icon = document.createElement('span');
 		icon.className = 'material-symbols-rounded';
 		icon.setAttribute('aria-hidden', 'true');
@@ -1724,17 +1724,24 @@ class CustomerManager extends HTMLElement {
 		if (!this.profileProfitabilityWrap) return;
 
 		const profitability = stats.profitability_enabled ? stats.profitability : null;
-		if (!profitability) {
+		const avgTicket = Number(profitability?.avg_ticket);
+		const lostValue = Number(profitability?.lost_value);
+		const hasMoney =
+			Boolean(profitability) &&
+			((Number.isFinite(avgTicket) && avgTicket > 0) ||
+				(Number.isFinite(lostValue) && lostValue > 0));
+
+		if (!hasMoney) {
 			this.profileProfitabilityWrap.classList.add('hidden');
 			return;
 		}
 
 		this.profileProfitabilityWrap.classList.remove('hidden');
 		if (this.profileAvgTicketNode) {
-			this.profileAvgTicketNode.textContent = this.formatCurrency(profitability.avg_ticket);
+			this.profileAvgTicketNode.textContent = this.formatCurrency(avgTicket);
 		}
 		if (this.profileLostValueNode) {
-			this.profileLostValueNode.textContent = this.formatCurrency(profitability.lost_value);
+			this.profileLostValueNode.textContent = this.formatCurrency(lostValue);
 		}
 	}
 
@@ -3777,14 +3784,14 @@ class CustomerManager extends HTMLElement {
 		if (!this.profileServicesNode) return;
 		this.clearNode(this.profileServicesNode);
 
+		const habits = this.profileServicesNode.closest('.customer-profile-habits');
+
 		if (services.length === 0) {
-			const empty = document.createElement('p');
-			empty.className = 'customer-profile-reservation-empty';
-			empty.textContent = 'Aún sin citas atendidas registradas';
-			this.profileServicesNode.appendChild(empty);
+			habits?.classList.add('hidden');
 			return;
 		}
 
+		habits?.classList.remove('hidden');
 		for (const service of services) {
 			const chip = document.createElement('span');
 			chip.className = 'customer-profile-service-chip';
@@ -3810,7 +3817,7 @@ class CustomerManager extends HTMLElement {
 		const isProfessionalScope = this.selectedProfessionalId > 0;
 
 		this.profileScopeNode.dataset.scope = isProfessionalScope ? 'professional' : 'global';
-		this.profileScopeNode.classList.remove('hidden');
+		this.profileScopeNode.classList.toggle('hidden', !isProfessionalScope);
 
 		if (this.profileScopeIconNode) {
 			this.profileScopeIconNode.textContent = isProfessionalScope ? 'person' : 'public';
@@ -4172,17 +4179,26 @@ class CustomerManager extends HTMLElement {
 		if (this.profileLastNameNode) {
 			this.profileLastNameNode.textContent = this.activeProfileLastName || '—';
 		}
-		if (this.profilePhoneNode) {
-			this.profilePhoneNode.textContent = this.activeProfilePhoneE164
+		this.bindProfileContactLink(
+			this.profilePhoneNode,
+			this.profilePhoneRow,
+			this.activeProfilePhoneE164
 				? this.formatCustomerPhone(this.activeProfilePhoneE164)
-				: '—';
-		}
-		if (this.profileDocumentNode) {
-			this.profileDocumentNode.textContent = this.activeProfileDocument || '—';
-		}
-		if (this.profileEmailNode) {
-			this.profileEmailNode.textContent = this.activeProfileEmail || '—';
-		}
+				: '',
+			this.activeProfilePhoneE164 ? `tel:${this.activeProfilePhoneE164}` : ''
+		);
+		this.bindProfileContactLink(
+			this.profileDocumentNode,
+			this.profileDocumentRow,
+			this.formatCustomerDocument(this.activeProfileDocument),
+			''
+		);
+		this.bindProfileContactLink(
+			this.profileEmailNode,
+			this.profileEmailRow,
+			this.activeProfileEmail,
+			this.activeProfileEmail ? `mailto:${this.activeProfileEmail}` : ''
+		);
 		if (this.profileAvatarNode) {
 			const tone = this.getCustomerAvatarTone({
 				id_customer: customer.id_customer,
@@ -4206,25 +4222,34 @@ class CustomerManager extends HTMLElement {
 			this.profileRegisteredNode.textContent = this.formatDate(profile.created_at);
 		}
 
+		const hasAttendance =
+			stats.attendance_rate !== null && Number.isFinite(stats.attendance_rate);
+
 		if (this.profileAttendanceDot) {
 			this.profileAttendanceDot.className = 'customer-profile-attendance-dot';
 			const dotClass = this.getAttendanceDotClass(stats.attendance_rate);
 			if (dotClass) this.profileAttendanceDot.classList.add(dotClass);
+			this.profileAttendanceDot.hidden = !hasAttendance;
 		}
 
 		if (this.profileAttendanceRate) {
-			this.profileAttendanceRate.textContent =
-				stats.attendance_rate === null || !Number.isFinite(stats.attendance_rate)
-					? 'Sin datos'
-					: `${stats.attendance_rate}%`;
+			this.profileAttendanceRate.textContent = hasAttendance
+				? `${stats.attendance_rate}%`
+				: 'Sin citas';
+			this.profileAttendanceRate.classList.toggle('is-empty', !hasAttendance);
+			this.profileAttendanceRate.parentElement?.classList.toggle('is-empty', !hasAttendance);
 		}
 
 		if (this.profileAttendanceDetail) {
-			const attended = stats.attended_count;
-			const cancelled = stats.cancelled_count;
-			const attendedLabel = attended === 1 ? '1 atendida' : `${attended} atendidas`;
-			const cancelledLabel = cancelled === 1 ? '1 cancelada' : `${cancelled} canceladas`;
-			this.profileAttendanceDetail.textContent = `${attendedLabel} · ${cancelledLabel}`;
+			if (!hasAttendance) {
+				this.profileAttendanceDetail.textContent = 'Cuando atienda, aparece el porcentaje.';
+			} else {
+				const attended = stats.attended_count;
+				const cancelled = stats.cancelled_count;
+				const attendedLabel = attended === 1 ? '1 atendida' : `${attended} atendidas`;
+				const cancelledLabel = cancelled === 1 ? '1 cancelada' : `${cancelled} canceladas`;
+				this.profileAttendanceDetail.textContent = `${attendedLabel} · ${cancelledLabel}`;
+			}
 		}
 
 		if (this.profileLtvNode) {
@@ -4234,7 +4259,7 @@ class CustomerManager extends HTMLElement {
 		this.renderReservationLine(
 			this.profileLastNode,
 			stats.last_appointment,
-			'Sin reservas atendidas'
+			'Todavía no tiene citas atendidas'
 		);
 		this.renderReservationLine(
 			this.profileNextNode,
@@ -4278,9 +4303,9 @@ class CustomerManager extends HTMLElement {
 			this.profileAvatarNode.className = this.getProfileAvatarClassName(1);
 			this.profileAvatarNode.textContent = '?';
 		}
-		if (this.profilePhoneNode) this.profilePhoneNode.textContent = '—';
-		if (this.profileDocumentNode) this.profileDocumentNode.textContent = '—';
-		if (this.profileEmailNode) this.profileEmailNode.textContent = '—';
+		this.bindProfileContactLink(this.profilePhoneNode, this.profilePhoneRow, '', '');
+		this.bindProfileContactLink(this.profileDocumentNode, this.profileDocumentRow, '', '');
+		this.bindProfileContactLink(this.profileEmailNode, this.profileEmailRow, '', '');
 		if (this.profileRegisteredNode) this.profileRegisteredNode.textContent = '—';
 		this.renderProfileScope();
 
@@ -4416,6 +4441,32 @@ class CustomerManager extends HTMLElement {
 		if (parsed.isValid) return parsed.pretty;
 
 		return value;
+	}
+
+	private formatCustomerDocument(rawValue: string) {
+		const digits = String(rawValue || '').replace(/\D/g, '');
+		if (!digits) return '';
+		return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+	}
+
+	private bindProfileContactLink(
+		valueNode: HTMLElement | null,
+		rowNode: HTMLElement | null,
+		label: string,
+		href: string
+	) {
+		const text = String(label || '').trim();
+		if (valueNode) {
+			valueNode.textContent = text || '—';
+			if (valueNode instanceof HTMLAnchorElement) {
+				if (href) {
+					valueNode.href = href;
+				} else {
+					valueNode.removeAttribute('href');
+				}
+			}
+		}
+		rowNode?.classList.toggle('is-empty', !text);
 	}
 
 	private getCustomerInitials(name: string) {
