@@ -78,7 +78,11 @@ const themeColor = initialTheme === 'dark' ? '#0e0e10' : '#f9fafb';
 ---
 
 <!doctype html>
-<html lang="es" {...(initialTheme ? { 'data-theme': initialTheme } : {})}>
+<html
+        lang="es"
+        {...(initialTheme ? { 'data-theme': initialTheme } : {})}
+        {...(isPanelRoute ? { 'data-app': 'panel' } : {})}
+    >
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -87,28 +91,64 @@ const themeColor = initialTheme === 'dark' ? '#0e0e10' : '#f9fafb';
         <link rel="shortcut icon" href="/favicon.ico" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            rel="preload"
-            href="/fonts/plus-jakarta-sans-latin-400.woff2"
-            as="font"
-            type="font/woff2"
-            crossorigin
-            fetchpriority="high"
-        />
-        <link
-            rel="preload"
-            href="/fonts/plus-jakarta-sans-latin-500.woff2"
-            as="font"
-            type="font/woff2"
-            crossorigin
-        />
-        <link
-            rel="preload"
-            href="/fonts/plus-jakarta-sans-latin-700.woff2"
-            as="font"
-            type="font/woff2"
-            crossorigin
-        />
+        {isPanelRoute ? (
+            <>
+                <link
+                    rel="preload"
+                    href="/fonts/geist-latin-400.woff2"
+                    as="font"
+                    type="font/woff2"
+                    crossorigin
+                    fetchpriority="high"
+                />
+                <link
+                    rel="preload"
+                    href="/fonts/geist-latin-500.woff2"
+                    as="font"
+                    type="font/woff2"
+                    crossorigin
+                />
+                <link
+                    rel="preload"
+                    href="/fonts/geist-latin-600.woff2"
+                    as="font"
+                    type="font/woff2"
+                    crossorigin
+                />
+                <link
+                    rel="preload"
+                    href="/fonts/geist-latin-700.woff2"
+                    as="font"
+                    type="font/woff2"
+                    crossorigin
+                />
+            </>
+        ) : (
+            <>
+                <link
+                    rel="preload"
+                    href="/fonts/plus-jakarta-sans-latin-400.woff2"
+                    as="font"
+                    type="font/woff2"
+                    crossorigin
+                    fetchpriority="high"
+                />
+                <link
+                    rel="preload"
+                    href="/fonts/plus-jakarta-sans-latin-500.woff2"
+                    as="font"
+                    type="font/woff2"
+                    crossorigin
+                />
+                <link
+                    rel="preload"
+                    href="/fonts/plus-jakarta-sans-latin-700.woff2"
+                    as="font"
+                    type="font/woff2"
+                    crossorigin
+                />
+            </>
+        )}
         <link
             href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,300..600,0..1,0&display=block"
             rel="stylesheet"
@@ -132,6 +172,15 @@ const themeColor = initialTheme === 'dark' ? '#0e0e10' : '#f9fafb';
             const isPanelPath = (pathname) => {
                 const path = String(pathname || '').split(/[?#]/)[0] || '';
                 return path === '/panel' || path.indexOf('/panel/') === 0;
+            };
+
+            const applyAppSurface = (pathname, root) => {
+                const target = root || document.documentElement;
+                if (isPanelPath(pathname)) {
+                    target.setAttribute('data-app', 'panel');
+                } else {
+                    target.removeAttribute('data-app');
+                }
             };
 
             const systemTheme = () => {
@@ -195,6 +244,7 @@ const themeColor = initialTheme === 'dark' ? '#0e0e10' : '#f9fafb';
                 const path = pathname || location.pathname;
                 const theme = resolveThemeForPath(path);
                 applyResolvedTheme(theme, root || document.documentElement);
+                applyAppSurface(path, root || document.documentElement);
                 bindSystemThemeListener(!isPanelPath(path) || !readStoredPanelTheme());
             };
 
@@ -392,6 +442,16 @@ const themeColor = initialTheme === 'dark' ? '#0e0e10' : '#f9fafb';
         margin: 0;
         width: 100%;
         min-height: 100%;
-        font-family: "Plus Jakarta Sans", sans-serif;
+        font-family: var(--font-body, "Plus Jakarta Sans", sans-serif);
+    }
+
+    html[data-app='panel'] {
+        --font-body: "Geist", sans-serif;
+        --font-logo: "Geist", sans-serif;
+    }
+
+    html[data-app='panel'],
+    html[data-app='panel'] body {
+        font-family: "Geist", sans-serif;
     }
 </style>
