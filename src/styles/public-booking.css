@@ -1834,7 +1834,9 @@ html:has(.sipap-deposit-panel:not(.hidden)) body,
 		outline: none;
 		user-select: none;
 		-webkit-user-select: none;
-		overflow: hidden;
+		/* hidden recortaba el borde 1.5px de la card en top:0 (índice 0). */
+		overflow: clip;
+		overflow-clip-margin: 4px;
 	}
 
 	.public-service-stack .public-service-card {
@@ -2002,7 +2004,9 @@ html:has(.sipap-deposit-panel:not(.hidden)) body,
 		outline: none;
 		user-select: none;
 		-webkit-user-select: none;
-		overflow: hidden;
+		/* hidden recortaba el borde 1.5px de la card en top:0 (índice 0). */
+		overflow: clip;
+		overflow-clip-margin: 4px;
 	}
 
 	.public-location-stack.is-single {
@@ -2376,6 +2380,7 @@ html:has(.sipap-deposit-panel:not(.hidden)) body,
 	}
 
 	/* Índice 0: sin peek de card anterior. Cierra el hueco bajo el hint.
+	   3px de inset para que el borde/selection no quede bajo el overflow.
 	   Índice ≥1 (.has-prev): se mantienen altura 15.75rem y translateY(2.65rem). */
 	.public-service-stack:not(.has-prev),
 	.public-location-stack:not(.has-prev):not(.is-single) {
@@ -2383,7 +2388,7 @@ html:has(.sipap-deposit-panel:not(.hidden)) body,
 	}
 
 	.public-service-stack:not(.has-prev) .public-service-card.is-focus {
-		transform: translateY(0) scale(1);
+		transform: translateY(3px) scale(1);
 	}
 
 	.public-service-stack:not(.has-prev) .public-service-card.is-near-down {
@@ -2395,7 +2400,7 @@ html:has(.sipap-deposit-panel:not(.hidden)) body,
 	}
 
 	.public-location-stack:not(.has-prev):not(.is-single) .public-location-card.is-focus {
-		transform: translateY(0) scale(1);
+		transform: translateY(3px) scale(1);
 	}
 
 	.public-location-stack:not(.has-prev):not(.is-single) .public-location-card.is-near-down {
@@ -2408,7 +2413,7 @@ html:has(.sipap-deposit-panel:not(.hidden)) body,
 	}
 
 	.public-location-stack:not(.has-prev) .public-org-card--business.is-focus {
-		transform: translateY(0) scale(1);
+		transform: translateY(3px) scale(1);
 	}
 
 	.public-location-stack:not(.has-prev) .public-org-card--business.is-near-down {

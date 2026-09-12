@@ -320,55 +320,147 @@ html[data-theme='dark'] .appointment-submit-btn:hover {
 	filter: brightness(1.08);
 }
 
-dialog[data-appointment-modal] input[type='datetime-local'] {
-	color-scheme: light;
-	font-variant-numeric: tabular-nums;
+.appointment-datetime {
+	position: relative;
+	display: block;
 	min-width: 0;
-	color: var(--on-surface);
-}
-
-dialog[data-appointment-modal] input[type='datetime-local']::-webkit-datetime-edit {
-	color: inherit;
-	padding: 0;
-}
-
-dialog[data-appointment-modal] input[type='datetime-local']::-webkit-calendar-picker-indicator {
 	cursor: pointer;
-	opacity: 0.72;
-	width: 1.1rem;
-	height: 1.1rem;
-	margin-left: 0.35rem;
-	padding: 0.15rem;
-	border-radius: 0.4rem;
+}
+
+.appointment-datetime__face {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	min-height: 3.25rem;
+	padding: 0.75rem 1rem;
+	border-radius: 0.75rem;
+	border: 1px solid var(--shell-border);
+	background: var(--surface-bright);
+	color: var(--on-surface);
+	font-size: 0.95rem;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+	letter-spacing: -0.01em;
+	line-height: 1.25;
+	pointer-events: none;
 	transition:
-		filter 140ms ease,
-		opacity 140ms ease,
-		background-color 140ms ease;
+		border-color 200ms ease,
+		box-shadow 200ms ease,
+		background-color 200ms ease,
+		transform 180ms ease;
 }
 
-dialog[data-appointment-modal] input[type='datetime-local']:hover::-webkit-calendar-picker-indicator,
-dialog[data-appointment-modal] input[type='datetime-local']:focus::-webkit-calendar-picker-indicator {
+.appointment-datetime__value {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.appointment-datetime__value.is-empty {
+	color: var(--on-surface-variant);
+	font-weight: 500;
+}
+
+.appointment-datetime__icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 2rem;
+	box-sizing: border-box;
+	width: 2rem;
+	height: 2rem;
+	padding: 0;
+	border-radius: 0.5rem;
+	color: var(--on-surface-variant);
+	opacity: 0.82;
+	transition:
+		color 200ms ease,
+		opacity 200ms ease,
+		background-color 200ms ease,
+		transform 180ms ease;
+}
+
+.appointment-datetime__icon .material-symbols-rounded {
+	display: block;
+	width: 1.125rem;
+	height: 1.125rem;
+	font-size: 1.125rem;
+	font-weight: 400;
+	line-height: 1;
+	letter-spacing: 0;
+	overflow: hidden;
+	/* calendar_month es top-heavy: 1px abajo centra el glifo en el chip */
+	translate: 0 1px;
+}
+
+.appointment-datetime__native {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	opacity: 0;
+	pointer-events: none;
+	color-scheme: light;
+	background: transparent;
+}
+
+.appointment-datetime:hover .appointment-datetime__face {
+	border-color: color-mix(in srgb, var(--on-surface-variant) 40%, var(--shell-border));
+}
+
+.appointment-datetime:hover .appointment-datetime__icon {
 	opacity: 1;
-	background-color: color-mix(in srgb, var(--surface-container-low) 70%, transparent);
+	color: var(--on-surface);
+	background: color-mix(in srgb, var(--surface-container-low) 78%, transparent);
 }
 
-html[data-theme='dark'] dialog[data-appointment-modal] input[type='datetime-local'] {
+.appointment-datetime:focus-within .appointment-datetime__face {
+	border-color: var(--primary);
+	box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 10%, transparent);
+}
+
+.appointment-datetime:focus-within .appointment-datetime__icon {
+	opacity: 1;
+	color: var(--primary);
+	background: color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+.appointment-datetime:active .appointment-datetime__face {
+	transform: scale(0.99);
+}
+
+.appointment-datetime:active .appointment-datetime__icon {
+	transform: scale(0.94);
+}
+
+.appointment-datetime:has(.appointment-datetime__native:disabled) {
+	pointer-events: none;
+}
+
+.appointment-datetime:has(.appointment-datetime__native:disabled) .appointment-datetime__face {
+	opacity: 0.62;
+}
+
+html[data-theme='dark'] .appointment-datetime__native {
 	color-scheme: dark;
 }
 
-html[data-theme='dark'] dialog[data-appointment-modal] input[type='datetime-local']::-webkit-calendar-picker-indicator {
-	filter: invert(0.92) brightness(0.9);
-	opacity: 0.88;
+html[data-theme='dark'] .appointment-datetime:hover .appointment-datetime__face {
+	border-color: rgba(255, 255, 255, 0.18);
 }
 
-html[data-theme='dark']
-	dialog[data-appointment-modal]
-	input[type='datetime-local']:hover::-webkit-calendar-picker-indicator,
-html[data-theme='dark']
-	dialog[data-appointment-modal]
-	input[type='datetime-local']:focus::-webkit-calendar-picker-indicator {
-	opacity: 1;
-	background-color: rgba(255, 255, 255, 0.1);
+html[data-theme='dark'] .appointment-datetime:hover .appointment-datetime__icon {
+	background: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme='dark'] .appointment-datetime:focus-within .appointment-datetime__icon {
+	background: color-mix(in srgb, var(--primary) 18%, transparent);
 }
 
 @media (max-width: 767px) {
@@ -945,7 +1037,6 @@ dialog[data-appointment-modal] .bookmate-searchable-select-dropdown {
 		input[type='text'],
 		input[type='tel'],
 		input[type='email'],
-		input[type='datetime-local'],
 		select
 	) {
 		min-height: 2.85rem;
@@ -953,6 +1044,11 @@ dialog[data-appointment-modal] .bookmate-searchable-select-dropdown {
 		padding: 0.7rem 0.85rem;
 		font-weight: 600;
 		line-height: 1.25;
+	}
+
+	dialog[data-appointment-modal] .appointment-datetime__face {
+		min-height: 2.85rem;
+		padding: 0.7rem 0.85rem;
 	}
 
 	dialog[data-appointment-modal] .appointment-phone-field {

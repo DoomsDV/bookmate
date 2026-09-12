@@ -3576,47 +3576,6 @@ const googleErrorMessage = hasGoogleError
 		filter: brightness(1.08);
 	}
 
-	dialog[data-appointment-modal] input[type='datetime-local'] {
-		color-scheme: light;
-		font-variant-numeric: tabular-nums;
-	}
-
-	dialog[data-appointment-modal] input[type='datetime-local']::-webkit-datetime-edit {
-		color: inherit;
-	}
-
-	dialog[data-appointment-modal] input[type='datetime-local']::-webkit-calendar-picker-indicator {
-		cursor: pointer;
-		opacity: 0.82;
-		border-radius: 0.5rem;
-		transition: filter 140ms ease, opacity 140ms ease, background-color 140ms ease;
-	}
-
-	dialog[data-appointment-modal] input[type='datetime-local']:hover::-webkit-calendar-picker-indicator,
-	dialog[data-appointment-modal] input[type='datetime-local']:focus::-webkit-calendar-picker-indicator {
-		opacity: 0.98;
-		background-color: color-mix(in srgb, var(--surface-container-low) 70%, transparent);
-	}
-
-	html[data-theme='dark'] dialog[data-appointment-modal] input[type='datetime-local'] {
-		color-scheme: dark;
-	}
-
-	html[data-theme='dark'] dialog[data-appointment-modal] input[type='datetime-local']::-webkit-calendar-picker-indicator {
-		filter: invert(0.92) brightness(0.9);
-		opacity: 0.88;
-	}
-
-	html[data-theme='dark']
-		dialog[data-appointment-modal]
-		input[type='datetime-local']:hover::-webkit-calendar-picker-indicator,
-	html[data-theme='dark']
-		dialog[data-appointment-modal]
-		input[type='datetime-local']:focus::-webkit-calendar-picker-indicator {
-		opacity: 1;
-		background-color: rgba(255, 255, 255, 0.1);
-	}
-
 	@media (min-width: 768px) and (max-width: 1023.98px) {
 		.app-shell > :last-child:has([data-calendar-main]) > .grid {
 			height: auto;

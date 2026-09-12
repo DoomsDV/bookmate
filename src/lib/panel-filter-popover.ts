@@ -117,6 +117,8 @@ type BindOptions = {
 	signal?: AbortSignal;
 	/** Ancho del popover desktop en rem (default 18.5). */
 	widthRem?: number;
+	/** Si true, no cerrar por click afuera (p. ej. picker nativo de fecha). */
+	ignoreOutside?: (event: PointerEvent) => boolean;
 };
 
 /** Escape / outside click / resize-scroll reposition / cleanup on close. */
@@ -125,6 +127,7 @@ export const bindFilterPopoverChrome = ({
 	getTrigger,
 	signal,
 	widthRem = DEFAULT_WIDTH_REM,
+	ignoreOutside,
 }: BindOptions) => {
 	const onClose = () => {
 		clearPopoverStyles(sheet);
@@ -146,6 +149,7 @@ export const bindFilterPopoverChrome = ({
 
 	const onOutsidePointer = (event: PointerEvent) => {
 		if (!sheet.open || !sheet.classList.contains(POPOVER_CLASS)) return;
+		if (ignoreOutside?.(event)) return;
 		const target = event.target;
 		if (!(target instanceof Node)) return;
 		if (sheet.contains(target)) return;

@@ -113,6 +113,24 @@ export const parseIsoToLocalInput = (value: string) => {
 	return formatDateTimeLocal(date);
 };
 
+const datetimeFaceFormatter = new Intl.DateTimeFormat('es-PY', {
+	day: '2-digit',
+	month: '2-digit',
+	year: 'numeric',
+	hour: '2-digit',
+	minute: '2-digit',
+	hour12: false,
+});
+
+export const formatDateTimeFace = (value: string) => {
+	const date = parseLocalDateTime(value);
+	if (!date) return '';
+	const parts = datetimeFaceFormatter.formatToParts(date);
+	const get = (type: Intl.DateTimeFormatPartTypes) =>
+		parts.find((part) => part.type === type)?.value ?? '';
+	return `${get('day')}/${get('month')}/${get('year')}  ·  ${get('hour')}:${get('minute')}`;
+};
+
 export const parseIsoToDisplayInput = (value: string) => {
 	return parseIsoToLocalInput(value);
 };

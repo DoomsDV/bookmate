@@ -57,6 +57,7 @@ import type {
 import {
 	ApiClientError,
 	formatAttendanceReplyAt,
+	formatDateTimeFace,
 	formatDateTimeLocal,
 	getAttendanceReminderLabel,
 	getAttendanceStatusFromValue,
@@ -69,6 +70,81 @@ import {
 	toIsoWithOffset,
 	toPositiveInt,
 } from './utils';
+
+const DATETIME_FACE_EMPTY = 'Elegir fecha y hora';
+
+const syncDatetimeFace = (input: HTMLInputElement) => {
+	const root = input.closest('[data-appointment-datetime]');
+	const display = root?.querySelector<HTMLElement>('[data-datetime-display]');
+	if (!display) return;
+	const formatted = formatDateTimeFace(input.value);
+	display.textContent = formatted || DATETIME_FACE_EMPTY;
+	display.classList.toggle('is-empty', !formatted);
+};
+
+const tryShowDatetimePicker = (input: HTMLInputElement) => {
+	if (typeof input.showPicker !== 'function') return false;
+	try {
+		input.showPicker();
+		return true;
+	} catch {
+		return false;
+	}
+};
+
+const openNativeDatetimePicker = (input: HTMLInputElement) => {
+	if (input.disabled || input.readOnly) return;
+	input.focus({ preventScroll: true });
+	if (tryShowDatetimePicker(input)) return;
+
+	/* Chromium a veces trata opacity:0 como no visible y rechaza showPicker. */
+	const previousOpacity = input.style.opacity;
+	input.style.opacity = '0.01';
+	const opened = tryShowDatetimePicker(input);
+	window.requestAnimationFrame(() => {
+		input.style.opacity = previousOpacity;
+	});
+	if (opened) return;
+	input.click();
+};
+
+const bindDatetimeFace = (input: HTMLInputElement, signal: AbortSignal) => {
+	const root = input.closest<HTMLElement>('[data-appointment-datetime]');
+	const sync = () => syncDatetimeFace(input);
+	input.addEventListener('input', sync, { signal });
+	input.addEventListener('change', sync, { signal });
+	input.addEventListener(
+		'keydown',
+		(event) => {
+			if (event.key !== 'Enter' && event.key !== ' ') return;
+			event.preventDefault();
+			openNativeDatetimePicker(input);
+		},
+		{ signal }
+	);
+	root?.addEventListener(
+		'click',
+		() => {
+			openNativeDatetimePicker(input);
+		},
+		{ signal }
+	);
+	const descriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+	if (descriptor?.get && descriptor.set) {
+		Object.defineProperty(input, 'value', {
+			configurable: true,
+			enumerable: descriptor.enumerable,
+			get() {
+				return descriptor.get!.call(this);
+			},
+			set(next) {
+				descriptor.set!.call(this, next);
+				syncDatetimeFace(this);
+			},
+		});
+	}
+	sync();
+};
 
 type ModalMode = 'create' | 'edit';
 
@@ -470,6 +546,8 @@ class AppointmentModal extends HTMLElement {
 		requiredNodes.modalProfessional.addEventListener('change', this.handleProfessionalChange, { signal });
 		requiredNodes.startInput.addEventListener('change', this.handleStartTimeChange, { signal });
 		requiredNodes.endInput.addEventListener('change', this.handleEndTimeChange, { signal });
+		bindDatetimeFace(requiredNodes.startInput, signal);
+		bindDatetimeFace(requiredNodes.endInput, signal);
 
 		this.attachmentAddButton?.addEventListener('click', this.handleAttachmentAddClick, { signal });
 		this.attachmentInput?.addEventListener('change', this.handleAttachmentInputChange, { signal });

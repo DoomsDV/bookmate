@@ -3211,37 +3211,6 @@ html[data-theme='dark'] [data-theme-toggle-mobile]:hover {
 	box-shadow: var(--modal-shadow-elevated);
 }
 
-.cobros-date-picker {
-	position: fixed;
-	z-index: 10001;
-	margin: 0;
-	padding: 0;
-	border: 0;
-	max-width: none;
-	max-height: none;
-	overflow: visible;
-	background: transparent;
-}
-
-.cobros-date-picker:not([open]) {
-	display: none;
-}
-
-.cobros-date-picker::backdrop {
-	background: transparent;
-}
-
-.cobros-date-picker .dtp-card {
-	width: 320px;
-	max-width: calc(100vw - 1.5rem);
-	border-radius: 1.25rem;
-	box-shadow: var(--modal-shadow-dialog);
-}
-
-html[data-theme='dark'] .cobros-date-picker .dtp-card {
-	box-shadow: var(--modal-shadow-dialog);
-}
-
 .plan-history-date-picker {
 	position: fixed;
 	z-index: 10001;
