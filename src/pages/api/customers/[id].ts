@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 
 import { ROLES } from '../../../config/roles';
+import { validateCustomerContactInput } from '../../../lib/customer-contact';
 import {
 	CustomersApiError,
 	getCustomerProfileWithOrds,
@@ -11,7 +12,6 @@ import {
 	ORG_ACCESS_INACTIVE_MESSAGE,
 } from '../../../lib/panel-access';
 import { listProfessionalsLovWithOrds } from '../../../lib/schedules';
-import { PARAGUAY_MOBILE_PHONE_ERROR, parseParaguayMobilePhone } from '../../../lib/paraguay-phone';
 import {
 	parseRequestBody,
 	requireToken as requireApiToken,
@@ -43,8 +43,12 @@ const getCurrentProfessionalId = async (token: string) => {
 
 const parseUpdateBody = (request: Request) =>
 	parseRequestBody(request, (formData) => ({
+		first_name: formData.get('first_name'),
+		last_name: formData.get('last_name'),
 		full_name: formData.get('full_name'),
 		phone_number: formData.get('phone_number'),
+		document_number: formData.get('document_number'),
+		email: formData.get('email'),
 	}));
 
 export const GET: APIRoute = async ({ locals, params, url }) => {
@@ -108,33 +112,17 @@ export const PUT: APIRoute = async ({ locals, params, request }) => {
 		}
 
 		const body = await parseUpdateBody(request);
-		const fullName = String(body.full_name ?? '').trim();
-		const phoneNumberRaw = body.phone_number;
-		const phoneNumber =
-			phoneNumberRaw === null || phoneNumberRaw === undefined
-				? ''
-				: String(phoneNumberRaw).trim();
-
-		if (!fullName) {
-			throw new CustomersApiError('El nombre es obligatorio.', 400, undefined, [
-				{ field: 'full_name', message: 'El nombre es obligatorio.' },
-			]);
+		const validated = validateCustomerContactInput(body);
+		if (!validated.ok) {
+			throw new CustomersApiError(
+				validated.errors[0]?.message || 'Errores de validacion en los campos enviados.',
+				400,
+				undefined,
+				validated.errors
+			);
 		}
 
-		const parsedPhone = parseParaguayMobilePhone(phoneNumber);
-		if (!parsedPhone.isValid) {
-			throw new CustomersApiError('El telefono es obligatorio.', 400, undefined, [
-				{
-					field: 'phone_number',
-					message: phoneNumber ? PARAGUAY_MOBILE_PHONE_ERROR : 'El telefono es obligatorio.',
-				},
-			]);
-		}
-
-		const updated = await updateCustomerProfileWithOrds(token, customerId, {
-			full_name: fullName,
-			phone_number: parsedPhone.e164,
-		});
+		const updated = await updateCustomerProfileWithOrds(token, customerId, validated.value);
 
 		return Response.json(
 			{

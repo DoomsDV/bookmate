@@ -1,7 +1,12 @@
 import type { APIRoute } from 'astro';
 
 import { ROLES } from '../../config/roles';
-import { CustomersApiError, listCustomersWithOrds } from '../../lib/customers';
+import { validateCustomerContactInput } from '../../lib/customer-contact';
+import {
+	createCustomerWithOrds,
+	CustomersApiError,
+	listCustomersWithOrds,
+} from '../../lib/customers';
 import {
 	ORG_ACCESS_INACTIVE_CODE,
 	ORG_ACCESS_INACTIVE_MESSAGE,
@@ -9,6 +14,7 @@ import {
 import { listProfessionalsLovWithOrds } from '../../lib/schedules';
 import { parseTokenClaims } from '../../lib/token-claims';
 import {
+	parseRequestBody,
 	requireToken as requireApiToken,
 	toErrorResponse as toApiErrorResponse,
 	toOptionalPositiveInt,
@@ -77,5 +83,47 @@ export const GET: APIRoute = async ({ locals, url }) => {
 		);
 	} catch (error) {
 		return toErrorResponse(error, 'No fue posible obtener el listado de clientes.');
+	}
+};
+
+const parseCreateBody = (request: Request) =>
+	parseRequestBody(request, (formData) => ({
+		first_name: formData.get('first_name'),
+		last_name: formData.get('last_name'),
+		full_name: formData.get('full_name'),
+		phone_number: formData.get('phone_number'),
+		document_number: formData.get('document_number'),
+		email: formData.get('email'),
+	}));
+
+export const POST: APIRoute = async ({ locals, request }) => {
+	try {
+		const token = requireToken(locals.token);
+		const roleId = Number(locals.roleId ?? 0);
+		if (roleId !== ROLES.ADMIN && roleId !== ROLES.RECEPCIONISTA) {
+			throw new CustomersApiError('No tienes permisos para crear clientes.', 403);
+		}
+
+		const body = await parseCreateBody(request);
+		const validated = validateCustomerContactInput(body);
+		if (!validated.ok) {
+			throw new CustomersApiError(
+				validated.errors[0]?.message || 'Errores de validacion en los campos enviados.',
+				400,
+				undefined,
+				validated.errors
+			);
+		}
+
+		const created = await createCustomerWithOrds(token, validated.value);
+		return Response.json(
+			{
+				status: 'success',
+				data: created,
+			},
+			{ status: 200 }
+		);
+	} catch (error) {
+		return toErrorResponse(error, 'No fue posible crear el cliente.');
 	}
 };

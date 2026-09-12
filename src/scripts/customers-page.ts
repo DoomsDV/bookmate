@@ -9,6 +9,12 @@ import { bindFileViewer, type FileViewerHandle } from '../lib/file-viewer';
 import { hasAnySessionNote, SESSION_NOTE_FIELDS } from '../lib/session-notes';
 import { updateAppPaginationDom } from '../lib/pagination';
 import {
+	CUSTOMER_EMAIL_ERROR,
+	parseCustomerEmail,
+	splitCustomerFullName,
+} from '../lib/customer-contact';
+import { PARAGUAY_CI_ERROR, parseParaguayCi } from '../lib/paraguay-ci';
+import {
 	formatParaguayMobilePhoneInput,
 	parseParaguayMobilePhone,
 	PARAGUAY_MOBILE_PHONE_ERROR,
@@ -54,6 +60,10 @@ type ProfessionalLov = { id_professional: number; display_name: string };
 type Customer = {
 	id_customer: number;
 	full_name: string;
+	first_name?: string | null;
+	last_name?: string | null;
+	document_number?: string | null;
+	email?: string | null;
 	phone_number: string;
 	created_at: string;
 	appointment_count?: number;
@@ -110,6 +120,10 @@ type ApiResponse<TData = unknown> = {
 type CustomerContactUpdateResponse = {
 	id_customer: number;
 	full_name: string;
+	first_name?: string | null;
+	last_name?: string | null;
+	document_number?: string | null;
+	email?: string | null;
 	phone_number: string;
 };
 
@@ -152,14 +166,32 @@ class CustomerManager extends HTMLElement {
 	private prevButton: HTMLButtonElement | null = null;
 	private nextButton: HTMLButtonElement | null = null;
 
+	private createModal: HTMLDialogElement | null = null;
+	private createForm: HTMLFormElement | null = null;
+	private createErrorNode: HTMLElement | null = null;
+	private createFirstNameInput: HTMLInputElement | null = null;
+	private createLastNameInput: HTMLInputElement | null = null;
+	private createPhoneInput: HTMLInputElement | null = null;
+	private createDocumentInput: HTMLInputElement | null = null;
+	private createEmailInput: HTMLInputElement | null = null;
+	private createSubmitBtn: HTMLButtonElement | null = null;
+	private createSubmitLabel: HTMLElement | null = null;
+	private isSavingCreate = false;
+
 	private profileModal: HTMLDialogElement | null = null;
 	private profilePanel: HTMLElement | null = null;
 	private profileLoadingNode: HTMLElement | null = null;
 	private profileErrorNode: HTMLElement | null = null;
 	private profileBodyNode: HTMLElement | null = null;
 	private profileNameNode: HTMLElement | null = null;
+	private profileFirstNameNode: HTMLElement | null = null;
 	private profileNameInput: HTMLInputElement | null = null;
 	private profileNameErrorNode: HTMLElement | null = null;
+	private profileFirstNameRow: HTMLElement | null = null;
+	private profileLastNameNode: HTMLElement | null = null;
+	private profileLastNameInput: HTMLInputElement | null = null;
+	private profileLastNameRow: HTMLElement | null = null;
+	private profileLastNameErrorNode: HTMLElement | null = null;
 	private profileEditForm: HTMLFormElement | null = null;
 	private profileFooterEdit: HTMLElement | null = null;
 	private profileEditStatusNode: HTMLElement | null = null;
@@ -169,6 +201,14 @@ class CustomerManager extends HTMLElement {
 	private profilePhoneFieldWrap: HTMLElement | null = null;
 	private profilePhoneInput: HTMLInputElement | null = null;
 	private profilePhoneErrorNode: HTMLElement | null = null;
+	private profileDocumentNode: HTMLElement | null = null;
+	private profileDocumentRow: HTMLElement | null = null;
+	private profileDocumentInput: HTMLInputElement | null = null;
+	private profileDocumentErrorNode: HTMLElement | null = null;
+	private profileEmailNode: HTMLElement | null = null;
+	private profileEmailRow: HTMLElement | null = null;
+	private profileEmailInput: HTMLInputElement | null = null;
+	private profileEmailErrorNode: HTMLElement | null = null;
 	private profileEditToggleBtn: HTMLButtonElement | null = null;
 	private profileModalTitle: HTMLElement | null = null;
 	private profileHeaderIcon: HTMLElement | null = null;
@@ -180,7 +220,11 @@ class CustomerManager extends HTMLElement {
 	private isEditingProfile = false;
 	private isSavingProfileEdit = false;
 	private activeProfileFullName = '';
+	private activeProfileFirstName = '';
+	private activeProfileLastName = '';
 	private activeProfilePhoneE164 = '';
+	private activeProfileDocument = '';
+	private activeProfileEmail = '';
 	private profileRegisteredNode: HTMLElement | null = null;
 	private profileScopeNode: HTMLElement | null = null;
 	private profileScopeIconNode: HTMLElement | null = null;
@@ -306,17 +350,52 @@ class CustomerManager extends HTMLElement {
 		this.prevButton = this.querySelector<HTMLButtonElement>('[data-customers-prev]');
 		this.nextButton = this.querySelector<HTMLButtonElement>('[data-customers-next]');
 
+		this.createModal = this.querySelector<HTMLDialogElement>('[data-create-customer-modal]');
+		this.createForm = this.querySelector<HTMLFormElement>('[data-create-customer-form]');
+		this.createErrorNode = this.querySelector<HTMLElement>('[data-create-customer-error]');
+		this.createFirstNameInput = this.querySelector<HTMLInputElement>(
+			'[data-create-customer-first-name]'
+		);
+		this.createLastNameInput = this.querySelector<HTMLInputElement>(
+			'[data-create-customer-last-name]'
+		);
+		this.createPhoneInput = this.querySelector<HTMLInputElement>('[data-create-customer-phone]');
+		this.createDocumentInput = this.querySelector<HTMLInputElement>(
+			'[data-create-customer-document]'
+		);
+		this.createEmailInput = this.querySelector<HTMLInputElement>('[data-create-customer-email]');
+		this.createSubmitBtn = this.querySelector<HTMLButtonElement>('[data-submit-create-customer]');
+		this.createSubmitLabel = this.querySelector<HTMLElement>('[data-create-customer-submit-label]');
+
 		this.profileModal = this.querySelector<HTMLDialogElement>('[data-customer-profile-modal]');
 		this.profilePanel = this.querySelector<HTMLElement>('[data-customer-profile-panel]');
 		this.profileLoadingNode = this.querySelector<HTMLElement>('[data-customer-profile-loading]');
 		this.profileErrorNode = this.querySelector<HTMLElement>('[data-customer-profile-error]');
 		this.profileBodyNode = this.querySelector<HTMLElement>('[data-customer-profile-body]');
 		this.profileNameNode = this.querySelector<HTMLElement>('[data-customer-profile-name]');
+		this.profileFirstNameNode = this.querySelector<HTMLElement>(
+			'[data-customer-profile-first-name]'
+		);
 		this.profileNameInput = this.querySelector<HTMLInputElement>(
 			'[data-customer-profile-name-input]'
 		);
+		this.profileFirstNameRow = this.querySelector<HTMLElement>(
+			'[data-customer-profile-first-name-row]'
+		);
 		this.profileNameErrorNode = this.querySelector<HTMLElement>(
 			'[data-field-error="customer_profile_name"]'
+		);
+		this.profileLastNameNode = this.querySelector<HTMLElement>(
+			'[data-customer-profile-last-name]'
+		);
+		this.profileLastNameInput = this.querySelector<HTMLInputElement>(
+			'[data-customer-profile-last-name-input]'
+		);
+		this.profileLastNameRow = this.querySelector<HTMLElement>(
+			'[data-customer-profile-last-name-row]'
+		);
+		this.profileLastNameErrorNode = this.querySelector<HTMLElement>(
+			'[data-field-error="customer_profile_last_name"]'
 		);
 		this.profileEditForm = this.querySelector<HTMLFormElement>('[data-customer-profile-edit-form]');
 		this.profileFooterEdit = this.querySelector<HTMLElement>('[data-customer-profile-footer-edit]');
@@ -332,6 +411,22 @@ class CustomerManager extends HTMLElement {
 		);
 		this.profilePhoneErrorNode = this.querySelector<HTMLElement>(
 			'[data-field-error="customer_profile_phone"]'
+		);
+		this.profileDocumentNode = this.querySelector<HTMLElement>('[data-customer-profile-document]');
+		this.profileDocumentRow = this.querySelector<HTMLElement>('[data-customer-profile-document-row]');
+		this.profileDocumentInput = this.querySelector<HTMLInputElement>(
+			'[data-customer-profile-document-input]'
+		);
+		this.profileDocumentErrorNode = this.querySelector<HTMLElement>(
+			'[data-field-error="customer_profile_document"]'
+		);
+		this.profileEmailNode = this.querySelector<HTMLElement>('[data-customer-profile-email]');
+		this.profileEmailRow = this.querySelector<HTMLElement>('[data-customer-profile-email-row]');
+		this.profileEmailInput = this.querySelector<HTMLInputElement>(
+			'[data-customer-profile-email-input]'
+		);
+		this.profileEmailErrorNode = this.querySelector<HTMLElement>(
+			'[data-field-error="customer_profile_email"]'
 		);
 		this.profileEditToggleBtn = this.querySelector<HTMLButtonElement>(
 			'[data-edit-customer-profile-toggle]'
@@ -554,13 +649,27 @@ class CustomerManager extends HTMLElement {
 		this.profileModal?.addEventListener('cancel', this.handleProfileModalCancel, { signal });
 		this.profileNameInput?.addEventListener('input', this.handleProfileNameEditInput, { signal });
 		this.profileNameInput?.addEventListener('keydown', this.handleProfileEditKeydown, { signal });
+		this.profileLastNameInput?.addEventListener('input', this.handleProfileLastNameEditInput, {
+			signal,
+		});
+		this.profileLastNameInput?.addEventListener('keydown', this.handleProfileEditKeydown, {
+			signal,
+		});
 		this.profilePhoneInput?.addEventListener('input', this.handleProfilePhoneEditInput, {
 			signal,
 		});
 		this.profilePhoneInput?.addEventListener('keydown', this.handleProfileEditKeydown, {
 			signal,
 		});
+		this.profileDocumentInput?.addEventListener('input', this.handleProfileDocumentEditInput, {
+			signal,
+		});
+		this.profileEmailInput?.addEventListener('input', this.handleProfileEmailEditInput, { signal });
 		this.profileEditForm?.addEventListener('submit', this.handleProfileEditFormSubmit, { signal });
+		this.createForm?.addEventListener('submit', this.handleCreateCustomerSubmit, { signal });
+		this.createModal?.addEventListener('click', this.handleCreateModalClick, { signal });
+		this.createModal?.addEventListener('cancel', this.handleCreateModalCancel, { signal });
+		this.createPhoneInput?.addEventListener('input', this.handleCreatePhoneInput, { signal });
 		for (const tab of this.profileTabButtons ?? []) {
 			tab.addEventListener('click', this.handleProfileTabClick, { signal });
 		}
@@ -698,6 +807,217 @@ class CustomerManager extends HTMLElement {
 
 	private canEditCustomerProfile() {
 		return this.canFilterByProfessional();
+	}
+
+	private canCreateCustomer() {
+		return this.canEditCustomerProfile();
+	}
+
+	private createFieldErrorNode(
+		field: 'first_name' | 'last_name' | 'phone_number' | 'document_number' | 'email'
+	) {
+		const map = {
+			first_name: 'create_first_name',
+			last_name: 'create_last_name',
+			phone_number: 'create_phone_number',
+			document_number: 'create_document_number',
+			email: 'create_email',
+		} as const;
+		return this.querySelector<HTMLElement>(`[data-field-error="${map[field]}"]`);
+	}
+
+	private clearCreateCustomerErrors() {
+		if (this.createErrorNode) {
+			this.createErrorNode.textContent = '';
+			this.createErrorNode.classList.add('hidden');
+		}
+		for (const field of [
+			'first_name',
+			'last_name',
+			'phone_number',
+			'document_number',
+			'email',
+		] as const) {
+			const node = this.createFieldErrorNode(field);
+			if (!node) continue;
+			node.textContent = '';
+			node.classList.add('hidden');
+		}
+	}
+
+	private setCreateCustomerFieldError(
+		field: 'first_name' | 'last_name' | 'phone_number' | 'document_number' | 'email',
+		message: string
+	) {
+		const node = this.createFieldErrorNode(field);
+		if (!node) return;
+		node.textContent = message;
+		node.classList.remove('hidden');
+	}
+
+	private setCreateCustomerLoading(loading: boolean) {
+		this.isSavingCreate = loading;
+		if (this.createSubmitBtn) this.createSubmitBtn.disabled = loading;
+		if (this.createSubmitLabel) {
+			this.createSubmitLabel.textContent = loading ? 'Creando…' : 'Crear cliente';
+		}
+	}
+
+	private resetCreateCustomerForm() {
+		this.createForm?.reset();
+		if (this.createPhoneInput) this.createPhoneInput.value = '';
+		this.clearCreateCustomerErrors();
+		this.setCreateCustomerLoading(false);
+	}
+
+	private openCreateCustomerModal() {
+		if (!this.canCreateCustomer() || !this.createModal) return;
+		this.resetCreateCustomerForm();
+		if (!this.createModal.open) openPanelModal(this.createModal);
+		window.setTimeout(() => this.createFirstNameInput?.focus(), 0);
+	}
+
+	private closeCreateCustomerModal() {
+		if (!this.createModal?.open) return;
+		this.createModal.close();
+		this.resetCreateCustomerForm();
+	}
+
+	private handleCreateModalClick = (event: MouseEvent) => {
+		if (event.target === this.createModal) this.closeCreateCustomerModal();
+	};
+
+	private handleCreateModalCancel = (event: Event) => {
+		event.preventDefault();
+		this.closeCreateCustomerModal();
+	};
+
+	private handleCreatePhoneInput = () => {
+		if (!this.createPhoneInput) return;
+		this.createPhoneInput.value = formatParaguayMobilePhoneInput(this.createPhoneInput.value);
+		const errorNode = this.createFieldErrorNode('phone_number');
+		if (errorNode && !errorNode.classList.contains('hidden')) {
+			errorNode.textContent = '';
+			errorNode.classList.add('hidden');
+		}
+	};
+
+	private handleCreateCustomerSubmit = (event: SubmitEvent) => {
+		event.preventDefault();
+		void this.submitCreateCustomer();
+	};
+
+	private async submitCreateCustomer() {
+		if (this.isSavingCreate || !this.canCreateCustomer()) return;
+		this.clearCreateCustomerErrors();
+
+		const firstName = String(this.createFirstNameInput?.value || '').trim();
+		const lastName = String(this.createLastNameInput?.value || '').trim();
+		const rawPhone = String(this.createPhoneInput?.value || '').trim();
+		const rawDocument = String(this.createDocumentInput?.value || '').trim();
+		const rawEmail = String(this.createEmailInput?.value || '').trim();
+
+		let hasError = false;
+		if (!firstName) {
+			this.setCreateCustomerFieldError('first_name', 'El nombre es obligatorio.');
+			if (!hasError) this.createFirstNameInput?.focus();
+			hasError = true;
+		}
+		if (!lastName) {
+			this.setCreateCustomerFieldError('last_name', 'El apellido es obligatorio.');
+			if (!hasError) this.createLastNameInput?.focus();
+			hasError = true;
+		}
+		const parsedPhone = parseParaguayMobilePhone(rawPhone);
+		if (!parsedPhone.isValid) {
+			this.setCreateCustomerFieldError(
+				'phone_number',
+				rawPhone ? PARAGUAY_MOBILE_PHONE_ERROR : 'El telefono es obligatorio.'
+			);
+			if (!hasError) this.createPhoneInput?.focus();
+			hasError = true;
+		}
+		let documentNumber: string | null = null;
+		if (rawDocument) {
+			const parsedCi = parseParaguayCi(rawDocument);
+			if (!parsedCi.isValid) {
+				this.setCreateCustomerFieldError('document_number', PARAGUAY_CI_ERROR);
+				if (!hasError) this.createDocumentInput?.focus();
+				hasError = true;
+			} else {
+				documentNumber = parsedCi.digits;
+			}
+		}
+		let email: string | null = null;
+		if (rawEmail) {
+			const parsedEmail = parseCustomerEmail(rawEmail);
+			if (!parsedEmail.isValid) {
+				this.setCreateCustomerFieldError('email', CUSTOMER_EMAIL_ERROR);
+				if (!hasError) this.createEmailInput?.focus();
+				hasError = true;
+			} else {
+				email = parsedEmail.email || null;
+			}
+		}
+		if (hasError || !parsedPhone.isValid) return;
+
+		this.setCreateCustomerLoading(true);
+		try {
+			const response = await fetch('/api/customers', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					Accept: 'application/json',
+				},
+				body: JSON.stringify({
+					first_name: firstName,
+					last_name: lastName,
+					phone_number: parsedPhone.e164,
+					document_number: documentNumber,
+					email,
+				}),
+			});
+			const data = await this.parseJson<CustomerContactUpdateResponse>(response);
+			if (!response.ok || data.status !== 'success' || !data.data) {
+				const fieldErrors = Array.isArray(data.errors) ? data.errors : [];
+				let handled = false;
+				for (const fieldError of fieldErrors) {
+					if (
+						fieldError.field === 'first_name' ||
+						fieldError.field === 'last_name' ||
+						fieldError.field === 'phone_number' ||
+						fieldError.field === 'document_number' ||
+						fieldError.field === 'email'
+					) {
+						this.setCreateCustomerFieldError(fieldError.field, fieldError.message);
+						handled = true;
+					}
+				}
+				if (!handled) {
+					if (this.createErrorNode) {
+						this.createErrorNode.textContent = this.getBackendMessage(
+							data,
+							'No fue posible crear el cliente.'
+						);
+						this.createErrorNode.classList.remove('hidden');
+					}
+				}
+				return;
+			}
+
+			const createdId = Number(data.data.id_customer || 0);
+			this.closeCreateCustomerModal();
+			this.page = 1;
+			await this.loadCustomers({ silent: true });
+			if (createdId > 0) void this.openCustomerProfile(createdId);
+		} catch {
+			if (this.createErrorNode) {
+				this.createErrorNode.textContent = 'No fue posible crear el cliente.';
+				this.createErrorNode.classList.remove('hidden');
+			}
+		} finally {
+			this.setCreateCustomerLoading(false);
+		}
 	}
 
 	private handleProfessionalChange = () => {
@@ -951,6 +1271,14 @@ class CustomerManager extends HTMLElement {
 			this.closeProfileModal();
 			return;
 		}
+		if (target.closest('[data-open-create-customer]')) {
+			this.openCreateCustomerModal();
+			return;
+		}
+		if (target.closest('[data-close-create-customer]')) {
+			this.closeCreateCustomerModal();
+			return;
+		}
 		if (target.closest('[data-edit-customer-profile-toggle]')) {
 			this.enterProfileEditMode();
 			return;
@@ -1138,13 +1466,15 @@ class CustomerManager extends HTMLElement {
 		}
 		if (this.emptyCopyNode) {
 			if (hasSearch) {
-				this.emptyCopyNode.textContent = 'Probá con otro nombre o teléfono.';
+				this.emptyCopyNode.textContent = 'Probá con otro nombre, teléfono o CI.';
 			} else if (hasProFilter) {
 				this.emptyCopyNode.textContent =
 					'No hay clientes asociados al profesional seleccionado.';
 			} else {
 				this.emptyCopyNode.textContent =
-					'Cuando registres citas, tus clientes aparecerán aquí.';
+					this.canCreateCustomer()
+						? 'Creá un cliente o registrá una cita para verlo aquí.'
+						: 'Cuando registres citas, tus clientes aparecerán aquí.';
 			}
 		}
 		if (this.emptyIconNode) {
@@ -3505,19 +3835,33 @@ class CustomerManager extends HTMLElement {
 	}
 
 	private clearProfileEditFieldErrors() {
-		if (this.profileNameErrorNode) {
-			this.profileNameErrorNode.textContent = '';
-			this.profileNameErrorNode.classList.add('hidden');
-		}
-		if (this.profilePhoneErrorNode) {
-			this.profilePhoneErrorNode.textContent = '';
-			this.profilePhoneErrorNode.classList.add('hidden');
+		for (const node of [
+			this.profileNameErrorNode,
+			this.profileLastNameErrorNode,
+			this.profilePhoneErrorNode,
+			this.profileDocumentErrorNode,
+			this.profileEmailErrorNode,
+		]) {
+			if (!node) continue;
+			node.textContent = '';
+			node.classList.add('hidden');
 		}
 	}
 
-	private setProfileEditFieldError(field: 'full_name' | 'phone_number', message: string) {
+	private setProfileEditFieldError(
+		field: 'first_name' | 'last_name' | 'full_name' | 'phone_number' | 'document_number' | 'email',
+		message: string
+	) {
 		const node =
-			field === 'full_name' ? this.profileNameErrorNode : this.profilePhoneErrorNode;
+			field === 'last_name'
+				? this.profileLastNameErrorNode
+				: field === 'phone_number'
+					? this.profilePhoneErrorNode
+					: field === 'document_number'
+						? this.profileDocumentErrorNode
+						: field === 'email'
+							? this.profileEmailErrorNode
+							: this.profileNameErrorNode;
 		if (!node) return;
 		node.textContent = message;
 		node.classList.remove('hidden');
@@ -3558,11 +3902,14 @@ class CustomerManager extends HTMLElement {
 		this.clearProfileEditFieldErrors();
 		this.setProfileEditUiState(true);
 
-		this.profileNameNode?.classList.add('hidden');
+		this.profileFirstNameRow?.setAttribute('data-editing', '1');
+		this.profileLastNameRow?.setAttribute('data-editing', '1');
+		this.profileFirstNameNode?.classList.add('hidden');
+		this.profileLastNameNode?.classList.add('hidden');
 		this.profileNameInput?.classList.remove('hidden');
-		if (this.profileNameInput) {
-			this.profileNameInput.value = this.activeProfileFullName;
-		}
+		this.profileLastNameInput?.classList.remove('hidden');
+		if (this.profileNameInput) this.profileNameInput.value = this.activeProfileFirstName;
+		if (this.profileLastNameInput) this.profileLastNameInput.value = this.activeProfileLastName;
 
 		this.profilePhoneNode?.classList.add('hidden');
 		this.profilePhoneFieldWrap?.classList.remove('hidden');
@@ -3572,6 +3919,16 @@ class CustomerManager extends HTMLElement {
 				: '';
 		}
 		if (this.profilePhoneRow) this.profilePhoneRow.setAttribute('data-editing', '1');
+
+		this.profileDocumentNode?.classList.add('hidden');
+		this.profileDocumentInput?.classList.remove('hidden');
+		if (this.profileDocumentInput) this.profileDocumentInput.value = this.activeProfileDocument;
+		this.profileDocumentRow?.setAttribute('data-editing', '1');
+
+		this.profileEmailNode?.classList.add('hidden');
+		this.profileEmailInput?.classList.remove('hidden');
+		if (this.profileEmailInput) this.profileEmailInput.value = this.activeProfileEmail;
+		this.profileEmailRow?.setAttribute('data-editing', '1');
 
 		this.syncProfileEditToggleVisibility();
 
@@ -3584,12 +3941,24 @@ class CustomerManager extends HTMLElement {
 		this.clearProfileEditFieldErrors();
 		this.setProfileEditUiState(false);
 
-		this.profileNameNode?.classList.remove('hidden');
 		this.profileNameInput?.classList.add('hidden');
+		this.profileLastNameInput?.classList.add('hidden');
+		this.profileFirstNameNode?.classList.remove('hidden');
+		this.profileLastNameNode?.classList.remove('hidden');
+		this.profileFirstNameRow?.removeAttribute('data-editing');
+		this.profileLastNameRow?.removeAttribute('data-editing');
 
 		this.profilePhoneNode?.classList.remove('hidden');
 		this.profilePhoneFieldWrap?.classList.add('hidden');
 		this.profilePhoneRow?.removeAttribute('data-editing');
+
+		this.profileDocumentNode?.classList.remove('hidden');
+		this.profileDocumentInput?.classList.add('hidden');
+		this.profileDocumentRow?.removeAttribute('data-editing');
+
+		this.profileEmailNode?.classList.remove('hidden');
+		this.profileEmailInput?.classList.add('hidden');
+		this.profileEmailRow?.removeAttribute('data-editing');
 
 		this.syncProfileEditToggleVisibility();
 		this.setProfileSaveButtonLoading(false);
@@ -3616,6 +3985,32 @@ class CustomerManager extends HTMLElement {
 		}
 	};
 
+	private handleProfileLastNameEditInput = () => {
+		if (this.profileLastNameErrorNode && !this.profileLastNameErrorNode.classList.contains('hidden')) {
+			this.profileLastNameErrorNode.textContent = '';
+			this.profileLastNameErrorNode.classList.add('hidden');
+		}
+	};
+
+	private handleProfileDocumentEditInput = () => {
+		if (!this.profileDocumentInput) return;
+		this.profileDocumentInput.value = String(this.profileDocumentInput.value || '').replace(
+			/\D/g,
+			''
+		);
+		if (this.profileDocumentErrorNode && !this.profileDocumentErrorNode.classList.contains('hidden')) {
+			this.profileDocumentErrorNode.textContent = '';
+			this.profileDocumentErrorNode.classList.add('hidden');
+		}
+	};
+
+	private handleProfileEmailEditInput = () => {
+		if (this.profileEmailErrorNode && !this.profileEmailErrorNode.classList.contains('hidden')) {
+			this.profileEmailErrorNode.textContent = '';
+			this.profileEmailErrorNode.classList.add('hidden');
+		}
+	};
+
 	private handleProfileEditKeydown = (event: KeyboardEvent) => {
 		if (event.key === 'Escape') {
 			event.preventDefault();
@@ -3630,10 +4025,16 @@ class CustomerManager extends HTMLElement {
 
 		this.clearProfileEditFieldErrors();
 
-		const fullName = String(this.profileNameInput?.value || '').trim();
-		if (!fullName) {
-			this.setProfileEditFieldError('full_name', 'El nombre es obligatorio.');
+		const firstName = String(this.profileNameInput?.value || '').trim();
+		const lastName = String(this.profileLastNameInput?.value || '').trim();
+		if (!firstName) {
+			this.setProfileEditFieldError('first_name', 'El nombre es obligatorio.');
 			this.profileNameInput?.focus();
+			return;
+		}
+		if (!lastName) {
+			this.setProfileEditFieldError('last_name', 'El apellido es obligatorio.');
+			this.profileLastNameInput?.focus();
 			return;
 		}
 
@@ -3651,6 +4052,30 @@ class CustomerManager extends HTMLElement {
 		}
 		const phoneE164 = parsedPhone.e164;
 
+		const rawDocument = String(this.profileDocumentInput?.value || '').trim();
+		let documentNumber: string | null = null;
+		if (rawDocument) {
+			const parsedCi = parseParaguayCi(rawDocument);
+			if (!parsedCi.isValid) {
+				this.setProfileEditFieldError('document_number', PARAGUAY_CI_ERROR);
+				this.profileDocumentInput?.focus();
+				return;
+			}
+			documentNumber = parsedCi.digits;
+		}
+
+		const rawEmail = String(this.profileEmailInput?.value || '').trim();
+		let email: string | null = null;
+		if (rawEmail) {
+			const parsedEmail = parseCustomerEmail(rawEmail);
+			if (!parsedEmail.isValid) {
+				this.setProfileEditFieldError('email', CUSTOMER_EMAIL_ERROR);
+				this.profileEmailInput?.focus();
+				return;
+			}
+			email = parsedEmail.email || null;
+		}
+
 		this.isSavingProfileEdit = true;
 		this.setProfileSaveButtonLoading(true);
 
@@ -3661,7 +4086,13 @@ class CustomerManager extends HTMLElement {
 					'Content-Type': 'application/json',
 					Accept: 'application/json',
 				},
-				body: JSON.stringify({ full_name: fullName, phone_number: phoneE164 }),
+				body: JSON.stringify({
+					first_name: firstName,
+					last_name: lastName,
+					phone_number: phoneE164,
+					document_number: documentNumber,
+					email,
+				}),
 			});
 			const data = await this.parseJson<CustomerContactUpdateResponse>(response);
 
@@ -3669,7 +4100,14 @@ class CustomerManager extends HTMLElement {
 				const fieldErrors = Array.isArray(data.errors) ? data.errors : [];
 				let handled = false;
 				for (const fieldError of fieldErrors) {
-					if (fieldError.field === 'full_name' || fieldError.field === 'phone_number') {
+					if (
+						fieldError.field === 'first_name' ||
+						fieldError.field === 'last_name' ||
+						fieldError.field === 'full_name' ||
+						fieldError.field === 'phone_number' ||
+						fieldError.field === 'document_number' ||
+						fieldError.field === 'email'
+					) {
 						this.setProfileEditFieldError(fieldError.field, fieldError.message);
 						handled = true;
 					}
@@ -3684,25 +4122,16 @@ class CustomerManager extends HTMLElement {
 			}
 
 			const updated = data.data;
-			this.activeProfileFullName = updated.full_name || fullName;
-			this.activeProfilePhoneE164 = updated.phone_number || '';
-
-			if (this.profileNameNode) this.profileNameNode.textContent = this.activeProfileFullName;
-			if (this.profilePhoneNode) {
-				this.profilePhoneNode.textContent = this.activeProfilePhoneE164
-					? this.formatCustomerPhone(this.activeProfilePhoneE164)
-					: '—';
-			}
-			if (this.profileAvatarNode) {
-				const tone = this.getCustomerAvatarTone({
-					id_customer: customerId,
-					full_name: this.activeProfileFullName,
-					phone_number: this.activeProfilePhoneE164,
-					created_at: '',
-				});
-				this.profileAvatarNode.className = this.getProfileAvatarClassName(tone);
-				this.profileAvatarNode.textContent = this.getCustomerInitials(this.activeProfileFullName);
-			}
+			this.applyProfileContact({
+				id_customer: customerId,
+				full_name: updated.full_name || `${firstName} ${lastName}`.trim(),
+				first_name: updated.first_name || firstName,
+				last_name: updated.last_name || lastName,
+				phone_number: updated.phone_number || phoneE164,
+				document_number: updated.document_number || documentNumber,
+				email: updated.email || email,
+				created_at: '',
+			});
 
 			this.exitProfileEditMode();
 			void this.loadCustomers({ silent: true });
@@ -3714,33 +4143,65 @@ class CustomerManager extends HTMLElement {
 		}
 	}
 
-	private renderCustomerProfile(profile: CustomerProfile) {
-		const stats = profile.stats;
-		const displayName = profile.full_name || `Cliente #${profile.id_customer}`;
+	private applyProfileContact(customer: {
+		id_customer: number;
+		full_name: string;
+		first_name?: string | null;
+		last_name?: string | null;
+		phone_number: string;
+		document_number?: string | null;
+		email?: string | null;
+		created_at?: string;
+	}) {
+		const split = splitCustomerFullName(customer.full_name || '');
+		this.activeProfileFirstName = String(customer.first_name || '').trim() || split.first_name;
+		this.activeProfileLastName = String(customer.last_name || '').trim() || split.last_name;
+		this.activeProfileFullName =
+			String(customer.full_name || '').trim() ||
+			`${this.activeProfileFirstName} ${this.activeProfileLastName}`.trim();
+		this.activeProfilePhoneE164 = String(customer.phone_number || '').trim();
+		this.activeProfileDocument = String(customer.document_number || '').trim();
+		this.activeProfileEmail = String(customer.email || '').trim();
 
-		this.renderProfileScope();
-		this.activeProfileFullName = profile.full_name || '';
-		this.activeProfilePhoneE164 = profile.phone_number || '';
-		this.syncProfileHeaderChrome();
-
-		if (this.profileNameNode) {
-			this.profileNameNode.textContent = displayName;
+		const displayName =
+			this.activeProfileFullName || `Cliente #${customer.id_customer}`;
+		if (this.profileNameNode) this.profileNameNode.textContent = displayName;
+		if (this.profileFirstNameNode) {
+			this.profileFirstNameNode.textContent = this.activeProfileFirstName || '—';
+		}
+		if (this.profileLastNameNode) {
+			this.profileLastNameNode.textContent = this.activeProfileLastName || '—';
+		}
+		if (this.profilePhoneNode) {
+			this.profilePhoneNode.textContent = this.activeProfilePhoneE164
+				? this.formatCustomerPhone(this.activeProfilePhoneE164)
+				: '—';
+		}
+		if (this.profileDocumentNode) {
+			this.profileDocumentNode.textContent = this.activeProfileDocument || '—';
+		}
+		if (this.profileEmailNode) {
+			this.profileEmailNode.textContent = this.activeProfileEmail || '—';
 		}
 		if (this.profileAvatarNode) {
 			const tone = this.getCustomerAvatarTone({
-				id_customer: profile.id_customer,
+				id_customer: customer.id_customer,
 				full_name: displayName,
-				phone_number: profile.phone_number,
-				created_at: profile.created_at,
+				phone_number: this.activeProfilePhoneE164,
+				created_at: customer.created_at || '',
 			});
 			this.profileAvatarNode.className = this.getProfileAvatarClassName(tone);
 			this.profileAvatarNode.textContent = this.getCustomerInitials(displayName);
 		}
-		if (this.profilePhoneNode) {
-			this.profilePhoneNode.textContent = profile.phone_number
-				? this.formatCustomerPhone(profile.phone_number)
-				: '—';
-		}
+	}
+
+	private renderCustomerProfile(profile: CustomerProfile) {
+		const stats = profile.stats;
+
+		this.renderProfileScope();
+		this.applyProfileContact(profile);
+		this.syncProfileHeaderChrome();
+
 		if (this.profileRegisteredNode) {
 			this.profileRegisteredNode.textContent = this.formatDate(profile.created_at);
 		}
@@ -3811,11 +4272,15 @@ class CustomerManager extends HTMLElement {
 		this.setProfileLoading(true);
 
 		if (this.profileNameNode) this.profileNameNode.textContent = 'Cliente';
+		if (this.profileFirstNameNode) this.profileFirstNameNode.textContent = '—';
+		if (this.profileLastNameNode) this.profileLastNameNode.textContent = '—';
 		if (this.profileAvatarNode) {
 			this.profileAvatarNode.className = this.getProfileAvatarClassName(1);
 			this.profileAvatarNode.textContent = '?';
 		}
 		if (this.profilePhoneNode) this.profilePhoneNode.textContent = '—';
+		if (this.profileDocumentNode) this.profileDocumentNode.textContent = '—';
+		if (this.profileEmailNode) this.profileEmailNode.textContent = '—';
 		if (this.profileRegisteredNode) this.profileRegisteredNode.textContent = '—';
 		this.renderProfileScope();
 

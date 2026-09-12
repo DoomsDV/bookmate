@@ -58,8 +58,16 @@ export const GET: APIRoute = async ({ locals }) => {
 		const pageSize = 200;
 		let page = 1;
 		let totalPages = 1;
-		const rows: Array<{ id: number; full_name: string; phone_number: string; created_at: string }> =
-			[];
+		const rows: Array<{
+			id: number;
+			full_name: string;
+			first_name: string;
+			last_name: string;
+			document_number: string;
+			email: string;
+			phone_number: string;
+			created_at: string;
+		}> = [];
 
 		while (page <= totalPages && page <= 50) {
 			const result = await listCustomersWithOrds(token, {
@@ -72,6 +80,10 @@ export const GET: APIRoute = async ({ locals }) => {
 				rows.push({
 					id: Number(customer.id_customer || 0),
 					full_name: String(customer.full_name || ''),
+					first_name: String(customer.first_name || ''),
+					last_name: String(customer.last_name || ''),
+					document_number: String(customer.document_number || ''),
+					email: String(customer.email || ''),
 					phone_number: String(customer.phone_number || ''),
 					created_at: String(customer.created_at || ''),
 				});
@@ -79,13 +91,26 @@ export const GET: APIRoute = async ({ locals }) => {
 			page += 1;
 		}
 
-		const header = ['id_customer', 'full_name', 'phone_number', 'created_at'];
+		const header = [
+			'id_customer',
+			'full_name',
+			'first_name',
+			'last_name',
+			'document_number',
+			'email',
+			'phone_number',
+			'created_at',
+		];
 		const lines = [
 			header.join(','),
 			...rows.map((row) =>
 				[
 					csvEscape(String(row.id)),
 					csvEscape(row.full_name),
+					csvEscape(row.first_name),
+					csvEscape(row.last_name),
+					csvEscape(row.document_number),
+					csvEscape(row.email),
 					csvEscape(row.phone_number),
 					csvEscape(row.created_at),
 				].join(',')

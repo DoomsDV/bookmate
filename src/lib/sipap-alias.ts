@@ -1,3 +1,4 @@
+import { parseParaguayCi } from './paraguay-ci';
 import { parseParaguayMobilePhone } from './paraguay-phone';
 
 export type SipapAliasKind = 'phone' | 'email' | 'ci' | 'ruc';
@@ -44,12 +45,6 @@ const parseParaguayRuc = (digits: string): string | null => {
 	const dv = Number(digits.slice(-1));
 	const expected = paraguayRucCheckDigit(base);
 	return expected === dv ? `${base}-${dv}` : null;
-};
-
-const parseParaguayCi = (digits: string): string | null => {
-	if (!/^\d{5,8}$/.test(digits)) return null;
-	if (/^0+$/.test(digits)) return null;
-	return digits;
 };
 
 const parseEmail = (raw: string): string | null => {
@@ -114,7 +109,7 @@ export const parseSipapAlias = (rawValue: string): SipapAliasParseResult => {
 	}
 
 	const ci = parseParaguayCi(digits);
-	if (ci) return { isValid: true, kind: 'ci', normalized: ci };
+	if (ci.isValid) return { isValid: true, kind: 'ci', normalized: ci.digits };
 
 	return { isValid: false, kind: null, normalized: '', message: SIPAP_ALIAS_ERROR };
 };

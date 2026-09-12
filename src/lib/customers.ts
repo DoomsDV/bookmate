@@ -10,6 +10,10 @@ export const CUSTOMERS_URL = resolveOrdsApiUrl(
 export interface Customer {
 	id_customer: number;
 	full_name: string;
+	first_name: string | null;
+	last_name: string | null;
+	document_number: string | null;
+	email: string | null;
 	phone_number: string;
 	created_at: string;
 	appointment_count: number;
@@ -90,6 +94,10 @@ export interface CustomerProfileStats {
 export interface CustomerProfile {
 	id_customer: number;
 	full_name: string;
+	first_name: string | null;
+	last_name: string | null;
+	document_number: string | null;
+	email: string | null;
 	phone_number: string;
 	created_at: string;
 	stats: CustomerProfileStats;
@@ -144,6 +152,18 @@ const parseFieldErrors = (value: unknown) => {
 	});
 };
 
+const optionalText = (value: unknown) => {
+	const text = String(value ?? '').trim();
+	return text || null;
+};
+
+const normalizeCustomerContactFields = (source: Record<string, unknown>) => ({
+	first_name: optionalText(source.first_name),
+	last_name: optionalText(source.last_name),
+	document_number: optionalText(source.document_number),
+	email: optionalText(source.email),
+});
+
 const normalizeCustomer = (value: unknown): Customer | null => {
 	if (!value || typeof value !== 'object') return null;
 
@@ -160,6 +180,7 @@ const normalizeCustomer = (value: unknown): Customer | null => {
 	return {
 		id_customer: customerId,
 		full_name: String(source.full_name || '').trim(),
+		...normalizeCustomerContactFields(source),
 		phone_number: String(source.phone_number || '').trim(),
 		created_at: String(source.created_at || '').trim(),
 		appointment_count: Math.max(0, Math.floor(toNumber(source.appointment_count, 0))),
@@ -467,6 +488,7 @@ const normalizeCustomerProfile = (value: unknown): CustomerProfile | null => {
 	return {
 		id_customer: customerId,
 		full_name: String(source.full_name || '').trim(),
+		...normalizeCustomerContactFields(source),
 		phone_number: String(source.phone_number || '').trim(),
 		created_at: String(source.created_at || '').trim(),
 		stats: normalizeCustomerProfileStats(source.stats),
@@ -540,19 +562,37 @@ export const getCustomerProfileWithOrds = async (
 	return parseCustomerProfileResponse(response);
 };
 
-export interface CustomerContactUpdatePayload {
-	full_name: string;
-	phone_number?: string | null;
+export interface CustomerContactPayload {
+	first_name: string;
+	last_name: string;
+	phone_number: string;
+	document_number?: string | null;
+	email?: string | null;
 }
+
+export interface CustomerContactUpdatePayload extends CustomerContactPayload {}
 
 export interface CustomerContactUpdateResult {
 	id_customer: number;
 	full_name: string;
+	first_name: string | null;
+	last_name: string | null;
+	document_number: string | null;
+	email: string | null;
 	phone_number: string;
 }
 
-const parseCustomerUpdateResponse = async (
-	response: Response
+const contactPayloadBody = (payload: CustomerContactPayload) => ({
+	first_name: payload.first_name,
+	last_name: payload.last_name,
+	phone_number: payload.phone_number,
+	document_number: payload.document_number ?? null,
+	email: payload.email ?? null,
+});
+
+const parseCustomerContactResponse = async (
+	response: Response,
+	fallbackMessage: string
 ): Promise<CustomerContactUpdateResult> => {
 	let data: CustomersSuccessResponse | CustomersFailureResponse | null = null;
 
@@ -577,7 +617,7 @@ const parseCustomerUpdateResponse = async (
 		const failureData = (data ?? {}) as CustomersFailureResponse;
 		throw new CustomersApiError(
 			(typeof failureData.message === 'string' && failureData.message.trim()) ||
-				'No fue posible actualizar el cliente.',
+				fallbackMessage,
 			response.status || 400,
 			failureData.details,
 			parseFieldErrors(failureData.errors)
@@ -588,8 +628,28 @@ const parseCustomerUpdateResponse = async (
 	return {
 		id_customer: toNumber(source.id_customer, 0),
 		full_name: String(source.full_name || '').trim(),
+		...normalizeCustomerContactFields(source),
 		phone_number: String(source.phone_number || '').trim(),
 	};
+};
+
+export const createCustomerWithOrds = async (
+	token: string,
+	payload: CustomerContactPayload
+): Promise<CustomerContactUpdateResult> => {
+	ensureToken(token);
+
+	const response = await fetch(CUSTOMERS_URL.replace(/\/+$/, ''), {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+		},
+		body: JSON.stringify(contactPayloadBody(payload)),
+	});
+
+	return parseCustomerContactResponse(response, 'No fue posible crear el cliente.');
 };
 
 export const updateCustomerProfileWithOrds = async (
@@ -610,11 +670,8 @@ export const updateCustomerProfileWithOrds = async (
 			'Content-Type': 'application/json',
 			Accept: 'application/json',
 		},
-		body: JSON.stringify({
-			full_name: payload.full_name,
-			phone_number: payload.phone_number ?? '',
-		}),
+		body: JSON.stringify(contactPayloadBody(payload)),
 	});
 
-	return parseCustomerUpdateResponse(response);
+	return parseCustomerContactResponse(response, 'No fue posible actualizar el cliente.');
 };

@@ -23,6 +23,7 @@ const organizationLogoUrl = String(
 const isProfessional = roleId === ROLES.PROFESIONAL;
 const canFilterByProfessional =
 	roleId === ROLES.ADMIN || roleId === ROLES.RECEPCIONISTA;
+const canCreateCustomer = canFilterByProfessional;
 const initialLoadError = token ? '' : 'No hay sesion valida para consultar clientes.';
 ---
 
@@ -50,7 +51,8 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 									<FlashMessage message={initialLoadError} type="error" expand={true} dismissible={false} />
 								) : (
 									<div class="grid gap-3 sm:gap-4">
-										<header class="grid gap-1">
+										<header class="flex flex-wrap items-start justify-between gap-3">
+											<div class="grid gap-1 min-w-0">
 											<h1 class="m-0 text-[1.5rem] font-bold leading-none tracking-tight text-(--on-surface) sm:text-[1.75rem]">
 												Clientes{' '}
 												<span
@@ -63,10 +65,31 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 													isProfessional
 														? 'Clientes registrados en tu agenda.'
 														: canFilterByProfessional
-															? 'Buscá por nombre o teléfono y filtrá por profesional.'
+															? 'Buscá por nombre, teléfono o CI y filtrá por profesional.'
 															: 'Clientes registrados en el consultorio.'
 												}
 											</p>
+											</div>
+											{
+												canCreateCustomer ? (
+													<button
+														type="button"
+														class="customers-create-btn hidden sm:inline-flex items-center justify-center gap-2"
+														data-open-create-customer
+														data-requires-write
+													>
+														<svg
+															class="customers-create-btn-icon w-[18px] h-[18px]"
+															viewBox="0 0 24 24"
+															fill="none"
+															aria-hidden="true"
+														>
+															<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" />
+														</svg>
+														<span>Nuevo cliente</span>
+													</button>
+												) : null
+											}
 										</header>
 
 										<select
@@ -90,8 +113,8 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 													inputmode="search"
 													enterkeyhint="search"
 													data-customers-search
-													placeholder="Buscar por nombre o teléfono"
-													aria-label="Buscar por nombre o teléfono"
+													placeholder="Buscar por nombre, teléfono o CI"
+													aria-label="Buscar por nombre, teléfono o CI"
 													autocomplete="off"
 													class="w-full rounded-2xl border border-(--shell-border) bg-(--surface-bright) py-2.5 pl-11 pr-11 text-[0.95rem] font-semibold text-(--on-surface) outline-none transition placeholder:font-medium placeholder:text-(--on-surface-variant)/70 hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
 												/>
@@ -188,7 +211,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 												class="mt-1.5 max-w-sm text-[0.95rem] leading-relaxed text-(--on-surface-variant)"
 												data-customers-empty-copy
 											>
-												Cuando registres citas, tus clientes aparecerán aquí.
+												Cuando registres una cita o creés un cliente, aparecerá aquí.
 											</p>
 										</div>
 
@@ -215,6 +238,23 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 				</div>
 			</div>
 		</div>
+
+		{
+			canCreateCustomer ? (
+				<button
+					type="button"
+					class="customers-create-fab"
+					data-open-create-customer
+					data-requires-write
+					aria-label="Nuevo cliente"
+					title="Nuevo cliente"
+				>
+					<svg class="customers-create-fab-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+						<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" />
+					</svg>
+				</button>
+			) : null
+		}
 
 		<dialog
 			id="customers-pro-filter-sheet"
@@ -250,6 +290,157 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 					aria-label="Profesionales"
 				></div>
 			</div>
+		</dialog>
+
+		<dialog
+			class="m-0 mt-auto mb-0 w-screen max-w-none max-h-[80vh] open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:m-0 sm:ml-auto sm:mr-0 sm:mt-0 sm:mb-0 sm:h-[100dvh] sm:max-h-[100dvh] sm:w-[min(32rem,100%)] sm:max-w-[min(32rem,100%)] sm:rounded-none sm:border-y-0 sm:border-r-0 sm:shadow-none"
+			data-create-customer-modal
+			aria-labelledby="create-customer-modal-title"
+		>
+			<div class="panel-modal-header">
+				<div class="panel-modal-header__row">
+					<div class="panel-modal-header__leading">
+						<div class="panel-modal-header__icon">
+							<span class="material-symbols-rounded">person_add</span>
+						</div>
+						<div class="panel-modal-header__text">
+							<h2 class="panel-modal-header__title" id="create-customer-modal-title">
+								Nuevo cliente
+							</h2>
+						</div>
+					</div>
+					<button
+						type="button"
+						class="panel-modal-header__close"
+						data-close-create-customer
+						aria-label="Cerrar modal"
+					>
+						<span class="material-symbols-rounded">close</span>
+					</button>
+				</div>
+			</div>
+
+			<form
+				class="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-(--surface)/30"
+				data-create-customer-form
+				novalidate
+			>
+				<div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-7 sm:py-7">
+						<div class="grid gap-5">
+						<div
+							class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-bold text-rose-500 shadow-sm"
+							data-create-customer-error
+						></div>
+
+						<div class="customer-create-field-pair">
+							<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+								<span class="inline-flex items-center gap-1">
+									Nombre
+									<span class="text-rose-500">*</span>
+								</span>
+								<input
+									type="text"
+									name="first_name"
+									maxlength="80"
+									autocomplete="given-name"
+									class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+									placeholder="Ej: María"
+									data-create-customer-first-name
+								/>
+								<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="create_first_name" role="alert"></span>
+							</label>
+
+							<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+								<span class="inline-flex items-center gap-1">
+									Apellido
+									<span class="text-rose-500">*</span>
+								</span>
+								<input
+									type="text"
+									name="last_name"
+									maxlength="80"
+									autocomplete="family-name"
+									class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+									placeholder="Ej: Fernández"
+									data-create-customer-last-name
+								/>
+								<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="create_last_name" role="alert"></span>
+							</label>
+						</div>
+
+						<div class="customer-create-field-pair">
+							<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+								<span class="inline-flex items-center gap-1">
+									Teléfono
+									<span class="text-rose-500">*</span>
+								</span>
+								<div class="customer-profile-phone-field customer-create-phone-field" data-create-customer-phone-field>
+									<span class="customer-profile-phone-field__prefix">+595</span>
+									<input
+										type="text"
+										name="phone_number"
+										maxlength="11"
+										inputmode="numeric"
+										autocomplete="tel"
+										placeholder="981 123 456"
+										class="customer-profile-phone-field__input"
+										data-create-customer-phone
+										aria-label="Teléfono del cliente"
+									/>
+								</div>
+								<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="create_phone_number" role="alert"></span>
+							</label>
+
+							<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+								<span class="inline-flex items-center gap-1">
+									CI <span class="text-(--on-surface-variant) font-medium">(Opcional)</span>
+								</span>
+								<input
+									type="text"
+									name="document_number"
+									maxlength="12"
+									inputmode="numeric"
+									autocomplete="off"
+									class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+									placeholder="Ej: 4567890"
+									data-create-customer-document
+								/>
+								<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="create_document_number" role="alert"></span>
+							</label>
+						</div>
+
+						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+							<span class="inline-flex items-center gap-1">
+								Correo <span class="text-(--on-surface-variant) font-medium">(Opcional)</span>
+							</span>
+							<input
+								type="email"
+								name="email"
+								maxlength="150"
+								autocomplete="email"
+								class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+								placeholder="nombre@correo.com"
+								data-create-customer-email
+							/>
+							<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="create_email" role="alert"></span>
+						</label>
+					</div>
+				</div>
+
+				<div class="z-20 mt-auto shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-4 py-4 sm:px-7 sm:py-5">
+					<div class="modal-footer">
+						<div class="modal-footer-actions">
+							<button type="button" class="modal-action-secondary" data-close-create-customer>
+								Cancelar
+							</button>
+							<button type="submit" class="modal-action-primary" data-submit-create-customer data-requires-write>
+								<span class="material-symbols-rounded text-[1.2rem]" aria-hidden="true">check</span>
+								<span data-create-customer-submit-label>Crear cliente</span>
+							</button>
+						</div>
+					</div>
+				</div>
+			</form>
 		</dialog>
 
 		<dialog
@@ -403,31 +594,12 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 										?
 									</div>
 									<div class="customer-profile-identity__body">
-										<label
-											class="customer-profile-edit-label"
-											for="customer-profile-name-input"
-										>
-											Nombre
-										</label>
 										<h2
 											class="customer-profile-identity__name truncate"
 											data-customer-profile-name
 										>
 											Cliente
 										</h2>
-										<input
-											id="customer-profile-name-input"
-											type="text"
-											maxlength="150"
-											class="customer-profile-field-input hidden"
-											data-customer-profile-name-input
-											autocomplete="name"
-										/>
-										<span
-											class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
-											data-field-error="customer_profile_name"
-											role="alert"
-										></span>
 										<p
 											class="customer-profile-scope hidden"
 											data-customer-profile-scope
@@ -447,35 +619,132 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 						</section>
 
 						<section class="customer-profile-meta">
-							<div class="customer-profile-field-row" data-customer-profile-phone-row>
-								<span class="customer-profile-field-term">Teléfono</span>
-								<span
-									class="customer-profile-field-value customer-profile-field-value--emphasize"
-									data-customer-profile-phone
-								>—</span>
-								<div class="customer-profile-phone-field hidden" data-customer-profile-phone-field>
-									<span class="customer-profile-phone-field__prefix">+595</span>
-									<input
-										type="text"
-										maxlength="11"
-										inputmode="numeric"
-										autocomplete="new-password"
-										autocapitalize="off"
-										autocorrect="off"
-										spellcheck="false"
-										data-lpignore="true"
-										data-1p-ignore="true"
-										data-form-type="other"
-										placeholder="981 123 456"
-										class="customer-profile-phone-field__input"
-										data-customer-profile-phone-input
-										aria-label="Telefono del cliente"
-									/>
+							<div class="customer-profile-field-pair">
+								<div class="customer-profile-field-cell">
+									<div class="customer-profile-field-row" data-customer-profile-first-name-row>
+										<span class="customer-profile-field-term">Nombre</span>
+										<span
+											class="customer-profile-field-value"
+											data-customer-profile-first-name
+										>—</span>
+										<input
+											id="customer-profile-name-input"
+											type="text"
+											maxlength="80"
+											placeholder="Ej: María"
+											class="customer-profile-field-input hidden"
+											data-customer-profile-name-input
+											autocomplete="given-name"
+										/>
+									</div>
+									<span
+										class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
+										data-field-error="customer_profile_name"
+										role="alert"
+									></span>
 								</div>
+								<div class="customer-profile-field-cell">
+									<div class="customer-profile-field-row" data-customer-profile-last-name-row>
+										<span class="customer-profile-field-term">Apellido</span>
+										<span
+											class="customer-profile-field-value"
+											data-customer-profile-last-name
+										>—</span>
+										<input
+											id="customer-profile-last-name-input"
+											type="text"
+											maxlength="80"
+											placeholder="Ej: Fernández"
+											class="customer-profile-field-input hidden"
+											data-customer-profile-last-name-input
+											autocomplete="family-name"
+										/>
+									</div>
+									<span
+										class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
+										data-field-error="customer_profile_last_name"
+										role="alert"
+									></span>
+								</div>
+							</div>
+							<div class="customer-profile-field-pair">
+								<div class="customer-profile-field-cell">
+									<div class="customer-profile-field-row" data-customer-profile-phone-row>
+										<span class="customer-profile-field-term">Teléfono</span>
+										<span
+											class="customer-profile-field-value customer-profile-field-value--emphasize"
+											data-customer-profile-phone
+										>—</span>
+										<div class="customer-profile-phone-field hidden" data-customer-profile-phone-field>
+											<span class="customer-profile-phone-field__prefix">+595</span>
+											<input
+												type="text"
+												maxlength="11"
+												inputmode="numeric"
+												autocomplete="new-password"
+												autocapitalize="off"
+												autocorrect="off"
+												spellcheck="false"
+												data-lpignore="true"
+												data-1p-ignore="true"
+												data-form-type="other"
+												placeholder="981 123 456"
+												class="customer-profile-phone-field__input"
+												data-customer-profile-phone-input
+												aria-label="Telefono del cliente"
+											/>
+										</div>
+									</div>
+									<span
+										class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
+										data-field-error="customer_profile_phone"
+										role="alert"
+									></span>
+								</div>
+								<div class="customer-profile-field-cell">
+									<div class="customer-profile-field-row" data-customer-profile-document-row>
+										<span class="customer-profile-field-term">CI</span>
+										<span
+											class="customer-profile-field-value"
+											data-customer-profile-document
+										>—</span>
+										<input
+											type="text"
+											maxlength="12"
+											inputmode="numeric"
+											autocomplete="off"
+											placeholder="4567890"
+											class="customer-profile-field-input hidden"
+											data-customer-profile-document-input
+											aria-label="CI del cliente"
+										/>
+									</div>
+									<span
+										class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
+										data-field-error="customer_profile_document"
+										role="alert"
+									></span>
+								</div>
+							</div>
+							<div class="customer-profile-field-row" data-customer-profile-email-row>
+								<span class="customer-profile-field-term">Correo</span>
+								<span
+									class="customer-profile-field-value"
+									data-customer-profile-email
+								>—</span>
+								<input
+									type="email"
+									maxlength="150"
+									autocomplete="email"
+									placeholder="nombre@correo.com"
+									class="customer-profile-field-input hidden"
+									data-customer-profile-email-input
+									aria-label="Correo del cliente"
+								/>
 							</div>
 							<span
 								class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
-								data-field-error="customer_profile_phone"
+								data-field-error="customer_profile_email"
 								role="alert"
 							></span>
 							<div class="customer-profile-field-row">
@@ -1194,6 +1463,86 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		display: block;
 	}
 
+	.customers-create-btn {
+		border-radius: 999px;
+		border: 1px solid color-mix(in srgb, var(--primary) 72%, #123e7a 28%);
+		background: var(--primary);
+		padding: 0.72rem 1.15rem;
+		font-size: 0.92rem;
+		font-weight: 780;
+		color: #f8fbff;
+		box-shadow: none;
+		transition: filter 140ms ease, border-color 140ms ease;
+	}
+
+	.customers-create-btn-icon {
+		flex-shrink: 0;
+	}
+
+	.customers-create-btn:hover {
+		filter: brightness(1.04);
+	}
+
+	.customers-create-btn:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--primary) 42%, white 58%);
+		outline-offset: 3px;
+	}
+
+	.customers-create-fab {
+		display: none;
+	}
+
+	@media (max-width: 639px) {
+		.customers-create-fab {
+			position: fixed;
+			right: max(1rem, env(safe-area-inset-right, 0px));
+			bottom: calc(5.15rem + env(safe-area-inset-bottom, 0px));
+			z-index: 44;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 3.05rem;
+			height: 3.05rem;
+			padding: 0;
+			border: 0;
+			border-radius: 999px;
+			color: #f8fbff;
+			background: var(--primary);
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+			cursor: pointer;
+			-webkit-tap-highlight-color: transparent;
+			transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
+		}
+
+		.customers-create-fab-icon {
+			width: 1.35rem;
+			height: 1.35rem;
+			flex-shrink: 0;
+		}
+
+		.customers-create-fab:hover {
+			filter: brightness(1.04);
+			box-shadow: 0 3px 10px rgba(0, 0, 0, 0.32);
+		}
+
+		.customers-create-fab:active {
+			transform: scale(0.96);
+		}
+
+		.customers-create-fab:focus-visible {
+			outline: 2px solid color-mix(in srgb, var(--primary) 42%, white 58%);
+			outline-offset: 3px;
+		}
+	}
+
+	html[data-theme='dark'] .customers-create-btn {
+		color: #f8fbff;
+	}
+
+	html[data-theme='dark'] .customers-create-btn:hover {
+		filter: brightness(1.06);
+	}
+
 	.customers-grid {
 		align-items: stretch;
 	}
@@ -1492,15 +1841,6 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		min-width: 0;
 	}
 
-	.customer-profile-contact-form[data-editing='1'] .customer-profile-identity__inner {
-		align-items: flex-start;
-	}
-
-	.customer-profile-contact-form[data-editing='1'] .customer-profile-identity__avatar {
-		margin-top: 1.35rem;
-		box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 45%, transparent);
-	}
-
 	.customer-profile-identity__avatar {
 		flex-shrink: 0;
 		width: 3.25rem;
@@ -1536,19 +1876,6 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		.customer-profile-identity__name {
 			font-size: 1.25rem;
 		}
-	}
-
-	.customer-profile-edit-label {
-		display: none;
-		margin: 0;
-		font-size: 0.82rem;
-		font-weight: 650;
-		line-height: 1.2;
-		color: var(--on-surface-variant);
-	}
-
-	.customer-profile-contact-form[data-editing='1'] .customer-profile-edit-label {
-		display: block;
 	}
 
 	.customer-profile-field-input {
@@ -2715,38 +3042,83 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		gap: 0.45rem;
 	}
 
+	.customer-profile-field-pair {
+		display: grid;
+		grid-template-columns: max-content max-content;
+		justify-content: start;
+		gap: 0.4rem 2.25rem;
+		align-items: baseline;
+	}
+
+	.customer-create-field-pair {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		gap: 0.75rem 1rem;
+		align-items: start;
+	}
+
+	.customer-profile-field-cell {
+		min-width: 0;
+		display: grid;
+		gap: 0.28rem;
+	}
+
+	.customer-create-field-pair > * {
+		min-width: 0;
+	}
+
+	.customer-profile-modal__panel[data-editing-profile='1'] .customer-profile-field-pair {
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		gap: 0.85rem 1.1rem;
+		align-items: start;
+	}
+
+	@media (max-width: 639px) {
+		.customer-profile-field-pair,
+		.customer-create-field-pair,
+		.customer-profile-modal__panel[data-editing-profile='1'] .customer-profile-field-pair {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+
 	.customer-profile-field-row {
 		display: flex;
 		align-items: baseline;
-		justify-content: space-between;
-		gap: 0.75rem;
+		justify-content: flex-start;
+		gap: 0.4rem;
 		font-size: 0.9rem;
+	}
+
+	.customer-profile-field-row.hidden {
+		display: none;
 	}
 
 	.customer-profile-field-term {
 		flex-shrink: 0;
-		font-weight: 600;
+		font-weight: 500;
+		letter-spacing: 0.01em;
 		color: var(--on-surface-variant);
 	}
 
 	.customer-profile-field-value {
 		min-width: 0;
-		text-align: right;
-		font-weight: 700;
-		color: color-mix(in srgb, var(--on-surface-variant) 70%, var(--on-surface) 30%);
+		text-align: left;
+		font-weight: 600;
+		letter-spacing: -0.01em;
+		color: var(--on-surface);
 		overflow-wrap: anywhere;
+		font-variant-numeric: tabular-nums;
 	}
 
 	.customer-profile-field-value--emphasize {
-		font-size: 0.95rem;
-		font-weight: 800;
+		font-weight: 600;
 		color: var(--on-surface);
 	}
 
 	.customer-profile-field-row[data-editing] {
 		flex-direction: column;
 		align-items: stretch;
-		gap: 0.5rem;
+		gap: 0.4rem;
 	}
 
 	.customer-profile-modal__panel[data-editing-profile='1'] .customer-profile-tab:not(.is-active) {
@@ -2803,6 +3175,29 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 
 	.customer-profile-phone-field__input:focus {
 		outline: none;
+	}
+
+	.customer-profile-phone-field.customer-create-phone-field {
+		display: flex;
+		height: auto;
+		min-height: 0;
+		border-radius: 0.75rem;
+		align-items: stretch;
+	}
+
+	.customer-create-phone-field .customer-profile-phone-field__prefix,
+	.customer-create-phone-field .customer-profile-phone-field__input {
+		font-size: 0.95rem;
+		line-height: 1.5;
+	}
+
+	.customer-create-phone-field .customer-profile-phone-field__prefix {
+		padding: 0.75rem 0.15rem 0.75rem 1rem;
+	}
+
+	.customer-create-phone-field .customer-profile-phone-field__input {
+		padding: 0.75rem 1rem 0.75rem 0.45rem;
+		font-weight: 400;
 	}
 
 	.customer-profile-pending-item {
