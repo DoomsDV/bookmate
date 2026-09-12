@@ -1,9 +1,13 @@
 import {
 	BUSINESS_HOURS_DAY_LABELS,
+	BUSINESS_HOURS_DAY_LETTER,
 	BUSINESS_HOURS_MAX_INTERVALS,
+	businessHoursTrackPercent,
 	defaultOpenInterval,
+	describeBusinessHoursDay,
 	emptyBusinessHours,
 	formatBusinessHoursForDisplay,
+	getLocalDayAndMinutes,
 	parseBusinessHours,
 	validateBusinessHours,
 	type BusinessHours,
@@ -324,6 +328,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	const facebookInput = root.querySelector<HTMLInputElement>('[data-ppe-facebook]');
 	const instagramInput = root.querySelector<HTMLInputElement>('[data-ppe-instagram]');
 	let hoursList = root.querySelector<HTMLElement>('[data-ppe-hours-list]');
+	let hoursWeek = root.querySelector<HTMLElement>('[data-ppe-hours-week]');
 	const saveBtn = root.querySelector<HTMLButtonElement>('[data-ppe-save]');
 	const openPublic = root.querySelector<HTMLAnchorElement>('[data-ppe-open-public]');
 	const copyBtn = root.querySelector<HTMLButtonElement>('[data-ppe-copy-url]');
@@ -674,6 +679,45 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		);
 	};
 
+	const renderHoursWeekStrip = () => {
+		hoursWeek = root.querySelector<HTMLElement>('[data-ppe-hours-week]');
+		if (!hoursWeek) return;
+		hoursWeek.replaceChildren();
+		const todayDay = getLocalDayAndMinutes().day;
+
+		for (const day of businessHours.days) {
+			const open = !day.closed && day.intervals.length > 0;
+			const btn = document.createElement('button');
+			btn.type = 'button';
+			btn.className = `ppe-hours-week__day ${open ? 'is-open' : 'is-closed'}${
+				day.day === todayDay ? ' is-today' : ''
+			}`;
+			btn.setAttribute('data-ppe-hours-jump', String(day.day));
+			btn.setAttribute('aria-label', describeBusinessHoursDay(day));
+
+			const letter = document.createElement('span');
+			letter.className = 'ppe-hours-week__letter';
+			letter.textContent = BUSINESS_HOURS_DAY_LETTER[day.day - 1] || '';
+
+			const track = document.createElement('span');
+			track.className = 'ppe-hours-week__track';
+			track.setAttribute('aria-hidden', 'true');
+			if (open) {
+				for (const interval of day.intervals) {
+					const fill = document.createElement('span');
+					fill.className = 'ppe-hours-week__fill';
+					const pct = businessHoursTrackPercent(interval.start, interval.end);
+					fill.style.left = `${pct.left}%`;
+					fill.style.width = `${pct.width}%`;
+					track.appendChild(fill);
+				}
+			}
+
+			btn.append(letter, track);
+			hoursWeek.appendChild(btn);
+		}
+	};
+
 	const renderBusinessHours = () => {
 		hoursList = root.querySelector<HTMLElement>('[data-ppe-hours-list]');
 		if (!hoursList) return;
@@ -740,8 +784,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 
 					const sep = document.createElement('span');
 					sep.className = 'ppe-hours-interval__sep';
-					sep.setAttribute('aria-hidden', 'true');
-					sep.textContent = '–';
+					sep.textContent = 'a';
 
 					const end = document.createElement('input');
 					end.className = 'ppe-input ppe-hours-interval__time';
@@ -774,11 +817,10 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 					addBtn.className = 'ppe-hours-add';
 					addBtn.setAttribute('data-ppe-hours-add', String(day.day));
 					addBtn.setAttribute('aria-label', `Agregar turno el ${dayLabel}`);
-					addBtn.title = 'Agregar turno';
+					addBtn.title = 'Otro turno';
 					addBtn.innerHTML =
-						'<span>Agregar turno</span>' +
-						'<span class="ppe-hours-add__mark" aria-hidden="true">' +
-						'<span class="material-symbols-rounded">add</span></span>';
+						'<span class="material-symbols-rounded" aria-hidden="true">add</span>' +
+						'<span>Otro turno</span>';
 					intervalsWrap.appendChild(addBtn);
 				}
 
@@ -787,6 +829,8 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 
 			hoursList.appendChild(li);
 		}
+
+		renderHoursWeekStrip();
 	};
 
 	root.addEventListener(
@@ -1546,6 +1590,27 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	);
 
 	root.addEventListener(
+		'click',
+		(event) => {
+			const jump = (event.target as HTMLElement | null)?.closest('[data-ppe-hours-jump]');
+			if (!(jump instanceof HTMLElement)) return;
+			const dayNum = Number(jump.getAttribute('data-ppe-hours-jump') || 0);
+			if (!dayNum) return;
+			const row = root.querySelector<HTMLElement>(
+				`[data-ppe-hours-list] [data-day="${dayNum}"]`
+			);
+			if (!row) return;
+			const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+			row.scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
+			const focusable = row.querySelector<HTMLElement>(
+				'input[type="time"], [data-ppe-hours-open]'
+			);
+			focusable?.focus();
+		},
+		{ signal }
+	);
+
+	root.addEventListener(
 		'change',
 		(event) => {
 		const target = event.target as HTMLElement | null;
@@ -1578,6 +1643,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 				startInput.value = normalized;
 				day.intervals[index].start = normalized;
 				businessHours.days[dayNum - 1] = day;
+				renderHoursWeekStrip();
 				syncPreview();
 			}
 			return;
@@ -1593,6 +1659,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 				endInput.value = normalized;
 				day.intervals[index].end = normalized;
 				businessHours.days[dayNum - 1] = day;
+				renderHoursWeekStrip();
 				syncPreview();
 			}
 		}

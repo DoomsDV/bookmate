@@ -230,7 +230,7 @@ const googleErrorMessage = hasGoogleError
 														data-refresh-calendar
 														aria-label="Refrescar calendario"
 													>
-														<span class="material-symbols-rounded text-[1.12rem]">refresh</span>
+														<span class="material-symbols-rounded text-[1.25rem]">refresh</span>
 														<span class="calendar-refresh-btn__label sr-only">Refrescar</span>
 													</button>
 
@@ -242,7 +242,7 @@ const googleErrorMessage = hasGoogleError
 														aria-label="Agendar"
 													>
 														<svg
-															class="calendar-create-btn-icon w-[18px] h-[18px]"
+															class="calendar-create-btn-icon w-5 h-[20px]"
 															viewBox="0 0 24 24"
 															fill="none"
 															aria-hidden="true"
@@ -1419,7 +1419,7 @@ const googleErrorMessage = hasGoogleError
 			gap: 0.3rem 0.5rem;
 			position: relative;
 			margin-bottom: 0.28rem;
-			min-height: 2.25rem;
+			min-height: 3rem;
 		}
 
 		[data-calendar-root] .fc .fc-toolbar-chunk[data-calendar-title],
@@ -1479,12 +1479,14 @@ const googleErrorMessage = hasGoogleError
 		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .fc-button-group--segmented {
 			flex: 0 1 auto;
 			min-width: 0;
+			min-height: 3rem;
+			align-items: center;
 			margin-right: 0;
 		}
 
 		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .fc-button-group--segmented .fc-button {
-			padding-inline: 0.55rem;
-			font-size: 0.82rem;
+			padding-inline: 1.05rem;
+			font-size: 0.875rem;
 		}
 
 		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .calendar-chrome-actions {
@@ -1512,42 +1514,69 @@ const googleErrorMessage = hasGoogleError
 		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .calendar-chrome-actions .calendar-tour-help,
 		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav .calendar-filters-trigger {
 			box-sizing: border-box;
-			width: 2.15rem;
-			height: 2.15rem;
-			min-width: 2.15rem;
-			min-height: 2.15rem;
-			max-width: 2.15rem;
-			max-height: 2.15rem;
+			width: 3rem;
+			height: 3rem;
+			min-width: 3rem;
+			min-height: 3rem;
+			max-width: 3rem;
+			max-height: 3rem;
 			padding: 0;
 			margin: 0;
 			gap: 0;
 			border: 1px solid var(--calendar-outline-strong);
 			border-radius: 999px;
 			aspect-ratio: 1;
-			flex: 0 0 2.15rem;
+			flex: 0 0 3rem;
 			align-self: center;
 			line-height: 0;
 		}
 
 		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .calendar-chrome-actions .material-symbols-rounded,
 		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav .calendar-filters-trigger .material-symbols-rounded {
-			font-size: 1.12rem;
+			font-size: 1.25rem;
 			line-height: 1;
 			font-variation-settings: 'wght' 380, 'opsz' 20;
 		}
 
 		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .calendar-create-btn {
-			height: 2.15rem;
-			min-height: 2.15rem;
-			padding-inline: 0.75rem;
-			font-size: 0.82rem;
+			box-sizing: border-box;
+			height: 3rem;
+			min-height: 3rem;
+			padding-inline: 1.25rem;
+			font-size: 0.875rem;
+			font-weight: 600;
+			line-height: 1;
 		}
 
 		[data-calendar-root] .fc .fc-button,
 		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .fc-button-group--segmented .fc-button {
-			height: 2.05rem;
-			font-size: 0.78rem;
-			padding-inline: 0.62rem;
+			height: 3rem;
+			min-height: 3rem;
+			font-size: 0.875rem;
+			padding-inline: 1.05rem;
+		}
+
+		[data-calendar-root] .fc .fc-prev-button,
+		[data-calendar-root] .fc .fc-next-button {
+			width: 3rem;
+			min-width: 3rem;
+			max-width: 3rem;
+			padding: 0;
+		}
+
+		[data-calendar-root] .fc .fc-goToday-button,
+		[data-calendar-root] .fc .fc-today-button {
+			height: 3rem;
+			min-height: 3rem;
+			padding-inline: 1.25rem;
+			font-size: 0.875rem;
+			font-weight: 600;
+			line-height: 1;
+		}
+
+		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .fc-button-group--segmented {
+			min-height: 3rem;
+			align-items: center;
 		}
 
 		[data-calendar-root] .fc .fc-timegrid-slot {
@@ -1598,7 +1627,7 @@ const googleErrorMessage = hasGoogleError
 		}
 
 		.calendar-filters-trigger {
-			min-height: 2.15rem;
+			min-height: 3rem;
 			padding: 0.35rem 0.7rem;
 		}
 	}
@@ -1633,16 +1662,19 @@ const googleErrorMessage = hasGoogleError
 	}
 
 	[data-calendar-root] .fc .fc-button {
-		height: 2.4rem;
+		box-sizing: border-box;
+		height: 3rem;
+		min-height: 3rem;
 		border-radius: 999px;
 		border: 0;
 		background: transparent;
 		color: var(--on-surface);
 		box-shadow: none;
 		text-transform: none;
-		font-weight: 700;
-		font-size: 0.88rem;
-		padding-inline: 0.8rem;
+		font-weight: 600;
+		font-size: 0.875rem;
+		line-height: 1;
+		padding-inline: 1.05rem;
 		transition: background-color 140ms ease, color 140ms ease, transform 140ms ease;
 	}
 
@@ -1684,9 +1716,12 @@ const googleErrorMessage = hasGoogleError
 		border: 0;
 		border-radius: 999px;
 		background: transparent;
-		height: 2.28rem;
-		padding-inline: 0.82rem;
+		height: 3rem;
+		min-height: 3rem;
+		padding-inline: 1.05rem;
 		margin-left: 0;
+		font-size: 0.875rem;
+		font-weight: 600;
 	}
 
 	[data-calendar-root]
@@ -3036,10 +3071,10 @@ const googleErrorMessage = hasGoogleError
 
 		/* Desktop: ícono circular, mismo tamaño que refresh / conflictos */
 		.calendar-filters-trigger {
-			width: 2.15rem;
-			height: 2.15rem;
-			min-width: 2.15rem;
-			min-height: 2.15rem;
+			width: 3rem;
+			height: 3rem;
+			min-width: 3rem;
+			min-height: 3rem;
 			padding: 0;
 			border-radius: 999px;
 		}
@@ -3240,17 +3275,17 @@ const googleErrorMessage = hasGoogleError
 		.calendar-conflicts-trigger,
 		.calendar-tour-help {
 			box-sizing: border-box;
-			width: 2.15rem;
-			height: 2.15rem;
-			min-width: 2.15rem;
-			min-height: 2.15rem;
-			max-width: 2.15rem;
-			max-height: 2.15rem;
+			width: 3rem;
+			height: 3rem;
+			min-width: 3rem;
+			min-height: 3rem;
+			max-width: 3rem;
+			max-height: 3rem;
 			padding: 0;
 			border: 1px solid var(--calendar-outline-strong);
 			border-radius: 999px;
 			aspect-ratio: 1;
-			flex: 0 0 2.15rem;
+			flex: 0 0 3rem;
 			align-self: center;
 			line-height: 0;
 		}
@@ -3258,15 +3293,18 @@ const googleErrorMessage = hasGoogleError
 		.calendar-refresh-btn .material-symbols-rounded,
 		.calendar-conflicts-trigger .material-symbols-rounded,
 		.calendar-tour-help .material-symbols-rounded {
-			font-size: 1.12rem;
+			font-size: 1.25rem;
 			line-height: 1;
 		}
 
 		.calendar-create-btn {
-			height: 2.15rem;
-			min-height: 2.15rem;
-			padding: 0 0.75rem;
-			font-size: 0.82rem;
+			box-sizing: border-box;
+			height: 3rem;
+			min-height: 3rem;
+			padding: 0 1.25rem;
+			font-size: 0.875rem;
+			font-weight: 600;
+			line-height: 1;
 		}
 	}
 
@@ -3288,6 +3326,8 @@ const googleErrorMessage = hasGoogleError
 
 	.calendar-create-btn-icon {
 		flex-shrink: 0;
+		width: 1.25rem;
+		height: 1.25rem;
 	}
 
 	.calendar-create-btn:hover {

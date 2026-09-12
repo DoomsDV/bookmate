@@ -242,7 +242,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 				<main class="w-full max-w-full min-w-0 overflow-x-hidden px-4 py-5 sm:px-6 sm:py-6">
 					<div class="w-full min-w-0">
 						<section
-							class="dashboard-main-stack grid w-full min-w-0 gap-4 sm:gap-5"
+							class="dashboard-main-stack grid w-full min-w-0"
 							data-dashboard-main
 							data-fade-content
 							data-fc-blur="true"
@@ -371,20 +371,18 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 											<p class="dashboard-profit-value dashboard-profit-value--static">{todayTotal}</p>
 											<p class="dashboard-profit-caption">{todayTotal === 1 ? 'turno' : 'turnos'}</p>
 										</a>
-										<a
+										<article
 											class:list={[
 												'dashboard-profit-card dashboard-profit-card--simple',
 												unconfirmedTotal > 0 && 'is-alert',
 											]}
 											data-profit-accent="amber"
-											href="#dashboard-upcoming-appointments"
 										>
 											<span class="dashboard-profit-card__head">
 												<span class="dashboard-profit-icon" aria-hidden="true">
 													<span class="material-symbols-rounded">hourglass_top</span>
 												</span>
 												<p class="dashboard-profit-label">Por confirmar</p>
-												<span class="dashboard-profit-card__go material-symbols-rounded" aria-hidden="true">arrow_outward</span>
 											</span>
 											<p class="dashboard-profit-value dashboard-profit-value--static">{unconfirmedTotal}</p>
 											<p class="dashboard-profit-caption">
@@ -394,7 +392,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 														? 'Cita por confirmar'
 														: 'Citas por confirmar'}
 											</p>
-										</a>
+										</article>
 										<article class="dashboard-profit-card dashboard-profit-card--simple" data-profit-accent="emerald">
 											<span class="dashboard-profit-card__head">
 												<span class="dashboard-profit-icon" aria-hidden="true">
@@ -456,21 +454,28 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 									aria-busy="false"
 								>
 									<div class="dashboard-ai-strip__body">
+										<span class="dashboard-ai-strip__spine" aria-hidden="true"></span>
 										<div class="dashboard-ai-strip__copy">
 											<div class="dashboard-ai-strip__head">
 												<span class="dashboard-ai-strip__badge" aria-hidden="true">
-													<span class="dashboard-ai-strip__icon dashboard-ai-strip__shiny material-symbols-rounded">
+													<span class="dashboard-ai-strip__icon material-symbols-rounded">
 														auto_awesome
 													</span>
 												</span>
-												<p class="dashboard-ai-strip__eyebrow dashboard-ai-strip__shiny">
-													Resumen inteligente del día
-												</p>
+												<div class="dashboard-ai-strip__heading">
+													<p class="dashboard-ai-strip__eyebrow">
+														Resumen inteligente del día
+													</p>
+													<p class="dashboard-ai-strip__status" data-ai-summary-status>
+														Leyendo la agenda de hoy
+													</p>
+												</div>
 											</div>
 											<div class="dashboard-ai-strip__skeleton" aria-hidden="true">
 												<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--lg"></span>
 												<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--md"></span>
 												<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--sm"></span>
+												<span class="dashboard-ai-strip__skel-cta"></span>
 											</div>
 											<p class="dashboard-ai-strip__text" data-ai-summary-line>
 												{defaultAiSummaryShort}
@@ -483,7 +488,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 											>
 												<span class="dashboard-ai-strip__action-label">Ver análisis completo</span>
 												<span class="dashboard-ai-strip__action-icon" aria-hidden="true">
-													<span class="material-symbols-rounded">arrow_outward</span>
+													<span class="material-symbols-rounded">arrow_forward</span>
 												</span>
 											</button>
 										</div>
@@ -1299,7 +1304,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	const TEAM_OVERVIEW_TTL_MS = 120000;
 	const TEAM_OVERVIEW_LIMIT = 4;
 	const TEAM_AVATAR_FALLBACK_PALETTE = ['#2563eb', '#0f766e', '#be185d', '#7c3aed'];
-	const AI_SUMMARY_CACHE_KEY = 'hasel:dashboard-ai-summary:v4';
+	const AI_SUMMARY_CACHE_KEY = 'hasel:dashboard-ai-summary:v5';
 	const AI_SUMMARY_TTL_MS = 10 * 60 * 1000;
 	const DEFAULT_AI_SUMMARY_SHORT = '¡Buen día! Preparate para una excelente jornada de trabajo.';
 	const DEFAULT_AI_SUMMARY_FULL = DEFAULT_AI_SUMMARY_SHORT;
@@ -1755,7 +1760,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 		card.setAttribute('aria-busy', 'true');
 		card.classList.add('is-generating');
-		lineNode.textContent = 'Generando resumen inteligente.';
+		lineNode.textContent = 'Leyendo la agenda de hoy.';
 
 		try {
 			const response = await fetch('/api/dashboard/ai-summary', {
@@ -2417,7 +2422,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		--dashboard-card-radius: 0.75rem;
 		--dashboard-card-radius-inner: 0.55rem;
 		--dashboard-card-bg: #ffffff;
-		--dashboard-card-border: #eeeeee;
+		--dashboard-card-border: transparent;
+		--dashboard-gap: 8px;
 		--dashboard-copy-size: 0.92rem;
 		--dashboard-copy-weight: 500;
 		--dashboard-copy-leading: 1.45;
@@ -2433,7 +2439,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	html[data-theme='dark'] .dashboard-content-canvas {
 		background: var(--page-background, #0e0e10);
 		--dashboard-card-bg: var(--surface-bright);
-		--dashboard-card-border: var(--shell-border);
+		--dashboard-card-border: transparent;
 	}
 
 	.dashboard-primary-cta {
@@ -2860,7 +2866,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	.dashboard-main-stack {
 		--dashboard-duo-columns: 1fr;
-		--dashboard-duo-gap: 1rem;
+		--dashboard-duo-gap: var(--dashboard-gap, 8px);
+		gap: var(--dashboard-gap, 8px);
 	}
 
 	.dashboard-ops-duo {
@@ -2882,7 +2889,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	@media (min-width: 1280px) {
 		.dashboard-main-stack {
 			--dashboard-duo-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-			--dashboard-duo-gap: 1rem;
+			--dashboard-duo-gap: var(--dashboard-gap, 8px);
 		}
 
 		.dashboard-ops-duo > .dashboard-ai-strip {
@@ -3216,7 +3223,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	.dashboard-floor {
 		display: grid;
 		grid-template-columns: 1fr;
-		gap: 1rem;
+		gap: var(--dashboard-gap, 8px);
 		align-items: stretch;
 		width: 100%;
 		max-width: 100%;
@@ -3225,7 +3232,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	.dashboard-floor--today,
 	.dashboard-floor--action {
-		--dashboard-floor-gap: 1rem;
+		--dashboard-floor-gap: var(--dashboard-gap, 8px);
 		gap: var(--dashboard-floor-gap);
 	}
 
@@ -3591,7 +3598,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	html[data-theme='dark'] .dashboard-day-progress__inner {
-		border-color: var(--shell-border);
+		border-color: var(--dashboard-card-border, transparent);
 		background: var(--surface-bright);
 		box-shadow: none;
 	}
@@ -3797,7 +3804,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	html[data-theme='dark'] .dashboard-alerts-shell {
 		background: var(--surface-bright);
-		border: 1px solid var(--shell-border);
+		border: 1px solid var(--dashboard-card-border, transparent);
 		box-shadow: none;
 	}
 
@@ -4214,7 +4221,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	.dashboard-profit-metrics-track {
 		display: flex;
 		grid-template-columns: none;
-		gap: 0.85rem;
+		gap: var(--dashboard-gap, 8px);
 		width: 100%;
 		max-width: 100%;
 		min-width: 0;
@@ -4224,7 +4231,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		scroll-padding-inline: 0;
 		-webkit-overflow-scrolling: touch;
 		scrollbar-width: none;
-		padding: 0.2rem 0 0.25rem;
+		padding: 0;
 		margin-inline: 0;
 		box-sizing: border-box;
 	}
@@ -4250,7 +4257,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		.dashboard-profit-metrics-track {
 			display: grid;
 			grid-template-columns: repeat(4, minmax(0, 1fr));
-			gap: 0.85rem;
+			gap: var(--dashboard-gap, 8px);
 			overflow: visible;
 			scroll-snap-type: none;
 			padding: 0;
@@ -4322,7 +4329,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	html[data-theme='dark'] .dashboard-profit-card {
-		border: 1px solid var(--shell-border);
+		border: 1px solid var(--dashboard-card-border, transparent);
 		background: var(--surface-bright);
 		box-shadow: none;
 	}
@@ -4901,7 +4908,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	html[data-theme='dark'] .dashboard-report-shell {
 		background: var(--surface-bright);
-		border: 1px solid var(--shell-border);
+		border: 1px solid var(--dashboard-card-border, transparent);
 		box-shadow: none;
 	}
 
@@ -5372,7 +5379,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	html[data-theme='dark'] .m3-card {
-		border: 1px solid var(--shell-border);
+		border: 1px solid var(--dashboard-card-border, transparent);
 		background: var(--surface-bright);
 		box-shadow: none;
 	}
@@ -5527,9 +5534,9 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	/* Pausar animaciones infinitas al backgroundear (calor en PWA iOS/Android). */
-	:global(html[data-page-hidden] .dashboard-ai-strip.is-generating .dashboard-ai-strip__icon),
-	:global(html[data-page-hidden] .dashboard-ai-strip.is-generating .dashboard-ai-strip__badge),
+	:global(html[data-page-hidden] .dashboard-ai-strip.is-generating .dashboard-ai-strip__spine),
 	:global(html[data-page-hidden] .dashboard-ai-strip.is-generating .dashboard-ai-strip__skel-line::after),
+	:global(html[data-page-hidden] .dashboard-ai-strip.is-generating .dashboard-ai-strip__skel-cta::after),
 	html[data-page-hidden] .dashboard-profitability-shell.is-loading .dashboard-profit-value:not(.dashboard-profit-value--static),
 	html[data-page-hidden] .dashboard-profitability-shell.is-loading .dashboard-profit-stat__value:not(.dashboard-profit-value--static),
 	html[data-page-hidden] .dashboard-profitability-shell.is-loading .dashboard-profit-chip__value {

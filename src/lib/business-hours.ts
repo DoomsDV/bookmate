@@ -49,7 +49,35 @@ export const BUSINESS_HOURS_DAY_SHORT = [
 	'Dom',
 ] as const;
 
+/** Letras de cartelera (X = miércoles). */
+export const BUSINESS_HOURS_DAY_LETTER = ['L', 'M', 'X', 'J', 'V', 'S', 'D'] as const;
+
 export const BUSINESS_HOURS_MAX_INTERVALS = 3;
+
+const MINUTES_IN_DAY = 24 * 60;
+
+/** Posición del turno en una barra 0-24 h (para la vista semanal del editor). */
+export const businessHoursTrackPercent = (
+	start: string,
+	end: string
+): { left: number; width: number } => {
+	const startMin = timeToMinutes(start);
+	const endMin = timeToMinutes(end);
+	if (!Number.isFinite(startMin) || !Number.isFinite(endMin) || endMin <= startMin) {
+		return { left: 0, width: 0 };
+	}
+	return {
+		left: (startMin / MINUTES_IN_DAY) * 100,
+		width: ((endMin - startMin) / MINUTES_IN_DAY) * 100,
+	};
+};
+
+export const describeBusinessHoursDay = (day: BusinessHoursDay): string => {
+	const label = BUSINESS_HOURS_DAY_LABELS[day.day - 1] || `Día ${day.day}`;
+	if (day.closed || !day.intervals.length) return `${label}, cerrado`;
+	const slots = day.intervals.map((interval) => `${interval.start} a ${interval.end}`).join(', ');
+	return `${label}, ${slots}`;
+};
 
 const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
 

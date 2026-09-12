@@ -18,7 +18,7 @@ export type BookmateTourRunOptions = {
 	 * con `showModal()` (top layer). Sin esto, la guía queda detrás del modal.
 	 */
 	useTopLayerShell?: boolean;
-	/** Opacidad del velo de driver.js. Default 0: el encuadre es el anillo CSS. */
+	/** Opacidad del velo de driver.js. Default 0: el encuadre es el anillo fixed. */
 	overlayOpacity?: number;
 	stagePadding?: number;
 	stageRadius?: number;
@@ -65,7 +65,9 @@ function ensureTourShell(): HTMLDialogElement {
 function closeTourShell() {
 	const shell = document.querySelector<HTMLDialogElement>(TOUR_SHELL_SELECTOR);
 	if (shell) {
-		shell.querySelectorAll('.driver-popover, .driver-overlay').forEach((node) => node.remove());
+		shell
+			.querySelectorAll('.driver-popover, .driver-overlay, [data-bookmate-tour-focus]')
+			.forEach((node) => node.remove());
 		delete shell.dataset.overlayOpacity;
 		if (shell.open) shell.close();
 	}
@@ -96,6 +98,7 @@ function forceCleanupDriverDom() {
 	});
 	document.body.classList.remove('driver-active', 'driver-fade', 'driver-simple');
 	stopOverlayStripObserver();
+	removeTourFocusRing();
 	closeTourShell();
 }
 
@@ -165,6 +168,7 @@ let activeTourStorageKey: string | null = null;
 let activeTourPersistCompletion = true;
 let activeTourUsesTopLayerShell = false;
 let activeTourOverlayOpacity = 0;
+let activeTourDurationMs = 280;
 let destroyPersistOverride: boolean | null = null;
 
 function isTourOverlayDisabled() {
@@ -201,6 +205,148 @@ function startOverlayStripObserver() {
 function stopOverlayStripObserver() {
 	overlayStripObserver?.disconnect();
 	overlayStripObserver = null;
+}
+
+const TOUR_FOCUS_SELECTOR = '[data-bookmate-tour-focus]';
+/** Misma holgura que el outline-offset anterior (~0.7rem). */
+const TOUR_FOCUS_PAD_REM = 0.7;
+
+let focusRingTarget: HTMLElement | null = null;
+let focusRingRaf = 0;
+let focusRingSyncBound = false;
+let focusRingObserver: ResizeObserver | null = null;
+
+function getTourFocusRingHost(): HTMLElement {
+	if (activeTourUsesTopLayerShell) {
+		const shell = document.querySelector<HTMLElement>(TOUR_SHELL_SELECTOR);
+		if (shell) return shell;
+	}
+	return document.body;
+}
+
+function ensureTourFocusRing(): HTMLElement {
+	const host = getTourFocusRingHost();
+	let ring = document.querySelector<HTMLElement>(TOUR_FOCUS_SELECTOR);
+	if (!ring) {
+		ring = document.createElement('div');
+		ring.setAttribute('data-bookmate-tour-focus', '');
+		ring.setAttribute('aria-hidden', 'true');
+		ring.hidden = true;
+		host.appendChild(ring);
+	} else if (ring.parentElement !== host) {
+		host.appendChild(ring);
+	}
+	ring.style.setProperty('--driver-animation-duration', `${activeTourDurationMs}ms`);
+	return ring;
+}
+
+function resolveTourFocusRadius(element: HTMLElement, pad: number): string {
+	if (
+		element.matches(
+			'[data-professional-card-avatar], [data-voice-overlay-record], [data-calendar-tour-help], .calendar-tour-help, .calendar-filters-trigger'
+		)
+	) {
+		return '999px';
+	}
+
+	const radius = getComputedStyle(element).borderRadius;
+	const parts = radius.split(/\s+/).filter(Boolean);
+	if (parts.some((part) => part.includes('%') && parseFloat(part) >= 50)) {
+		return '999px';
+	}
+
+	const values = parts.map((part) => parseFloat(part)).filter((n) => Number.isFinite(n));
+	const max = values.length ? Math.max(...values) : 0;
+	const rect = element.getBoundingClientRect();
+	const minSide = Math.min(rect.width, rect.height);
+	if (max >= 999 || (minSide > 0 && max >= minSide / 2 - 0.5)) {
+		return '999px';
+	}
+
+	const base = max > 0 ? max : 16;
+	return `${base + pad}px`;
+}
+
+function placeTourFocusRing(element?: Element | null, options?: { snap?: boolean }) {
+	const ring = ensureTourFocusRing();
+	if (!(element instanceof HTMLElement) || element.getClientRects().length === 0) {
+		ring.hidden = true;
+		return;
+	}
+
+	const rect = element.getBoundingClientRect();
+	if (rect.width < 1 && rect.height < 1) {
+		ring.hidden = true;
+		return;
+	}
+
+	const rootFont = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+	const pad = TOUR_FOCUS_PAD_REM * rootFont;
+	const snap = Boolean(options?.snap || ring.hidden);
+
+	if (snap) ring.style.transition = 'none';
+
+	ring.hidden = false;
+	ring.style.top = `${rect.top - pad}px`;
+	ring.style.left = `${rect.left - pad}px`;
+	ring.style.width = `${rect.width + pad * 2}px`;
+	ring.style.height = `${rect.height + pad * 2}px`;
+	ring.style.borderRadius = resolveTourFocusRadius(element, pad);
+
+	if (snap) {
+		void ring.offsetWidth;
+		ring.style.transition = '';
+	}
+}
+
+function onTourFocusViewportChange() {
+	if (!focusRingTarget) return;
+	if (focusRingRaf) return;
+	focusRingRaf = window.requestAnimationFrame(() => {
+		focusRingRaf = 0;
+		placeTourFocusRing(focusRingTarget);
+	});
+}
+
+function startTourFocusRingSync(element: Element | undefined) {
+	const next = element instanceof HTMLElement ? element : null;
+	const ring = document.querySelector<HTMLElement>(TOUR_FOCUS_SELECTOR);
+	const snap = !ring || ring.hidden;
+	focusRingTarget = next;
+	placeTourFocusRing(next, { snap });
+
+	if (!focusRingObserver) {
+		focusRingObserver = new ResizeObserver(onTourFocusViewportChange);
+	}
+	focusRingObserver.disconnect();
+	if (next) focusRingObserver.observe(next);
+
+	if (focusRingSyncBound) return;
+	focusRingSyncBound = true;
+	window.addEventListener('scroll', onTourFocusViewportChange, true);
+	window.addEventListener('resize', onTourFocusViewportChange);
+	window.visualViewport?.addEventListener('resize', onTourFocusViewportChange);
+	window.visualViewport?.addEventListener('scroll', onTourFocusViewportChange);
+}
+
+function stopTourFocusRingSync() {
+	focusRingTarget = null;
+	if (focusRingRaf) {
+		window.cancelAnimationFrame(focusRingRaf);
+		focusRingRaf = 0;
+	}
+	focusRingObserver?.disconnect();
+	if (!focusRingSyncBound) return;
+	focusRingSyncBound = false;
+	window.removeEventListener('scroll', onTourFocusViewportChange, true);
+	window.removeEventListener('resize', onTourFocusViewportChange);
+	window.visualViewport?.removeEventListener('resize', onTourFocusViewportChange);
+	window.visualViewport?.removeEventListener('scroll', onTourFocusViewportChange);
+}
+
+function removeTourFocusRing() {
+	stopTourFocusRingSync();
+	document.querySelectorAll(TOUR_FOCUS_SELECTOR).forEach((node) => node.remove());
 }
 
 function scheduleRemoveTourOverlaysAfterDriverPaint() {
@@ -461,6 +607,7 @@ function syncTourLayout(
 	scheduleRemoveTourOverlaysAfterDriverPaint();
 
 	const activeElement = document.querySelector('.driver-active-element');
+	placeTourFocusRing(activeElement);
 	if (activeElement instanceof HTMLElement && isPopoverMispositioned(popover, activeElement)) {
 		pinPopoverNearActiveElement(popover, preferredSide);
 	}
@@ -504,6 +651,7 @@ export function runBookmateTour(steps: DriveStep[], options: BookmateTourRunOpti
 	const animate = options.animate ?? true;
 	const duration = options.duration ?? 280;
 	activeTourOverlayOpacity = overlayOpacity;
+	activeTourDurationMs = animate ? duration : 0;
 	activeTourStorageKey = options.storageKey;
 	activeTourPersistCompletion = options.persistCompletion !== false;
 	activeTourUsesTopLayerShell = useShell;
@@ -532,9 +680,11 @@ export function runBookmateTour(steps: DriveStep[], options: BookmateTourRunOpti
 			: undefined,
 		onHighlightStarted: (element) => {
 			scrollTourTargetIntoView(element, options.scrollIntoView);
+			startTourFocusRingSync(element);
 			scheduleRemoveTourOverlaysAfterDriverPaint();
 		},
-		onHighlighted: (_element, step, { driver: activeDriver }) => {
+		onHighlighted: (element, step, { driver: activeDriver }) => {
+			startTourFocusRingSync(element);
 			if (!useShell && !needsScrollSync) return;
 			if (!isTourHostOpen(hostSelector)) {
 				destroyActiveBookmateTour();
@@ -554,7 +704,9 @@ export function runBookmateTour(steps: DriveStep[], options: BookmateTourRunOpti
 			activeTourDriver = null;
 			activeTourUsesTopLayerShell = false;
 			activeTourOverlayOpacity = 0;
+			activeTourDurationMs = 280;
 			stopOverlayStripObserver();
+			removeTourFocusRing();
 			if (useShell) closeTourShell();
 
 			const shouldPersist =
