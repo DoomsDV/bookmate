@@ -61,7 +61,20 @@ const compactClock = (value: string): string => {
 	return value.endsWith(':00') ? value.slice(0, 2) : value;
 };
 
-/** Resumen de un día para la tira semanal del editor (una línea). */
+/** Índice tipo plantilla semanal (01-07). */
+export const formatBusinessHoursDayIndex = (day: number): string =>
+	String(day).padStart(2, '0');
+
+export const formatBusinessHoursShiftCount = (count: number): string =>
+	count === 1 ? '1 turno' : `${count} turnos`;
+
+/** Resumen del día en el editor (alineado a Horarios). */
+export const formatBusinessHoursDaySummary = (day: BusinessHoursDay): string => {
+	if (day.closed || !day.intervals.length) return 'Día libre';
+	return formatBusinessHoursShiftCount(day.intervals.length);
+};
+
+/** Resumen compacto de un día (una línea). */
 export const formatBusinessHoursDayBrief = (day: BusinessHoursDay): string => {
 	if (day.closed || !day.intervals.length) return 'Cerrado';
 	const first = day.intervals[0];

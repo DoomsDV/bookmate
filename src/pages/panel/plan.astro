@@ -889,7 +889,7 @@ const defaultCardHint = defaultCard
 								)}
 
 								{canDowngradeToBase ? (
-									<section class="grid gap-3 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-4 sm:px-5">
+									<section class="grid gap-3 rounded-2xl bg-(--sidebar-surface) px-4 py-4 sm:px-5">
 										<div class="grid gap-1">
 											<h2 class="m-0 text-lg font-bold text-(--on-surface)">Cambiar de plan</h2>
 											<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)">
@@ -905,7 +905,7 @@ const defaultCardHint = defaultCard
 								) : null}
 
 								{canTerminate ? (
-									<section class="grid gap-3 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-4 sm:px-5">
+									<section class="grid gap-3 rounded-2xl bg-(--sidebar-surface) px-4 py-4 sm:px-5">
 										<div class="grid gap-1">
 											<h2 class="m-0 text-lg font-bold text-(--on-surface)">Cancelar suscripción</h2>
 											<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)">
@@ -1136,7 +1136,7 @@ const defaultCardHint = defaultCard
 										</select>
 
 										<div
-											class="plan-history-results overflow-hidden rounded-2xl border border-(--shell-border) bg-(--surface-bright)"
+											class="plan-history-results overflow-hidden rounded-2xl bg-(--sidebar-surface)"
 											data-plan-history-results
 										>
 											<div class="plan-invoice-table-wrap hidden md:block" data-plan-history-table-wrap>
@@ -1744,7 +1744,7 @@ const defaultCardHint = defaultCard
 		position: relative;
 		overflow: hidden;
 		border-radius: 1.25rem;
-		border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
+		border: none;
 		background: color-mix(in srgb, var(--primary) 5%, var(--surface-bright, #fff));
 		padding: 1.5rem;
 		display: grid;
@@ -2046,18 +2046,19 @@ const defaultCardHint = defaultCard
 		position: relative;
 		display: flex; flex-direction: column; gap: 1rem;
 		border-radius: 1.25rem;
-		border: 1px solid var(--shell-border);
-		background: var(--surface-bright, #fff);
+		border: none;
+		background: var(--sidebar-surface, #fff);
 		padding: 1.5rem;
 		overflow: hidden;
+		box-shadow: none;
 	}
 	.plan-card-featured {
-		border-color: color-mix(in srgb, var(--primary) 45%, var(--shell-border));
+		border: none;
 		border-top: 4px solid var(--primary);
 		background: color-mix(in srgb, var(--primary) 4%, var(--surface-bright, #fff));
 		box-shadow: none;
 	}
-	.plan-card-current { outline: none; border-color: color-mix(in srgb, var(--primary) 40%, var(--shell-border)); }
+	.plan-card-current { outline: none; }
 	.plan-card-divider {
 		display: none;
 		height: 0;
@@ -2237,7 +2238,7 @@ const defaultCardHint = defaultCard
 
 		.plan-cards-carousel .plan-card-current {
 			outline: 0;
-			border: 1px solid var(--shell-border);
+			border: none;
 			border-top: 4px solid var(--primary);
 			background: color-mix(in srgb, var(--primary) 5%, var(--surface-bright, #fff));
 			color: var(--on-surface);
@@ -2435,8 +2436,9 @@ const defaultCardHint = defaultCard
 
 	.plan-addon-card {
 		display: grid; gap: 1rem;
-		border-radius: 1.1rem; border: 1px solid var(--shell-border);
-		background: var(--surface-bright, #fff); padding: 1.25rem;
+		border-radius: 1.1rem; border: none;
+		background: var(--sidebar-surface, #fff); padding: 1.25rem;
+		box-shadow: none;
 	}
 
 	.plan-usage-section,
@@ -2456,8 +2458,9 @@ const defaultCardHint = defaultCard
 		gap: 0.85rem;
 		padding: 1.15rem 1.2rem;
 		border-radius: 1.15rem;
-		border: 1px solid var(--shell-border);
-		background: var(--surface-bright, #fff);
+		border: none;
+		background: var(--sidebar-surface, #fff);
+		box-shadow: none;
 	}
 
 	.plan-usage-card-head {
@@ -2516,17 +2519,16 @@ const defaultCardHint = defaultCard
 		width: 100%;
 		padding: 1rem 1.1rem;
 		border-radius: 1.1rem;
-		border: 1px solid var(--shell-border);
-		background: var(--surface-bright, #fff);
+		border: none;
+		background: var(--sidebar-surface, #fff);
 		color: var(--on-surface);
 		cursor: pointer;
 		text-align: left;
-		transition: border-color 0.15s ease, background 0.15s ease;
+		transition: background 0.15s ease, box-shadow 0.15s ease;
 	}
 
 	.plan-mgmt-link:hover {
-		border-color: color-mix(in srgb, var(--primary) 35%, var(--shell-border));
-		background: color-mix(in srgb, var(--primary) 4%, var(--surface-bright, #fff));
+		background: color-mix(in srgb, var(--primary) 4%, var(--sidebar-surface, #fff));
 	}
 
 	.plan-mgmt-link > .material-symbols-rounded:first-child {
@@ -2678,9 +2680,10 @@ const defaultCardHint = defaultCard
 	.plan-billing-summary {
 		gap: 1rem;
 		border-radius: 1.25rem;
-		border: 1px solid var(--shell-border);
-		background: var(--surface-bright, #fff);
+		border: none;
+		background: var(--sidebar-surface, #fff);
 		padding: 1.25rem 1.35rem;
+		box-shadow: none;
 	}
 	.plan-billing-compact {
 		align-items: center;
@@ -2688,8 +2691,9 @@ const defaultCardHint = defaultCard
 		gap: 0.75rem;
 		padding: 0.85rem 1rem;
 		border-radius: 1rem;
-		border: 1px solid var(--shell-border);
-		background: var(--surface-bright, #fff);
+		border: none;
+		background: var(--sidebar-surface, #fff);
+		box-shadow: none;
 	}
 	.plan-billing-compact-text {
 		margin: 0;
@@ -2724,8 +2728,9 @@ const defaultCardHint = defaultCard
 		gap: 0.85rem;
 		padding: 0.95rem 1.1rem;
 		border-radius: 1.1rem;
-		border: 1px solid var(--shell-border);
-		background: var(--surface-bright, #fff);
+		border: none;
+		background: var(--sidebar-surface, #fff);
+		box-shadow: none;
 	}
 	.plan-billing-profile-collapsed.hidden,
 	[data-billing-profile-section].hidden {
@@ -3208,6 +3213,11 @@ const defaultCardHint = defaultCard
 			overflow: hidden;
 		}
 	}
+	.plan-history-results {
+		border: none;
+		box-shadow: none;
+	}
+
 	@media (max-width: 767px) {
 		.plan-history-results {
 			border: 0;
@@ -3223,7 +3233,8 @@ const defaultCardHint = defaultCard
 	.plan-invoice-table-wrap {
 		overflow-x: auto;
 		border-radius: 1.1rem;
-		border: 1px solid var(--shell-border);
+		border: none;
+		box-shadow: none;
 	}
 	.plan-invoice-table {
 		width: 100%;
@@ -3463,7 +3474,7 @@ const defaultCardHint = defaultCard
 		gap: 0.65rem;
 		padding: 0.95rem 1rem;
 		border-radius: 1rem;
-		border: 1px solid color-mix(in srgb, var(--on-surface) 10%, transparent);
+		border: none;
 		background: color-mix(in srgb, var(--on-surface) 3%, transparent);
 	}
 	.plan-downgrade-col-title {
@@ -3880,8 +3891,10 @@ const defaultCardHint = defaultCard
 
 	.plan-pay-card {
 		display: flex; align-items: center; gap: 0.8rem;
-		border: 1px solid var(--shell-border); border-radius: 1rem;
+		border: none; border-radius: 1rem;
 		padding: 0.9rem 1rem;
+		background: var(--sidebar-surface, #fff);
+		box-shadow: none;
 	}
 	.plan-pay-card .material-symbols-rounded { color: var(--primary); font-size: 1.5rem; }
 	.plan-pay-card small { color: var(--on-surface-variant); font-size: 0.78rem; }

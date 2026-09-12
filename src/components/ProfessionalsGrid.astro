@@ -424,8 +424,9 @@ const cardItems = professionals.map((professional) => ({
 		align-items: center;
 		justify-content: center;
 		border-radius: 1.35rem;
-		border: 1px solid rgba(148, 163, 184, 0.24);
-		background: color-mix(in srgb, var(--surface-container-low) 72%, var(--surface-bright) 28%);
+		border: none;
+		background: var(--sidebar-surface);
+		box-shadow: none;
 		padding: 2.5rem 1.25rem;
 		text-align: center;
 	}
@@ -444,15 +445,14 @@ const cardItems = professionals.map((professional) => ({
 
 	professional-manager .professionals-card {
 		--professionals-ease: cubic-bezier(0.32, 0.72, 0, 1);
-		--calendar-surface: color-mix(in srgb, var(--surface-container-low) 86%, var(--surface-bright) 14%);
 		cursor: pointer;
 		gap: 0;
 		min-height: 10.5rem;
 		padding: 0.95rem 0.9rem 0.85rem;
-		border: 0;
+		border: none;
 		border-radius: 1.2rem;
-		background: var(--calendar-surface);
-		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 9%, transparent);
+		background: var(--sidebar-surface);
+		box-shadow: none;
 		overflow: visible;
 		animation: professionals-card-enter 800ms var(--professionals-ease) both;
 		transition:
@@ -482,12 +482,12 @@ const cardItems = professionals.map((professional) => ({
 	professional-manager .professionals-card.panel-skeleton-card:hover {
 		animation: none;
 		transform: none !important;
-		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 9%, transparent) !important;
+		box-shadow: none !important;
 	}
 
 	professional-manager .professionals-card:hover {
 		transform: none;
-		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 14%, transparent);
+		box-shadow: none;
 	}
 
 	professional-manager .professionals-card__inner {
@@ -647,18 +647,20 @@ const cardItems = professionals.map((professional) => ({
 
 	@media (min-width: 1024px) {
 		professional-manager .professionals-card:hover {
-			transform: translateY(-3px);
-			box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 28%, transparent);
+			transform: translateY(-2px);
+			box-shadow: var(--card-elevation-hover);
 		}
 	}
 
 	html[data-theme='dark'] professional-manager .professionals-card {
-		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+		background: #121214;
+		border: none;
+		box-shadow: none;
 	}
 
 	html[data-theme='dark'] professional-manager .professionals-card:hover {
-		background: color-mix(in srgb, var(--surface-container-high) 28%, var(--calendar-surface) 72%);
-		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
+		background: #121214;
+		box-shadow: none;
 	}
 
 	html[data-theme='dark'] professional-manager .professionals-card__inner {
@@ -684,8 +686,8 @@ const cardItems = professionals.map((professional) => ({
 
 	html[data-theme='dark'] professional-manager .professionals-card.panel-skeleton-card,
 	html[data-theme='dark'] professional-manager .professionals-card.panel-skeleton-card:hover {
-		background: var(--calendar-surface);
-		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+		background: #121214;
+		box-shadow: none !important;
 	}
 
 	html[data-theme='dark'] professional-manager .professionals-card__craft {
@@ -712,8 +714,9 @@ const cardItems = professionals.map((professional) => ({
 	}
 
 	html[data-theme='dark'] .professionals-empty-state {
-		border-color: rgba(255, 255, 255, 0.08);
+		border: none;
 		background: #121214;
+		box-shadow: none;
 	}
 
 

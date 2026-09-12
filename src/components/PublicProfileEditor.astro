@@ -1,12 +1,10 @@
 ---
 import {
 	BUSINESS_HOURS_DAY_LABELS,
-	BUSINESS_HOURS_DAY_LETTER,
 	BUSINESS_HOURS_MAX_INTERVALS,
-	describeBusinessHoursDay,
-	formatBusinessHoursDayBrief,
+	formatBusinessHoursDayIndex,
+	formatBusinessHoursDaySummary,
 	formatBusinessHoursForDisplay,
-	getLocalDayAndMinutes,
 	parseBusinessHours,
 } from '../lib/business-hours';
 import type { PublicOrgHub } from '../lib/public-org-hub';
@@ -45,7 +43,6 @@ const instagramUrl = String(workspace.instagram_url || '').trim();
 const bannerUrl = String(workspace.banner_url || '').trim();
 const businessHours = parseBusinessHours(workspace.business_hours);
 const businessHoursRows = formatBusinessHoursForDisplay(businessHours);
-const businessHoursToday = getLocalDayAndMinutes().day;
 
 const initials = (() => {
 	const parts = organizationName.trim().split(/\s+/).filter(Boolean);
@@ -510,148 +507,139 @@ const previewInitial = {
 						data-ppe-panel="horario"
 						hidden
 					>
-						<div class="ppe-field ppe-hours">
+						<div class="ppe-hours">
 							<div class="ppe-hours-head">
-								<div class="ppe-hours-head__copy">
-									<span class="ppe-field__label">Horario comercial</span>
-									<p class="ppe-field__hint">
-										Se muestra en tu página. No cambia cuándo te pueden reservar.
-									</p>
-								</div>
+								<p class="ppe-hours-kicker">
+									<span>Página</span>
+									Horario que se muestra a tus clientes. No cambia las reservas.
+								</p>
 								<button type="button" class="ppe-hours-copy" data-ppe-hours-copy-weekdays>
 									<span class="material-symbols-rounded" aria-hidden="true">content_copy</span>
 									<span>Copiar lunes a Lun-Vie</span>
 								</button>
 							</div>
-							<div
-								class="ppe-hours-week"
-								data-ppe-hours-week
-								role="group"
-								aria-label="Resumen de la semana"
-							>
+							<div class="ppe-hours-list" data-ppe-hours-list>
 								{
 									businessHours.days.map((day) => {
-										const letter = BUSINESS_HOURS_DAY_LETTER[day.day - 1];
-										const open = !day.closed && day.intervals.length > 0;
-										const isToday = day.day === businessHoursToday;
+										const dayLabel = BUSINESS_HOURS_DAY_LABELS[day.day - 1] || `Día ${day.day}`;
+										const open = !day.closed;
+										const canAdd = open && day.intervals.length < BUSINESS_HOURS_MAX_INTERVALS;
+										const onlyShift = day.intervals.length < 2;
 										return (
-											<button
-												type="button"
+											<article
 												class:list={[
-													'ppe-hours-week__day',
-													open ? 'is-open' : 'is-closed',
-													isToday && 'is-today',
+													'ppe-hours-day',
+													open ? 'ppe-hours-day--open' : 'ppe-hours-day--closed',
 												]}
-												data-ppe-hours-jump={day.day}
-												aria-label={describeBusinessHoursDay(day)}
-												aria-current={isToday ? 'true' : undefined}
+												data-day={day.day}
 											>
-												<span class="ppe-hours-week__letter">{letter}</span>
-												<span class="ppe-hours-week__meta">{formatBusinessHoursDayBrief(day)}</span>
-											</button>
+												<div class="ppe-hours-day__inner">
+													<header class="ppe-hours-day__mast">
+														<span class="ppe-hours-day__index">
+															{formatBusinessHoursDayIndex(day.day)}
+														</span>
+														<div class="ppe-hours-day__identity">
+															<h3 class="ppe-hours-day__title">{dayLabel}</h3>
+															<p class="ppe-hours-day__summary">
+																{formatBusinessHoursDaySummary(day)}
+															</p>
+														</div>
+														<label
+															class:list={['ppe-hours-switch', open && 'is-on']}
+														>
+															<span class="ppe-switch">
+																<input
+																	type="checkbox"
+																	checked={open}
+																	data-ppe-hours-open={day.day}
+																	aria-label={`${dayLabel}: ${open ? 'Abierto' : 'Cerrado'}`}
+																/>
+																<span class="ppe-switch__track" aria-hidden="true"></span>
+															</span>
+															<span class="ppe-hours-switch__label">
+																{open ? 'Abierto' : 'Cerrado'}
+															</span>
+														</label>
+													</header>
+													{
+														open ? (
+															<div class="ppe-hours-day__rail">
+																<div class="ppe-hours-day__shifts">
+																	{day.intervals.map((interval, index) => (
+																		<div class="ppe-hours-interval">
+																			<label class="ppe-hours-interval__field">
+																				Inicio
+																				<input
+																					class="ppe-hours-interval__time"
+																					type="time"
+																					step="60"
+																					min="00:00"
+																					max="23:59"
+																					autocomplete="off"
+																					lang="en-GB"
+																					title="Formato 24 h (HH:mm)"
+																					value={interval.start}
+																					data-ppe-hours-start={day.day}
+																					data-index={index}
+																					aria-label={`${dayLabel}: inicio turno ${index + 1}`}
+																				/>
+																			</label>
+																			<label class="ppe-hours-interval__field">
+																				Fin
+																				<input
+																					class="ppe-hours-interval__time"
+																					type="time"
+																					step="60"
+																					min="00:00"
+																					max="23:59"
+																					autocomplete="off"
+																					lang="en-GB"
+																					title="Formato 24 h (HH:mm)"
+																					value={interval.end}
+																					data-ppe-hours-end={day.day}
+																					data-index={index}
+																					aria-label={`${dayLabel}: fin turno ${index + 1}`}
+																				/>
+																			</label>
+																			<div class="ppe-hours-remove-wrap">
+																				<button
+																					type="button"
+																					class="ppe-hours-remove"
+																					data-ppe-hours-remove={day.day}
+																					data-index={index}
+																					aria-label={`Eliminar turno ${index + 1} de ${dayLabel}`}
+																					disabled={onlyShift}
+																				>
+																					<span class="material-symbols-rounded" aria-hidden="true">close</span>
+																				</button>
+																			</div>
+																		</div>
+																	))}
+																</div>
+																{
+																	canAdd ? (
+																		<button
+																			type="button"
+																			class="ppe-hours-add"
+																			data-ppe-hours-add={day.day}
+																			aria-label={`Agregar turno el ${dayLabel}`}
+																		>
+																			<span>Agregar turno</span>
+																			<span class="ppe-hours-add__mark" aria-hidden="true">
+																				<span class="material-symbols-rounded">add</span>
+																			</span>
+																		</button>
+																	) : null
+																}
+															</div>
+														) : null
+													}
+												</div>
+											</article>
 										);
 									})
 								}
 							</div>
-							<ul class="ppe-hours-list" data-ppe-hours-list>
-								{
-									businessHours.days.map((day) => {
-										const dayLabel = BUSINESS_HOURS_DAY_LABELS[day.day - 1] || `Día ${day.day}`;
-										const canAdd = !day.closed && day.intervals.length < BUSINESS_HOURS_MAX_INTERVALS;
-										return (
-											<li
-												class:list={['ppe-hours-day', day.closed ? 'is-closed' : 'is-open']}
-												data-day={day.day}
-											>
-												<div class="ppe-hours-day__mast">
-													<span class="ppe-hours-day__name">{dayLabel}</span>
-													<label class="ppe-hours-toggle">
-														<span class="ppe-switch">
-															<input
-																type="checkbox"
-																checked={!day.closed}
-																data-ppe-hours-open={day.day}
-																aria-label={`${dayLabel}: ${day.closed ? 'Cerrado' : 'Abierto'}`}
-															/>
-															<span class="ppe-switch__track" aria-hidden="true"></span>
-														</span>
-													</label>
-												</div>
-												{
-													day.closed ? (
-														<p class="ppe-hours-closed">Cerrado</p>
-													) : (
-														<div class="ppe-hours-intervals">
-															{day.intervals.map((interval, index) => (
-																<div class="ppe-hours-interval">
-																	<div class="ppe-hours-interval__range">
-																		<input
-																			class="ppe-input ppe-hours-interval__time"
-																			type="time"
-																			step="60"
-																			min="00:00"
-																			max="23:59"
-																			autocomplete="off"
-																			lang="en-GB"
-																			title="Formato 24 h (HH:mm)"
-																			value={interval.start}
-																			data-ppe-hours-start={day.day}
-																			data-index={index}
-																			aria-label={`${dayLabel}: inicio turno ${index + 1}`}
-																		/>
-																		<span class="ppe-hours-interval__sep">a</span>
-																		<input
-																			class="ppe-input ppe-hours-interval__time"
-																			type="time"
-																			step="60"
-																			min="00:00"
-																			max="23:59"
-																			autocomplete="off"
-																			lang="en-GB"
-																			title="Formato 24 h (HH:mm)"
-																			value={interval.end}
-																			data-ppe-hours-end={day.day}
-																			data-index={index}
-																			aria-label={`${dayLabel}: fin turno ${index + 1}`}
-																		/>
-																	</div>
-																	<button
-																		type="button"
-																		class:list={[
-																			'ppe-hours-remove',
-																			day.intervals.length < 2 && 'is-ghost',
-																		]}
-																		data-ppe-hours-remove={day.day}
-																		data-index={index}
-																		aria-label="Quitar turno"
-																		tabindex={day.intervals.length < 2 ? -1 : undefined}
-																	>
-																		<span class="material-symbols-rounded" aria-hidden="true">close</span>
-																	</button>
-																</div>
-															))}
-															{
-																canAdd ? (
-																	<button
-																		type="button"
-																		class="ppe-hours-add"
-																		data-ppe-hours-add={day.day}
-																		aria-label={`Agregar turno el ${dayLabel}`}
-																		title="Otro turno"
-																	>
-																		<span class="material-symbols-rounded" aria-hidden="true">add</span>
-																		<span>Otro turno</span>
-																	</button>
-																) : null
-															}
-														</div>
-													)
-												}
-											</li>
-										);
-									})
-								}
-							</ul>
 						</div>
 					</section>
 				</form>

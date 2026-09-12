@@ -2071,8 +2071,8 @@ html[data-theme='dark'] .modal-action-danger:hover {
 	padding: 0.55rem 0.7rem 0.55rem 0.9rem;
 	border: 0;
 	border-radius: 1.15rem;
-	background: var(--surface-bright);
-	box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 9%, transparent);
+	background: var(--sidebar-surface);
+	box-shadow: none;
 }
 
 .app-pagination__inner {
@@ -2209,8 +2209,8 @@ html[data-theme='dark'] .modal-action-danger:hover {
 }
 
 html[data-theme='dark'] .app-pagination__pill {
-	background: #16161a;
-	box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+	background: #121214;
+	box-shadow: none;
 }
 
 html[data-theme='dark'] .app-pagination__inner {
@@ -2285,14 +2285,14 @@ html[data-theme='dark'] .app-pagination__ellipsis {
 
 .material-region {
 	border-radius: 1.5rem;
-	border: 1px solid var(--card-border, var(--shell-border));
+	border: none;
 	background: var(--sidebar-surface);
 	width: 100%;
 	max-width: 100%;
 	min-width: 0;
 	box-sizing: border-box;
 	padding: var(--md-space-4);
-	box-shadow: var(--card-elevation), var(--card-inset-highlight);
+	box-shadow: none;
 	transition: all 180ms ease;
 }
 
@@ -2318,14 +2318,14 @@ html[data-theme='dark'] .app-pagination__ellipsis {
 
 .material-data-card {
 	border-radius: 1.25rem;
-	border: 1px solid var(--card-border, var(--shell-border));
+	border: none;
 	background: var(--card-surface-strong);
 	width: 100%;
 	max-width: 100%;
 	min-width: 0;
 	box-sizing: border-box;
 	padding: var(--md-space-4);
-	box-shadow: var(--card-elevation), var(--card-inset-highlight);
+	box-shadow: none;
 	transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 	display: flex;
 	flex-direction: column;
@@ -2341,14 +2341,14 @@ html[data-theme='dark'] .app-pagination__ellipsis {
 
 .material-inline-panel {
 	border-radius: 1rem;
-	border: 1px solid var(--card-border, var(--shell-border));
+	border: none;
 	background: var(--card-surface-strong);
 	width: 100%;
 	max-width: 100%;
 	min-width: 0;
 	box-sizing: border-box;
 	padding: 0.875rem var(--md-space-4);
-	box-shadow: var(--card-elevation), var(--card-inset-highlight);
+	box-shadow: none;
 }
 
 /* Skeletons de carga (clientes / server islands) */
@@ -2375,7 +2375,7 @@ html[data-theme='dark'] .app-pagination__ellipsis {
 
 .panel-skeleton-card:hover {
 	transform: none !important;
-	box-shadow: var(--card-elevation) !important;
+	box-shadow: none !important;
 }
 
 /* Cards del panel: estilo unificado (clientes, especialidades, personal, servicios, sucursales) */
@@ -2387,7 +2387,7 @@ html[data-theme='dark'] .app-pagination__ellipsis {
 	padding: 1.45rem 1.5rem 1.55rem;
 	border: none;
 	background: var(--sidebar-surface);
-	box-shadow: var(--card-elevation);
+	box-shadow: none;
 	transition: transform 170ms ease, box-shadow 170ms ease;
 }
 

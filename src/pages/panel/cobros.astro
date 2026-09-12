@@ -104,7 +104,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 											</div>
 										</div>
 
-										<div class="cobros-results overflow-hidden rounded-2xl border border-(--shell-border) bg-(--surface-bright)" data-cobros-results>
+										<div class="cobros-results overflow-hidden rounded-2xl bg-(--sidebar-surface)" data-cobros-results>
 											<!-- Desktop headers -->
 											<div class="hidden overflow-x-auto md:block" data-cobros-table-wrap>
 												<table class="w-full min-w-[44rem] border-collapse text-left text-[0.92rem]">
@@ -212,7 +212,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 						</section>
 
 						<section
-							class="hidden rounded-2xl border border-(--shell-border) bg-(--surface-bright) p-6"
+							class="hidden rounded-2xl bg-(--sidebar-surface) p-6"
 							data-cobros-feature-locked
 						>
 							<h2 class="text-xl font-bold text-(--on-surface)">Cobros es Premium</h2>
@@ -820,9 +820,19 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		display: none !important;
 	}
 
+	.cobros-results {
+		border: none;
+		box-shadow: none;
+	}
+
+	html[data-theme='dark'] .cobros-results {
+		background: #121214;
+	}
+
 	/* Móvil: sin caja externa → cards sueltas (como Clientes/Servicios) */
 	@media (max-width: 767px) {
-		.cobros-results {
+		.cobros-results,
+		html[data-theme='dark'] .cobros-results {
 			border: 0;
 			background: transparent;
 			border-radius: 0;
@@ -842,9 +852,9 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 
 	.cobros-loading__card {
 		border-radius: 1.2rem;
-		border: 0;
-		background: var(--surface-bright);
-		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 9%, transparent);
+		border: none;
+		background: var(--sidebar-surface);
+		box-shadow: none;
 		padding: 0.85rem 0.9rem 0.8rem;
 	}
 
@@ -1247,10 +1257,10 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 	:global(.cobros-card) {
 		--cobros-ease: cubic-bezier(0.32, 0.72, 0, 1);
 		padding: 0.85rem 0.9rem 0.8rem;
-		border: 0;
+		border: none;
 		border-radius: 1.2rem;
-		background: var(--surface-bright);
-		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 9%, transparent);
+		background: var(--sidebar-surface);
+		box-shadow: none;
 		animation: cobros-card-enter 800ms var(--cobros-ease) both;
 	}
 
@@ -1388,8 +1398,8 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 	}
 
 	:global(html[data-theme='dark'] .cobros-card) {
-		background: #16161a;
-		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+		background: #121214;
+		box-shadow: none;
 	}
 
 	:global(html[data-theme='dark'] .cobros-card__inner) {
@@ -1398,8 +1408,8 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 	}
 
 	:global(html[data-theme='dark'] .cobros-loading__card) {
-		background: #16161a;
-		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+		background: #121214;
+		box-shadow: none;
 	}
 
 	:global(html[data-theme='dark'] .cobros-chip--pending) {
@@ -2370,16 +2380,12 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 	}
 
 	:global(.cobros-card[data-cobros-focus]) {
-		box-shadow:
-			inset 3px 0 0 color-mix(in srgb, var(--on-surface) 42%, transparent),
-			0 0 0 1px color-mix(in srgb, var(--on-surface) 10%, transparent);
+		box-shadow: inset 3px 0 0 color-mix(in srgb, var(--on-surface) 42%, transparent);
 	}
 
 	:global(html[data-theme='dark'] .cobros-card[data-cobros-focus]) {
-		background: #16161a;
-		box-shadow:
-			inset 3px 0 0 rgba(255, 255, 255, 0.42),
-			0 0 0 1px rgba(255, 255, 255, 0.1);
+		background: #121214;
+		box-shadow: inset 3px 0 0 rgba(255, 255, 255, 0.42);
 	}
 
 	/* Validar comprobante: sheet móvil → drawer desde sm */

@@ -1,13 +1,11 @@
 import {
 	BUSINESS_HOURS_DAY_LABELS,
-	BUSINESS_HOURS_DAY_LETTER,
 	BUSINESS_HOURS_MAX_INTERVALS,
 	defaultOpenInterval,
-	describeBusinessHoursDay,
 	emptyBusinessHours,
-	formatBusinessHoursDayBrief,
+	formatBusinessHoursDayIndex,
+	formatBusinessHoursDaySummary,
 	formatBusinessHoursForDisplay,
-	getLocalDayAndMinutes,
 	parseBusinessHours,
 	validateBusinessHours,
 	type BusinessHours,
@@ -236,7 +234,7 @@ let ppeTabDelegationBound = false;
 
 /** Listeners del init anterior (mismo custom element tras View Transitions). */
 const editorAborts = new WeakMap<HTMLElement, AbortController>();
-/** `<ul data-ppe-hours-list>` al que este módulo ya enganchó el pintado. */
+/** `[data-ppe-hours-list]` al que este módulo ya enganchó el pintado. */
 const boundHoursLists = new WeakSet<Element>();
 
 /** Delegación global: funciona aunque el init del editor falle a mitad. */
@@ -330,7 +328,6 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	const facebookInput = root.querySelector<HTMLInputElement>('[data-ppe-facebook]');
 	const instagramInput = root.querySelector<HTMLInputElement>('[data-ppe-instagram]');
 	let hoursList = root.querySelector<HTMLElement>('[data-ppe-hours-list]');
-	let hoursWeek = root.querySelector<HTMLElement>('[data-ppe-hours-week]');
 	const saveBtn = root.querySelector<HTMLButtonElement>('[data-ppe-save]');
 	const openPublic = root.querySelector<HTMLAnchorElement>('[data-ppe-open-public]');
 	const copyBtn = root.querySelector<HTMLButtonElement>('[data-ppe-copy-url]');
@@ -681,35 +678,20 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		);
 	};
 
-	const renderHoursWeekStrip = () => {
-		hoursWeek = root.querySelector<HTMLElement>('[data-ppe-hours-week]');
-		if (!hoursWeek) return;
-		hoursWeek.replaceChildren();
-		const todayDay = getLocalDayAndMinutes().day;
-
-		for (const day of businessHours.days) {
-			const open = !day.closed && day.intervals.length > 0;
-			const isToday = day.day === todayDay;
-			const btn = document.createElement('button');
-			btn.type = 'button';
-			btn.className = `ppe-hours-week__day ${open ? 'is-open' : 'is-closed'}${
-				isToday ? ' is-today' : ''
-			}`;
-			btn.setAttribute('data-ppe-hours-jump', String(day.day));
-			btn.setAttribute('aria-label', describeBusinessHoursDay(day));
-			if (isToday) btn.setAttribute('aria-current', 'true');
-
-			const letter = document.createElement('span');
-			letter.className = 'ppe-hours-week__letter';
-			letter.textContent = BUSINESS_HOURS_DAY_LETTER[day.day - 1] || '';
-
-			const meta = document.createElement('span');
-			meta.className = 'ppe-hours-week__meta';
-			meta.textContent = formatBusinessHoursDayBrief(day);
-
-			btn.append(letter, meta);
-			hoursWeek.appendChild(btn);
-		}
+	const createHoursTimeInput = (
+		value: string,
+		attrs: { day: number; index: number; bound: 'start' | 'end'; ariaLabel: string }
+	) => {
+		const input = document.createElement('input');
+		input.className = 'ppe-hours-interval__time';
+		bindHoursTimeInput(input, value);
+		input.setAttribute(
+			attrs.bound === 'start' ? 'data-ppe-hours-start' : 'data-ppe-hours-end',
+			String(attrs.day)
+		);
+		input.dataset.index = String(attrs.index);
+		input.setAttribute('aria-label', attrs.ariaLabel);
+		return input;
 	};
 
 	const renderBusinessHours = () => {
@@ -720,111 +702,133 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 
 		for (const day of businessHours.days) {
 			const dayLabel = BUSINESS_HOURS_DAY_LABELS[day.day - 1] || `Día ${day.day}`;
-			const li = document.createElement('li');
-			li.className = day.closed ? 'ppe-hours-day is-closed' : 'ppe-hours-day is-open';
-			li.dataset.day = String(day.day);
+			const open = !day.closed;
+			const article = document.createElement('article');
+			article.className = open
+				? 'ppe-hours-day ppe-hours-day--open'
+				: 'ppe-hours-day ppe-hours-day--closed';
+			article.dataset.day = String(day.day);
 
-			const mast = document.createElement('div');
+			const inner = document.createElement('div');
+			inner.className = 'ppe-hours-day__inner';
+
+			const mast = document.createElement('header');
 			mast.className = 'ppe-hours-day__mast';
 
-			const name = document.createElement('span');
-			name.className = 'ppe-hours-day__name';
-			name.textContent = dayLabel;
+			const index = document.createElement('span');
+			index.className = 'ppe-hours-day__index';
+			index.textContent = formatBusinessHoursDayIndex(day.day);
+
+			const identity = document.createElement('div');
+			identity.className = 'ppe-hours-day__identity';
+
+			const title = document.createElement('h3');
+			title.className = 'ppe-hours-day__title';
+			title.textContent = dayLabel;
+
+			const summary = document.createElement('p');
+			summary.className = 'ppe-hours-day__summary';
+			summary.textContent = formatBusinessHoursDaySummary(day);
+			identity.append(title, summary);
 
 			const toggleWrap = document.createElement('label');
-			toggleWrap.className = 'ppe-hours-toggle';
+			toggleWrap.className = open ? 'ppe-hours-switch is-on' : 'ppe-hours-switch';
 			const switchEl = document.createElement('span');
 			switchEl.className = 'ppe-switch';
 			const toggle = document.createElement('input');
 			toggle.type = 'checkbox';
-			toggle.checked = !day.closed;
+			toggle.checked = open;
 			toggle.setAttribute('data-ppe-hours-open', String(day.day));
-			toggle.setAttribute(
-				'aria-label',
-				`${dayLabel}: ${day.closed ? 'Cerrado' : 'Abierto'}`
-			);
+			toggle.setAttribute('aria-label', `${dayLabel}: ${open ? 'Abierto' : 'Cerrado'}`);
 			const track = document.createElement('span');
 			track.className = 'ppe-switch__track';
 			track.setAttribute('aria-hidden', 'true');
 			switchEl.append(toggle, track);
-			toggleWrap.appendChild(switchEl);
+			const toggleText = document.createElement('span');
+			toggleText.className = 'ppe-hours-switch__label';
+			toggleText.textContent = open ? 'Abierto' : 'Cerrado';
+			toggleWrap.append(switchEl, toggleText);
 
-			mast.append(name, toggleWrap);
-			li.appendChild(mast);
+			mast.append(index, identity, toggleWrap);
+			inner.appendChild(mast);
 
-			if (day.closed) {
-				const closedLabel = document.createElement('p');
-				closedLabel.className = 'ppe-hours-closed';
-				closedLabel.textContent = 'Cerrado';
-				li.appendChild(closedLabel);
-			} else {
-				const intervalsWrap = document.createElement('div');
-				intervalsWrap.className = 'ppe-hours-intervals';
-				const canAdd = day.intervals.length < BUSINESS_HOURS_MAX_INTERVALS;
-				const ghostRemove = day.intervals.length < 2;
+			if (open) {
+				const rail = document.createElement('div');
+				rail.className = 'ppe-hours-day__rail';
 
-				day.intervals.forEach((interval, index) => {
+				const shifts = document.createElement('div');
+				shifts.className = 'ppe-hours-day__shifts';
+				const onlyShift = day.intervals.length < 2;
+
+				day.intervals.forEach((interval, intervalIndex) => {
 					const row = document.createElement('div');
 					row.className = 'ppe-hours-interval';
 
-					const range = document.createElement('div');
-					range.className = 'ppe-hours-interval__range';
+					const startLabel = document.createElement('label');
+					startLabel.className = 'ppe-hours-interval__field';
+					startLabel.append(
+						'Inicio',
+						createHoursTimeInput(interval.start, {
+							day: day.day,
+							index: intervalIndex,
+							bound: 'start',
+							ariaLabel: `${dayLabel}: inicio turno ${intervalIndex + 1}`,
+						})
+					);
 
-					const start = document.createElement('input');
-					start.className = 'ppe-input ppe-hours-interval__time';
-					bindHoursTimeInput(start, interval.start);
-					start.setAttribute('data-ppe-hours-start', String(day.day));
-					start.dataset.index = String(index);
-					start.setAttribute('aria-label', `${dayLabel}: inicio turno ${index + 1}`);
+					const endLabel = document.createElement('label');
+					endLabel.className = 'ppe-hours-interval__field';
+					endLabel.append(
+						'Fin',
+						createHoursTimeInput(interval.end, {
+							day: day.day,
+							index: intervalIndex,
+							bound: 'end',
+							ariaLabel: `${dayLabel}: fin turno ${intervalIndex + 1}`,
+						})
+					);
 
-					const sep = document.createElement('span');
-					sep.className = 'ppe-hours-interval__sep';
-					sep.textContent = 'a';
-
-					const end = document.createElement('input');
-					end.className = 'ppe-input ppe-hours-interval__time';
-					bindHoursTimeInput(end, interval.end);
-					end.setAttribute('data-ppe-hours-end', String(day.day));
-					end.dataset.index = String(index);
-					end.setAttribute('aria-label', `${dayLabel}: fin turno ${index + 1}`);
-
-					range.append(start, sep, end);
-					row.appendChild(range);
-
+					const removeWrap = document.createElement('div');
+					removeWrap.className = 'ppe-hours-remove-wrap';
 					const removeBtn = document.createElement('button');
 					removeBtn.type = 'button';
-					removeBtn.className = ghostRemove ? 'ppe-hours-remove is-ghost' : 'ppe-hours-remove';
+					removeBtn.className = 'ppe-hours-remove';
 					removeBtn.setAttribute('data-ppe-hours-remove', String(day.day));
-					removeBtn.dataset.index = String(index);
-					removeBtn.setAttribute('aria-label', 'Quitar turno');
-					if (ghostRemove) removeBtn.tabIndex = -1;
+					removeBtn.dataset.index = String(intervalIndex);
+					removeBtn.setAttribute(
+						'aria-label',
+						`Eliminar turno ${intervalIndex + 1} de ${dayLabel}`
+					);
+					removeBtn.disabled = onlyShift;
 					removeBtn.innerHTML =
 						'<span class="material-symbols-rounded" aria-hidden="true">close</span>';
-					row.appendChild(removeBtn);
+					removeWrap.appendChild(removeBtn);
 
-					intervalsWrap.appendChild(row);
+					row.append(startLabel, endLabel, removeWrap);
+					shifts.appendChild(row);
 				});
 
-				if (canAdd) {
+				rail.appendChild(shifts);
+
+				if (day.intervals.length < BUSINESS_HOURS_MAX_INTERVALS) {
 					const addBtn = document.createElement('button');
 					addBtn.type = 'button';
 					addBtn.className = 'ppe-hours-add';
 					addBtn.setAttribute('data-ppe-hours-add', String(day.day));
 					addBtn.setAttribute('aria-label', `Agregar turno el ${dayLabel}`);
-					addBtn.title = 'Otro turno';
 					addBtn.innerHTML =
-						'<span class="material-symbols-rounded" aria-hidden="true">add</span>' +
-						'<span>Otro turno</span>';
-					intervalsWrap.appendChild(addBtn);
+						'<span>Agregar turno</span>' +
+						'<span class="ppe-hours-add__mark" aria-hidden="true">' +
+						'<span class="material-symbols-rounded">add</span></span>';
+					rail.appendChild(addBtn);
 				}
 
-				li.appendChild(intervalsWrap);
+				inner.appendChild(rail);
 			}
 
-			hoursList.appendChild(li);
+			article.appendChild(inner);
+			hoursList.appendChild(article);
 		}
-
-		renderHoursWeekStrip();
 	};
 
 	root.addEventListener(
@@ -1584,27 +1588,6 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	);
 
 	root.addEventListener(
-		'click',
-		(event) => {
-			const jump = (event.target as HTMLElement | null)?.closest('[data-ppe-hours-jump]');
-			if (!(jump instanceof HTMLElement)) return;
-			const dayNum = Number(jump.getAttribute('data-ppe-hours-jump') || 0);
-			if (!dayNum) return;
-			const row = root.querySelector<HTMLElement>(
-				`[data-ppe-hours-list] [data-day="${dayNum}"]`
-			);
-			if (!row) return;
-			const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-			row.scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
-			const focusable = row.querySelector<HTMLElement>(
-				'input[type="time"], [data-ppe-hours-open]'
-			);
-			focusable?.focus();
-		},
-		{ signal }
-	);
-
-	root.addEventListener(
 		'change',
 		(event) => {
 		const target = event.target as HTMLElement | null;
@@ -1637,7 +1620,6 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 				startInput.value = normalized;
 				day.intervals[index].start = normalized;
 				businessHours.days[dayNum - 1] = day;
-				renderHoursWeekStrip();
 				syncPreview();
 			}
 			return;
@@ -1653,7 +1635,6 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 				endInput.value = normalized;
 				day.intervals[index].end = normalized;
 				businessHours.days[dayNum - 1] = day;
-				renderHoursWeekStrip();
 				syncPreview();
 			}
 		}
