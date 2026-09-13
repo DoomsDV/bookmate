@@ -102,12 +102,19 @@ const slides = [
 				}
 			};
 
-			const desktopMq = window.matchMedia('(min-width: 960px)');
-
 			const start = () => {
 				stop();
-				if (prefersReducedMotion() || document.hidden || !desktopMq.matches) return;
+				if (prefersReducedMotion() || document.hidden) return;
 				timer = window.setInterval(() => show(index + 1), INTERVAL_MS);
+			};
+
+			const desktopMq = window.matchMedia('(min-width: 960px)');
+			const showcaseCol = root.closest('.auth-split-showcase-col');
+
+			const syncMobileBackdrop = () => {
+				if (showcaseCol instanceof HTMLElement) {
+					showcaseCol.toggleAttribute('aria-hidden', !desktopMq.matches);
+				}
 			};
 
 			dots.forEach((dot, dotIndex) => {
@@ -123,8 +130,12 @@ const slides = [
 			root.addEventListener('focusout', (event) => {
 				if (!root.contains(event.relatedTarget)) start();
 			});
+			const onDesktopChange = () => {
+				syncMobileBackdrop();
+				start();
+			};
 			if (typeof desktopMq.addEventListener === 'function') {
-				desktopMq.addEventListener('change', start);
+				desktopMq.addEventListener('change', onDesktopChange);
 			}
 
 			const onVisibility = () => {
@@ -137,12 +148,13 @@ const slides = [
 				stop();
 				document.removeEventListener('visibilitychange', onVisibility);
 				if (typeof desktopMq.removeEventListener === 'function') {
-					desktopMq.removeEventListener('change', start);
+					desktopMq.removeEventListener('change', onDesktopChange);
 				}
 				document.removeEventListener('astro:before-swap', teardown);
 			};
 			document.addEventListener('astro:before-swap', teardown);
 
+			syncMobileBackdrop();
 			start();
 		};
 
