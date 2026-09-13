@@ -14,6 +14,7 @@ export {
 	DASHBOARD_DAY_WINDOW,
 	DASHBOARD_UPCOMING_DAYS,
 	asuncionTodayIso,
+	chartBarTip,
 	chartWindowSubtitle,
 	chartYCeiling,
 	chartYTicks,

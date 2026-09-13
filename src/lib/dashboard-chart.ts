@@ -147,6 +147,18 @@ export type DashboardChartDay = {
 	showTick: boolean;
 };
 
+export const chartBarTip = (day: DashboardChartDay) => {
+	const countLabel = day.appointmentCount === 1 ? '1 cita' : `${day.appointmentCount} citas`;
+	if (day.isToday) return { title: 'Hoy', countLabel };
+	const month = new Intl.DateTimeFormat('es-PY', { month: 'short', timeZone: 'UTC' })
+		.format(new Date(`${day.iso}T12:00:00Z`))
+		.replace('.', '');
+	return {
+		title: `${day.weekdayName} ${day.dayNumber} ${month}`,
+		countLabel,
+	};
+};
+
 export const toDashboardChartDays = (
 	series: DashboardDayCount[],
 	todayIso: string

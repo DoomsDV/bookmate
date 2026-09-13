@@ -16,6 +16,7 @@ import {
 	DASHBOARD_CHART_WINDOWS,
 	DASHBOARD_UPCOMING_DAYS,
 	asuncionTodayIso,
+	chartBarTip,
 	chartWindowSubtitle,
 	chartYTicks,
 	fillAppointmentsByDay,
@@ -687,7 +688,16 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 															))
 														}
 													</div>
-													<div class="dashboard-week-chart__area">
+													<div class="dashboard-week-chart__area" data-chart-area>
+														<div
+															class="dashboard-week-chart__tip"
+															data-chart-tip
+															role="tooltip"
+															hidden
+														>
+															<strong data-chart-tip-title></strong>
+															<span data-chart-tip-count></span>
+														</div>
 														<div class="dashboard-week-chart__grid" aria-hidden="true" data-chart-grid>
 															{
 																chartY.map((tick) => (
@@ -703,26 +713,26 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 														</div>
 														<div
 															class="dashboard-week-chart__plot"
-															role="img"
-															aria-hidden="true"
 															data-chart-plot
 															data-window={String(chartWindow)}
 															style={`--chart-cols:${chartWindow}`}
 														>
 															{
-																chartDays.map((day) => (
-																	<div
+																chartDays.map((day) => {
+																	const tip = chartBarTip(day);
+																	return (
+																	<button
+																		type="button"
 																		class:list={[
 																			'dashboard-week-chart__col',
 																			day.isToday && 'is-today',
 																			!day.hasAppointments && 'is-empty',
 																			day.showTick && 'is-tick',
 																		]}
-																		title={
-																			day.isToday
-																				? `Hoy · ${day.appointmentCount} ${day.appointmentCount === 1 ? 'cita' : 'citas'}`
-																				: `${day.weekdayName} ${String(day.dayNumber).padStart(2, '0')} · ${day.appointmentCount} ${day.appointmentCount === 1 ? 'cita' : 'citas'}`
-																		}
+																		data-chart-bar
+																		data-tip-title={tip.title}
+																		data-tip-count={tip.countLabel}
+																		aria-label={`${tip.title}, ${tip.countLabel}`}
 																	>
 																		<span class="dashboard-week-chart__value">
 																			{day.appointmentCount}
@@ -735,8 +745,9 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 																		</span>
 																		<span class="dashboard-week-chart__label">{day.label}</span>
 																		<span class="dashboard-week-chart__number">{day.dayNumber}</span>
-																	</div>
-																))
+																	</button>
+																	);
+																})
 															}
 														</div>
 													</div>
@@ -829,6 +840,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	import { lockPanelScroll } from '../../lib/panel-scroll-lock';
 	import {
 		asuncionTodayIso,
+		chartBarTip,
 		chartWindowSubtitle,
 		chartYTicks,
 		normalizeChartWindow,
@@ -1891,6 +1903,10 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 
 		const plot = chart.querySelector<HTMLElement>('[data-chart-plot]');
+		const area = chart.querySelector<HTMLElement>('[data-chart-area]');
+		const tip = chart.querySelector<HTMLElement>('[data-chart-tip]');
+		const tipTitle = chart.querySelector<HTMLElement>('[data-chart-tip-title]');
+		const tipCount = chart.querySelector<HTMLElement>('[data-chart-tip-count]');
 		const yAxis = chart.querySelector<HTMLElement>('[data-chart-y]');
 		const grid = chart.querySelector<HTMLElement>('[data-chart-grid]');
 		const subtitle = chart.querySelector<HTMLElement>('[data-chart-subtitle]');
@@ -1898,8 +1914,53 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		const idle = chart.querySelector<HTMLElement>('[data-chart-idle]');
 		const chips = [...chart.querySelectorAll<HTMLButtonElement>('[data-chart-days]')];
 		const todayIso = asuncionTodayIso();
+		let pinnedBar: HTMLElement | null = null;
+
+		const canHoverTip = () => window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+		const hideChartTip = () => {
+			pinnedBar = null;
+			tip?.setAttribute('hidden', '');
+			tip?.classList.remove('is-below');
+			for (const col of chart.querySelectorAll('.dashboard-week-chart__col.is-active')) {
+				col.classList.remove('is-active');
+			}
+		};
+
+		const placeChartTip = (col: HTMLElement) => {
+			if (!tip || !area) return;
+			const bar = col.querySelector<HTMLElement>('.dashboard-week-chart__bar');
+			const areaRect = area.getBoundingClientRect();
+			const barRect = (bar ?? col).getBoundingClientRect();
+			tip.removeAttribute('hidden');
+			const tipWidth = tip.offsetWidth;
+			let left = barRect.left + barRect.width / 2 - areaRect.left;
+			const pad = 8;
+			const half = tipWidth / 2;
+			left = Math.min(Math.max(half + pad, left), Math.max(half + pad, areaRect.width - half - pad));
+			tip.classList.remove('is-below');
+			tip.style.left = `${left}px`;
+			tip.style.top = `${Math.max(barRect.top - areaRect.top, 0)}px`;
+		};
+
+		const showChartTip = (col: HTMLElement, pin: boolean) => {
+			if (!tip || !tipTitle || !tipCount) return;
+			if (pin) {
+				pinnedBar = col;
+			} else if (pinnedBar && pinnedBar !== col) {
+				return;
+			}
+			for (const other of chart.querySelectorAll('.dashboard-week-chart__col.is-active')) {
+				other.classList.remove('is-active');
+			}
+			col.classList.add('is-active');
+			tipTitle.textContent = col.getAttribute('data-tip-title') || '';
+			tipCount.textContent = col.getAttribute('data-tip-count') || '';
+			placeChartTip(col);
+		};
 
 		const applyWindow = (days: number) => {
+			hideChartTip();
 			const windowDays = normalizeChartWindow(days);
 			const items = toDashboardChartDays(sliceChartWindow(series, windowDays), todayIso);
 			const total = items.reduce((sum, item) => sum + item.appointmentCount, 0);
@@ -1940,14 +2001,17 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 				plot.style.setProperty('--chart-cols', String(windowDays));
 				plot.replaceChildren();
 				for (const day of items) {
-					const col = document.createElement('div');
+					const tipCopy = chartBarTip(day);
+					const col = document.createElement('button');
+					col.type = 'button';
 					col.className = 'dashboard-week-chart__col';
 					if (day.isToday) col.classList.add('is-today');
 					if (!day.hasAppointments) col.classList.add('is-empty');
 					if (day.showTick) col.classList.add('is-tick');
-					col.title = day.isToday
-						? `Hoy · ${day.appointmentCount} ${day.appointmentCount === 1 ? 'cita' : 'citas'}`
-						: `${day.weekdayName} ${String(day.dayNumber).padStart(2, '0')} · ${day.appointmentCount} ${day.appointmentCount === 1 ? 'cita' : 'citas'}`;
+					col.dataset.chartBar = '';
+					col.dataset.tipTitle = tipCopy.title;
+					col.dataset.tipCount = tipCopy.countLabel;
+					col.setAttribute('aria-label', `${tipCopy.title}, ${tipCopy.countLabel}`);
 
 					const value = document.createElement('span');
 					value.className = 'dashboard-week-chart__value';
@@ -1990,9 +2054,52 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			const target = event.target;
 			if (!(target instanceof Element)) return;
 			const chip = target.closest<HTMLButtonElement>('[data-chart-days]');
-			if (!chip || !chart.contains(chip)) return;
-			applyWindow(Number(chip.getAttribute('data-chart-days')));
+			if (chip && chart.contains(chip)) {
+				applyWindow(Number(chip.getAttribute('data-chart-days')));
+				return;
+			}
+			const col = target.closest<HTMLElement>('[data-chart-bar]');
+			if (!col || !chart.contains(col)) return;
+			if (pinnedBar === col) {
+				hideChartTip();
+				return;
+			}
+			showChartTip(col, true);
 		});
+
+		chart.addEventListener('pointerover', (event) => {
+			if (!canHoverTip()) return;
+			const target = event.target;
+			if (!(target instanceof Element)) return;
+			const col = target.closest<HTMLElement>('[data-chart-bar]');
+			if (col && chart.contains(col)) {
+				if (pinnedBar) return;
+				showChartTip(col, false);
+				return;
+			}
+			if (!pinnedBar && !target.closest('[data-chart-tip]')) hideChartTip();
+		});
+
+		chart.addEventListener('pointerleave', () => {
+			if (pinnedBar) return;
+			hideChartTip();
+		});
+
+		if (!(window as unknown as { __haselChartTipBound?: boolean }).__haselChartTipBound) {
+			(window as unknown as { __haselChartTipBound?: boolean }).__haselChartTipBound = true;
+			document.addEventListener('pointerdown', (event) => {
+				const target = event.target;
+				const host = document.querySelector<HTMLElement>('[data-day-chart]');
+				if (!host || !(target instanceof Element) || host.contains(target)) return;
+				host.dispatchEvent(new Event('chart-tip-hide'));
+			});
+			document.addEventListener('keydown', (event) => {
+				if (event.key !== 'Escape') return;
+				document.querySelector('[data-day-chart]')?.dispatchEvent(new Event('chart-tip-hide'));
+			});
+		}
+
+		chart.addEventListener('chart-tip-hide', hideChartTip);
 	};
 
 	const bindUpcomingDayFilter = () => {
@@ -3432,6 +3539,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		background: var(--dashboard-card-bg, #ffffff);
 		box-shadow: none;
 		box-sizing: border-box;
+		overflow: visible;
 	}
 
 	html[data-theme='dark'] .dashboard-week-chart__inner {
@@ -3524,6 +3632,56 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		position: relative;
 		min-width: 0;
 		min-height: 13.75rem;
+		overflow: visible;
+	}
+	.dashboard-week-chart :global(.dashboard-week-chart__tip) {
+		position: absolute;
+		z-index: 6;
+		display: grid;
+		gap: 0.1rem;
+		min-width: 6.75rem;
+		max-width: min(14rem, calc(100% - 0.5rem));
+		padding: 0.45rem 0.7rem 0.5rem;
+		border-radius: 0.75rem;
+		background: var(--on-surface);
+		color: var(--surface-bright, #fff);
+		box-shadow: var(--modal-shadow-popover, 0 8px 24px rgb(15 23 42 / 0.16));
+		pointer-events: none;
+		transform: translate(-50%, calc(-100% - 0.5rem));
+		white-space: nowrap;
+	}
+	.dashboard-week-chart :global(.dashboard-week-chart__tip[hidden]) {
+		display: none;
+	}
+	.dashboard-week-chart :global(.dashboard-week-chart__tip.is-below) {
+		transform: translate(-50%, 0.5rem);
+	}
+	.dashboard-week-chart :global(.dashboard-week-chart__tip strong) {
+		font-size: 0.72rem;
+		font-weight: 750;
+		letter-spacing: -0.02em;
+		line-height: 1.2;
+		text-transform: capitalize;
+	}
+	.dashboard-week-chart :global(.dashboard-week-chart__tip span) {
+		font-size: 0.7rem;
+		font-weight: 600;
+		line-height: 1.2;
+		opacity: 0.82;
+	}
+	.dashboard-week-chart :global(.dashboard-week-chart__tip::after) {
+		content: '';
+		position: absolute;
+		left: 50%;
+		bottom: -4px;
+		width: 8px;
+		height: 8px;
+		background: inherit;
+		transform: translateX(-50%) rotate(45deg);
+	}
+	.dashboard-week-chart :global(.dashboard-week-chart__tip.is-below::after) {
+		bottom: auto;
+		top: -4px;
 	}
 
 	.dashboard-week-chart :global(.dashboard-week-chart__grid) {
@@ -3594,12 +3752,29 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	.dashboard-week-chart :global(.dashboard-week-chart__col) {
+		appearance: none;
 		display: grid;
 		grid-template-rows: var(--value-row) var(--chart-track) var(--x-axis);
 		align-items: stretch;
 		justify-items: center;
 		min-width: 0;
 		height: 100%;
+		margin: 0;
+		padding: 0;
+		border: 0;
+		background: transparent;
+		font: inherit;
+		color: inherit;
+		cursor: pointer;
+		border-radius: 0.4rem;
+	}
+	.dashboard-week-chart :global(.dashboard-week-chart__col.is-active .dashboard-week-chart__bar) {
+		box-shadow: 0 0 0 2px color-mix(in srgb, var(--week-bar-strong) 50%, transparent);
+	}
+	@media (hover: hover) and (pointer: fine) {
+		.dashboard-week-chart :global(.dashboard-week-chart__col:hover .dashboard-week-chart__bar) {
+			filter: brightness(1.08);
+		}
 	}
 
 	.dashboard-week-chart :global(.dashboard-week-chart__value) {
