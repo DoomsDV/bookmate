@@ -576,6 +576,7 @@ export const initCobrosPage = () => {
 
 		const claimNote = modal?.querySelector<HTMLElement>('[data-cobros-claim-note]');
 		if (claimNote) {
+			const settled = normalizeDisputeStatus(disputeStatus) === 'REFUND_SETTLED';
 			if (canUpload && normalizeDisputeStatus(disputeStatus) === 'OPENED') {
 				claimNote.textContent = cobrosDisputeNote('OPENED');
 				claimNote.classList.remove('hidden');
@@ -584,6 +585,7 @@ export const initCobrosPage = () => {
 				claimNote.textContent = note;
 				claimNote.classList.toggle('hidden', !note);
 			}
+			claimNote.classList.toggle('is-ok', settled && !claimNote.classList.contains('hidden'));
 		}
 
 		const proofRow = modal?.querySelector<HTMLElement>('[data-cobros-refund-proof-row]');
@@ -658,6 +660,10 @@ export const initCobrosPage = () => {
 		const panel = modal.querySelector<HTMLElement>('[data-cobros-modal-panel]');
 		panel?.classList.toggle('is-refund-mode', isRefund);
 		panel?.classList.toggle('is-dispute-mode', disputeOpen);
+
+		const headerIcon = disputeOpen ? 'gavel' : isRefund ? 'currency_exchange' : 'payments';
+		setText('[data-cobros-modal-header-icon]', headerIcon);
+		setText('[data-cobros-ficha-mark-icon]', headerIcon);
 
 		setText(
 			'[data-cobros-amount-label]',
