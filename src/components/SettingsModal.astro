@@ -167,7 +167,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 			]}
 		>
 		<div
-			class="settings-content relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:p-6"
+			class="settings-content relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 sm:p-6"
 			data-settings-content
 		>
 			<div class="settings-feedback-sticky-wrap">
@@ -238,7 +238,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 					<div class="settings-card grid gap-5">
 						<div class="settings-card__intro">
 							<h3 class="settings-card__title">
-								Información personal
+								<span>Información personal</span>
 								<SettingsHelpInfo text="Solo para tu cuenta y acceso interno." />
 							</h3>
 						</div>
@@ -292,7 +292,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 					<div class="settings-card grid gap-5">
 						<div class="settings-card__intro">
 							<h3 class="settings-card__title">
-								Perfil público personal
+								<span>Perfil público personal</span>
 								<SettingsHelpInfo text="Tu enlace y teléfono para compartir en Hasel. La foto de la agenda de cada negocio la gestiona el administrador." />
 							</h3>
 						</div>
@@ -658,7 +658,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 
 											<div data-payments-tour-sipap class="grid gap-4">
 												<div class="grid gap-1">
-													<p class="flex items-start gap-1 text-[0.95rem] font-bold text-(--on-surface)">
+													<p class="flex items-center gap-1 text-[0.95rem] font-bold text-(--on-surface)">
 														<span class="min-w-0">Datos para recibir la transferencia (SIPAP)</span>
 														<SettingsHelpInfo text="Completá banco, titular, documento y alias para activar el cobro." />
 													</p>
@@ -902,7 +902,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 												<div class="grid min-w-0 flex-1 gap-1.5">
 													<div class="flex items-center gap-2">
 														<span class="material-symbols-rounded text-[1.25rem] text-(--primary)">notifications_active</span>
-														<h4 class="flex min-w-0 items-start gap-1 text-[0.98rem] font-bold text-(--on-surface)">
+														<h4 class="flex min-w-0 items-center gap-1 text-[0.98rem] font-bold text-(--on-surface)">
 															<span class="min-w-0">Notificaciones en este dispositivo</span>
 															<SettingsHelpInfo text="Alertas de turnos nuevos, cambios y cancelaciones en este dispositivo." />
 														</h4>
@@ -941,7 +941,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 												<div class="grid min-w-0 flex-1 gap-1.5">
 													<div class="flex items-center gap-2">
 														<span class="material-symbols-rounded text-[1.25rem] text-(--primary)">group</span>
-														<h4 class="flex min-w-0 items-start gap-1 text-[0.98rem] font-bold text-(--on-surface)">
+														<h4 class="flex min-w-0 items-center gap-1 text-[0.98rem] font-bold text-(--on-surface)">
 															<span class="min-w-0">Notificaciones de todo el equipo</span>
 															<SettingsHelpInfo text="También recibís las alertas de los demás profesionales en este dispositivo." />
 														</h4>
@@ -4233,7 +4233,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		min-height: 0;
 		height: auto;
 		overflow: visible;
-		padding: 1rem 1.2rem 1.1rem;
+		padding: 0.85rem 0.75rem 1rem;
 	}
 
 	[data-settings-modal][data-settings-page] .settings-content-scroll-edge,
@@ -4257,7 +4257,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		flex: 0 0 auto;
 		border-top: 1px solid color-mix(in srgb, var(--shell-border) 92%, transparent);
 		background: transparent;
-		padding: 0.7rem 1.2rem 0.85rem;
+		padding: 0.7rem 0.75rem 0.85rem;
 	}
 
 	@media (min-width: 769px) {
@@ -4426,10 +4426,11 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 	.settings-card__title {
 		margin: 0;
 		display: flex;
-		align-items: flex-start;
+		align-items: center;
 		gap: 0.28rem;
 		font-size: 0.98rem;
 		font-weight: 750;
+		line-height: 1.25;
 		color: var(--on-surface);
 	}
 
@@ -4453,9 +4454,9 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 	.settings-field-info {
 		display: inline-grid;
 		place-items: center;
-		width: 1.45rem;
-		height: 1.45rem;
-		margin: -0.15rem 0;
+		width: 1.2rem;
+		height: 1.2rem;
+		margin: 0;
 		padding: 0;
 		border: 0;
 		border-radius: 999px;
@@ -4463,13 +4464,16 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		color: var(--on-surface-variant);
 		cursor: help;
 		flex-shrink: 0;
+		align-self: center;
 		touch-action: manipulation;
 	}
 
 	.settings-field-info .material-symbols-rounded {
-		font-size: 1.05rem;
+		display: block;
+		font-size: 1em;
 		line-height: 1;
 		color: inherit;
+		translate: 0 0.08em;
 	}
 
 	.settings-field-info:hover,
@@ -5118,7 +5122,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 			gap: 0.5rem;
 			overflow-x: auto;
 			overscroll-behavior-x: contain;
-			padding: 0 1rem;
+			padding: 0 0.75rem;
 			scrollbar-width: none;
 			-ms-overflow-style: none;
 		}
