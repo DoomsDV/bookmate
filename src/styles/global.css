@@ -725,7 +725,8 @@ professional-manager:has(.app-shell) {
 }
 
 .app-shell > :last-child > main.settings-page-main {
-	overflow: hidden;
+	overflow-x: hidden;
+	overflow-y: auto;
 }
 
 html.panel-modal-open .app-shell > :last-child > main,

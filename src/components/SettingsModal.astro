@@ -3853,10 +3853,10 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		position: relative;
 		inset: auto;
 		z-index: auto;
-		flex: 1 1 auto;
-		height: 100%;
-		max-height: 100%;
-		min-height: 0;
+		flex: 1 0 auto;
+		height: auto;
+		max-height: none;
+		min-height: 100%;
 		width: 100%;
 		max-width: none;
 		margin: 0;
@@ -3867,7 +3867,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		animation: none;
 		display: flex;
 		flex-direction: column;
-		overflow: hidden;
+		overflow: visible;
 	}
 
 	.settings-page .panel-modal-header {
@@ -3895,12 +3895,12 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 	}
 
 	.settings-page .settings-layout {
-		flex: 1 1 auto;
+		flex: 1 0 auto;
 		height: auto;
 		min-height: 0;
 		background: transparent;
 		box-shadow: none;
-		overflow: hidden;
+		overflow: visible;
 	}
 
 	.settings-page .settings-content {
@@ -3954,11 +3954,11 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		position: relative;
 		inset: auto;
 		z-index: auto;
-		flex: 1 1 auto;
-		height: 100%;
-		max-height: 100%;
-		min-height: 0;
-		overflow: hidden;
+		flex: 1 0 auto;
+		height: auto;
+		max-height: none;
+		min-height: 100%;
+		overflow: visible;
 		animation: none;
 		background: transparent;
 	}
@@ -3966,9 +3966,9 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 	[data-settings-modal][data-settings-page] .settings-layout {
 		display: flex;
 		flex-direction: column;
-		flex: 1 1 auto;
+		flex: 1 0 auto;
 		min-height: 0;
-		overflow: hidden;
+		overflow: visible;
 	}
 
 	[data-settings-modal][data-settings-page] .settings-nav {
@@ -3978,12 +3978,13 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 	}
 
 	[data-settings-modal][data-settings-page] .settings-content-shell {
+		position: relative;
 		display: flex;
 		flex-direction: column;
-		flex: 1 1 auto;
+		flex: 1 0 auto;
 		min-height: 0;
-		max-height: 100%;
-		overflow: hidden;
+		max-height: none;
+		overflow: visible;
 		border: none;
 		border-radius: 1.25rem;
 		background: var(--sidebar-surface);
@@ -3999,11 +4000,11 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 	}
 
 	[data-settings-modal][data-settings-page] .settings-panel {
-		gap: 1.85rem;
+		gap: 1.2rem;
 	}
 
 	[data-settings-modal][data-settings-page] .settings-card + .settings-card {
-		padding-top: 1.65rem;
+		padding-top: 1.15rem;
 		border-top: 1px solid color-mix(in srgb, var(--shell-border) 92%, transparent);
 	}
 
@@ -4043,17 +4044,15 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		flex-direction: column;
 		flex: 1 1 auto;
 		min-height: 0;
-		overflow: hidden;
+		overflow: visible;
 	}
 
 	[data-settings-modal][data-settings-page] .settings-content {
 		flex: 1 1 auto;
 		min-height: 0;
 		height: auto;
-		overflow-x: hidden;
-		overflow-y: auto;
-		overscroll-behavior: contain;
-		padding: 1.15rem 1.2rem 1.25rem;
+		overflow: visible;
+		padding: 1rem 1.2rem 1.1rem;
 	}
 
 	[data-settings-modal][data-settings-page] .settings-content-scroll-edge,
@@ -4073,22 +4072,23 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 
 	[data-settings-modal][data-settings-page] .settings-actions {
 		position: static;
-		margin-top: 0;
+		margin-top: auto;
 		flex: 0 0 auto;
 		border-top: 1px solid color-mix(in srgb, var(--shell-border) 92%, transparent);
 		background: transparent;
-		padding: 0.85rem 1.2rem 1rem;
+		padding: 0.7rem 1.2rem 0.85rem;
 	}
 
 	@media (min-width: 769px) {
 		[data-settings-modal][data-settings-page] .settings-layout {
 			display: grid;
 			grid-template-columns: 16rem minmax(0, 1fr);
-			grid-template-rows: minmax(0, 1fr);
-			align-items: start;
+			grid-template-rows: minmax(min-content, 1fr);
+			align-items: stretch;
 			column-gap: 1.25rem;
-			overflow: hidden;
-			height: 100%;
+			overflow: visible;
+			height: auto;
+			min-height: 0;
 		}
 
 		[data-settings-modal][data-settings-page] .settings-nav {
@@ -4100,19 +4100,19 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		}
 
 		[data-settings-modal][data-settings-page] .settings-content-shell {
-			align-self: start;
+			align-self: stretch;
 			width: 100%;
 			height: auto;
-			max-height: 100%;
+			max-height: none;
 			min-height: 0;
 		}
 
 		[data-settings-modal][data-settings-page] .settings-content {
-			padding: 1.35rem 1.5rem 1.5rem;
+			padding: 1.1rem 1.4rem 1.2rem;
 		}
 
 		[data-settings-modal][data-settings-page] .settings-actions {
-			padding: 0.9rem 1.5rem 1.05rem;
+			padding: 0.75rem 1.4rem 0.9rem;
 		}
 	}
 
@@ -4200,12 +4200,12 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		justify-content: space-between;
 		gap: 1rem;
 		flex: 0 0 auto;
-		padding: 0.15rem 0.1rem 1rem;
+		padding: 0.1rem 0.1rem 0.7rem;
 	}
 
 	@media (min-width: 769px) {
 		.settings-page-header {
-			padding: 0.2rem 0.15rem 1.1rem;
+			padding: 0.1rem 0.15rem 0.75rem;
 		}
 	}
 
@@ -4730,7 +4730,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 			padding-top: var(--settings-space-section);
 		}
 
-		[data-settings-modal] .settings-content {
+		[data-settings-modal]:not([data-settings-page]) .settings-content {
 			overflow-x: clip;
 		}
 

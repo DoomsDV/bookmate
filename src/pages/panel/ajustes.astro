@@ -41,7 +41,9 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 		flex-direction: column;
 		min-height: 0;
 		height: 100%;
-		overflow: hidden;
+		overflow-x: hidden;
+		overflow-y: auto;
+		overscroll-behavior: contain;
 		padding: var(--settings-page-inset);
 	}
 
@@ -53,14 +55,14 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 
 	@media (min-width: 1024px) {
 		.settings-page-main {
-			--settings-page-inset: 1.75rem;
+			--settings-page-inset: 1.25rem;
 		}
 	}
 
 	.settings-page-main :global(.settings-page) {
-		flex: 1 1 auto;
-		min-height: 0;
-		height: 100%;
-		max-height: 100%;
+		flex: 1 0 auto;
+		min-height: 100%;
+		height: auto;
+		max-height: none;
 	}
 </style>

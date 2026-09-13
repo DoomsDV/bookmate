@@ -105,7 +105,10 @@ function forceCleanupDriverDom() {
 function isTourHostOpen(hostSelector?: string) {
 	if (!hostSelector) return true;
 	const host = document.querySelector(hostSelector);
-	return host instanceof HTMLDialogElement && host.open;
+	if (!host) return false;
+	if (host instanceof HTMLDialogElement) return host.open;
+	// Ajustes como página (y otros hosts que no son <dialog>) siguen abiertos mientras existan.
+	return host instanceof HTMLElement;
 }
 
 function bindTourHostClose(hostSelector: string) {
