@@ -1,6 +1,7 @@
 import { resolveOrdsPublicApiUrl } from './env-urls';
 import { PublicBookingApiError } from './public-booking-error';
 import { normalizePublicBookingLocations } from './public-booking-locations';
+import { normalizePublicProfessionalRating } from './public-professional-rating';
 import type { PublicReservationNoRefundReason } from './public-reservation-refund';
 import { isReceiptRejected } from './public-receipt-reconcile';
 
@@ -130,6 +131,8 @@ export interface PublicBookingProfile {
 	full_name: string;
 	specialty: string;
 	image_url: string;
+	rating_avg: number | null;
+	rating_count: number;
 	services: PublicBookingService[];
 	locations: PublicBookingLocation[];
 	deposit_settings?: Record<string, unknown> | null;
@@ -626,6 +629,7 @@ const normalizeProfile = (value: unknown): PublicBookingProfile | null => {
 		full_name: fullName,
 		specialty: String(source.specialty || '').trim() || 'Sin especialidad',
 		image_url: String(source.image_url || '').trim(),
+		...normalizePublicProfessionalRating(source.rating_avg, source.rating_count),
 		services,
 		locations,
 		deposit_settings:

@@ -1,6 +1,7 @@
 ---
 import { parseParaguayMobilePhone } from '../lib/paraguay-phone';
 import { getProfessionalDisplayName, isProfessionalAccountActive, type Professional } from '../lib/professionals';
+import { formatPublicProfessionalRating } from '../lib/public-professional-rating';
 
 interface Props {
 	professionals: Professional[];
@@ -47,6 +48,7 @@ const toPhoneLabel = (value?: string | null) => {
 const cardItems = professionals.map((professional) => ({
 	professional,
 	profileImageUrl: toProfileImageUrl(professional),
+	rating: formatPublicProfessionalRating(professional.rating_avg, professional.rating_count),
 }));
 ---
 
@@ -301,6 +303,16 @@ const cardItems = professionals.map((professional) => ({
 												: 'Inactivo'}
 									</span>
 								</div>
+								<p
+									class:list={[
+										'professionals-card__rating',
+										!item.rating.hasRating && 'professionals-card__rating--empty',
+									]}
+									aria-label={item.rating.aria}
+								>
+									<span class="material-symbols-rounded" aria-hidden="true">star</span>
+									<span>{item.rating.label}</span>
+								</p>
 								<p class="professionals-card__email line-clamp-1">
 									{toContactEmail(item.professional)}
 								</p>
@@ -558,6 +570,42 @@ const cardItems = professionals.map((professional) => ({
 		font-weight: 760;
 		letter-spacing: -0.032em;
 		line-height: 1.2;
+	}
+
+	professional-manager .professionals-card__rating {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.18rem;
+		margin: 0.02rem 0 0;
+		font-size: 0.88rem;
+		font-weight: 800;
+		letter-spacing: -0.02em;
+		line-height: 1;
+		color: var(--on-surface, #1e293b);
+	}
+
+	professional-manager .professionals-card__rating .material-symbols-rounded {
+		font-size: 1.05rem;
+		color: #e4b51a;
+		font-variation-settings: 'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 20;
+	}
+
+	professional-manager .professionals-card__rating--empty {
+		color: #64748b;
+		font-weight: 650;
+	}
+
+	professional-manager .professionals-card__rating--empty .material-symbols-rounded {
+		color: currentColor;
+		font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 20;
+	}
+
+	html[data-theme='dark'] professional-manager .professionals-card__rating {
+		color: #f4f4f5;
+	}
+
+	html[data-theme='dark'] professional-manager .professionals-card__rating--empty {
+		color: color-mix(in srgb, #fff 62%, transparent);
 	}
 
 	professional-manager .professionals-card__email {

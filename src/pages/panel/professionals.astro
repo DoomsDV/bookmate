@@ -151,6 +151,15 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 					</div>
 				</div>
 
+				<p
+					class="professional-modal-rating hidden"
+					data-professional-rating
+					hidden
+				>
+					<span class="material-symbols-rounded" aria-hidden="true">star</span>
+					<span data-professional-rating-label>-</span>
+				</p>
+
 				<label class="professional-modal-identity">
 					<span class="professional-modal-identity__label">Nombre en este negocio <span class="text-rose-500">*</span></span>
 					<input
@@ -443,6 +452,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 	import { showProfessionalProfileUrlTour } from '../../lib/professional-profile-url-tour';
 	import { destroyActiveBookmateTour } from '../../lib/product-tour';
 	import { openPanelModal } from '../../lib/panel-scroll-lock';
+	import { formatPublicProfessionalRating, normalizePublicProfessionalRating } from '../../lib/public-professional-rating';
 	import {
 		bindPanelThemedSelectRoot,
 		destroyPanelThemedSelect,
@@ -480,6 +490,8 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 			photoDropzone: HTMLElement | null;
 			profileUploadIcon: HTMLElement | null;
 			profileUploadButton: HTMLLabelElement | null;
+			rating: HTMLElement | null;
+			ratingLabel: HTMLElement | null;
 			roleSelfAdminHint: HTMLElement | null;
 			cropModal: HTMLDialogElement | null;
 			cropMount: HTMLElement | null;
@@ -580,6 +592,8 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 				photoDropzone: this.querySelector<HTMLElement>('[data-profile-upload-dropzone]'),
 				profileUploadIcon: this.querySelector<HTMLElement>('[data-profile-upload-icon]'),
 				profileUploadButton: this.querySelector<HTMLLabelElement>('[data-profile-upload-button]'),
+				rating: this.querySelector<HTMLElement>('[data-professional-rating]'),
+				ratingLabel: this.querySelector<HTMLElement>('[data-professional-rating-label]'),
 				roleSelfAdminHint: this.querySelector<HTMLElement>('[data-role-self-admin-hint]'),
 				cropModal: this.querySelector<HTMLDialogElement>('[data-profile-crop-modal]'),
 				cropMount: this.querySelector<HTMLElement>('[data-profile-crop-mount]'),
@@ -1023,6 +1037,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 			}
 			if (this.els.submitLabel) this.els.submitLabel.textContent = isEdit ? 'Guardar cambios' : 'Enviar invitación';
 			if (this.els.submitIcon) this.els.submitIcon.textContent = isEdit ? 'save' : 'mail';
+			if (!isEdit) this.setProfessionalRating(null, 0, false);
 
 			if (!isEdit) {
 				this.editingUserId = null;
@@ -1271,6 +1286,21 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 			this.slugManuallyEdited = false;
 			this.clearSlugSuggestTimer();
 			this.slugRequestSeq += 1;
+			this.setProfessionalRating(null, 0, false);
+		}
+
+		private setProfessionalRating(avg: unknown, count: unknown, visible: boolean) {
+			const ratingNode = this.els.rating;
+			const labelNode = this.els.ratingLabel;
+			if (!ratingNode || !labelNode) return;
+
+			const normalized = normalizePublicProfessionalRating(avg, count);
+			const rating = formatPublicProfessionalRating(normalized.rating_avg, normalized.rating_count);
+			labelNode.textContent = rating.label;
+			ratingNode.setAttribute('aria-label', rating.aria);
+			ratingNode.classList.toggle('professional-modal-rating--empty', !rating.hasRating);
+			ratingNode.classList.toggle('hidden', !visible);
+			ratingNode.hidden = !visible;
 		}
 
 		private setImageFileNameLabel() {
@@ -1675,6 +1705,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 				if (formEls.slug) formEls.slug.value = prof.profile_slug || '';
 				
 				this.setPreviewImage(prof.profile_image_url);
+				this.setProfessionalRating(prof.rating_avg, prof.rating_count, true);
 
 				const sId = prof.specialty?.id_specialty;
 				if (formEls.specialty && sId) formEls.specialty.value = String(sId);
@@ -1919,6 +1950,47 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 		margin-bottom: 1rem;
 		padding-bottom: 1rem;
 		border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 35%, transparent);
+	}
+
+	.professional-modal-rating {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.18rem;
+		margin: 0.1rem 0 0.15rem;
+		font-size: 0.95rem;
+		font-weight: 800;
+		letter-spacing: -0.02em;
+		line-height: 1;
+		color: var(--on-surface, #1e293b);
+	}
+
+	.professional-modal-rating.hidden {
+		display: none;
+	}
+
+	.professional-modal-rating .material-symbols-rounded {
+		font-size: 1.1rem;
+		color: #e4b51a;
+		font-variation-settings: 'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 20;
+	}
+
+	.professional-modal-rating--empty {
+		color: #64748b;
+		font-weight: 650;
+	}
+
+	.professional-modal-rating--empty .material-symbols-rounded {
+		color: currentColor;
+		font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 20;
+	}
+
+	html[data-theme='dark'] .professional-modal-rating {
+		color: #f4f4f5;
+	}
+
+	html[data-theme='dark'] .professional-modal-rating--empty {
+		color: color-mix(in srgb, #fff 62%, transparent);
 	}
 
 	.professional-modal-identity {

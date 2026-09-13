@@ -5,6 +5,7 @@ import {
 } from '../lib/panel-filter-popover';
 import { parseParaguayMobilePhone } from '../lib/paraguay-phone';
 import { updateAppPaginationDom } from '../lib/pagination';
+import { formatPublicProfessionalRating } from '../lib/public-professional-rating';
 
 type ProfessionalItem = {
 	id_professional: number;
@@ -20,6 +21,8 @@ type ProfessionalItem = {
 	specialty?: {
 		name?: string | null;
 	} | null;
+	rating_avg?: number | null;
+	rating_count?: number | null;
 };
 
 type ProfessionalsListMeta = {
@@ -115,6 +118,13 @@ const renderProfessionalCard = (professional: ProfessionalItem) => {
 		: isActive
 			? ''
 			: ' professionals-card--inactive';
+	const rating = formatPublicProfessionalRating(
+		professional.rating_avg ?? null,
+		professional.rating_count ?? 0
+	);
+	const ratingClass = rating.hasRating
+		? 'professionals-card__rating'
+		: 'professionals-card__rating professionals-card__rating--empty';
 
 	const avatarClasses = imageUrl
 		? 'professionals-card-avatar'
@@ -157,6 +167,10 @@ const renderProfessionalCard = (professional: ProfessionalItem) => {
 								${statusLabel}
 							</span>
 						</div>
+						<p class="${ratingClass}" aria-label="${escapeHtml(rating.aria)}">
+							<span class="material-symbols-rounded" aria-hidden="true">star</span>
+							<span>${escapeHtml(rating.label)}</span>
+						</p>
 						<p class="professionals-card__email line-clamp-1">${escapeHtml(email)}</p>
 					</div>
 				</div>

@@ -11,6 +11,7 @@ import {
 	PublicBookingApiError,
 	type PublicBookingProfile,
 } from '../../../lib/public-booking';
+import { formatPublicProfessionalRating } from '../../../lib/public-professional-rating';
 import {
 	buildOrgHubPath,
 	buildPublicProfilePath,
@@ -79,6 +80,9 @@ const hubPath = buildOrgHubPath(organizationSlug) || '/explorar';
 const organizationName = profile?.organization_name?.trim() || organizationSlug;
 const professionalName = profile?.full_name?.trim() || professionalSlug;
 const specialtyLabel = profile ? getPublicProfileSpecialtyLabel(profile.specialty) : null;
+const rating = profile
+	? formatPublicProfessionalRating(profile.rating_avg, profile.rating_count)
+	: null;
 
 const pageTitle = profile
 	? `Agendá con ${professionalName} | ${organizationName}`
@@ -168,6 +172,18 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 									</div>
 									<div class="public-booking-profile__text">
 										<h1 class="public-booking-profile__title">{profile.full_name}</h1>
+										{rating ? (
+											<p
+												class:list={[
+													'public-booking-profile__rating',
+													!rating.hasRating && 'public-booking-profile__rating--empty',
+												]}
+												aria-label={rating.aria}
+											>
+												<span class="material-symbols-rounded" aria-hidden="true">star</span>
+												<span>{rating.label}</span>
+											</p>
+										) : null}
 										{specialtyLabel ? (
 											<p class="public-booking-profile__meta">{specialtyLabel}</p>
 										) : null}

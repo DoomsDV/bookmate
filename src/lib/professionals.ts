@@ -1,6 +1,7 @@
 import { ordsFailureDetails } from './api-error-codes';
 import { resolveOrdsApiUrl } from './env-urls';
 import { ROLES } from '../config/roles';
+import { normalizePublicProfessionalRating } from './public-professional-rating';
 
 export const PROFESSIONALS_URL = resolveOrdsApiUrl(
 	import.meta.env.ORDS_PROFESSIONALS_URL,
@@ -42,6 +43,8 @@ export interface Professional {
 	user: ProfessionalUser;
 	specialty: ProfessionalSpecialty | null;
 	services: number[];
+	rating_avg: number | null;
+	rating_count: number;
 }
 
 /** Misma regla que el modal: inactivo solo cuando panel y visibilidad pública están apagados. */
@@ -417,6 +420,7 @@ const normalizeProfessional = (value: unknown): Professional | null => {
 		user: normalizeProfessionalUser(source.user),
 		specialty: normalizeProfessionalSpecialty(source.specialty),
 		services: normalizeProfessionalServices(source.services),
+		...normalizePublicProfessionalRating(source.rating_avg, source.rating_count),
 	};
 };
 

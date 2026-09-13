@@ -514,6 +514,42 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-profile__m
 	color: #c4c6d0;
 }
 
+.public-booking-profile__rating {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.18rem;
+	margin: 0.1rem 0 0;
+	font-size: 0.95rem;
+	font-weight: 800;
+	letter-spacing: -0.02em;
+	line-height: 1;
+	color: var(--on-surface, #1e293b);
+}
+
+.public-booking-profile__rating .material-symbols-rounded {
+	font-size: 1.1rem;
+	color: #e4b51a;
+	font-variation-settings: 'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 20;
+}
+
+.public-booking-profile__rating--empty {
+	color: #64748b;
+	font-weight: 650;
+}
+
+.public-booking-profile__rating--empty .material-symbols-rounded {
+	color: currentColor;
+	font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 20;
+}
+
+html[data-theme='dark'] .public-booking-profile__rating {
+	color: #f4f4f5;
+}
+
+html[data-theme='dark'] .public-booking-profile__rating--empty {
+	color: color-mix(in srgb, #fff 62%, transparent);
+}
+
 .public-booking-profile__media {
 	position: relative;
 	display: flex;
