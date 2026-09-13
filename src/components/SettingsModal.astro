@@ -829,6 +829,18 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 												Es el tiempo que se da al cliente de reconfirmar antes de la cancelación automática.
 											</span>
 										</label>
+									</div>
+
+									<div
+										class="border-t border-(--shell-border) border-dashed"
+										role="separator"
+										aria-hidden="true"
+									></div>
+
+									<div class="grid gap-5">
+										<h4 class="text-[0.98rem] font-bold text-(--on-surface)">
+											Encuesta de satisfacción
+										</h4>
 
 										<div
 											class="settings-push-card rounded-2xl bg-(--sidebar-surface) px-4 py-4"
@@ -838,10 +850,10 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 												<div class="grid min-w-0 flex-1 gap-1.5">
 													<div class="flex items-center gap-2">
 														<span class="material-symbols-rounded text-[1.25rem] text-(--primary)">reviews</span>
-														<h4 class="text-[0.98rem] font-bold text-(--on-surface)">Encuesta de satisfacción</h4>
+														<h5 class="text-[0.98rem] font-bold text-(--on-surface)">Envío automático</h5>
 													</div>
 													<p class="text-[0.86rem] font-medium leading-relaxed text-(--on-surface-variant)">
-														Envía automáticamente una encuesta por WhatsApp 2 horas después de que termina la cita.
+														Envía automáticamente una encuesta por WhatsApp 2 horas después de que termina la cita. Solo se envía si marcás la cita como Completado: si queda en otro estado, el cliente no la recibe.
 													</p>
 												</div>
 												<label class="settings-switch shrink-0">
@@ -2410,7 +2422,20 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 
 			const content = this.querySelector<HTMLElement>('[data-settings-content]');
 			if (content) content.scrollTop = 0;
-			requestAnimationFrame(this.updateScrollHints);
+			requestAnimationFrame(() => {
+				this.scrollActiveTabIntoView();
+				this.updateScrollHints();
+			});
+		}
+
+		private scrollActiveTabIntoView() {
+			const tabsGrid = this.querySelector<HTMLElement>('[data-settings-tabs-scroll]');
+			const activeBtn = this.querySelector<HTMLElement>('[data-settings-tab-trigger].is-active');
+			if (!tabsGrid || !activeBtn || !tabsGrid.contains(activeBtn)) return;
+			const gridRect = tabsGrid.getBoundingClientRect();
+			const btnRect = activeBtn.getBoundingClientRect();
+			const delta = btnRect.left - gridRect.left - (gridRect.width - btnRect.width) / 2;
+			tabsGrid.scrollTo({ left: Math.max(0, tabsGrid.scrollLeft + delta), behavior: 'smooth' });
 		}
 
 		private shouldHidePaymentsFooter() {
@@ -3913,7 +3938,9 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 
 	@media (min-width: 769px) {
 		.settings-page .settings-nav {
-			position: static;
+			position: sticky;
+			top: var(--settings-page-inset, 1.25rem);
+			z-index: 20;
 			align-self: start;
 			height: auto;
 			min-height: 0;
@@ -3972,9 +3999,23 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 	}
 
 	[data-settings-modal][data-settings-page] .settings-nav {
+		position: sticky;
+		top: 0;
+		z-index: 20;
 		flex: 0 0 auto;
 		height: auto;
 		min-height: 0;
+	}
+
+	@media (max-width: 768px) {
+		[data-settings-modal][data-settings-page] .settings-nav {
+			top: calc(-1 * var(--settings-page-inset, 1.25rem));
+			margin-inline: calc(-1 * var(--settings-page-inset, 1.25rem));
+			padding-top: calc(var(--settings-page-inset, 1.25rem) + 0.1rem);
+			padding-bottom: 0.5rem;
+			background: var(--page-background);
+			border-bottom: 0;
+		}
 	}
 
 	[data-settings-modal][data-settings-page] .settings-content-shell {
@@ -4092,6 +4133,9 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		}
 
 		[data-settings-modal][data-settings-page] .settings-nav {
+			position: sticky;
+			top: var(--settings-page-inset, 1.25rem);
+			z-index: 20;
 			align-self: start;
 			height: auto;
 			min-height: 0;
@@ -4483,7 +4527,9 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		}
 
 		.settings-page .settings-nav {
-			position: static;
+			position: sticky;
+			top: var(--settings-page-inset, 1.25rem);
+			z-index: 20;
 			align-self: start;
 			width: 16rem;
 			height: auto;
