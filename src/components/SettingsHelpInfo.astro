@@ -1,0 +1,19 @@
+---
+interface Props {
+	text: string;
+}
+
+const { text } = Astro.props;
+---
+
+<button
+	type="button"
+	class="settings-field-info"
+	data-settings-help
+	data-tooltip={text}
+	aria-label={text}
+	aria-expanded="false"
+	aria-controls="settings-help-bubble"
+>
+	<span class="material-symbols-rounded" aria-hidden="true">info</span>
+</button>

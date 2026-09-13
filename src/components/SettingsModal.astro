@@ -1,6 +1,7 @@
 ﻿---
 import { FEATURE_FLAGS, isSubscriptionBillingUiEnabled } from '../config/feature-flags';
 import { ROLES } from '../config/roles';
+import SettingsHelpInfo from './SettingsHelpInfo.astro';
 
 import {
 	buildGlobalPublicProfilePrefix,
@@ -189,7 +190,6 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 					<div class="settings-card settings-photo-card" data-settings-tour-photo>
 						<div class="settings-card__intro">
 							<h3 class="settings-card__title">Foto de perfil</h3>
-							<p class="settings-card__hint">Información básica de tu cuenta</p>
 						</div>
 						<div class="settings-photo-card__actions">
 							<div class="profile-photo-uploader" data-settings-profile-dropzone>
@@ -237,8 +237,10 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 
 					<div class="settings-card grid gap-5">
 						<div class="settings-card__intro">
-							<h3 class="settings-card__title">Información personal</h3>
-							<p class="settings-card__hint">Solo para tu cuenta y acceso interno.</p>
+							<h3 class="settings-card__title">
+								Información personal
+								<SettingsHelpInfo text="Solo para tu cuenta y acceso interno." />
+							</h3>
 						</div>
 						<div class="settings-card__fields grid gap-5 sm:grid-cols-2">
 							<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"><span>Nombre <span class="text-rose-500">*</span></span><input name="first_name" maxlength="50" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
@@ -255,10 +257,13 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 									<div class="grid min-w-0 flex-1 gap-1.5">
 										<div class="flex items-center gap-2">
 											<span class="material-symbols-rounded text-[1.25rem] text-(--primary)">notifications_active</span>
-											<h4 class="text-[0.98rem] font-bold text-(--on-surface)">Notificaciones</h4>
+											<h4 class="inline-flex items-center gap-1 text-[0.98rem] font-bold text-(--on-surface)">
+												Notificaciones
+												<SettingsHelpInfo text="Avisos de nuevas citas, cambios y cancelaciones en todas tus organizaciones." />
+											</h4>
 										</div>
-										<p class="text-[0.86rem] font-medium leading-relaxed text-(--on-surface-variant)">
-											Recibí avisos de nuevas citas, cambios y cancelaciones en todas tus organizaciones.
+										<p class="settings-help-inline">
+											Avisos de citas, cambios y cancelaciones.
 										</p>
 										<p
 											class="hidden text-[0.82rem] font-semibold text-amber-700 dark:text-amber-400"
@@ -286,14 +291,17 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 
 					<div class="settings-card grid gap-5">
 						<div class="settings-card__intro">
-							<h3 class="settings-card__title">Perfil público personal</h3>
-							<p class="settings-card__hint">
-								Tu enlace único y contacto para compartir en Hasel. La foto visible en la agenda de cada negocio la gestiona el administrador.
-							</p>
+							<h3 class="settings-card__title">
+								Perfil público personal
+								<SettingsHelpInfo text="Tu enlace y teléfono para compartir en Hasel. La foto de la agenda de cada negocio la gestiona el administrador." />
+							</h3>
 						</div>
 
 						<label class="settings-field settings-public-profile-field" data-settings-public-profile-field>
-							<span class="inline-flex items-center gap-1 text-[0.95rem] font-bold text-(--on-surface)">Enlace personal <span class="text-rose-500">*</span></span>
+							<span class="inline-flex items-center gap-1 text-[0.95rem] font-bold text-(--on-surface)">
+								Enlace personal <span class="text-rose-500">*</span>
+								<SettingsHelpInfo text="Enlace directo para que los clientes te encuentren en Hasel." />
+							</span>
 							<div class="settings-input-affix flex min-w-0">
 								<span
 									data-settings-profile-slug-prefix
@@ -319,14 +327,17 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 									<span class="material-symbols-rounded text-[1.1rem]" data-copy-settings-profile-url-icon>content_copy</span>
 								</button>
 							</div>
-							<span class="settings-field__help text-[0.84rem] font-semibold text-(--on-surface-variant)">
-								Este será tu enlace directo para que los clientes te encuentren en Hasel.
+							<span class="settings-field__help">
+								Enlace directo para que te encuentren en Hasel.
 							</span>
 							<span data-settings-profile-field-error="public_slug" class="hidden text-[0.85rem] font-semibold text-rose-600 dark:text-rose-400 mt-1"></span>
 						</label>
 
 						<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)" data-settings-tour-phone>
-							<span>Teléfono público <span class="text-rose-500">*</span></span>
+							<span class="inline-flex items-center gap-1">
+								Teléfono público <span class="text-rose-500">*</span>
+								<SettingsHelpInfo text="Teléfono de contacto de tu cuenta. Se aplica en todos tus negocios." />
+							</span>
 							<div class="settings-input-affix flex rounded-2xl shadow-sm transition-shadow focus-within:ring-4 focus-within:ring-(--primary)/10">
 								<span class="inline-flex items-center rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-4 text-[0.95rem] font-semibold text-(--on-surface-variant)">
 									+595
@@ -341,8 +352,8 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 									class="min-w-0 flex-1 rounded-none rounded-r-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary)"
 								/>
 							</div>
-							<span class="settings-field__help text-[0.85rem] font-medium leading-relaxed text-(--on-surface-variant)">
-								Teléfono de contacto de tu cuenta en Hasel. Se aplica en todos tus negocios.
+							<span class="settings-field__help">
+								Se aplica en todos tus negocios.
 							</span>
 							<span data-settings-profile-field-error="phone_number" class="hidden text-[0.85rem] font-semibold text-rose-600 dark:text-rose-400 mt-1"></span>
 						</label>
@@ -358,7 +369,6 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 						</div>
 						<div class="settings-row__text">
 							<h3 class="settings-card__title">Cambiar contraseña</h3>
-							<p class="settings-card__hint">Actualizá tu contraseña con regularidad para mayor seguridad</p>
 						</div>
 						<button
 							type="button"
@@ -394,7 +404,10 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 						</label>
 						<div class="grid gap-5 sm:grid-cols-2">
 							<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-								<span>Nueva contraseña <span class="text-rose-500">*</span></span>
+								<span class="inline-flex items-center gap-1">
+									Nueva contraseña <span class="text-rose-500">*</span>
+									<SettingsHelpInfo text="Debe tener al menos 8 caracteres." />
+								</span>
 								<input
 									type="password"
 									name="new_password"
@@ -416,8 +429,8 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 								/>
 							</label>
 						</div>
-						<p class="settings-field__help text-[0.85rem] font-medium text-(--on-surface-variant) -mt-2">
-							La nueva contraseña debe tener al menos 8 caracteres.
+						<p class="settings-field__help -mt-2">
+							Mínimo 8 caracteres.
 						</p>
 					</form>
 				</div>
@@ -444,7 +457,6 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 				<form id="settings-preferences-form" data-settings-preferences-form class="settings-card grid gap-5">
 					<div class="settings-card__intro">
 						<h3 class="settings-card__title">Tu panel de control</h3>
-						<p class="settings-card__hint">Personalizá la apariencia y el comportamiento de tu vista.</p>
 					</div>
 					<div class="grid gap-5">
 						<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"><span>Tema del panel <span class="text-rose-500">*</span></span>
@@ -470,7 +482,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 								<span class="grid min-w-0 gap-0.5">
 									<span class="text-[0.95rem] font-bold text-(--on-surface)">Perfil Público</span>
 									<span class="text-[0.85rem] font-medium text-(--on-surface-variant)">
-										Configurá logo, descripción y enlace en Perfil Público
+										Logo, descripción y enlace
 									</span>
 								</span>
 								<span class="material-symbols-rounded ml-auto mt-0.5 text-(--on-surface-variant)" aria-hidden="true">chevron_right</span>
@@ -486,24 +498,24 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 					<>
 						<section data-settings-panel="workspace" class="settings-panel hidden gap-4">
 							<form id="settings-workspace-form" data-settings-workspace-form class="settings-card grid gap-6">
-								<div class="settings-card__intro">
-									<h3 class="settings-card__title">Información del negocio</h3>
-									<p class="settings-card__hint">Detalles principales de tu organización.</p>
-								</div>
 								<div class="grid gap-5">
 									<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"><span>Nombre del negocio <span class="text-rose-500">*</span></span><input name="name" maxlength="100" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
 									<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-										<span>Rubros del negocio <span class="text-rose-500">*</span></span>
+										<span class="inline-flex items-center gap-1">Rubros del negocio <span class="text-rose-500">*</span>
+											<SettingsHelpInfo text="Podés elegir más de un rubro si tu negocio combina varias categorías." />
+										</span>
 										<div
 											data-settings-org-specialties-list
 											class="grid max-h-56 gap-2 overflow-y-auto rounded-xl border border-(--shell-border) bg-(--surface-bright) p-3"
 										></div>
-										<span class="settings-field__help text-[0.85rem] font-medium text-(--on-surface-variant)">
-											Podés elegir más de un rubro si tu negocio combina varias categorías.
+										<span class="settings-field__help">
+											Podés elegir más de un rubro.
 										</span>
 									</label>
 									<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-										<span>Rubro principal <span class="text-rose-500">*</span></span>
+										<span class="inline-flex items-center gap-1">Rubro principal <span class="text-rose-500">*</span>
+											<SettingsHelpInfo text="Se muestra en tu perfil público y define la categoría principal." />
+										</span>
 										<div class="relative">
 											<select
 												name="id_org_specialty"
@@ -512,8 +524,8 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 												class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
 											></select>
 										</div>
-										<span class="settings-field__help text-[0.85rem] font-medium text-(--on-surface-variant)">
-											Se muestra en tu perfil público y define la categoría principal.
+										<span class="settings-field__help">
+											Categoría que se muestra en tu perfil público.
 										</span>
 									</label>
 									<div
@@ -525,7 +537,9 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 								<input type="hidden" name="profile_slug" />
 								<div class="border-t border-(--shell-border) border-dashed" role="separator"></div>
 								<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-									<span>Texto por defecto para precios ocultos <span class="text-rose-500">*</span></span>
+									<span class="inline-flex items-center gap-1">Texto por defecto para precios ocultos <span class="text-rose-500">*</span>
+										<SettingsHelpInfo text="Se muestra en la reserva pública cuando un servicio oculta el precio y no tiene texto propio." />
+									</span>
 									<input
 										name="hidden_public_price_label"
 										maxlength="80"
@@ -534,8 +548,8 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 										data-hidden-price-label-input
 										class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
 									/>
-									<span class="settings-field__help text-[0.85rem] font-medium text-(--on-surface-variant)">
-										Se muestra en la reserva pública cuando un servicio oculta el precio y no tiene texto propio.
+									<span class="settings-field__help">
+										Texto de respaldo si un servicio oculta el precio.
 									</span>
 									<div class="mt-2 grid gap-2">
 										<span class="text-[0.8rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Cómo lo verán los clientes</span>
@@ -563,13 +577,6 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 									</div>
 
 									<form id="settings-payments-form" data-settings-payments-form data-payments-body class="settings-card hidden grid gap-6">
-										<div class="settings-card__intro">
-											<h3 class="settings-card__title">Cobro de señas</h3>
-											<p class="settings-card__hint">
-												Asegurá tus turnos cobrando una seña por transferencia bancaria (SIPAP) directamente a tu cuenta.
-											</p>
-										</div>
-
 										<div
 											data-payments-strikes-banner
 											class="hidden rounded-2xl border border-amber-300/80 bg-amber-50 px-4 py-3 text-[0.88rem] font-medium text-amber-950"
@@ -580,8 +587,13 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 											class="flex items-start justify-between gap-4 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3.5"
 										>
 											<div class="grid min-w-0 flex-1 gap-0.5">
-												<span class="text-[0.95rem] font-bold text-(--on-surface)">Habilitar cobro de señas</span>
-												<span class="text-[0.85rem] font-medium text-(--on-surface-variant)">
+												<span class="text-[0.95rem] font-bold text-(--on-surface)">
+													Habilitar cobro de señas
+												</span>
+												<span
+													data-payments-enable-help
+													class="text-[0.85rem] font-medium leading-snug text-(--on-surface-variant)"
+												>
 													Al activarlo, configurá la política de cancelación y tus datos SIPAP.
 												</span>
 											</div>
@@ -605,14 +617,14 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 													Política de cancelación <span class="text-rose-500">*</span>
 												</p>
 												<p class="text-[0.85rem] font-medium text-(--on-surface-variant) -mt-1">
-													El cliente debe aceptarla al reservar.
+													El cliente la acepta al reservar.
 													<a
 														href="/politicas-de-cancelacion-y-reembolso"
 														target="_blank"
 														rel="noopener noreferrer"
 														class="font-semibold text-(--primary) underline underline-offset-2 hover:opacity-90"
 													>
-														Ver detalles de nuestra política de reembolsos
+														Ver políticas
 													</a>
 												</p>
 												<label class="flex items-start gap-3 rounded-2xl border border-(--shell-border) px-4 py-3 has-[:checked]:border-(--primary) has-[:checked]:bg-(--primary-soft)/40">
@@ -620,7 +632,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 													<span class="grid gap-0.5">
 														<span class="text-[0.92rem] font-bold text-(--on-surface)">Flexible</span>
 														<span class="text-[0.82rem] font-medium text-(--on-surface-variant)">
-															Reembolso total cancelando hasta 24 hs antes del turno.
+															Reembolso total hasta 24 hs antes.
 														</span>
 													</span>
 												</label>
@@ -629,7 +641,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 													<span class="grid gap-0.5">
 														<span class="text-[0.92rem] font-bold text-(--on-surface)">Moderada</span>
 														<span class="text-[0.82rem] font-medium text-(--on-surface-variant)">
-															Reembolso del 50% cancelando hasta 24 hs antes. Las cancelaciones posteriores no tienen devolución.
+															50% de reembolso hasta 24 hs antes. Después, sin devolución.
 														</span>
 													</span>
 												</label>
@@ -638,7 +650,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 													<span class="grid gap-0.5">
 														<span class="text-[0.92rem] font-bold text-(--on-surface)">Estricta (no reembolsable)</span>
 														<span class="text-[0.82rem] font-medium text-(--on-surface-variant)">
-															Las cancelaciones no tienen reembolso de la seña en ningún caso.
+															La seña no se reembolsa en ningún caso.
 														</span>
 													</span>
 												</label>
@@ -646,9 +658,9 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 
 											<div data-payments-tour-sipap class="grid gap-4">
 												<div class="grid gap-1">
-													<p class="text-[0.95rem] font-bold text-(--on-surface)">Datos para recibir la transferencia (SIPAP)</p>
-													<p class="text-[0.85rem] font-medium text-(--on-surface-variant)">
-														Completá todos los datos para activar el cobro.
+													<p class="flex items-start gap-1 text-[0.95rem] font-bold text-(--on-surface)">
+														<span class="min-w-0">Datos para recibir la transferencia (SIPAP)</span>
+														<SettingsHelpInfo text="Completá banco, titular, documento y alias para activar el cobro." />
 													</p>
 												</div>
 												<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
@@ -708,15 +720,6 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 							<form id="settings-system-form" data-settings-system-form class="settings-card grid gap-6">
 								<div class="grid gap-8">
 									<div class="grid gap-5">
-										<div class="grid gap-1">
-											<h4 class="text-[0.98rem] font-bold text-(--on-surface)">
-												Visualización y Calendario
-											</h4>
-											<p class="text-[0.85rem] font-medium text-(--on-surface-variant)">
-												Cómo se muestra el tiempo en el panel y en la página pública.
-											</p>
-										</div>
-
 										<label class="settings-field hidden grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 											<span>Formato de hora <span class="text-rose-500">*</span></span>
 											<div class="relative">
@@ -731,7 +734,9 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 											class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
 											data-settings-tour-system-slot
 										>
-											<span>Intervalo de reserva (slots) <span class="text-rose-500">*</span></span>
+											<span class="inline-flex items-center gap-1">Intervalo de reserva (slots) <span class="text-rose-500">*</span>
+												<SettingsHelpInfo text="Frecuencia con la que se muestran horarios en la página pública." />
+											</span>
 											<div class="relative">
 												<select
 													name="rsi_id_slot_interval"
@@ -739,8 +744,8 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 													class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
 												></select>
 											</div>
-											<span class="settings-field__help text-[0.85rem] font-medium text-(--on-surface-variant) mt-0.5">
-												Frecuencia con la que se muestran horarios en la página pública.
+											<span class="settings-field__help mt-0.5">
+												Cada cuánto se ofrecen turnos en la reserva pública.
 											</span>
 										</label>
 
@@ -768,19 +773,19 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 
 									<div class="grid gap-5">
 										<div class="grid gap-1">
-											<h4 class="text-[0.98rem] font-bold text-(--on-surface)">
+											<h4 class="inline-flex items-center gap-1 text-[0.98rem] font-bold text-(--on-surface)">
 												Recordatorios y Automatizaciones
+												<SettingsHelpInfo text="Confirmación de citas: cuándo se envía, cuánto se espera y qué pasa si no hay respuesta." />
 											</h4>
-											<p class="text-[0.85rem] font-medium text-(--on-surface-variant)">
-												Confirmación de citas: envío, espera y acción si no hay respuesta.
-											</p>
 										</div>
 
 										<label
 											class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
 											data-settings-tour-system-reminder
 										>
-											<span>Tiempo de recordatorio <span class="text-rose-500">*</span></span>
+											<span class="inline-flex items-center gap-1">Tiempo de recordatorio <span class="text-rose-500">*</span>
+												<SettingsHelpInfo text="Cuándo se envía el mensaje de reconfirmación al cliente." />
+											</span>
 											<div class="relative">
 												<select
 													name="rh_id_reminder_hours"
@@ -788,8 +793,8 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 													class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
 												></select>
 											</div>
-											<span class="settings-field__help text-[0.85rem] font-medium text-(--on-surface-variant) mt-0.5">
-												Cuándo se envía el mensaje de reconfirmación al cliente.
+											<span class="settings-field__help mt-0.5">
+												Cuándo se envía la reconfirmación.
 											</span>
 										</label>
 
@@ -797,7 +802,9 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 											class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
 											data-settings-tour-system-alert
 										>
-											<span>Alertas de citas no respondidas <span class="text-rose-500">*</span></span>
+											<span class="inline-flex items-center gap-1">Alertas de citas no respondidas <span class="text-rose-500">*</span>
+												<SettingsHelpInfo text="Qué hacer si el cliente no responde al recordatorio." />
+											</span>
 											<div class="relative">
 												<select
 													name="unanswered_alert_action"
@@ -808,8 +815,8 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 													<option value="CANCEL">Cancelar la cita automáticamente</option>
 												</select>
 											</div>
-											<span class="settings-field__help text-[0.85rem] font-medium text-(--on-surface-variant) mt-0.5">
-												Acción cuando el cliente no responde al recordatorio.
+											<span class="settings-field__help mt-0.5">
+												Si el cliente no responde al recordatorio.
 											</span>
 										</label>
 
@@ -817,7 +824,9 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 											class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface) hidden"
 											data-settings-system-cancel-wait-field
 										>
-											<span>Tiempo límite de espera <span class="text-rose-500">*</span></span>
+											<span class="inline-flex items-center gap-1">Tiempo límite de espera <span class="text-rose-500">*</span>
+												<SettingsHelpInfo text="Tiempo que tiene el cliente para reconfirmar antes de la cancelación automática." />
+											</span>
 											<div class="relative">
 												<select
 													name="cwh_id_cancel_wait_hours"
@@ -825,8 +834,8 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 													class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
 												></select>
 											</div>
-											<span class="settings-field__help text-[0.85rem] font-medium text-(--on-surface-variant) mt-0.5">
-												Es el tiempo que se da al cliente de reconfirmar antes de la cancelación automática.
+											<span class="settings-field__help mt-0.5">
+												Plazo para reconfirmar antes de cancelar.
 											</span>
 										</label>
 									</div>
@@ -850,10 +859,13 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 												<div class="grid min-w-0 flex-1 gap-1.5">
 													<div class="flex items-center gap-2">
 														<span class="material-symbols-rounded text-[1.25rem] text-(--primary)">reviews</span>
-														<h5 class="text-[0.98rem] font-bold text-(--on-surface)">Envío automático</h5>
+														<h5 class="inline-flex items-center gap-1 text-[0.98rem] font-bold text-(--on-surface)">
+															Envío automático
+															<SettingsHelpInfo text="Se envía por WhatsApp 2 horas después de que termina la cita. Solo si la marcás como Completado; en otro estado, el cliente no la recibe." />
+														</h5>
 													</div>
-													<p class="text-[0.86rem] font-medium leading-relaxed text-(--on-surface-variant)">
-														Envía automáticamente una encuesta por WhatsApp 2 horas después de que termina la cita. Solo se envía si marcás la cita como Completado: si queda en otro estado, el cliente no la recibe.
+													<p class="settings-help-inline">
+														WhatsApp, 2 h después de Completado.
 													</p>
 												</div>
 												<label class="settings-switch shrink-0">
@@ -890,10 +902,13 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 												<div class="grid min-w-0 flex-1 gap-1.5">
 													<div class="flex items-center gap-2">
 														<span class="material-symbols-rounded text-[1.25rem] text-(--primary)">notifications_active</span>
-														<h4 class="text-[0.98rem] font-bold text-(--on-surface)">Notificaciones en este dispositivo</h4>
+														<h4 class="flex min-w-0 items-start gap-1 text-[0.98rem] font-bold text-(--on-surface)">
+															<span class="min-w-0">Notificaciones en este dispositivo</span>
+															<SettingsHelpInfo text="Alertas de turnos nuevos, cambios y cancelaciones en este dispositivo." />
+														</h4>
 													</div>
-													<p class="text-[0.86rem] font-medium leading-relaxed text-(--on-surface-variant)">
-														Recibí alertas de tus turnos (nuevos, cambios y cancelaciones).
+													<p class="settings-help-inline">
+														Alertas de turnos, cambios y cancelaciones.
 													</p>
 													<p
 														class="hidden text-[0.82rem] font-semibold text-amber-700 dark:text-amber-400"
@@ -926,12 +941,13 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 												<div class="grid min-w-0 flex-1 gap-1.5">
 													<div class="flex items-center gap-2">
 														<span class="material-symbols-rounded text-[1.25rem] text-(--primary)">group</span>
-														<h4 class="text-[0.98rem] font-bold text-(--on-surface)">
-															Notificaciones de todo el equipo
+														<h4 class="flex min-w-0 items-start gap-1 text-[0.98rem] font-bold text-(--on-surface)">
+															<span class="min-w-0">Notificaciones de todo el equipo</span>
+															<SettingsHelpInfo text="También recibís las alertas de los demás profesionales en este dispositivo." />
 														</h4>
 													</div>
-													<p class="text-[0.86rem] font-medium leading-relaxed text-(--on-surface-variant)">
-														Recibí también las alertas de los demás profesionales en este dispositivo.
+													<p class="settings-help-inline">
+														Incluye alertas de los demás profesionales.
 													</p>
 												</div>
 												<label class="settings-switch shrink-0">
@@ -959,9 +975,6 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 						<section data-settings-panel="plan" class="settings-panel hidden gap-4">
 							<div class="settings-card__intro">
 								<h3 class="settings-card__title">Plan y suscripción</h3>
-								<p class="settings-card__hint">
-									Estado de tu suscripción, uso de almacenamiento y funciones incluidas.
-								</p>
 							</div>
 
 							<div data-settings-plan-loading class="settings-plan-loading grid place-items-center gap-2 py-10 text-(--on-surface-variant)">
@@ -1235,6 +1248,13 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		</div>
 	</div>
 </dialog>
+<div
+	id="settings-help-bubble"
+	class="settings-help-bubble"
+	data-settings-help-bubble
+	role="tooltip"
+	hidden
+></div>
 </settings-manager>
 
 <script>
@@ -1403,6 +1423,8 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		private subscriptionLoading = false;
 		private paymentsLoaded = false;
 		private paymentsLoading = false;
+		private helpBubble: HTMLElement | null = null;
+		private helpAnchor: HTMLButtonElement | null = null;
 
 		connectedCallback() {
 			const roleId = Number(this.dataset.roleId || '0');
@@ -1509,6 +1531,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 				?.addEventListener('change', this.syncPaymentsDetailsVisibility, { signal });
 			this.bindScrollHints(signal);
 			this.bindSettingsSelects(signal);
+			this.bindHelpTooltips(signal);
 			this.syncPanelThemeSelect();
 			if (this.isPageMode) {
 				this.setActiveTab(this.resolveInitialTab());
@@ -1636,6 +1659,24 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 			const target = event.target;
 			if (!(target instanceof Element)) return;
 
+			const helpBtn = target.closest<HTMLButtonElement>('[data-settings-help]');
+			if (helpBtn && this.contains(helpBtn)) {
+				event.preventDefault();
+				event.stopPropagation();
+				if (this.canHoverHelpTooltips()) {
+					this.showHelpTooltip(helpBtn);
+					return;
+				}
+				if (this.helpAnchor === helpBtn && this.helpBubble && !this.helpBubble.hidden) {
+					this.hideHelpTooltip();
+					return;
+				}
+				this.showHelpTooltip(helpBtn);
+				return;
+			}
+
+			this.hideHelpTooltip();
+
 			if (this.els.cropModal?.open && this.els.cropModal === target) {
 				this.closeProfileImageCrop(true);
 				return;
@@ -1694,6 +1735,101 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 				openBtn.closest('details')?.removeAttribute('open');
 				this.openModal();
 			}
+		};
+
+		private canHoverHelpTooltips() {
+			return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+		}
+
+		private bindHelpTooltips(signal: AbortSignal) {
+			this.helpBubble = this.querySelector<HTMLElement>('[data-settings-help-bubble]');
+			this.els.modal?.addEventListener('pointerover', this.handleHelpTooltipOver, { signal });
+			this.els.modal?.addEventListener('pointerout', this.handleHelpTooltipOut, { signal });
+			this.els.modal?.addEventListener(
+				'click',
+				(event) => {
+					const target = event.target;
+					if (!(target instanceof Element)) return;
+					if (target.closest('[data-settings-help]')) event.preventDefault();
+				},
+				{ signal, capture: true },
+			);
+			document.addEventListener('keydown', this.handleHelpTooltipKeydown, { signal });
+			const content = this.querySelector<HTMLElement>('[data-settings-content]');
+			content?.addEventListener('scroll', this.hideHelpTooltip, { signal, passive: true });
+			this.closest('main')?.addEventListener('scroll', this.hideHelpTooltip, { signal, passive: true });
+			window.addEventListener('scroll', this.hideHelpTooltip, { signal, passive: true, capture: true });
+			window.addEventListener('resize', this.hideHelpTooltip, { signal });
+		}
+
+		private handleHelpTooltipOver = (event: PointerEvent) => {
+			if (!this.canHoverHelpTooltips()) return;
+			const target = event.target;
+			if (!(target instanceof Element)) return;
+			const btn = target.closest<HTMLButtonElement>('[data-settings-help]');
+			if (btn && this.contains(btn)) this.showHelpTooltip(btn);
+		};
+
+		private handleHelpTooltipOut = (event: PointerEvent) => {
+			if (!this.canHoverHelpTooltips()) return;
+			const target = event.target;
+			if (!(target instanceof Element)) return;
+			const btn = target.closest<HTMLButtonElement>('[data-settings-help]');
+			if (!btn) return;
+			const related = event.relatedTarget;
+			if (related instanceof Node && btn.contains(related)) return;
+			this.hideHelpTooltip();
+		};
+
+		private handleHelpTooltipKeydown = (event: KeyboardEvent) => {
+			if (event.key === 'Escape') this.hideHelpTooltip();
+		};
+
+		private showHelpTooltip(btn: HTMLButtonElement) {
+			const bubble = this.helpBubble;
+			const text = btn.getAttribute('data-tooltip')?.trim();
+			if (!bubble || !text) return;
+
+			this.querySelectorAll<HTMLButtonElement>('[data-settings-help][aria-expanded="true"]').forEach((openBtn) => {
+				if (openBtn !== btn) openBtn.setAttribute('aria-expanded', 'false');
+			});
+
+			bubble.textContent = text;
+			bubble.hidden = false;
+			this.helpAnchor = btn;
+			btn.setAttribute('aria-expanded', 'true');
+			this.positionHelpTooltip(btn);
+			requestAnimationFrame(() => this.positionHelpTooltip(btn));
+		}
+
+		private positionHelpTooltip(btn: HTMLButtonElement) {
+			const bubble = this.helpBubble;
+			if (!bubble || bubble.hidden) return;
+
+			const rect = btn.getBoundingClientRect();
+			const margin = 8;
+			const vw = window.innerWidth;
+			const vh = window.innerHeight;
+			const maxWidth = Math.min(288, vw - 16);
+			bubble.style.maxWidth = `${maxWidth}px`;
+
+			const tipW = Math.min(bubble.offsetWidth, maxWidth);
+			const tipH = bubble.offsetHeight;
+			let top = rect.bottom + margin;
+			if (top + tipH > vh - 8 && rect.top - tipH - margin >= 8) {
+				top = rect.top - tipH - margin;
+			}
+
+			let left = rect.left + rect.width / 2 - tipW / 2;
+			left = Math.max(8, Math.min(left, vw - tipW - 8));
+			bubble.style.top = `${Math.max(8, top)}px`;
+			bubble.style.left = `${left}px`;
+		}
+
+		private hideHelpTooltip = () => {
+			if (this.helpBubble) this.helpBubble.hidden = true;
+			this.helpAnchor?.setAttribute('aria-expanded', 'false');
+			this.helpAnchor = null;
 		};
 
 		private getActiveTabId() {
@@ -1841,6 +1977,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 
 		private closeModal = () => {
 			if (this.isPageMode) return;
+			this.hideHelpTooltip();
 			const dialog = this.getDialog();
 			if (!dialog?.open) return;
 			destroyActiveBookmateTour();
@@ -2408,6 +2545,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		};
 
 		private setActiveTab(tabId: string) {
+			this.hideHelpTooltip();
 			this.els.tabButtons.forEach((btn) => btn.classList.toggle('is-active', btn.dataset.settingsTab === tabId));
 			this.els.panels.forEach((panel) => panel.classList.toggle('hidden', panel.dataset.settingsPanel !== tabId));
 			if (tabId === 'profile' || tabId === 'system') this.syncPushNotificationToggle();
@@ -3405,8 +3543,10 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 			if (!form) return;
 			const toggle = form.querySelector<HTMLInputElement>('[data-payments-deposits-toggle]');
 			const details = form.querySelector<HTMLElement>('[data-payments-details]');
+			const enableHelp = form.querySelector<HTMLElement>('[data-payments-enable-help]');
 			const enabled = Boolean(toggle?.checked);
 			details?.classList.toggle('hidden', !enabled);
+			enableHelp?.classList.toggle('hidden', enabled);
 		};
 
 		private populateBankSelect(
@@ -4285,6 +4425,9 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 
 	.settings-card__title {
 		margin: 0;
+		display: flex;
+		align-items: flex-start;
+		gap: 0.28rem;
 		font-size: 0.98rem;
 		font-weight: 750;
 		color: var(--on-surface);
@@ -4296,6 +4439,68 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		font-weight: 500;
 		line-height: 1.45;
 		color: var(--on-surface-variant);
+	}
+
+	.settings-field__help,
+	.settings-help-inline {
+		margin: 0;
+		font-size: 0.85rem;
+		font-weight: 500;
+		line-height: 1.45;
+		color: var(--on-surface-variant);
+	}
+
+	.settings-field-info {
+		display: inline-grid;
+		place-items: center;
+		width: 1.45rem;
+		height: 1.45rem;
+		margin: -0.15rem 0;
+		padding: 0;
+		border: 0;
+		border-radius: 999px;
+		background: transparent;
+		color: var(--on-surface-variant);
+		cursor: help;
+		flex-shrink: 0;
+		touch-action: manipulation;
+	}
+
+	.settings-field-info .material-symbols-rounded {
+		font-size: 1.05rem;
+		line-height: 1;
+		color: inherit;
+	}
+
+	.settings-field-info:hover,
+	.settings-field-info:focus-visible,
+	.settings-field-info[aria-expanded='true'] {
+		color: var(--primary);
+		outline: none;
+	}
+
+	.settings-field-info:focus-visible {
+		box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 35%, transparent);
+	}
+
+	.settings-help-bubble {
+		position: fixed;
+		z-index: 1400;
+		display: block;
+		max-width: min(18rem, calc(100vw - 1.5rem));
+		padding: 0.55rem 0.7rem;
+		border-radius: 0.7rem;
+		background: var(--on-surface);
+		color: var(--surface-bright, #fff);
+		font-size: 0.78rem;
+		font-weight: 550;
+		line-height: 1.4;
+		box-shadow: 0 12px 32px rgba(15, 23, 42, 0.28);
+		pointer-events: none;
+	}
+
+	.settings-help-bubble[hidden] {
+		display: none !important;
 	}
 
 	.settings-card__fields {
@@ -4752,9 +4957,10 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 			gap: var(--settings-space-micro);
 		}
 
-		[data-settings-modal] .settings-field__help {
-			margin-top: 0.125rem;
-			line-height: 1.45;
+		[data-settings-modal] .settings-card__intro .settings-card__hint,
+		[data-settings-modal] .settings-field__help,
+		[data-settings-modal] .settings-help-inline {
+			display: none;
 		}
 
 		[data-settings-modal] form .grid.gap-4,
