@@ -1286,7 +1286,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 				<div class="customer-profile-modal-footer__edit hidden" data-customer-profile-footer-edit>
 					<button
 						type="button"
-						class="modal-action-secondary w-full sm:w-auto"
+						class="modal-action-secondary"
 						data-cancel-customer-profile-edit
 					>
 						Cancelar
@@ -1294,7 +1294,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 					<button
 						type="submit"
 						form="customer-profile-edit-form"
-						class="modal-action-primary w-full sm:w-auto"
+						class="modal-action-primary"
 						data-save-customer-profile-edit
 						data-requires-write
 					>
@@ -1786,9 +1786,16 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 	.customer-profile-modal-footer__edit {
 		display: flex;
 		width: 100%;
-		align-items: center;
+		align-items: stretch;
 		justify-content: flex-end;
-		gap: 0.75rem;
+		gap: 0.65rem;
+	}
+
+	.customer-profile-modal-footer__edit .modal-action-secondary,
+	.customer-profile-modal-footer__edit .modal-action-primary {
+		flex: 1 1 0;
+		width: auto;
+		min-width: 0;
 	}
 
 	@media (min-width: 640px) {
@@ -1796,10 +1803,21 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 			width: auto;
 			margin-left: auto;
 		}
+
+		.customer-profile-modal-footer__edit .modal-action-secondary,
+		.customer-profile-modal-footer__edit .modal-action-primary {
+			flex: 0 0 auto;
+		}
 	}
 
 	.customer-profile-modal-footer__edit:not(.hidden) {
 		display: flex;
+	}
+
+	@media (max-width: 767px) {
+		.customer-profile-modal-footer__edit .modal-action-secondary {
+			display: inline-flex;
+		}
 	}
 
 	.customer-profile-ficha {

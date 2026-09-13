@@ -3901,17 +3901,20 @@ const googleErrorMessage = hasGoogleError
 
 		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav .calendar-filters-trigger,
 		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav .calendar-tour-help {
-			width: 1.95rem;
-			height: 1.95rem;
-			min-width: 1.95rem;
-			min-height: 1.95rem;
+			box-sizing: border-box;
+			width: 3rem;
+			height: 3rem;
+			min-width: 3rem;
+			min-height: 3rem;
 			padding: 0;
 			border-radius: 999px;
+			flex: 0 0 3rem;
+			align-self: center;
 		}
 
 		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav .calendar-filters-trigger .material-symbols-rounded,
 		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav .calendar-tour-help .material-symbols-rounded {
-			font-size: 1.05rem;
+			font-size: 1.25rem;
 		}
 
 		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav .calendar-tour-help__label {
