@@ -79,6 +79,8 @@ const { currentOrgMemberId = 0 } = Astro.props;
 
 		const currentMemberId = Number(dialog.getAttribute('data-current-org-member-id') || 0);
 		let organizationsCache: OrgSwitcherItem[] | null = null;
+		let ignoreLightDismissUntil = 0;
+		let settleTimer = 0;
 
 		const setVisible = (element: Element | null, visible: boolean) => {
 			element?.classList.toggle('is-hidden', !visible);
@@ -211,7 +213,15 @@ const { currentOrgMemberId = 0 } = Astro.props;
 			setVisible(loadingEl, true);
 			setVisible(emptyEl, false);
 			setVisible(listEl, false);
-			openPanelModal(dialog);
+			dialog.classList.remove('is-settled');
+			ignoreLightDismissUntil = Date.now() + 450;
+			window.clearTimeout(settleTimer);
+
+			/* iOS: el tap que abre el sheet también llega al backdrop y lo cierra al instante. */
+			window.setTimeout(() => {
+				if (!dialog.open) openPanelModal(dialog);
+				settleTimer = window.setTimeout(() => dialog.classList.add('is-settled'), 200);
+			}, 0);
 
 			try {
 				const organizations = await loadOrganizations();
@@ -235,6 +245,7 @@ const { currentOrgMemberId = 0 } = Astro.props;
 		triggers.forEach((trigger) => {
 			trigger.addEventListener('click', (event) => {
 				event.preventDefault();
+				event.stopPropagation();
 				void openDialog();
 			});
 		});
@@ -244,10 +255,18 @@ const { currentOrgMemberId = 0 } = Astro.props;
 		});
 
 		dialog.addEventListener('click', (event) => {
-			if (event.target === dialog) dialog.close();
+			if (event.target !== dialog) return;
+			if (Date.now() < ignoreLightDismissUntil) return;
+			dialog.close();
+		});
+
+		dialog.addEventListener('cancel', (event) => {
+			if (Date.now() < ignoreLightDismissUntil) event.preventDefault();
 		});
 
 		dialog.addEventListener('close', () => {
+			window.clearTimeout(settleTimer);
+			dialog.classList.remove('is-settled');
 			setVisible(loadingEl, false);
 			clearError();
 		});
@@ -261,13 +280,20 @@ const { currentOrgMemberId = 0 } = Astro.props;
 
 <style is:global>
 	/* is:global — las tarjetas se renderizan con JS y no reciben el scope de Astro */
-	.org-switcher-dialog {
+	dialog.org-switcher-dialog,
+	dialog.org-switcher-dialog:modal,
+	dialog.org-switcher-dialog[open] {
 		position: fixed;
 		inset: auto 0 0 0;
+		top: auto;
+		right: 0;
+		bottom: 0;
+		left: 0;
 		z-index: 80;
 		margin: 0;
 		width: 100%;
 		max-width: none;
+		height: auto;
 		max-height: min(88dvh, calc(100dvh - env(safe-area-inset-bottom, 0px)));
 		padding: 0;
 		border: 0;
@@ -282,9 +308,26 @@ const { currentOrgMemberId = 0 } = Astro.props;
 		animation: org-switcher-sheet-in 180ms cubic-bezier(0.2, 0, 0, 1);
 	}
 
-	.org-switcher-dialog[open] {
-		display: flex;
-		flex-direction: column;
+	dialog.org-switcher-dialog[open].is-settled {
+		transform: none;
+	}
+
+	@media (max-width: 639.98px) {
+		dialog.org-switcher-dialog,
+		dialog.org-switcher-dialog:modal,
+		dialog.org-switcher-dialog[open] {
+			animation: org-switcher-fade-in 180ms cubic-bezier(0.2, 0, 0, 1);
+			transform: none;
+		}
+	}
+
+	@keyframes org-switcher-fade-in {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
 	}
 
 	.org-switcher-dialog::backdrop {
@@ -297,7 +340,7 @@ const { currentOrgMemberId = 0 } = Astro.props;
 		position: relative;
 		display: flex;
 		flex-direction: column;
-		height: 100%;
+		height: auto;
 		max-height: min(88dvh, calc(100dvh - env(safe-area-inset-bottom, 0px)));
 		border: 1px solid var(--shell-border);
 		border-radius: 1.5rem 1.5rem 0 0;
@@ -329,8 +372,14 @@ const { currentOrgMemberId = 0 } = Astro.props;
 	}
 
 	@media (min-width: 640px) {
-		.org-switcher-dialog {
+		dialog.org-switcher-dialog,
+		dialog.org-switcher-dialog:modal,
+		dialog.org-switcher-dialog[open] {
 			inset: 0 0 0 auto;
+			top: 0;
+			right: 0;
+			bottom: 0;
+			left: auto;
 			width: min(32rem, 100%);
 			max-width: min(32rem, 100%);
 			height: 100dvh;
@@ -566,7 +615,7 @@ const { currentOrgMemberId = 0 } = Astro.props;
 	}
 
 	.org-switcher-footer {
-		padding: 0 1.5rem 1.5rem;
+		padding: 0 1.5rem max(1.5rem, env(safe-area-inset-bottom, 0px));
 	}
 
 	.org-switcher-create-link {
