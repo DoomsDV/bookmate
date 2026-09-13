@@ -12,8 +12,16 @@ import TopBar from '../../components/TopBar.astro';
 import {
 	DashboardApiError,
 	DASHBOARD_APP_TZ,
+	DASHBOARD_CHART_DEFAULT_DAYS,
+	DASHBOARD_CHART_WINDOWS,
+	DASHBOARD_UPCOMING_DAYS,
+	asuncionTodayIso,
+	chartWindowSubtitle,
+	chartYTicks,
 	fillAppointmentsByDay,
 	getMainDashboardWithOrds,
+	sliceChartWindow,
+	toDashboardChartDays,
 	type DashboardMainData,
 } from '../../lib/dashboard';
 import { getMyProfileWithOrds } from '../../lib/my-profile';
@@ -41,6 +49,10 @@ let dashboard: DashboardMainData = {
 	},
 	upcoming_appointments: [],
 	appointments_by_day: fillAppointmentsByDay(null),
+	upcoming_by_day: fillAppointmentsByDay(null, {
+		days: DASHBOARD_UPCOMING_DAYS,
+		direction: 'forward',
+	}),
 	pagination: {
 		current_page: currentPage,
 		per_page: PAGE_SIZE,
@@ -122,12 +134,11 @@ const greetingSubtitle = `${organizationName} · ${dashboardDate}`;
 
 const weekDayLabelsByJs = ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'] as const;
 const weekDayNamesByJs = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'] as const;
-const asuncionTodayIso = dashboard.appointments_by_day[0]?.date ?? '';
-const weekChartMax = Math.max(1, ...dashboard.appointments_by_day.map((item) => item.count));
-const weekChartTotal = dashboard.appointments_by_day.reduce((sum, item) => sum + item.count, 0);
-const weekChartEmpty = weekChartTotal === 0;
-const weekChartCountText = weekChartTotal === 1 ? '1 cita' : `${weekChartTotal} citas`;
-const weekGlance = dashboard.appointments_by_day.map((item) => {
+const todayIso = asuncionTodayIso();
+const weekGlance = fillAppointmentsByDay(dashboard.upcoming_by_day, {
+	days: DASHBOARD_UPCOMING_DAYS,
+	direction: 'forward',
+}).map((item) => {
 	const [year, month, dayNumber] = item.date.split('-').map(Number);
 	const utcDay = new Date(Date.UTC(year, month - 1, dayNumber));
 	const weekday = utcDay.getUTCDay();
@@ -136,15 +147,25 @@ const weekGlance = dashboard.appointments_by_day.map((item) => {
 		weekdayName: weekDayNamesByJs[weekday],
 		dayNumber,
 		iso: item.date,
-		isToday: item.date === asuncionTodayIso,
+		isToday: item.date === todayIso,
 		hasAppointments: item.count > 0,
 		appointmentCount: item.count,
-		barPct: weekChartEmpty ? 0 : Math.round((item.count / weekChartMax) * 100),
 	};
 });
-const weekChartAria = weekGlance
+const chartWindow = DASHBOARD_CHART_DEFAULT_DAYS;
+const chartDays = toDashboardChartDays(
+	sliceChartWindow(dashboard.appointments_by_day, chartWindow),
+	todayIso
+);
+const weekChartTotal = chartDays.reduce((sum, item) => sum + item.appointmentCount, 0);
+const weekChartEmpty = weekChartTotal === 0;
+const weekChartCountText = weekChartTotal === 1 ? '1 cita' : `${weekChartTotal} citas`;
+const weekChartAria = chartDays
 	.map((day) => `${day.weekdayName}: ${day.appointmentCount}`)
 	.join('. ');
+const chartY = chartYTicks(Math.max(0, ...chartDays.map((day) => day.appointmentCount)));
+const chartYMax = chartY[0] ?? 1;
+const chartSeriesJson = JSON.stringify(dashboard.appointments_by_day);
 
 const getStatusLabel = (status: string) => {
 	switch (status) {
@@ -628,51 +649,109 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 												weekChartEmpty && 'is-empty',
 											]}
 											aria-label={`Citas por día. ${weekChartAria}`}
+											data-day-chart
+											data-active-window={String(chartWindow)}
+											data-chart-series={chartSeriesJson}
 										>
 											<div class="dashboard-week-chart__inner">
 												<div class="dashboard-week-chart__head">
 													<div class="min-w-0">
 														<h2 class="text-xl font-semibold text-[#1e293b] dark:text-[#E5E7EB]">Citas por día</h2>
-														<p class="dashboard-appointments-subtitle">Siguientes 7 días</p>
+														<p class="dashboard-appointments-subtitle" data-chart-subtitle>
+															{chartWindowSubtitle(chartWindow)}
+														</p>
 													</div>
-													<span class="dashboard-appointments-count">{weekChartCountText}</span>
+													<div class="dashboard-week-chart__tools">
+														<div class="dashboard-chart-windows" role="group" aria-label="Periodo del gráfico">
+															{
+																DASHBOARD_CHART_WINDOWS.map((days) => (
+																	<button
+																		type="button"
+																		data-chart-days={String(days)}
+																		aria-pressed={days === chartWindow ? 'true' : 'false'}
+																	>
+																		{days} días
+																	</button>
+																))
+															}
+														</div>
+														<span class="dashboard-appointments-count" data-chart-count>{weekChartCountText}</span>
+													</div>
 												</div>
 
-												<div class="dashboard-week-chart__plot" role="img" aria-hidden="true">
-													{
-														weekGlance.map((day) => (
-															<div
-																class:list={[
-																	'dashboard-week-chart__col',
-																	day.isToday && 'is-today',
-																	!day.hasAppointments && 'is-empty',
-																]}
-																title={
-																	day.isToday
-																		? `Hoy · ${day.appointmentCount} ${day.appointmentCount === 1 ? 'cita' : 'citas'}`
-																		: `${day.weekdayName} ${String(day.dayNumber).padStart(2, '0')} · ${day.appointmentCount} ${day.appointmentCount === 1 ? 'cita' : 'citas'}`
-																}
-															>
-																<span class="dashboard-week-chart__value">
-																	{day.appointmentCount}
-																</span>
-																<span class="dashboard-week-chart__track">
+												<div class="dashboard-week-chart__frame">
+													<div class="dashboard-week-chart__y" aria-hidden="true" data-chart-y>
+														{
+															chartY.map((tick) => (
+																<span class="dashboard-week-chart__y-tick">{tick}</span>
+															))
+														}
+													</div>
+													<div class="dashboard-week-chart__area">
+														<div class="dashboard-week-chart__grid" aria-hidden="true" data-chart-grid>
+															{
+																chartY.map((tick) => (
 																	<span
-																		class="dashboard-week-chart__bar"
-																		style={`--h:${Math.max(day.barPct, day.hasAppointments ? 12 : 6)}`}
+																		class:list={[
+																			'dashboard-week-chart__h-line',
+																			tick === 0 && 'is-baseline',
+																		]}
+																		style={`bottom:${chartYMax <= 0 ? 0 : (tick / chartYMax) * 100}%`}
 																	></span>
-																</span>
-																<span class="dashboard-week-chart__label">{day.label}</span>
-																<span class="dashboard-week-chart__number">{day.dayNumber}</span>
-															</div>
-														))
-													}
+																))
+															}
+														</div>
+														<div
+															class="dashboard-week-chart__plot"
+															role="img"
+															aria-hidden="true"
+															data-chart-plot
+															data-window={String(chartWindow)}
+															style={`--chart-cols:${chartWindow}`}
+														>
+															{
+																chartDays.map((day) => (
+																	<div
+																		class:list={[
+																			'dashboard-week-chart__col',
+																			day.isToday && 'is-today',
+																			!day.hasAppointments && 'is-empty',
+																			day.showTick && 'is-tick',
+																		]}
+																		title={
+																			day.isToday
+																				? `Hoy · ${day.appointmentCount} ${day.appointmentCount === 1 ? 'cita' : 'citas'}`
+																				: `${day.weekdayName} ${String(day.dayNumber).padStart(2, '0')} · ${day.appointmentCount} ${day.appointmentCount === 1 ? 'cita' : 'citas'}`
+																		}
+																	>
+																		<span class="dashboard-week-chart__value">
+																			{day.appointmentCount}
+																		</span>
+																		<span class="dashboard-week-chart__track">
+																			<span
+																				class="dashboard-week-chart__bar"
+																				style={`--h:${day.barPct}`}
+																			></span>
+																		</span>
+																		<span class="dashboard-week-chart__label">{day.label}</span>
+																		<span class="dashboard-week-chart__number">{day.dayNumber}</span>
+																	</div>
+																))
+															}
+														</div>
+													</div>
 												</div>
 
 												{
 													weekChartEmpty ? (
-														<p class="dashboard-week-chart__idle">Aún no hay citas en los próximos 7 días.</p>
-													) : null
+														<p class="dashboard-week-chart__idle" data-chart-idle>
+															No hay citas en los últimos {chartWindow} días.
+														</p>
+													) : (
+														<p class="dashboard-week-chart__idle" data-chart-idle hidden>
+															No hay citas en los últimos {chartWindow} días.
+														</p>
+													)
 												}
 											</div>
 										</aside>
@@ -748,6 +827,15 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	import { initFadeContent } from '../../lib/fade-content';
 	import { initDashboardGreeting } from '../../lib/dashboard-greeting';
 	import { lockPanelScroll } from '../../lib/panel-scroll-lock';
+	import {
+		asuncionTodayIso,
+		chartWindowSubtitle,
+		chartYTicks,
+		normalizeChartWindow,
+		sliceChartWindow,
+		toDashboardChartDays,
+		type DashboardDayCount,
+	} from '../../lib/dashboard-chart';
 
 	const normalizeAiSummaryBase = (value: unknown): string =>
 		String(value ?? '')
@@ -1789,6 +1877,124 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 	};
 
+	const bindDayChart = () => {
+		const chart = document.querySelector<HTMLElement>('[data-day-chart]');
+		if (!chart || chart.dataset.chartBound === '1') return;
+		chart.dataset.chartBound = '1';
+
+		let series: DashboardDayCount[] = [];
+		try {
+			const parsed = JSON.parse(chart.getAttribute('data-chart-series') || '[]');
+			series = Array.isArray(parsed) ? parsed : [];
+		} catch {
+			series = [];
+		}
+
+		const plot = chart.querySelector<HTMLElement>('[data-chart-plot]');
+		const yAxis = chart.querySelector<HTMLElement>('[data-chart-y]');
+		const grid = chart.querySelector<HTMLElement>('[data-chart-grid]');
+		const subtitle = chart.querySelector<HTMLElement>('[data-chart-subtitle]');
+		const countNode = chart.querySelector<HTMLElement>('[data-chart-count]');
+		const idle = chart.querySelector<HTMLElement>('[data-chart-idle]');
+		const chips = [...chart.querySelectorAll<HTMLButtonElement>('[data-chart-days]')];
+		const todayIso = asuncionTodayIso();
+
+		const applyWindow = (days: number) => {
+			const windowDays = normalizeChartWindow(days);
+			const items = toDashboardChartDays(sliceChartWindow(series, windowDays), todayIso);
+			const total = items.reduce((sum, item) => sum + item.appointmentCount, 0);
+			const empty = total === 0;
+			const yTicks = chartYTicks(Math.max(0, ...items.map((item) => item.appointmentCount)));
+			const yMax = yTicks[0] ?? 1;
+
+			chart.classList.toggle('is-empty', empty);
+			chart.setAttribute('data-active-window', String(windowDays));
+			chart.setAttribute(
+				'aria-label',
+				`Citas por día. ${items.map((item) => `${item.weekdayName}: ${item.appointmentCount}`).join('. ')}`
+			);
+
+			if (yAxis) {
+				yAxis.replaceChildren();
+				for (const tick of yTicks) {
+					const label = document.createElement('span');
+					label.className = 'dashboard-week-chart__y-tick';
+					label.textContent = String(tick);
+					yAxis.append(label);
+				}
+			}
+
+			if (grid) {
+				grid.replaceChildren();
+				for (const tick of yTicks) {
+					const line = document.createElement('span');
+					line.className = 'dashboard-week-chart__h-line';
+					if (tick === 0) line.classList.add('is-baseline');
+					line.style.bottom = `${yMax <= 0 ? 0 : (tick / yMax) * 100}%`;
+					grid.append(line);
+				}
+			}
+
+			if (plot) {
+				plot.setAttribute('data-window', String(windowDays));
+				plot.style.setProperty('--chart-cols', String(windowDays));
+				plot.replaceChildren();
+				for (const day of items) {
+					const col = document.createElement('div');
+					col.className = 'dashboard-week-chart__col';
+					if (day.isToday) col.classList.add('is-today');
+					if (!day.hasAppointments) col.classList.add('is-empty');
+					if (day.showTick) col.classList.add('is-tick');
+					col.title = day.isToday
+						? `Hoy · ${day.appointmentCount} ${day.appointmentCount === 1 ? 'cita' : 'citas'}`
+						: `${day.weekdayName} ${String(day.dayNumber).padStart(2, '0')} · ${day.appointmentCount} ${day.appointmentCount === 1 ? 'cita' : 'citas'}`;
+
+					const value = document.createElement('span');
+					value.className = 'dashboard-week-chart__value';
+					value.textContent = String(day.appointmentCount);
+
+					const track = document.createElement('span');
+					track.className = 'dashboard-week-chart__track';
+					const bar = document.createElement('span');
+					bar.className = 'dashboard-week-chart__bar';
+					bar.style.setProperty('--h', String(day.barPct));
+					track.append(bar);
+
+					const label = document.createElement('span');
+					label.className = 'dashboard-week-chart__label';
+					label.textContent = day.label;
+
+					const number = document.createElement('span');
+					number.className = 'dashboard-week-chart__number';
+					number.textContent = String(day.dayNumber);
+
+					col.append(value, track, label, number);
+					plot.append(col);
+				}
+			}
+
+			if (subtitle) subtitle.textContent = chartWindowSubtitle(windowDays);
+			if (countNode) countNode.textContent = total === 1 ? '1 cita' : `${total} citas`;
+			if (idle) {
+				idle.hidden = !empty;
+				idle.textContent = `No hay citas en los últimos ${windowDays} días.`;
+			}
+
+			for (const chip of chips) {
+				const on = Number(chip.getAttribute('data-chart-days')) === windowDays;
+				chip.setAttribute('aria-pressed', on ? 'true' : 'false');
+			}
+		};
+
+		chart.addEventListener('click', (event) => {
+			const target = event.target;
+			if (!(target instanceof Element)) return;
+			const chip = target.closest<HTMLButtonElement>('[data-chart-days]');
+			if (!chip || !chart.contains(chip)) return;
+			applyWindow(Number(chip.getAttribute('data-chart-days')));
+		});
+	};
+
 	const bindUpcomingDayFilter = () => {
 		const shell = document.getElementById('dashboard-upcoming-appointments');
 		if (!shell || shell.dataset.dayFilterBound === '1') return;
@@ -1816,6 +2022,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		loadTeamOverview();
 		loadProfitability();
 		loadAiSummary();
+		bindDayChart();
 		bindUpcomingDayFilter();
 		scrollToUpcomingAppointmentsIfNeeded();
 	};
@@ -1872,6 +2079,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	// Solo page-load: evita doble init (cancela la animación a mitad).
 	document.addEventListener('astro:page-load', initializeDashboardPage);
+	bindDayChart();
 </script>
 
 <style is:global>
@@ -3192,12 +3400,23 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	.dashboard-week-chart {
 		--week-bar: #7c3aed;
 		--week-bar-strong: #6d28d9;
+		--chart-track: 10rem;
+		--value-row: 1.15rem;
+		--x-axis: 2.35rem;
+		--grid-line: color-mix(in srgb, var(--on-surface) 12%, transparent);
+		--grid-line-strong: color-mix(in srgb, var(--on-surface) 22%, transparent);
 		display: flex;
 		flex-direction: column;
 		min-height: 0;
 		height: 100%;
 		align-self: stretch;
 		box-sizing: border-box;
+	}
+
+	.dashboard-week-chart[data-active-window='15'],
+	.dashboard-week-chart[data-active-window='30'] {
+		--value-row: 0px;
+		--x-axis: 1.35rem;
 	}
 
 	.dashboard-week-chart__inner {
@@ -3228,26 +3447,166 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		flex-shrink: 0;
 	}
 
-	.dashboard-week-chart__plot {
+	.dashboard-week-chart__tools {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: 0.45rem;
+		flex-shrink: 0;
+	}
+
+	.dashboard-chart-windows {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.14rem;
+		border-radius: 999px;
+		border: 1px solid color-mix(in srgb, var(--on-surface) 10%, transparent);
+		background: color-mix(in srgb, var(--on-surface) 5%, transparent);
+	}
+
+	.dashboard-chart-windows button {
+		appearance: none;
+		height: 1.7rem;
+		padding: 0 0.65rem;
+		border: 0;
+		border-radius: 999px;
+		background: transparent;
+		color: var(--on-surface-variant);
+		font-size: 0.72rem;
+		font-weight: 650;
+		letter-spacing: 0.01em;
+		line-height: 1;
+		white-space: nowrap;
+		cursor: pointer;
+	}
+
+	.dashboard-chart-windows button[aria-pressed='true'] {
+		background: #ffffff;
+		color: var(--on-surface);
+		box-shadow: 0 1px 2px color-mix(in srgb, var(--on-surface) 12%, transparent);
+	}
+
+	html[data-theme='dark'] .dashboard-chart-windows button[aria-pressed='true'] {
+		background: color-mix(in srgb, var(--surface-bright) 55%, var(--primary) 18%);
+		color: var(--on-surface);
+		box-shadow: none;
+	}
+
+	.dashboard-week-chart__frame {
 		display: grid;
-		grid-template-columns: repeat(7, minmax(0, 1fr));
-		align-items: stretch;
+		grid-template-columns: 1.7rem minmax(0, 1fr);
 		gap: 0.35rem;
 		flex: 1 1 auto;
+		min-height: 0;
+		align-items: stretch;
+	}
+
+	.dashboard-week-chart :global(.dashboard-week-chart__y) {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		align-items: flex-end;
+		margin-top: var(--value-row);
+		height: var(--chart-track);
+		padding-right: 0.1rem;
+		box-sizing: border-box;
+	}
+
+	.dashboard-week-chart :global(.dashboard-week-chart__y-tick) {
+		font-size: 0.62rem;
+		font-weight: 650;
+		line-height: 1;
+		font-variant-numeric: tabular-nums lining-nums;
+		color: var(--on-surface-variant);
+	}
+
+	.dashboard-week-chart__area {
+		position: relative;
+		min-width: 0;
 		min-height: 13.75rem;
 	}
 
-	.dashboard-week-chart__col {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: flex-end;
-		gap: 0.32rem;
+	.dashboard-week-chart :global(.dashboard-week-chart__grid) {
+		position: absolute;
+		top: var(--value-row);
+		right: 0;
+		left: 0;
+		height: var(--chart-track);
+		pointer-events: none;
+		z-index: 0;
+	}
+
+	.dashboard-week-chart :global(.dashboard-week-chart__h-line) {
+		position: absolute;
+		right: 0;
+		left: 0;
+		height: 0;
+		border-top: 1px dashed var(--grid-line);
+	}
+
+	.dashboard-week-chart :global(.dashboard-week-chart__h-line.is-baseline) {
+		border-top: 1px solid var(--grid-line-strong);
+	}
+
+	.dashboard-week-chart__plot {
+		position: relative;
+		z-index: 1;
+		display: grid;
+		grid-template-columns: repeat(var(--chart-cols, 7), minmax(0, 1fr));
+		align-items: stretch;
+		gap: 0.35rem;
+		min-height: 13.75rem;
+	}
+
+	.dashboard-week-chart__plot[data-window='15'] {
+		gap: 0.18rem;
+	}
+
+	.dashboard-week-chart__plot[data-window='30'] {
+		gap: 0.1rem;
+	}
+
+	.dashboard-week-chart[data-active-window='15'] :global(.dashboard-week-chart__value),
+	.dashboard-week-chart[data-active-window='30'] :global(.dashboard-week-chart__value) {
+		visibility: hidden;
+		overflow: hidden;
+	}
+
+	.dashboard-week-chart[data-active-window='15'] :global(.dashboard-week-chart__label),
+	.dashboard-week-chart[data-active-window='30'] :global(.dashboard-week-chart__label) {
+		display: none;
+	}
+
+	.dashboard-week-chart[data-active-window='15'] :global(.dashboard-week-chart__number),
+	.dashboard-week-chart[data-active-window='30'] :global(.dashboard-week-chart__number) {
+		font-size: 0.62rem;
+		visibility: hidden;
+	}
+
+	.dashboard-week-chart[data-active-window='15'] :global(.dashboard-week-chart__col.is-tick .dashboard-week-chart__number),
+	.dashboard-week-chart[data-active-window='30'] :global(.dashboard-week-chart__col.is-tick .dashboard-week-chart__number) {
+		visibility: visible;
+	}
+
+	.dashboard-week-chart[data-active-window='15'] :global(.dashboard-week-chart__bar),
+	.dashboard-week-chart[data-active-window='30'] :global(.dashboard-week-chart__bar) {
+		max-width: 100%;
+	}
+
+	.dashboard-week-chart :global(.dashboard-week-chart__col) {
+		display: grid;
+		grid-template-rows: var(--value-row) var(--chart-track) var(--x-axis);
+		align-items: stretch;
+		justify-items: center;
 		min-width: 0;
 		height: 100%;
 	}
 
-	.dashboard-week-chart__value {
+	.dashboard-week-chart :global(.dashboard-week-chart__value) {
+		display: flex;
+		align-items: flex-end;
+		justify-content: center;
+		width: 100%;
 		font-size: 0.78rem;
 		font-weight: 650;
 		letter-spacing: -0.03em;
@@ -3256,33 +3615,42 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		color: var(--on-surface);
 	}
 
-	.dashboard-week-chart__track {
+	.dashboard-week-chart :global(.dashboard-week-chart__track) {
 		position: relative;
 		display: flex;
 		align-items: flex-end;
 		justify-content: center;
 		width: 100%;
-		height: 10rem;
-		flex: 1 1 auto;
-		border-bottom: 1px solid color-mix(in srgb, var(--on-surface) 10%, transparent);
+		height: var(--chart-track);
+		border-left: 1px solid var(--grid-line);
 	}
 
-	.dashboard-week-chart__bar {
+	.dashboard-week-chart :global(.dashboard-week-chart__col:last-child .dashboard-week-chart__track) {
+		border-right: 1px solid var(--grid-line);
+	}
+
+	.dashboard-week-chart[data-active-window='15'] :global(.dashboard-week-chart__col:not(.is-tick) .dashboard-week-chart__track),
+	.dashboard-week-chart[data-active-window='30'] :global(.dashboard-week-chart__col:not(.is-tick) .dashboard-week-chart__track) {
+		border-left-color: transparent;
+	}
+
+	.dashboard-week-chart :global(.dashboard-week-chart__bar) {
 		display: block;
 		width: 100%;
 		max-width: 1.7rem;
-		height: max(0.34rem, calc(var(--h) * 1%));
-		border-radius: 999px 999px 0.35rem 0.35rem;
+		height: calc(var(--h, 0) * 1%);
+		min-height: 0;
+		border-radius: 999px 999px 0.2rem 0.35rem;
 		background: var(--week-bar);
 		transform-origin: bottom center;
 		animation: dashboard-week-bar 640ms cubic-bezier(0.32, 0.72, 0, 1) both;
 	}
 
-	.dashboard-week-chart__col.is-today .dashboard-week-chart__bar {
+	.dashboard-week-chart :global(.dashboard-week-chart__col.is-today .dashboard-week-chart__bar) {
 		background: var(--week-bar-strong);
 	}
 
-	.dashboard-week-chart__col.is-empty .dashboard-week-chart__bar {
+	.dashboard-week-chart :global(.dashboard-week-chart__col.is-empty .dashboard-week-chart__bar) {
 		background: color-mix(in srgb, var(--week-bar) 32%, var(--surface-container-high));
 	}
 
@@ -3291,7 +3659,9 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		--week-bar-strong: #c4b5fd;
 	}
 
-	.dashboard-week-chart__label {
+	.dashboard-week-chart :global(.dashboard-week-chart__label) {
+		align-self: end;
+		margin-top: 0.28rem;
 		font-size: 0.7rem;
 		font-weight: 650;
 		letter-spacing: 0.04em;
@@ -3299,7 +3669,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		color: color-mix(in srgb, var(--on-surface-variant) 78%, var(--on-surface) 22%);
 	}
 
-	.dashboard-week-chart__number {
+	.dashboard-week-chart :global(.dashboard-week-chart__number) {
+		align-self: start;
 		font-size: 0.78rem;
 		font-weight: 600;
 		line-height: 1;
@@ -3307,9 +3678,9 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		color: var(--on-surface);
 	}
 
-	.dashboard-week-chart__col.is-today .dashboard-week-chart__value,
-	.dashboard-week-chart__col.is-today .dashboard-week-chart__label,
-	.dashboard-week-chart__col.is-today .dashboard-week-chart__number {
+	.dashboard-week-chart :global(.dashboard-week-chart__col.is-today .dashboard-week-chart__value),
+	.dashboard-week-chart :global(.dashboard-week-chart__col.is-today .dashboard-week-chart__label),
+	.dashboard-week-chart :global(.dashboard-week-chart__col.is-today .dashboard-week-chart__number) {
 		color: var(--primary);
 	}
 
@@ -3334,7 +3705,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.dashboard-week-chart__bar {
+		.dashboard-week-chart :global(.dashboard-week-chart__bar) {
 			animation: none;
 		}
 	}
@@ -4659,6 +5030,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 		.dashboard-week-chart {
 			min-height: 0;
+			--chart-track: 8.5rem;
 		}
 
 		.dashboard-week-chart__inner {
@@ -4666,8 +5038,16 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			padding: 1.1rem 1rem 1rem;
 		}
 
-		.dashboard-week-chart__track {
-			height: 8.5rem;
+		.dashboard-week-chart__head {
+			flex-wrap: wrap;
+		}
+
+		.dashboard-week-chart__tools {
+			width: 100%;
+			flex-direction: row;
+			align-items: center;
+			justify-content: space-between;
+			gap: 0.5rem;
 		}
 	}
 
