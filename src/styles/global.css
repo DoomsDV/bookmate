@@ -537,7 +537,8 @@ html[data-theme='dark'] [data-settings-modal] {
 	dialog[data-service-modal],
 	dialog[data-professional-modal],
 	dialog[data-specialty-modal],
-	dialog[data-location-modal] {
+	dialog[data-location-modal],
+	dialog.org-switcher-dialog {
 		position: fixed !important;
 		inset: auto 0 0 0 !important;
 		top: auto !important;
@@ -549,6 +550,7 @@ html[data-theme='dark'] [data-settings-modal] {
 		max-width: none !important;
 		max-height: min(85dvh, calc(100dvh - env(safe-area-inset-bottom, 0px))) !important;
 		height: auto !important;
+		transform: none !important;
 	}
 }
 
