@@ -768,7 +768,7 @@ const currentStep = normalizeStep(step);
 	.register-step {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.45rem;
+		gap: 0.6rem;
 		opacity: 0.46;
 		transition: opacity 200ms ease;
 	}
@@ -778,8 +778,8 @@ const currentStep = normalizeStep(step);
 	}
 
 	.register-step-node {
-		width: 1.35rem;
-		height: 1.35rem;
+		width: 2.15rem;
+		height: 2.15rem;
 		border-radius: 9999px;
 		border: 1.5px solid var(--auth-input-border);
 		background: transparent;
@@ -787,8 +787,9 @@ const currentStep = normalizeStep(step);
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		font-size: 0.72rem;
+		font-size: 0.82rem;
 		font-weight: 700;
+		flex-shrink: 0;
 	}
 
 	.register-step.is-active .register-step-node {
