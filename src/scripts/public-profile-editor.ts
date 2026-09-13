@@ -115,6 +115,16 @@ const normalizeHoursTimeInput = (value: string): string => {
 	return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
 };
 
+const hoursTimeDisplayText = (value: string) =>
+	normalizeHoursTimeInput(value) || value || '--:--';
+
+const syncHoursTimeDisplay = (input: HTMLInputElement) => {
+	const display = input
+		.closest('.ppe-hours-interval__control')
+		?.querySelector('.ppe-hours-interval__value');
+	if (display) display.textContent = hoursTimeDisplayText(input.value);
+};
+
 const bindHoursTimeInput = (input: HTMLInputElement, value: string) => {
 	input.type = 'time';
 	input.step = '60';
@@ -694,6 +704,20 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		return input;
 	};
 
+	const createHoursTimeControl = (
+		value: string,
+		attrs: { day: number; index: number; bound: 'start' | 'end'; ariaLabel: string }
+	) => {
+		const control = document.createElement('span');
+		control.className = 'ppe-hours-interval__control';
+		const display = document.createElement('span');
+		display.className = 'ppe-hours-interval__value';
+		display.setAttribute('aria-hidden', 'true');
+		display.textContent = hoursTimeDisplayText(value);
+		control.append(display, createHoursTimeInput(value, attrs));
+		return control;
+	};
+
 	const renderBusinessHours = () => {
 		hoursList = root.querySelector<HTMLElement>('[data-ppe-hours-list]');
 		if (!hoursList) return;
@@ -768,7 +792,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 					startLabel.className = 'ppe-hours-interval__field';
 					startLabel.append(
 						'Inicio',
-						createHoursTimeInput(interval.start, {
+						createHoursTimeControl(interval.start, {
 							day: day.day,
 							index: intervalIndex,
 							bound: 'start',
@@ -780,7 +804,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 					endLabel.className = 'ppe-hours-interval__field';
 					endLabel.append(
 						'Fin',
-						createHoursTimeInput(interval.end, {
+						createHoursTimeControl(interval.end, {
 							day: day.day,
 							index: intervalIndex,
 							bound: 'end',
@@ -1588,6 +1612,17 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	);
 
 	root.addEventListener(
+		'input',
+		(event) => {
+			const timeInput = (event.target as HTMLElement | null)?.closest<HTMLInputElement>(
+				'[data-ppe-hours-start], [data-ppe-hours-end]'
+			);
+			if (timeInput) syncHoursTimeDisplay(timeInput);
+		},
+		{ signal }
+	);
+
+	root.addEventListener(
 		'change',
 		(event) => {
 		const target = event.target as HTMLElement | null;
@@ -1618,6 +1653,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			if (day.intervals[index]) {
 				const normalized = normalizeHoursTimeInput(startInput.value) || '09:00';
 				startInput.value = normalized;
+				syncHoursTimeDisplay(startInput);
 				day.intervals[index].start = normalized;
 				businessHours.days[dayNum - 1] = day;
 				syncPreview();
@@ -1633,6 +1669,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			if (day.intervals[index]) {
 				const normalized = normalizeHoursTimeInput(endInput.value) || '18:00';
 				endInput.value = normalized;
+				syncHoursTimeDisplay(endInput);
 				day.intervals[index].end = normalized;
 				businessHours.days[dayNum - 1] = day;
 				syncPreview();
@@ -1654,7 +1691,10 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		const normalized = normalizeHoursTimeInput(timeInput.value);
 		if (normalized && normalized !== timeInput.value) {
 			timeInput.value = normalized;
+			syncHoursTimeDisplay(timeInput);
 			timeInput.dispatchEvent(new Event('change', { bubbles: true }));
+		} else if (normalized) {
+			syncHoursTimeDisplay(timeInput);
 		}
 		},
 		{ capture: true, signal }

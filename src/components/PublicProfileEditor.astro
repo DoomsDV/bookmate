@@ -569,37 +569,47 @@ const previewInitial = {
 																		<div class="ppe-hours-interval">
 																			<label class="ppe-hours-interval__field">
 																				Inicio
-																				<input
-																					class="ppe-hours-interval__time"
-																					type="time"
-																					step="60"
-																					min="00:00"
-																					max="23:59"
-																					autocomplete="off"
-																					lang="en-GB"
-																					title="Formato 24 h (HH:mm)"
-																					value={interval.start}
-																					data-ppe-hours-start={day.day}
-																					data-index={index}
-																					aria-label={`${dayLabel}: inicio turno ${index + 1}`}
-																				/>
+																				<span class="ppe-hours-interval__control">
+																					<span class="ppe-hours-interval__value" aria-hidden="true">
+																						{interval.start}
+																					</span>
+																					<input
+																						class="ppe-hours-interval__time"
+																						type="time"
+																						step="60"
+																						min="00:00"
+																						max="23:59"
+																						autocomplete="off"
+																						lang="en-GB"
+																						title="Formato 24 h (HH:mm)"
+																						value={interval.start}
+																						data-ppe-hours-start={day.day}
+																						data-index={index}
+																						aria-label={`${dayLabel}: inicio turno ${index + 1}`}
+																					/>
+																				</span>
 																			</label>
 																			<label class="ppe-hours-interval__field">
 																				Fin
-																				<input
-																					class="ppe-hours-interval__time"
-																					type="time"
-																					step="60"
-																					min="00:00"
-																					max="23:59"
-																					autocomplete="off"
-																					lang="en-GB"
-																					title="Formato 24 h (HH:mm)"
-																					value={interval.end}
-																					data-ppe-hours-end={day.day}
-																					data-index={index}
-																					aria-label={`${dayLabel}: fin turno ${index + 1}`}
-																				/>
+																				<span class="ppe-hours-interval__control">
+																					<span class="ppe-hours-interval__value" aria-hidden="true">
+																						{interval.end}
+																					</span>
+																					<input
+																						class="ppe-hours-interval__time"
+																						type="time"
+																						step="60"
+																						min="00:00"
+																						max="23:59"
+																						autocomplete="off"
+																						lang="en-GB"
+																						title="Formato 24 h (HH:mm)"
+																						value={interval.end}
+																						data-ppe-hours-end={day.day}
+																						data-index={index}
+																						aria-label={`${dayLabel}: fin turno ${index + 1}`}
+																					/>
+																				</span>
 																			</label>
 																			<div class="ppe-hours-remove-wrap">
 																				<button
