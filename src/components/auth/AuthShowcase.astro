@@ -1,0 +1,152 @@
+---
+const slides = [
+	{
+		src: '/auth/login-slide-estilista.webp',
+		alt: 'Estilista cortando el cabello en un salón',
+		caption: 'Estilista',
+	},
+	{
+		src: '/auth/login-slide-doctora.webp',
+		alt: 'Doctora en consulta con un paciente',
+		caption: 'Consultorio',
+	},
+	{
+		src: '/auth/login-slide-esteticista.webp',
+		alt: 'Esteticista realizando un tratamiento facial',
+		caption: 'Estética',
+	},
+];
+---
+
+<div class="auth-showcase" data-auth-showcase aria-roledescription="carrusel" aria-label="Especialistas en Hasel">
+	<div class="auth-showcase-slides">
+		{slides.map((slide, index) => (
+			<figure
+				class:list={['auth-showcase-slide', index === 0 && 'is-active']}
+				data-showcase-slide
+				data-caption={slide.caption}
+				aria-hidden={index === 0 ? 'false' : 'true'}
+			>
+				<img
+					src={slide.src}
+					alt={slide.alt}
+					width="864"
+					height="1152"
+					loading={index === 0 ? 'eager' : 'lazy'}
+					decoding={index === 0 ? 'sync' : 'async'}
+					fetchpriority={index === 0 ? 'high' : 'low'}
+				/>
+			</figure>
+		))}
+	</div>
+	<div class="auth-showcase-veil" aria-hidden="true"></div>
+	<div class="auth-showcase-meta">
+		<p class="auth-showcase-caption" data-showcase-caption>{slides[0].caption}</p>
+		<div class="auth-showcase-dots">
+			{slides.map((slide, index) => (
+				<button
+					type="button"
+					class="auth-showcase-dot"
+					data-showcase-dot
+					aria-label={`Mostrar ${slide.caption}`}
+					aria-current={index === 0 ? 'true' : undefined}
+				></button>
+			))}
+		</div>
+	</div>
+</div>
+
+<script is:inline>
+	(() => {
+		const INTERVAL_MS = 6000;
+
+		const prefersReducedMotion = () => {
+			try {
+				return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+			} catch {
+				return false;
+			}
+		};
+
+		const setupShowcase = () => {
+			const root = document.querySelector('[data-auth-showcase]');
+			if (!root || root.dataset.enhanced === 'true') return;
+			root.dataset.enhanced = 'true';
+
+			const slides = Array.from(root.querySelectorAll('[data-showcase-slide]'));
+			const dots = Array.from(root.querySelectorAll('[data-showcase-dot]'));
+			const caption = root.querySelector('[data-showcase-caption]');
+			if (slides.length < 2) return;
+
+			let index = 0;
+			let timer = 0;
+
+			const show = (nextIndex) => {
+				index = (nextIndex + slides.length) % slides.length;
+				slides.forEach((slide, slideIndex) => {
+					const active = slideIndex === index;
+					slide.classList.toggle('is-active', active);
+					slide.setAttribute('aria-hidden', active ? 'false' : 'true');
+				});
+				dots.forEach((dot, dotIndex) => {
+					if (dotIndex === index) dot.setAttribute('aria-current', 'true');
+					else dot.removeAttribute('aria-current');
+				});
+				if (caption) caption.textContent = slides[index]?.getAttribute('data-caption') || '';
+			};
+
+			const stop = () => {
+				if (timer) {
+					window.clearInterval(timer);
+					timer = 0;
+				}
+			};
+
+			const desktopMq = window.matchMedia('(min-width: 960px)');
+
+			const start = () => {
+				stop();
+				if (prefersReducedMotion() || document.hidden || !desktopMq.matches) return;
+				timer = window.setInterval(() => show(index + 1), INTERVAL_MS);
+			};
+
+			dots.forEach((dot, dotIndex) => {
+				dot.addEventListener('click', () => {
+					show(dotIndex);
+					start();
+				});
+			});
+
+			root.addEventListener('mouseenter', stop);
+			root.addEventListener('mouseleave', start);
+			root.addEventListener('focusin', stop);
+			root.addEventListener('focusout', (event) => {
+				if (!root.contains(event.relatedTarget)) start();
+			});
+			if (typeof desktopMq.addEventListener === 'function') {
+				desktopMq.addEventListener('change', start);
+			}
+
+			const onVisibility = () => {
+				if (document.hidden) stop();
+				else start();
+			};
+			document.addEventListener('visibilitychange', onVisibility);
+
+			const teardown = () => {
+				stop();
+				document.removeEventListener('visibilitychange', onVisibility);
+				if (typeof desktopMq.removeEventListener === 'function') {
+					desktopMq.removeEventListener('change', start);
+				}
+				document.removeEventListener('astro:before-swap', teardown);
+			};
+			document.addEventListener('astro:before-swap', teardown);
+
+			start();
+		};
+
+		setupShowcase();
+		document.addEventListener('astro:page-load', setupShowcase);
+	})();
+</script>

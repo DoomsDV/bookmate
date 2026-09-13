@@ -1,0 +1,46 @@
+---
+import AuthShowcase from './AuthShowcase.astro';
+import '../../styles/auth-split.css';
+
+interface Props {
+	page: 'login' | 'register';
+}
+
+const { page } = Astro.props;
+---
+
+<section
+	class="auth-page auth-split-page"
+	data-login-page={page === 'login' ? '' : undefined}
+	data-register-page={page === 'register' ? '' : undefined}
+>
+	<div class="auth-split">
+		<div class="auth-split-showcase-col">
+			<AuthShowcase />
+		</div>
+		<div class="auth-split-panel">
+			<div class="auth-split-panel-inner">
+				<a href="/" class="auth-split-brand" aria-label="Hasel — Inicio">
+					<img
+						src="/icons/icon-64.png"
+						alt=""
+						class="auth-split-brand-logo"
+						width="40"
+						height="40"
+						loading="eager"
+						decoding="async"
+					/>
+					<span class="auth-split-brand-wordmark">Hasel</span>
+				</a>
+				<slot />
+				<p class="auth-split-legal">
+					Hasel &copy; 2026
+					<span class="auth-split-legal-sep" aria-hidden="true">·</span>
+					<a href="/politicas-y-privacidad">Políticas de privacidad</a>
+					<span class="auth-split-legal-sep" aria-hidden="true">·</span>
+					<a href="/terminos-y-condiciones">Términos y condiciones</a>
+				</p>
+			</div>
+		</div>
+	</div>
+</section>
