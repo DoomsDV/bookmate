@@ -244,8 +244,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 							class="dashboard-main-stack grid w-full min-w-0"
 							data-dashboard-main
 							data-fade-content
-							data-fc-blur="true"
-							data-fc-duration="1000"
+							data-fc-duration="420"
 							data-fc-easing="ease-out"
 							data-fc-opacity="0"
 							data-fc-immediate="true"
@@ -344,9 +343,9 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 							{(roleId === ROLES.ADMIN || roleId === ROLES.PROFESIONAL) && (
 								<section
-									class="dashboard-profitability-shell is-loading transition-colors duration-300"
+									class="dashboard-profitability-shell transition-colors duration-300"
 									data-profitability-panel
-									aria-busy="true"
+									aria-busy="false"
 									aria-label={roleId === ROLES.PROFESIONAL ? 'Resumen de tu consultorio' : 'Resumen del consultorio'}
 								>
 									<h2 class="sr-only">
@@ -837,6 +836,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	import '../../scripts/appointment-voice-host';
 	import { initFadeContent } from '../../lib/fade-content';
 	import { initDashboardGreeting } from '../../lib/dashboard-greeting';
+	import { fetchWithTimeout } from '../../lib/fetch-with-timeout';
 	import { lockPanelScroll } from '../../lib/panel-scroll-lock';
 	import {
 		asuncionTodayIso,
@@ -916,11 +916,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			}
 		}
 	};
-
-	const splitSummaryIntoTokens = (text: string): string[] =>
-		String(text || '')
-			.split(/(\s+)/)
-			.filter((token) => token.length > 0);
 
 	type AiSummarySectionType = 'panorama' | 'contexto' | 'sugerencia';
 
@@ -1211,29 +1206,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 	};
 
-	const wait = (ms: number): Promise<void> => new Promise((resolve) => window.setTimeout(resolve, ms));
-
-	const getTokenDelayMs = () => 28 + Math.floor(Math.random() * 53);
-
-	const streamSummaryTokens = async (node: HTMLElement, text: string): Promise<void> => {
-		node.replaceChildren();
-
-		const tokens = splitSummaryIntoTokens(text);
-		for (const token of tokens) {
-			if (/^\s+$/.test(token)) {
-				node.appendChild(document.createTextNode(token));
-				continue;
-			}
-
-			const tokenNode = document.createElement('span');
-			tokenNode.className = 'ai-summary-token';
-			tokenNode.textContent = token;
-			node.appendChild(tokenNode);
-
-			await wait(getTokenDelayMs());
-		}
-	};
-
 	interface TeamMemberPreview {
 		avatarUrl: string;
 		label: string;
@@ -1330,11 +1302,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	const toRecord = (value: unknown): Record<string, unknown> =>
 		typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
-
-	const padDatePart = (value: number): string => String(value).padStart(2, '0');
-
-	const getLocalDateKey = (date = new Date()): string =>
-		`${date.getFullYear()}-${padDatePart(date.getMonth() + 1)}-${padDatePart(date.getDate())}`;
 
 	const readAiSummaryCache = (dateKey: string, roleId: number): AiSummaryPayload | null => {
 		try {
@@ -1689,7 +1656,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		if (!card) return;
 
 		if (card.getAttribute('data-ai-summary-loaded') === '1') return;
-		card.setAttribute('data-ai-summary-loaded', '1');
+		if (card.getAttribute('data-ai-summary-loading') === '1') return;
 
 		const lineNode = card.querySelector<HTMLElement>('[data-ai-summary-line]');
 		const roleId = Number(card.getAttribute('data-role-id') ?? '0');
@@ -1701,6 +1668,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 		if (!lineNode) return;
 
+		card.setAttribute('data-ai-summary-loading', '1');
 		bindAiSummaryModalEvents();
 
 		const revealSummary = async (payload: AiSummaryPayload) => {
@@ -1709,11 +1677,17 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			await applyAiSummaryContent(payload);
 		};
 
-		const todayKey = getLocalDateKey();
+		const finish = async (payload: AiSummaryPayload) => {
+			await revealSummary(payload);
+			card.setAttribute('data-ai-summary-loaded', '1');
+			card.removeAttribute('data-ai-summary-loading');
+		};
+
+		const todayKey = asuncionTodayIso();
 		const cachedSummary = readAiSummaryCache(todayKey, roleId);
 
 		if (cachedSummary) {
-			await revealSummary(cachedSummary);
+			await finish(cachedSummary);
 			return;
 		}
 
@@ -1722,9 +1696,11 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		lineNode.textContent = 'Leyendo la agenda de hoy.';
 
 		try {
-			const response = await fetch('/api/dashboard/ai-summary', {
-				headers: { Accept: 'application/json' },
-			});
+			const response = await fetchWithTimeout(
+				'/api/dashboard/ai-summary',
+				{ headers: { Accept: 'application/json' } },
+				12_000
+			);
 			const payload = await response.json();
 
 			if (!response.ok || payload?.status !== 'success') {
@@ -1748,9 +1724,9 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			};
 
 			saveAiSummaryCache(todayKey, roleId, normalizedSummary);
-			await revealSummary(normalizedSummary);
+			await finish(normalizedSummary);
 		} catch {
-			await revealSummary({
+			await finish({
 				summaryShort: fallbackShort,
 				summaryFull: fallbackFull,
 				sections: fallbackSections,
@@ -1780,14 +1756,15 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		const panel = document.querySelector<HTMLElement>('[data-profitability-panel]');
 		if (!panel) return;
 		if (panel.dataset.loaded === '1') return;
-		panel.dataset.loaded = '1';
+		if (panel.dataset.loading === '1') return;
+		panel.dataset.loading = '1';
 		panel.hidden = false;
 		panel.classList.remove('hidden', 'is-dismissed', 'is-ready');
 		panel.classList.add('is-loading');
 		panel.setAttribute('aria-busy', 'true');
 
 		try {
-			const response = await fetch('/api/dashboard/profitability', {
+			const response = await fetchWithTimeout('/api/dashboard/profitability', {
 				headers: { Accept: 'application/json' },
 			});
 			const payload = await response.json();
@@ -1795,6 +1772,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			// 403 (no admin/feature) u otros errores: ocultamos sin salto brusco.
 			if (!response.ok || payload?.status !== 'success' || !payload?.data) {
 				dismissProfitabilityPanel(panel);
+				panel.dataset.loaded = '1';
 				return;
 			}
 
@@ -1812,8 +1790,12 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			panel.classList.remove('hidden', 'is-dismissed', 'is-loading');
 			panel.setAttribute('aria-busy', 'false');
 			panel.classList.add('is-ready');
+			panel.dataset.loaded = '1';
 		} catch {
 			dismissProfitabilityPanel(panel);
+			panel.dataset.loaded = '1';
+		} finally {
+			panel.dataset.loading = '';
 		}
 	};
 
@@ -1915,6 +1897,15 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		const chips = [...chart.querySelectorAll<HTMLButtonElement>('[data-chart-days]')];
 		const todayIso = asuncionTodayIso();
 		let pinnedBar: HTMLElement | null = null;
+		let barSettleTimer = 0;
+
+		const settleChartBars = () => {
+			window.clearTimeout(barSettleTimer);
+			chart.classList.remove('is-bars-settled');
+			barSettleTimer = window.setTimeout(() => {
+				chart.classList.add('is-bars-settled');
+			}, 720);
+		};
 
 		const canHoverTip = () => window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
@@ -2048,6 +2039,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 				const on = Number(chip.getAttribute('data-chart-days')) === windowDays;
 				chip.setAttribute('aria-pressed', on ? 'true' : 'false');
 			}
+
+			settleChartBars();
 		};
 
 		chart.addEventListener('click', (event) => {
@@ -2100,6 +2093,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 
 		chart.addEventListener('chart-tip-hide', hideChartTip);
+		settleChartBars();
 	};
 
 	const bindUpcomingDayFilter = () => {
@@ -2133,15 +2127,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		bindUpcomingDayFilter();
 		scrollToUpcomingAppointmentsIfNeeded();
 	};
-
-	if (!(window as unknown as { __haselDashVisibilityBound?: boolean }).__haselDashVisibilityBound) {
-		(window as unknown as { __haselDashVisibilityBound?: boolean }).__haselDashVisibilityBound = true;
-		const syncPageHidden = () => {
-			document.documentElement.toggleAttribute('data-page-hidden', document.hidden);
-		};
-		syncPageHidden();
-		document.addEventListener('visibilitychange', syncPageHidden);
-	}
 
 	const UPCOMING_APPOINTMENTS_ANCHOR_ID = 'dashboard-upcoming-appointments';
 	const UPCOMING_APPOINTMENTS_SCROLL_OFFSET = 12;
@@ -2186,7 +2171,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	// Solo page-load: evita doble init (cancela la animación a mitad).
 	document.addEventListener('astro:page-load', initializeDashboardPage);
-	bindDayChart();
+	initializeDashboardPage();
 </script>
 
 <style is:global>
@@ -2232,7 +2217,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	.dashboard-ai-drawer__panel {
-		will-change: transform;
 		background: var(--surface-bright);
 		background-image: none;
 	}
@@ -2468,43 +2452,47 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 	}
 
-	/* React Bits FadeContent — single fade for the whole dashboard stack. */
+	/* Opacity-only enter: blur/will-change permanentes calientan iOS. */
 	[data-fade-content] {
 		opacity: var(--fc-opacity, 0);
-		filter: blur(var(--fc-blur, 0px));
-		transform: translateZ(0);
-		transition:
-			opacity var(--fc-duration, 1000ms) var(--fc-easing, ease-out) var(--fc-delay, 0ms),
-			filter var(--fc-duration, 1000ms) var(--fc-easing, ease-out) var(--fc-delay, 0ms);
-		will-change: opacity, filter;
+		transition: opacity var(--fc-duration, 420ms) var(--fc-easing, ease-out) var(--fc-delay, 0ms);
 	}
 
-	[data-fade-content].is-visible {
+	[data-fade-content].is-visible,
+	[data-fade-content].is-settled {
 		opacity: 1;
-		filter: blur(0px);
+	}
+
+	[data-fade-content].is-settled {
+		filter: none;
+		transform: none;
+		transition: none;
+		will-change: auto;
 	}
 
 	/* Fallback si el JS no corre: no dejar el dashboard invisible. */
 	@supports (opacity: 1) {
-		[data-fade-content]:not(.is-visible) {
-			animation: dashboard-fade-fallback 0.01s ease-out 1.2s forwards;
+		[data-fade-content]:not(.is-visible):not(.is-settled) {
+			animation: dashboard-fade-fallback 0.01s ease-out 0.8s forwards;
 		}
 	}
 
 	@keyframes dashboard-fade-fallback {
 		to {
 			opacity: 1;
-			filter: blur(0);
 		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {
 		[data-fade-content],
-		[data-fade-content].is-visible {
+		[data-fade-content].is-visible,
+		[data-fade-content].is-settled {
 			opacity: 1;
 			filter: none;
+			transform: none;
 			transition: none;
 			will-change: auto;
+			animation: none;
 		}
 	}
 
@@ -2514,25 +2502,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 </style>
 
 <style>
-	@keyframes ai-token-reveal {
-		from {
-			opacity: 0;
-			transform: translateY(3px);
-			filter: blur(2px);
-		}
-
-		to {
-			opacity: 1;
-			transform: translateY(0);
-			filter: blur(0);
-		}
-	}
-
-	.ai-summary-token {
-		display: inline-block;
-		animation: ai-token-reveal 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
-	}
-
 	.dashboard-canvas,
 	.dashboard-content-canvas {
 		position: relative;
@@ -2744,6 +2713,12 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			opacity: 1;
 			transform: translate3d(0, 0, 0);
 		}
+	}
+
+	.dashboard-greeting.is-settled .dashboard-greeting__char {
+		animation: none;
+		opacity: 1;
+		transform: none;
 	}
 
 	.dashboard-greeting__sub {
@@ -3879,6 +3854,12 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 	}
 
+	.dashboard-week-chart.is-bars-settled :global(.dashboard-week-chart__bar) {
+		animation: none;
+		opacity: 1;
+		transform: none;
+	}
+
 	@media (prefers-reduced-motion: reduce) {
 		.dashboard-week-chart :global(.dashboard-week-chart__bar) {
 			animation: none;
@@ -3941,15 +3922,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	.dashboard-profitability-shell.is-loading .dashboard-profit-chip__value {
 		color: transparent !important;
 		border-radius: 0.45rem;
-		background: linear-gradient(
-			110deg,
-			color-mix(in srgb, var(--on-surface-variant) 10%, transparent) 0%,
-			color-mix(in srgb, var(--on-surface-variant) 10%, transparent) 36%,
-			color-mix(in srgb, var(--on-surface-variant) 22%, transparent) 50%,
-			color-mix(in srgb, var(--on-surface-variant) 10%, transparent) 64%,
-			color-mix(in srgb, var(--on-surface-variant) 10%, transparent) 100%
-		);
-		background-size: 220% 100%;
+		background: color-mix(in srgb, var(--on-surface-variant) 14%, transparent);
 		animation: dashboard-profit-skeleton 1.4s ease-in-out infinite;
 	}
 
@@ -3985,11 +3958,12 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	@keyframes dashboard-profit-skeleton {
-		0% {
-			background-position: 120% 0;
-		}
+		0%,
 		100% {
-			background-position: -120% 0;
+			opacity: 0.45;
+		}
+		50% {
+			opacity: 0.9;
 		}
 	}
 
@@ -5393,10 +5367,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.ai-summary-token {
-			animation: none;
-		}
-
 		.dashboard-profitability-shell.is-loading .dashboard-profit-value:not(.dashboard-profit-value--static),
 		.dashboard-profitability-shell.is-loading .dashboard-profit-stat__value:not(.dashboard-profit-value--static),
 		.dashboard-profitability-shell.is-loading .dashboard-profit-chip__value,

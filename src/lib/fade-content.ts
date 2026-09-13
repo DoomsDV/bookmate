@@ -1,6 +1,6 @@
 /**
  * React Bits — FadeContent (lightweight vanilla port for Astro).
- * Opacity + optional blur on enter, once. CSS transitions, no GSAP.
+ * Opacity on enter, once. CSS transitions, no GSAP.
  */
 
 export type FadeContentPlayOptions = {
@@ -9,36 +9,69 @@ export type FadeContentPlayOptions = {
 
 const DEFAULT_DURATION_MS = 1000;
 const DEFAULT_OPACITY = 0;
-const DEFAULT_BLUR_PX = 10;
 const DEFAULT_THRESHOLD = 0.1;
+const SETTLE_CLASS = 'is-settled';
 
-const toDurationMs = (raw: string | undefined): number => {
+const toDurationMs = (raw: string | undefined, fallback: number): number => {
 	const value = Number(raw);
-	if (!Number.isFinite(value) || value <= 0) return DEFAULT_DURATION_MS;
+	if (!Number.isFinite(value) || value <= 0) return fallback;
 	return value > 10 ? value : value * 1000;
 };
 
+const readDelayMs = (el: HTMLElement) => {
+	const fromStyle = Number.parseFloat(el.style.getPropertyValue('--fc-delay'));
+	if (Number.isFinite(fromStyle) && fromStyle >= 0) return fromStyle;
+	return toDurationMs(el.dataset.fcDelay, 0);
+};
+
 const applyVars = (el: HTMLElement) => {
-	const durationMs = toDurationMs(el.dataset.fcDuration);
+	const durationMs = toDurationMs(el.dataset.fcDuration, DEFAULT_DURATION_MS);
 	const opacity = Number(el.dataset.fcOpacity ?? DEFAULT_OPACITY);
-	const blurEnabled = el.dataset.fcBlur === 'true';
 	const easing = el.dataset.fcEasing?.trim() || 'ease-out';
-	const delayMs = toDurationMs(el.dataset.fcDelay);
+	const delayMs = toDurationMs(el.dataset.fcDelay, 0);
 
 	el.style.setProperty('--fc-duration', `${durationMs}ms`);
 	el.style.setProperty('--fc-delay', `${delayMs}ms`);
 	el.style.setProperty('--fc-easing', easing);
 	el.style.setProperty('--fc-opacity', String(Number.isFinite(opacity) ? opacity : DEFAULT_OPACITY));
-	el.style.setProperty('--fc-blur', blurEnabled ? `${DEFAULT_BLUR_PX}px` : '0px');
+};
+
+const settleFadeContent = (el: HTMLElement) => {
+	el.classList.add('is-visible', SETTLE_CLASS);
+	el.style.removeProperty('--fc-blur');
+};
+
+const scheduleSettle = (el: HTMLElement) => {
+	if (el.classList.contains(SETTLE_CLASS) || el.dataset.fcSettleQueued === '1') return;
+	el.dataset.fcSettleQueued = '1';
+
+	const onEnd = (event: TransitionEvent) => {
+		if (event.target !== el) return;
+		if (event.propertyName !== 'opacity' && event.propertyName !== 'filter') return;
+		el.removeEventListener('transitionend', onEnd);
+		settleFadeContent(el);
+	};
+	el.addEventListener('transitionend', onEnd);
+
+	const durationMs = toDurationMs(el.dataset.fcDuration, DEFAULT_DURATION_MS);
+	const delayMs = readDelayMs(el);
+	window.setTimeout(() => settleFadeContent(el), durationMs + delayMs + 80);
 };
 
 export const playFadeContent = (el: HTMLElement, options: FadeContentPlayOptions = {}) => {
+	if (el.classList.contains(SETTLE_CLASS)) return;
+	if (el.classList.contains('is-visible')) {
+		scheduleSettle(el);
+		return;
+	}
+
 	applyVars(el);
 	if (options.immediate) {
 		el.style.setProperty('--fc-delay', '0ms');
 	}
 	void el.offsetWidth;
 	el.classList.add('is-visible');
+	scheduleSettle(el);
 };
 
 const collectFadeNodes = (root: ParentNode): HTMLElement[] => {
@@ -55,23 +88,26 @@ export const initFadeContent = (root: ParentNode = document, options: FadeConten
 
 	if (!nodes.length) return;
 
-	nodes.forEach((el) => applyVars(el));
-
 	if (prefersReduced) {
-		nodes.forEach((el) => el.classList.add('is-visible'));
+		nodes.forEach((el) => settleFadeContent(el));
 		return;
 	}
 
-	const immediate = options.immediate ?? nodes.some((el) => el.dataset.fcImmediate === 'true');
+	const pending = nodes.filter((el) => !el.classList.contains(SETTLE_CLASS));
+	if (!pending.length) return;
+
+	pending.forEach((el) => applyVars(el));
+
+	const immediate = options.immediate ?? pending.some((el) => el.dataset.fcImmediate === 'true');
 
 	if (immediate) {
 		requestAnimationFrame(() => {
-			nodes.forEach((el) => playFadeContent(el, { immediate: true }));
+			pending.forEach((el) => playFadeContent(el, { immediate: true }));
 		});
 		return;
 	}
 
-	const threshold = Number(nodes[0]?.dataset.fcThreshold ?? DEFAULT_THRESHOLD);
+	const threshold = Number(pending[0]?.dataset.fcThreshold ?? DEFAULT_THRESHOLD);
 
 	const observer = new IntersectionObserver(
 		(entries) => {
@@ -88,5 +124,5 @@ export const initFadeContent = (root: ParentNode = document, options: FadeConten
 		}
 	);
 
-	nodes.forEach((el) => observer.observe(el));
+	pending.forEach((el) => observer.observe(el));
 };

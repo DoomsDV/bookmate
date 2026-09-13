@@ -1158,11 +1158,11 @@ button {
 	backdrop-filter: none;
 	-webkit-backdrop-filter: none;
 	box-shadow: none;
+	/* No interpolar backdrop-filter: re-raster cada frame (calor iOS). */
 	transition:
 		background-color 220ms ease,
 		border-color 220ms ease,
-		box-shadow 220ms ease,
-		backdrop-filter 220ms ease;
+		box-shadow 220ms ease;
 }
 
 html.is-theme-swapping .shell-header-zone:not(.sidebar-account-header) {
@@ -1170,10 +1170,10 @@ html.is-theme-swapping .shell-header-zone:not(.sidebar-account-header) {
 }
 
 .shell-header-zone:not(.sidebar-account-header).is-scrolled {
-	background-color: color-mix(in srgb, var(--page-background, #f9fafb) 86%, transparent);
+	background-color: color-mix(in srgb, var(--page-background, #f9fafb) 94%, transparent);
 	border-bottom-color: transparent;
-	backdrop-filter: blur(14px) saturate(1.08);
-	-webkit-backdrop-filter: blur(14px) saturate(1.08);
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
 	box-shadow: none;
 }
 
@@ -1184,11 +1184,33 @@ html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header) {
 }
 
 html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header).is-scrolled {
-	background-color: color-mix(in srgb, var(--page-background, #0e0e10) 86%, transparent);
+	background-color: color-mix(in srgb, var(--page-background, #0e0e10) 94%, transparent);
 	border-bottom-color: transparent;
-	backdrop-filter: blur(16px) saturate(1.2);
-	-webkit-backdrop-filter: blur(16px) saturate(1.2);
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
 	box-shadow: none;
+}
+
+@media (min-width: 1024px) {
+	.shell-header-zone:not(.sidebar-account-header).is-scrolled {
+		background-color: color-mix(in srgb, var(--page-background, #f9fafb) 86%, transparent);
+		backdrop-filter: blur(14px) saturate(1.08);
+		-webkit-backdrop-filter: blur(14px) saturate(1.08);
+	}
+
+	html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header).is-scrolled {
+		background-color: color-mix(in srgb, var(--page-background, #0e0e10) 86%, transparent);
+		backdrop-filter: blur(16px) saturate(1.2);
+		-webkit-backdrop-filter: blur(16px) saturate(1.2);
+	}
+}
+
+html[data-page-hidden] .shell-header-zone:not(.sidebar-account-header),
+html[data-page-hidden] .mobile-bottom-nav__glass,
+html[data-page-hidden] .calendar-sticky-chrome,
+html[data-page-hidden] .schedule-page-header__sticky-bar {
+	backdrop-filter: none !important;
+	-webkit-backdrop-filter: none !important;
 }
 
 .shell-header-zone.sidebar-account-header {

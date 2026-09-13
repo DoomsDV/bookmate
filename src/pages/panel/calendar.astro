@@ -3771,30 +3771,25 @@ const googleErrorMessage = hasGoogleError
 			box-shadow: none;
 			transition:
 				background-color 220ms ease,
-				box-shadow 220ms ease,
-				backdrop-filter 220ms ease;
+				box-shadow 220ms ease;
 		}
 
 		html[data-theme='dark'] [data-calendar-root] .calendar-sticky-chrome {
 			background: var(--page-background, #0e0e10);
 		}
 
-		/* Anclado por scroll: mismo liquid glass que el TopBar (sin línea divisora) */
+		/* Anclado por scroll: mismo bloque que el TopBar (sin línea divisora). */
 		[data-calendar-root] .calendar-sticky-chrome.is-scrolled {
-			background-color: color-mix(
-				in srgb,
-				var(--sidebar-surface, var(--page-background, #fefdfc)) 72%,
-				transparent
-			);
-			backdrop-filter: blur(18px) saturate(1.15);
-			-webkit-backdrop-filter: blur(18px) saturate(1.15);
+			background-color: var(--page-background, #fefdfc);
+			backdrop-filter: none;
+			-webkit-backdrop-filter: none;
 			box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
 		}
 
 		html[data-theme='dark'] [data-calendar-root] .calendar-sticky-chrome.is-scrolled {
-			background-color: color-mix(in srgb, var(--sidebar-surface, #121214) 72%, transparent);
-			backdrop-filter: blur(20px) saturate(1.35);
-			-webkit-backdrop-filter: blur(20px) saturate(1.35);
+			background-color: var(--page-background, #0e0e10);
+			backdrop-filter: none;
+			-webkit-backdrop-filter: none;
 			box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 		}
 

@@ -7,6 +7,7 @@ import {
 } from '../lib/inbox-client';
 import { subscribeInboxForegroundMessages } from './firebase-messaging';
 import { openPanelModal } from '../lib/panel-scroll-lock';
+import { fetchWithTimeout } from '../lib/fetch-with-timeout';
 
 const POLL_MS = 30_000;
 const GLOBAL_KEY = '__haselInboxBell';
@@ -226,7 +227,9 @@ const fetchInbox = async (options?: { force?: boolean }) => {
 
 	state.inflight = (async () => {
 		try {
-			const response = await fetch('/api/inbox?limit=50', { headers: { Accept: 'application/json' } });
+			const response = await fetchWithTimeout('/api/inbox?limit=50', {
+				headers: { Accept: 'application/json' },
+			});
 			const payload = await response.json().catch(() => ({}));
 			if (!response.ok || payload?.status !== 'success') return;
 			const items = Array.isArray(payload.data) ? (payload.data as InboxItem[]) : [];

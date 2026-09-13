@@ -170,6 +170,7 @@ const isActive = (href?: string) => {
 		state.pill.style.width = `${w}px`;
 		state.pill.style.height = `${h}px`;
 		if (!animate) state.pill.classList.add('is-instant');
+		state.pill.style.willChange = animate ? 'transform' : 'auto';
 		state.pill.style.transform = `translate3d(${x}px, ${y}px, 0)`;
 		state.pill.style.opacity = '1';
 		state.x = x;
@@ -180,6 +181,17 @@ const isActive = (href?: string) => {
 		if (!animate) {
 			void state.pill.offsetWidth;
 			state.pill.classList.remove('is-instant');
+			state.pill.style.willChange = 'auto';
+		} else {
+			const onEnd = (event: TransitionEvent) => {
+				if (event.propertyName !== 'transform' && event.propertyName !== 'opacity') return;
+				state.pill.removeEventListener('transitionend', onEnd);
+				state.pill.style.willChange = 'auto';
+			};
+			state.pill.addEventListener('transitionend', onEnd);
+			window.setTimeout(() => {
+				state.pill.style.willChange = 'auto';
+			}, 280);
 		}
 	};
 
@@ -308,9 +320,8 @@ const isActive = (href?: string) => {
 			pointer-events: none;
 			z-index: 0;
 			border: 1px solid color-mix(in srgb, var(--on-surface) 10%, transparent);
-			background: color-mix(in srgb, var(--surface-bright, #ffffff) 28%, transparent);
-			-webkit-backdrop-filter: blur(28px) saturate(1.6);
-			backdrop-filter: blur(28px) saturate(1.6);
+			/* Sin backdrop-filter: el blur live del dock calienta iOS con la app abierta. */
+			background: color-mix(in srgb, var(--surface-bright, #ffffff) 92%, transparent);
 			box-shadow:
 				0 10px 28px color-mix(in srgb, #1e293b 14%, transparent),
 				inset 0 1px 0 rgba(255, 255, 255, 0.22);
@@ -318,9 +329,7 @@ const isActive = (href?: string) => {
 
 		html[data-theme='dark'] .mobile-bottom-nav__glass {
 			border-color: rgba(255, 255, 255, 0.1);
-			background: rgba(16, 18, 22, 0.46);
-			-webkit-backdrop-filter: blur(36px) saturate(1.55);
-			backdrop-filter: blur(36px) saturate(1.55);
+			background: rgba(22, 24, 28, 0.94);
 			box-shadow:
 				0 12px 32px rgba(0, 0, 0, 0.28),
 				inset 0 1px 0 rgba(255, 255, 255, 0.08);
@@ -358,7 +367,6 @@ const isActive = (href?: string) => {
 		transform: translate3d(0, 0, 0);
 		/* Solo transform/opacity en compositor; width/height se setean al instante. */
 		transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 120ms ease;
-		will-change: transform;
 		contain: layout style;
 		backface-visibility: hidden;
 	}

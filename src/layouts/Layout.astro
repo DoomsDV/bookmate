@@ -203,6 +203,26 @@ const themeColor = initialTheme === 'dark' ? '#0e0e10' : '#f9fafb';
 
             window.__haselSyncTheme = () => setBookmateTheme(location.pathname, document.documentElement);
 
+            const syncPageHidden = () => {
+                const hidden =
+                    document.visibilityState === 'hidden' ||
+                    Boolean(document.hidden);
+                document.documentElement.toggleAttribute('data-page-hidden', hidden);
+            };
+            if (!window.__haselPageVisibilityBound) {
+                window.__haselPageVisibilityBound = true;
+                syncPageHidden();
+                document.addEventListener('visibilitychange', syncPageHidden);
+                window.addEventListener('pagehide', () => {
+                    document.documentElement.setAttribute('data-page-hidden', '');
+                });
+                window.addEventListener('pageshow', syncPageHidden);
+                document.addEventListener('freeze', () => {
+                    document.documentElement.setAttribute('data-page-hidden', '');
+                });
+                document.addEventListener('resume', syncPageHidden);
+            }
+
             /** Solo desktop: recuerda sidebar colapsado/expandido entre páginas y refrescos. */
             const SIDEBAR_STATE_KEY = 'hasel-sidebar-state';
             const applySidebarState = () => {

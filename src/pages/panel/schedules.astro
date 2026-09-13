@@ -681,9 +681,9 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 	}
 
 	.schedule-page-header__sticky-bar.is-scrolled {
-		background-color: color-mix(in srgb, var(--schedule-chrome) 72%, transparent);
-		backdrop-filter: blur(18px) saturate(1.15);
-		-webkit-backdrop-filter: blur(18px) saturate(1.15);
+		background-color: var(--schedule-chrome);
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
 	}
 
 	.schedule-page-header__sticky-bar.is-scrolled::after {
@@ -699,9 +699,23 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 	}
 
 	html[data-theme='dark'] .schedule-page-header__sticky-bar.is-scrolled {
-		background-color: color-mix(in srgb, var(--schedule-chrome) 72%, transparent);
-		backdrop-filter: blur(20px) saturate(1.35);
-		-webkit-backdrop-filter: blur(20px) saturate(1.35);
+		background-color: var(--schedule-chrome);
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
+	}
+
+	@media (min-width: 1024px) {
+		.schedule-page-header__sticky-bar.is-scrolled {
+			background-color: color-mix(in srgb, var(--schedule-chrome) 86%, transparent);
+			backdrop-filter: blur(14px) saturate(1.08);
+			-webkit-backdrop-filter: blur(14px) saturate(1.08);
+		}
+
+		html[data-theme='dark'] .schedule-page-header__sticky-bar.is-scrolled {
+			background-color: color-mix(in srgb, var(--schedule-chrome) 86%, transparent);
+			backdrop-filter: blur(16px) saturate(1.2);
+			-webkit-backdrop-filter: blur(16px) saturate(1.2);
+		}
 	}
 
 	/* Sin línea entre TopBar y la barra de profesional: un solo bloque. */
