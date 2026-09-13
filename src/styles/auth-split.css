@@ -287,36 +287,14 @@ html[data-theme='dark'] .auth-page.auth-split-page {
 }
 
 .auth-split-page .auth-footer-text {
-	text-align: left;
+	text-align: center;
 }
 
 .auth-split-page .auth-card-footer {
 	margin-top: 1.35rem;
 	padding-top: 0;
 	border-top: none;
-	text-align: left;
-}
-
-.auth-split-legal {
-	margin: 2rem 0 0;
-	font-size: 0.78rem;
-	line-height: 1.5;
-	color: color-mix(in srgb, var(--auth-on-surface-variant) 78%, transparent);
-}
-
-.auth-split-legal a {
-	color: inherit;
-	text-decoration: none;
-}
-
-.auth-split-legal a:hover {
-	color: var(--auth-on-surface);
-	text-decoration: underline;
-}
-
-.auth-split-legal-sep {
-	margin: 0 0.4rem;
-	opacity: 0.55;
+	text-align: center;
 }
 
 html[data-theme='dark'] .auth-split-page .auth-input {
@@ -487,10 +465,6 @@ html[data-theme='dark'] .auth-split-page .auth-strength-segment {
 	.auth-split-header h1 {
 		font-size: 1.65rem;
 		color: #f4f4f5;
-	}
-
-	.auth-split-legal {
-		color: rgba(244, 244, 245, 0.55);
 	}
 }
 
