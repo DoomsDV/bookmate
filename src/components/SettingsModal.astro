@@ -831,7 +831,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 										</label>
 
 										<div
-											class="settings-push-card rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-4 shadow-sm"
+											class="settings-push-card rounded-2xl bg-(--sidebar-surface) px-4 py-4"
 											data-settings-tour-system-survey-auto
 										>
 											<div class="flex items-start justify-between gap-4">
@@ -870,7 +870,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 										</h4>
 
 										<div
-											class="settings-push-card rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-4 shadow-sm"
+											class="settings-push-card rounded-2xl bg-(--sidebar-surface) px-4 py-4"
 											data-settings-push-notifications
 											data-settings-tour-system-push
 										>
@@ -906,7 +906,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 										</div>
 
 										<div
-											class="settings-push-card rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-4 shadow-sm"
+											class="settings-push-card rounded-2xl bg-(--sidebar-surface) px-4 py-4"
 											data-settings-system-notify-all
 											data-settings-tour-system-notify-all
 										>
@@ -970,7 +970,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 							</div>
 
 							<div data-settings-plan-body class="hidden grid gap-6">
-								<div class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) p-5">
+								<div class="rounded-2xl bg-(--sidebar-surface) p-5">
 									<div class="flex flex-wrap items-start justify-between gap-3">
 										<div class="grid gap-1">
 											<div class="flex items-center gap-2">
@@ -996,7 +996,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 									<p data-settings-plan-status-hint class="mt-3 mb-0 hidden rounded-xl bg-(--surface-variant)/60 px-3 py-2 text-[0.85rem] font-medium text-(--on-surface-variant)"></p>
 								</div>
 
-								<article class="settings-plan-usage-card grid gap-[0.85rem] rounded-[1.15rem] border border-(--shell-border) bg-(--surface-bright) px-[1.2rem] py-[1.15rem]">
+								<article class="settings-plan-usage-card grid gap-[0.85rem] rounded-[1.15rem] bg-(--sidebar-surface) px-[1.2rem] py-[1.15rem]">
 									<div class="settings-plan-usage-card-head flex items-start gap-[0.85rem]">
 										<span
 											class="settings-plan-usage-icon material-symbols-rounded inline-flex size-10 shrink-0 items-center justify-center rounded-[0.85rem] bg-[color-mix(in_srgb,var(--primary)_12%,transparent)] text-[1.35rem] leading-none text-(--primary)"
@@ -3984,9 +3984,10 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		min-height: 0;
 		max-height: 100%;
 		overflow: hidden;
-		border: 1px solid var(--shell-border);
+		border: none;
 		border-radius: 1.25rem;
-		background: var(--surface-bright);
+		background: var(--sidebar-surface);
+		box-shadow: none;
 	}
 
 	[data-settings-modal][data-settings-page] .settings-card {
@@ -4227,9 +4228,10 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		display: grid;
 		gap: 1.1rem;
 		padding: 1.2rem 1.25rem;
-		border: 1px solid var(--shell-border);
+		border: none;
 		border-radius: 1.15rem;
-		background: var(--surface-bright);
+		background: var(--sidebar-surface);
+		box-shadow: none;
 	}
 
 	.settings-card__intro {
@@ -4486,10 +4488,11 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 			width: 16rem;
 			height: auto;
 			min-height: 0;
-			border: 1px solid var(--shell-border);
+			border: none;
 			border-radius: 1.25rem;
-			background: var(--surface-bright);
+			background: var(--sidebar-surface);
 			padding: 0.7rem;
+			box-shadow: none;
 		}
 
 		.settings-page .settings-tab {
@@ -4624,8 +4627,8 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		gap: 0.85rem;
 		padding: 1.15rem 1.2rem;
 		border-radius: 1.15rem;
-		border: 1px solid var(--shell-border);
-		background: var(--surface-bright, #fff);
+		border: none;
+		background: var(--sidebar-surface, #fff);
 	}
 
 	[data-settings-modal] .settings-plan-usage-card-head {
@@ -5069,13 +5072,13 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		align-items: center;
 		gap: 0.75rem;
 		border-radius: 1.25rem;
-		border: 1px solid var(--shell-border);
-		background: var(--surface-bright);
+		border: none;
+		background: var(--sidebar-surface);
 		padding: 0.9rem 1.1rem;
 		color: var(--on-surface);
 		font-size: 0.95rem;
 		font-weight: 800;
-		box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
+		box-shadow: none;
 	}
 
 	.settings-loading-card .material-symbols-rounded {
@@ -5118,17 +5121,16 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		align-items: center;
 		gap: 1rem;
 		border-radius: 1.35rem;
-		border: 1px solid color-mix(in srgb, var(--shell-border) 82%, var(--primary) 18%);
-		background: var(--surface-bright);
+		border: none;
+		background: var(--sidebar-surface);
 		padding: 1rem;
-		box-shadow: 0 8px 28px rgba(15, 23, 42, 0.06);
-		transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+		box-shadow: none;
+		transition: background-color 140ms ease, box-shadow 140ms ease;
 	}
 
 	.settings-upload-card.is-dragover {
-		border-color: var(--primary);
-		background: color-mix(in srgb, var(--primary-soft) 18%, var(--surface-bright));
-		box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 14%, transparent), 0 8px 28px rgba(15, 23, 42, 0.1);
+		background: color-mix(in srgb, var(--primary-soft) 18%, var(--sidebar-surface));
+		box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 14%, transparent);
 	}
 
 	.settings-upload-card__preview {
@@ -5471,10 +5473,10 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		display: grid;
 		gap: 0.55rem;
 		border-radius: 1.15rem;
-		border: 1px solid color-mix(in srgb, var(--shell-border) 80%, var(--primary) 20%);
-		background: color-mix(in srgb, var(--primary-soft) 28%, var(--surface-bright) 72%);
+		border: none;
+		background: color-mix(in srgb, var(--primary-soft) 28%, var(--sidebar-surface) 72%);
 		padding: 1rem;
-		box-shadow: var(--card-inset-highlight);
+		box-shadow: none;
 	}
 
 	.public-profile-url-prefix {
@@ -5509,8 +5511,8 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		max-width: 22rem;
 		padding: 1rem 1.15rem;
 		border-radius: 1rem;
-		border: 1.5px solid color-mix(in srgb, var(--outline-variant, var(--shell-border)) 85%, transparent);
-		background: var(--surface-container-high, var(--surface-bright));
+		border: none;
+		background: var(--sidebar-surface);
 		text-align: left;
 		pointer-events: none;
 	}
