@@ -75,6 +75,17 @@ const { userName = 'Perfil' } = Astro.props;
 				<span class="material-symbols-rounded text-[1rem]">support_agent</span>
 			</button>
 
+			<button
+				type="button"
+				class="topbar-action-btn flex size-9 shrink-0 items-center justify-center rounded-xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--control-surface-strong) sm:size-10"
+				aria-label="Cambiar a modo claro"
+				title="Cambiar a modo claro"
+				data-theme-toggle
+				aria-pressed="false"
+			>
+				<span class="material-symbols-rounded text-[1rem]" data-theme-icon>dark_mode</span>
+			</button>
+
 			<details class="group relative hidden shrink-0 lg:block" data-profile-menu>
 				<summary
 					class="topbar-action-btn flex size-9 cursor-pointer list-none items-center justify-center rounded-xl border border-(--primary-container) bg-(--primary-soft) text-(--primary) outline-none transition duration-200 hover:bg-(--primary-soft-hover) focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2 focus-visible:ring-offset-transparent sm:size-10"
@@ -102,18 +113,6 @@ const { userName = 'Perfil' } = Astro.props;
 						</span>
 						Ajustes
 					</a>
-
-					<button
-						type="button"
-						class="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-(--on-surface) transition hover:bg-(--primary-container)/45"
-						data-theme-toggle-menu
-						aria-pressed="false"
-					>
-						<span class="material-symbols-rounded text-[1.15rem] text-(--on-surface-variant)" data-theme-icon-menu>
-							dark_mode
-						</span>
-						<span data-theme-label-menu>Cambiar a modo claro</span>
-					</button>
 
 					<form
 						method="post"
@@ -217,9 +216,7 @@ const { userName = 'Perfil' } = Astro.props;
 		const sideNavBackdrop = document.querySelector<HTMLElement>('[data-side-nav-backdrop]');
 		const sideNavCloseButtons = document.querySelectorAll<HTMLButtonElement>('[data-side-nav-close]');
 		
-		const themeToggleMenu = document.querySelector<HTMLElement>('[data-theme-toggle-menu]');
-		const themeIconMenu = document.querySelector<HTMLElement>('[data-theme-icon-menu]');
-		const themeLabelMenu = document.querySelector<HTMLElement>('[data-theme-label-menu]');
+		const themeToggles = document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]');
 		const logoutForms = document.querySelectorAll<HTMLFormElement>('[data-logout-form]');
 		
 		const desktopBreakpoint = window.matchMedia('(min-width: 1024px)');
@@ -419,9 +416,13 @@ const { userName = 'Perfil' } = Astro.props;
 		const syncThemeToggleUi = (theme: 'light' | 'dark') => {
 			const isDark = theme === 'dark';
 			const nextThemeLabel = isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
-			themeToggleMenu?.setAttribute('aria-pressed', String(isDark));
-			if (themeIconMenu) themeIconMenu.textContent = isDark ? 'light_mode' : 'dark_mode';
-			if (themeLabelMenu) themeLabelMenu.textContent = nextThemeLabel;
+			themeToggles.forEach((toggle) => {
+				toggle.setAttribute('aria-pressed', String(isDark));
+				toggle.setAttribute('aria-label', nextThemeLabel);
+				toggle.setAttribute('title', nextThemeLabel);
+				const icon = toggle.querySelector<HTMLElement>('[data-theme-icon]');
+				if (icon) icon.textContent = isDark ? 'light_mode' : 'dark_mode';
+			});
 		};
 
 		const applyTheme = (theme: 'light' | 'dark') => {
@@ -472,7 +473,7 @@ const { userName = 'Perfil' } = Astro.props;
 
 		// Attach Listeners
 		navToggles.forEach((toggle) => on(toggle, 'click', toggleSideNav));
-		on(themeToggleMenu, 'click', toggleTheme);
+		themeToggles.forEach((toggle) => on(toggle, 'click', toggleTheme));
 		on(sideNavBackdrop, 'click', closeSideNav);
 		sideNavCloseButtons.forEach(btn => on(btn, 'click', closeSideNav));
 		sideNav?.addEventListener('touchstart', handleSideNavTouchStart, { signal, passive: true });
