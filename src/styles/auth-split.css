@@ -286,6 +286,73 @@ html[data-theme='dark'] .auth-page.auth-split-page {
 	border-bottom-color: var(--auth-on-surface-variant);
 }
 
+.auth-split-page .auth-select-wrap:has(.ts-wrapper)::after {
+	display: none;
+}
+
+.auth-split-page .auth-select {
+	background-color: #ffffff;
+	color-scheme: light;
+}
+
+.auth-split-page .auth-select option,
+.auth-split-page .auth-select optgroup {
+	background-color: #ffffff;
+	color: #14151a;
+}
+
+.auth-split-page .bookmate-searchable-select.ts-wrapper.single .ts-control {
+	min-height: 3rem;
+	height: auto;
+	border-radius: 0.85rem;
+	border-color: var(--split-line);
+	background: #ffffff;
+	color: var(--auth-on-surface);
+	font-size: max(1rem, 16px);
+	font-weight: 500;
+}
+
+.auth-split-page .bookmate-searchable-select.ts-wrapper.single .item,
+.auth-split-page .bookmate-searchable-select.ts-wrapper.single .ts-control > input {
+	font-weight: 500;
+}
+
+.auth-split-page .bookmate-searchable-select.ts-wrapper.focus .ts-control,
+.auth-split-page .bookmate-searchable-select.ts-wrapper.dropdown-active .ts-control {
+	border-color: color-mix(in srgb, var(--auth-primary) 45%, transparent);
+	box-shadow: 0 0 0 4px rgba(66, 110, 219, 0.2);
+}
+
+.auth-split-page .auth-select-wrap.is-invalid .bookmate-searchable-select.ts-wrapper.single .ts-control {
+	border-color: color-mix(in srgb, var(--auth-error) 55%, transparent);
+	background: var(--auth-error-container);
+}
+
+body:has(.auth-split-page) > .bookmate-searchable-select-dropdown,
+body:has(.auth-split-page) > .bookmate-searchable-select-dropdown .dropdown-input-wrap,
+body:has(.auth-split-page) > .bookmate-searchable-select-dropdown .ts-dropdown-content {
+	background: #ffffff;
+	background-color: #ffffff;
+	color: #14151a;
+	border-color: #e6e8ee;
+}
+
+body:has(.auth-split-page) > .bookmate-searchable-select-dropdown .dropdown-input {
+	font-size: 16px;
+	color: #14151a;
+}
+
+body:has(.auth-split-page) > .bookmate-searchable-select-dropdown .option,
+body:has(.auth-split-page) > .bookmate-searchable-select-dropdown .no-results {
+	color: #14151a;
+}
+
+body:has(.auth-split-page) > .bookmate-searchable-select-dropdown .option.active,
+body:has(.auth-split-page) > .bookmate-searchable-select-dropdown .option.selected {
+	background: rgba(66, 110, 219, 0.12);
+	color: #2f54c4;
+}
+
 .auth-split-page .auth-footer-text {
 	text-align: center;
 }
@@ -441,11 +508,60 @@ html[data-theme='dark'] .auth-split-page .auth-strength-segment {
 
 	.auth-split-page .auth-input,
 	.auth-split-page .auth-phone-group,
+	.auth-split-page .auth-select,
 	html[data-theme='dark'] .auth-split-page .auth-input,
-	html[data-theme='dark'] .auth-split-page .auth-phone-group {
+	html[data-theme='dark'] .auth-split-page .auth-phone-group,
+	html[data-theme='dark'] .auth-split-page .auth-select {
+		background: rgba(255, 255, 255, 0.08);
+		background-color: rgba(255, 255, 255, 0.08);
+		border-color: rgba(255, 255, 255, 0.18);
+		color: #f4f4f5;
+	}
+
+	.auth-split-page .auth-select {
+		color-scheme: dark;
+	}
+
+	.auth-split-page .auth-select option,
+	.auth-split-page .auth-select optgroup {
+		background-color: #1c1c1e;
+		color: #f4f4f5;
+	}
+
+	.auth-split-page .bookmate-searchable-select.ts-wrapper.single .ts-control {
 		background: rgba(255, 255, 255, 0.08);
 		border-color: rgba(255, 255, 255, 0.18);
 		color: #f4f4f5;
+	}
+
+	.auth-split-page .bookmate-searchable-select.ts-wrapper.focus .ts-control,
+	.auth-split-page .bookmate-searchable-select.ts-wrapper.dropdown-active .ts-control {
+		background: rgba(255, 255, 255, 0.1);
+	}
+
+	body:has(.auth-split-page) > .bookmate-searchable-select-dropdown,
+	body:has(.auth-split-page) > .bookmate-searchable-select-dropdown .dropdown-input-wrap,
+	body:has(.auth-split-page) > .bookmate-searchable-select-dropdown .ts-dropdown-content {
+		background: #1c1c1e;
+		background-color: #1c1c1e;
+		color: #f4f4f5;
+		border-color: rgba(255, 255, 255, 0.14);
+	}
+
+	body:has(.auth-split-page) > .bookmate-searchable-select-dropdown .dropdown-input {
+		color: #f4f4f5;
+		font-size: 16px;
+	}
+
+	body:has(.auth-split-page) > .bookmate-searchable-select-dropdown .option,
+	body:has(.auth-split-page) > .bookmate-searchable-select-dropdown .no-results {
+		color: #f4f4f5;
+	}
+
+	body:has(.auth-split-page) > .bookmate-searchable-select-dropdown .option.active,
+	body:has(.auth-split-page) > .bookmate-searchable-select-dropdown .option.selected {
+		background: rgba(66, 110, 219, 0.32);
+		color: #c5d6ff;
 	}
 
 	.auth-split-page .auth-input:focus,
