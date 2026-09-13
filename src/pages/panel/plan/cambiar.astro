@@ -1,0 +1,155 @@
+---
+import { isSubscriptionBillingUiEnabled } from '../../../config/feature-flags';
+import { ROLES } from '../../../config/roles';
+import SideNav from '../../../components/SideNav.astro';
+import TopBar from '../../../components/TopBar.astro';
+import AppAlert from '../../../components/AppAlert.astro';
+import PlanCompareCards from '../../../components/PlanCompareCards.astro';
+import PlanCheckoutModals from '../../../components/PlanCheckoutModals.astro';
+import Layout from '../../../layouts/Layout.astro';
+import { panelPageTitle } from '../../../lib/panel-page-title';
+import {
+	getPlansWithOrds,
+	listCardsWithOrds,
+	SubscriptionApiError,
+	type PlansCatalog,
+	type PaymentCard,
+} from '../../../lib/subscription';
+import {
+	getBillingProfileWithOrds,
+	type BillingProfileData,
+} from '../../../lib/billing-profile';
+import '../../../styles/global.css';
+
+if (!isSubscriptionBillingUiEnabled()) {
+	return Astro.redirect('/panel/dashboard', 302);
+}
+
+const token = Astro.locals.token ?? '';
+const roleId = Number(Astro.locals.roleId ?? 0);
+const isAdmin = roleId === ROLES.ADMIN;
+
+let catalog: PlansCatalog | null = null;
+let cards: PaymentCard[] = [];
+let billingProfile: BillingProfileData | null = null;
+let loadError = '';
+
+if (!token) {
+	loadError = 'No hay sesion valida para consultar tu plan.';
+} else {
+	const ssrOrdsSignal =
+		typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
+			? AbortSignal.timeout(12_000)
+			: undefined;
+	const isAbortError = (error: unknown) =>
+		(error instanceof Error && error.name === 'AbortError') ||
+		(typeof error === 'object' && error !== null && 'name' in error && error.name === 'AbortError');
+
+	const catalogPromise = getPlansWithOrds(token, { signal: ssrOrdsSignal }).catch((error) => {
+		loadError = isAbortError(error)
+			? 'La consulta del plan tardó demasiado. Recargá la página.'
+			: error instanceof SubscriptionApiError
+				? error.message
+				: 'No fue posible cargar la información de tu plan.';
+		return null;
+	});
+	const cardsPromise: Promise<PaymentCard[]> = isAdmin
+		? listCardsWithOrds(token, { signal: ssrOrdsSignal }).catch(() => [])
+		: Promise.resolve([]);
+	const billingProfilePromise: Promise<BillingProfileData | null> = isAdmin
+		? getBillingProfileWithOrds(token, { signal: ssrOrdsSignal }).catch(() => null)
+		: Promise.resolve(null);
+
+	[catalog, cards, billingProfile] = await Promise.all([
+		catalogPromise,
+		cardsPromise,
+		billingProfilePromise,
+	]);
+}
+
+const hasCard = cards.length > 0;
+const current = catalog?.current ?? null;
+const showBillingDrawer = isAdmin && !!current && !current.billing_exempt;
+const billingProfileComplete = billingProfile?.is_complete === 1;
+const defaultCard = cards.find((card) => card.is_default) || cards[0] || null;
+
+const formatMaskedCard = (masked: string | null) => {
+	const raw = String(masked || '').replace(/\s+/g, '');
+	if (!raw) return '•••• •••• •••• ••••';
+	return raw.replace(/(.{4})/g, '$1 ').trim();
+};
+const cardBrandLabel = (brand: string | null) => {
+	const b = String(brand || '').toLowerCase();
+	if (b.includes('master')) return 'Mastercard';
+	if (b.includes('visa')) return 'Visa';
+	return brand || 'Tarjeta';
+};
+const defaultCardLabel = defaultCard
+	? `${cardBrandLabel(defaultCard.brand)} · ${formatMaskedCard(defaultCard.masked_number)}`
+	: 'Tarjeta registrada';
+const defaultCardHint = defaultCard
+	? [defaultCard.card_type, defaultCard.issuer].filter(Boolean).join(' · ') ||
+		'Se debitará automáticamente cada mes.'
+	: 'Se debitará automáticamente cada mes.';
+---
+
+<Layout pageTitle={panelPageTitle('Cambiar de plan')}>
+	<div
+		class="plan-canvas min-h-screen w-full max-w-full overflow-x-hidden bg-(--page-background)"
+		data-has-card={hasCard ? '1' : '0'}
+		data-default-card-label={defaultCardLabel}
+		data-default-card-hint={defaultCardHint}
+		data-after-change="/panel/plan"
+	>
+		<div class="app-shell grid min-h-screen overflow-hidden bg-transparent" data-app-shell data-sidebar-state="expanded">
+			<SideNav currentPath="/panel/plan" />
+
+			<div class="grid min-h-full grid-rows-[auto_1fr] bg-(--page-background)">
+				<TopBar />
+
+				<main class="w-full max-w-full overflow-x-hidden px-4 py-4 sm:px-6 sm:py-8 lg:px-8">
+					<div class="grid w-full gap-6 sm:gap-8">
+						<a
+							href="/panel/plan"
+							data-astro-reload
+							data-astro-prefetch="false"
+							class="inline-flex w-fit items-center gap-1.5 text-[0.9rem] font-bold text-(--on-surface-variant) no-underline transition hover:text-(--on-surface)"
+						>
+							<span class="material-symbols-rounded text-[1.2rem]" aria-hidden="true">arrow_back</span>
+							Plan y suscripción
+						</a>
+
+						{loadError ? (
+							<div class="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
+								<p class="m-0 font-semibold">{loadError}</p>
+							</div>
+						) : current && catalog ? (
+							<PlanCompareCards plans={catalog.plans} current={current} isAdmin={isAdmin} />
+						) : (
+							<div class="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
+								<p class="m-0 font-semibold">No encontramos tu suscripción.</p>
+							</div>
+						)}
+					</div>
+				</main>
+			</div>
+		</div>
+	</div>
+
+	<PlanCheckoutModals
+		defaultCardLabel={defaultCardLabel}
+		defaultCardHint={defaultCardHint}
+		showBillingDrawer={showBillingDrawer}
+		billingProfile={billingProfile}
+		billingProfileComplete={billingProfileComplete}
+	/>
+
+	<AppAlert />
+</Layout>
+
+<script>
+	import { initPlanPage } from '../../../scripts/plan-page';
+	const boot = () => initPlanPage();
+	boot();
+	document.addEventListener('astro:page-load', boot);
+</script>

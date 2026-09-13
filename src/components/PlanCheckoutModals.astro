@@ -1,0 +1,472 @@
+---
+import BillingProfileForm from './BillingProfileForm.astro';
+import type { BillingProfileData } from '../lib/billing-profile';
+
+interface Props {
+	defaultCardLabel: string;
+	defaultCardHint: string;
+	showBillingDrawer?: boolean;
+	billingProfile?: BillingProfileData | null;
+	billingProfileComplete?: boolean;
+}
+
+const {
+	defaultCardLabel,
+	defaultCardHint,
+	showBillingDrawer = false,
+	billingProfile = null,
+	billingProfileComplete = false,
+} = Astro.props;
+---
+
+{/* Modal de confirmación de cobro — bottom sheet en mobile/tablet */}
+<div class="plan-modal-backdrop plan-pay-modal-backdrop hidden" data-pay-modal>
+	<div class="plan-modal plan-pay-sheet" role="dialog" aria-modal="true" aria-labelledby="plan-pay-title">
+		<div class="plan-sheet-handle" aria-hidden="true"><span></span></div>
+		<div class="grid gap-3">
+			<h3 id="plan-pay-title" class="m-0 text-lg font-bold text-(--on-surface)" data-pay-title>Confirmar suscripción</h3>
+
+			<div class="plan-pay-receipt" data-pay-receipt>
+				<div class="plan-pay-receipt-today">
+					<span class="plan-pay-receipt-label" data-pay-today-label>A pagar hoy</span>
+					<span class="plan-pay-receipt-amount" data-pay-today-amount>-</span>
+					<span class="plan-pay-receipt-note hidden" data-pay-today-note></span>
+				</div>
+				<div class="plan-pay-receipt-future hidden" data-pay-future>
+					<span class="plan-pay-receipt-future-text" data-pay-future-note></span>
+				</div>
+			</div>
+
+			<p class="m-0 hidden text-[0.88rem] font-medium text-(--on-surface-variant)" data-pay-summary></p>
+			<p class="m-0 hidden text-[0.82rem] font-medium text-(--on-surface-variant)" data-pay-detail></p>
+		</div>
+
+		<div class="grid gap-3" data-pay-has-card>
+			<div class="plan-pay-card" data-pay-card-info>
+				<span class="material-symbols-rounded">credit_card</span>
+				<span class="grid text-left gap-0.5">
+					<strong data-pay-card-label>{defaultCardLabel}</strong>
+					<small data-pay-card-hint>{defaultCardHint}</small>
+					<small class="opacity-80">Cobro con la tarjeta predeterminada · se renueva cada mes.</small>
+				</span>
+			</div>
+			<button type="button" class="plan-btn plan-btn-primary" data-confirm-pay>Pagar y activar</button>
+		</div>
+
+		<div class="grid gap-3 hidden" data-pay-need-card>
+			<p class="m-0 rounded-xl bg-amber-50 px-4 py-3 text-[0.85rem] font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+				Para continuar necesitás registrar una tarjeta. El cobro es automático cada mes.
+			</p>
+			<button type="button" class="plan-btn plan-btn-primary" data-add-card-cta>
+				<span class="material-symbols-rounded align-middle text-[1.1rem]">add_card</span> Registrar tarjeta
+			</button>
+		</div>
+
+		<button type="button" class="plan-btn plan-btn-ghost" data-pay-cancel>Cancelar</button>
+		<div class="plan-loading-chip hidden" data-pay-loading aria-live="polite">
+			<span class="material-symbols-rounded animate-spin text-[1.1rem] text-(--primary)">progress_activity</span>
+			<span>Procesando el cobro…</span>
+		</div>
+	</div>
+</div>
+
+{/* Modal del iframe uPay — bottom sheet en mobile/tablet */}
+<div class="plan-modal-backdrop plan-card-modal-backdrop hidden" data-card-modal>
+	<div class="plan-modal plan-modal-wide plan-card-sheet" role="dialog" aria-modal="true" aria-labelledby="plan-card-title">
+		<div class="plan-sheet-handle" aria-hidden="true"><span></span></div>
+		<div class="plan-card-sheet-head">
+			<div class="plan-card-sheet-copy">
+				<h3 id="plan-card-title" class="m-0 text-lg font-bold text-(--on-surface)">Registrar tarjeta</h3>
+				<p class="m-0 text-[0.85rem] font-medium text-(--on-surface-variant)">Crédito o débito · Visa / Mastercard</p>
+			</div>
+			<button type="button" class="plan-card-close" data-card-close aria-label="Cerrar">
+				<span class="material-symbols-rounded">close</span>
+			</button>
+		</div>
+		<div class="plan-iframe-wrap">
+			<div class="plan-iframe-loading" data-card-loading aria-live="polite" aria-busy="true">
+				<span class="plan-loading-chip">
+					<span class="material-symbols-rounded animate-spin text-[1.1rem] text-(--primary)">progress_activity</span>
+					<span>Cargando formulario seguro…</span>
+				</span>
+			</div>
+			<iframe class="plan-card-iframe hidden" data-card-iframe title="Registro de tarjeta" allow="payment"></iframe>
+		</div>
+	</div>
+</div>
+
+{showBillingDrawer ? (
+	<dialog
+		data-billing-profile-drawer
+		class="plan-billing-profile-drawer m-0 mt-auto mb-0 h-[min(34rem,92svh)] w-screen max-w-none open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:m-0 sm:ml-auto sm:mr-0 sm:mt-0 sm:mb-0 sm:h-[100dvh] sm:max-h-[100dvh] sm:w-[min(32rem,100%)] sm:max-w-[min(32rem,100%)] sm:rounded-none sm:border-y-0 sm:border-r-0 sm:shadow-none"
+		aria-labelledby="plan-billing-profile-drawer-title"
+	>
+		<header class="flex shrink-0 items-start justify-between gap-3 border-b border-(--shell-border) px-4 py-3 sm:px-5 sm:py-4">
+			<div class="flex min-w-0 items-center gap-3">
+				<div class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-(--primary)">
+					<span class="material-symbols-rounded text-[1.35rem]" aria-hidden="true">receipt_long</span>
+				</div>
+				<div class="min-w-0">
+					<h2 id="plan-billing-profile-drawer-title" class="text-[1.05rem] font-extrabold tracking-tight text-(--on-surface)">
+						Datos de facturación
+					</h2>
+					<p class="truncate text-[0.82rem] font-medium text-(--on-surface-variant)">
+						Requeridos para registrar tu tarjeta
+					</p>
+				</div>
+			</div>
+			<button
+				type="button"
+				class="flex size-10 shrink-0 items-center justify-center rounded-full border border-(--shell-border) text-(--on-surface-variant) transition hover:bg-(--control-surface)"
+				data-billing-profile-drawer-close
+				aria-label="Cerrar datos de facturación"
+			>
+				<span class="material-symbols-rounded text-[1.2rem]" aria-hidden="true">close</span>
+			</button>
+		</header>
+		<BillingProfileForm
+			variant="drawer"
+			billingProfile={billingProfile}
+			billingProfileComplete={billingProfileComplete}
+		/>
+	</dialog>
+) : null}
+
+<style is:global>
+	.plan-btn {
+		width: 100%;
+		border: 0;
+		cursor: pointer;
+		border-radius: 999px;
+		padding: 0.8rem 1.25rem;
+		font-size: 0.9rem;
+		font-weight: 800;
+		transition: filter .15s ease, background .15s ease, border-color .15s ease, color .15s ease;
+	}
+	.plan-btn:disabled { cursor: default; opacity: .75; }
+	.plan-btn-primary { background: var(--primary); color: #fff; }
+	.plan-btn-primary:hover { filter: brightness(1.05); }
+	.plan-btn-outline {
+		background: transparent;
+		color: var(--primary);
+		border: 1.5px solid var(--primary);
+	}
+	.plan-btn-outline:hover { background: color-mix(in srgb, var(--primary) 8%, transparent); }
+	.plan-btn-current { background: color-mix(in srgb, var(--on-surface-variant) 16%, transparent); color: var(--on-surface-variant); }
+	.plan-btn-soft { width: auto; background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary); }
+	.plan-btn--auto { width: auto; }
+	.plan-btn-danger {
+		width: auto;
+		background: transparent;
+		border: 1.5px solid color-mix(in srgb, #be123c 45%, transparent);
+		color: #be123c;
+	}
+	.plan-btn-danger:hover { background: color-mix(in srgb, #be123c 8%, transparent); }
+	.plan-btn-ghost { background: transparent; color: var(--on-surface-variant); }
+
+	.plan-modal-backdrop {
+		position: fixed;
+		inset: 0;
+		z-index: 10001;
+		place-items: center;
+		padding: 1rem;
+	}
+	.plan-modal-backdrop:not(.hidden) {
+		display: grid;
+	}
+	.plan-modal {
+		width: 100%;
+		max-width: 26rem;
+		border-radius: 1.25rem;
+		background: var(--surface-bright, #fff);
+		padding: 1.5rem;
+		display: grid;
+		gap: 1.1rem;
+	}
+	.plan-pay-receipt {
+		display: grid;
+		gap: 0.85rem;
+		border-radius: 1rem;
+		border: 1px solid var(--shell-border);
+		background: color-mix(in srgb, var(--on-surface) 3%, transparent);
+		padding: 1rem 1.1rem;
+	}
+	.plan-pay-receipt-today {
+		display: grid;
+		gap: 0.2rem;
+	}
+	.plan-pay-receipt-label {
+		font-size: 0.72rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--on-surface-variant);
+	}
+	.plan-pay-receipt-amount {
+		font-size: 1.75rem;
+		font-weight: 800;
+		letter-spacing: -0.02em;
+		line-height: 1.15;
+		color: var(--on-surface);
+	}
+	.plan-pay-receipt-note {
+		font-size: 0.8rem;
+		font-weight: 550;
+		color: var(--on-surface-variant);
+	}
+	.plan-pay-receipt-note.hidden,
+	.plan-pay-receipt-future.hidden { display: none; }
+	.plan-pay-receipt-future {
+		padding-top: 0.85rem;
+		border-top: 1px solid var(--shell-border);
+	}
+	.plan-pay-receipt-future-text {
+		display: block;
+		font-size: 0.84rem;
+		font-weight: 600;
+		line-height: 1.4;
+		color: var(--on-surface-variant);
+	}
+	.plan-loading-chip {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.55rem;
+		border-radius: 999px;
+		border: 1px solid var(--shell-border);
+		background: color-mix(in srgb, var(--surface-bright, #fff) 92%, transparent);
+		padding: 0.55rem 0.95rem;
+		font-size: 0.84rem;
+		font-weight: 700;
+		color: var(--on-surface-variant);
+		box-shadow: 0 8px 22px rgba(15, 23, 42, 0.12);
+	}
+	.plan-loading-chip.hidden { display: none; }
+	.plan-iframe-loading {
+		position: absolute;
+		inset: 0;
+		z-index: 2;
+		display: grid;
+		place-items: center;
+		border-radius: 0.75rem;
+		background: color-mix(in srgb, var(--surface-bright, #fff) 55%, transparent);
+		backdrop-filter: blur(3px);
+		-webkit-backdrop-filter: blur(3px);
+	}
+	.plan-iframe-loading.hidden { display: none; }
+	.plan-pay-card {
+		display: flex;
+		align-items: center;
+		gap: 0.8rem;
+		border: none;
+		border-radius: 1rem;
+		padding: 0.9rem 1rem;
+		background: var(--sidebar-surface, #fff);
+		box-shadow: none;
+	}
+	.plan-pay-card .material-symbols-rounded { color: var(--primary); font-size: 1.5rem; }
+	.plan-pay-card small { color: var(--on-surface-variant); font-size: 0.78rem; }
+	.plan-sheet-handle {
+		display: none;
+		justify-content: center;
+		padding-bottom: 0.15rem;
+	}
+	.plan-sheet-handle span {
+		width: 2.5rem;
+		height: 0.28rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface-variant) 35%, transparent);
+	}
+	.plan-modal-wide {
+		max-width: 36rem;
+		width: min(100%, 36rem);
+		max-height: min(92vh, 52rem);
+		overflow: hidden;
+	}
+	.plan-card-sheet {
+		display: grid;
+		grid-template-rows: auto auto minmax(0, 1fr);
+		gap: 0.85rem;
+	}
+	.plan-card-sheet-head {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 0.75rem;
+		min-width: 0;
+	}
+	.plan-card-sheet-copy {
+		display: grid;
+		gap: 0.2rem;
+		min-width: 0;
+		flex: 1 1 auto;
+	}
+	.plan-card-close {
+		display: inline-grid;
+		place-items: center;
+		flex-shrink: 0;
+		width: 2.4rem;
+		height: 2.4rem;
+		border: 0;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface-variant) 14%, transparent);
+		color: var(--on-surface);
+		cursor: pointer;
+	}
+	.plan-card-close .material-symbols-rounded { font-size: 1.25rem; }
+	.plan-iframe-wrap {
+		position: relative;
+		display: grid;
+		min-height: min(68vh, 36rem);
+		height: min(68vh, 36rem);
+		min-width: 0;
+		overflow: hidden;
+	}
+	.plan-card-iframe {
+		width: 100%;
+		height: 100%;
+		min-height: 0;
+		border: 0;
+		border-radius: 0.75rem;
+		background: #fff;
+	}
+
+	@media (max-width: 1023px) {
+		.plan-pay-modal-backdrop:not(.hidden),
+		.plan-card-modal-backdrop:not(.hidden),
+		.plan-billing-detail-backdrop:not(.hidden) {
+			display: flex;
+			align-items: flex-end;
+			justify-content: center;
+			padding: 0;
+		}
+		.plan-pay-sheet {
+			width: 100%;
+			max-width: 100%;
+			height: auto;
+			max-height: min(92dvh, 40rem);
+			margin: 0;
+			overflow-y: auto;
+			border-radius: 1.8rem 1.8rem 0 0;
+			padding: 0.35rem 1.15rem calc(1rem + env(safe-area-inset-bottom, 0px));
+			gap: 1rem;
+			animation: plan-card-sheet-in 180ms cubic-bezier(0.4, 0, 0.2, 1);
+			box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.28);
+		}
+		.plan-card-sheet {
+			width: min(100%, 26.5rem);
+			max-width: min(100%, 26.5rem);
+			height: auto;
+			max-height: min(94dvh, 40rem);
+			margin: 0;
+			border-radius: 1.8rem 1.8rem 0 0;
+			padding: 0.35rem 0.55rem calc(0.55rem + env(safe-area-inset-bottom, 0px));
+			gap: 0.55rem;
+			grid-template-rows: auto auto auto;
+			animation: plan-card-sheet-in 180ms cubic-bezier(0.4, 0, 0.2, 1);
+			box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.28);
+		}
+		.plan-pay-sheet .plan-sheet-handle,
+		.plan-card-sheet .plan-sheet-handle,
+		.plan-billing-detail-sheet .plan-sheet-handle,
+		.plan-sheet-handle {
+			display: flex;
+			padding-top: 0.15rem;
+			padding-bottom: 0.05rem;
+		}
+		.plan-card-sheet-head {
+			align-items: center;
+			padding-inline: 0.2rem;
+		}
+		.plan-card-sheet-copy h3 {
+			font-size: 1.05rem;
+			line-height: 1.25;
+		}
+		.plan-card-sheet-copy p {
+			font-size: 0.78rem;
+			line-height: 1.3;
+		}
+		.plan-iframe-wrap,
+		.plan-card-iframe {
+			height: min(28.5rem, 58dvh);
+			min-height: min(28.5rem, 58dvh);
+			max-height: min(28.5rem, 58dvh);
+		}
+		.plan-card-iframe {
+			border-radius: 0.9rem;
+		}
+	}
+	@media (max-width: 1023px) and (max-height: 720px) {
+		.plan-iframe-wrap,
+		.plan-card-iframe {
+			height: min(26rem, 52dvh);
+			min-height: min(26rem, 52dvh);
+			max-height: min(26rem, 52dvh);
+		}
+	}
+	@keyframes plan-card-sheet-in {
+		from { transform: translateY(100%); opacity: 0.96; }
+		to { transform: translateY(0); opacity: 1; }
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.plan-pay-sheet,
+		.plan-card-sheet { animation: none; }
+	}
+
+	.plan-billing-profile-drawer {
+		animation: plan-billing-drawer-modal-in var(--modal-open-duration, 220ms) var(--modal-easing, ease);
+	}
+	.plan-billing-profile-drawer::backdrop {
+		background: var(--modal-backdrop-scrim);
+		backdrop-filter: blur(var(--modal-backdrop-blur));
+		-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
+		animation: plan-billing-drawer-backdrop-in var(--modal-open-duration, 220ms) var(--modal-easing, ease);
+	}
+	.plan-billing-profile-drawer.is-closing {
+		animation: plan-billing-drawer-modal-out var(--modal-close-duration, 200ms) var(--modal-easing, ease) forwards;
+	}
+	.plan-billing-profile-drawer.is-closing::backdrop {
+		animation: plan-billing-drawer-backdrop-out var(--modal-close-duration, 200ms) var(--modal-easing, ease) forwards;
+	}
+	@keyframes plan-billing-drawer-modal-in {
+		from { opacity: 0; transform: translateY(100%); }
+		to { opacity: 1; transform: translateY(0); }
+	}
+	@keyframes plan-billing-drawer-modal-out {
+		from { opacity: 1; transform: translateY(0); }
+		to { opacity: 0; transform: translateY(100%); }
+	}
+	@keyframes plan-billing-drawer-backdrop-in {
+		from { opacity: 0; }
+		to { opacity: 1; }
+	}
+	@keyframes plan-billing-drawer-backdrop-out {
+		from { opacity: 1; }
+		to { opacity: 0; }
+	}
+	@media (min-width: 640px) {
+		.plan-billing-profile-drawer {
+			inset: 0 0 0 auto;
+			height: 100dvh;
+			max-height: 100dvh;
+			width: min(32rem, 100vw);
+			max-width: min(32rem, 100vw);
+			border-radius: 0;
+			box-shadow: none;
+			animation-name: plan-billing-drawer-side-in;
+		}
+		.plan-billing-profile-drawer.is-closing {
+			animation-name: plan-billing-drawer-side-out;
+		}
+		.plan-billing-profile-drawer.is-settled {
+			transform: none;
+		}
+		@keyframes plan-billing-drawer-side-in {
+			from { opacity: 0; transform: translateX(100%); }
+			to { opacity: 1; transform: translateX(0); }
+		}
+		@keyframes plan-billing-drawer-side-out {
+			from { opacity: 1; transform: translateX(0); }
+			to { opacity: 0; transform: translateX(100%); }
+		}
+	}
+</style>

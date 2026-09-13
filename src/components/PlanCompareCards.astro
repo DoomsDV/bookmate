@@ -1,0 +1,398 @@
+---
+import { featureLabel, formatPlanGs, planMarketing } from '../lib/plan-marketing';
+import type { PlanCatalogItem, SubscriptionCurrentSnapshot } from '../lib/subscription';
+
+interface Props {
+	plans: PlanCatalogItem[];
+	current: SubscriptionCurrentSnapshot;
+	isAdmin: boolean;
+}
+
+const { plans, current, isAdmin } = Astro.props;
+
+const paidPlans = plans
+	.filter((plan) => plan.code === 'BASE' || plan.code === 'PREMIUM')
+	.sort((a, b) => {
+		const order = (code: string) => (code === 'BASE' ? 0 : code === 'PREMIUM' ? 1 : 9);
+		return order(a.code) - order(b.code);
+	});
+
+const currentCatalogPrice =
+	plans.find((plan) => plan.is_current || plan.code === current.plan_code)?.price_amount ?? 0;
+
+const needsPaidSelection =
+	current.plan_code === 'FREE' ||
+	['TRIAL_EXPIRED', 'READ_ONLY'].includes(current.effective_status);
+
+const ctaLabel = (plan: PlanCatalogItem, isDowngrade: boolean) => {
+	if (current.billing_exempt) return 'Cambiar a este plan';
+	if (needsPaidSelection) return `Renovar con ${plan.name}`;
+	if (isDowngrade) return `Pasar a ${plan.name}`;
+	if (plan.code === 'PREMIUM') return 'Mejorar a Premium';
+	return `Elegir ${plan.name}`;
+};
+---
+
+<section class="plan-compare">
+	<header class="plan-compare-head">
+		<h1 class="plan-compare-title">Elegí tu plan</h1>
+		<p class="plan-compare-lead">Mensual. Cambiá cuando quieras.</p>
+	</header>
+
+	<div class="plan-compare-grid">
+		{paidPlans.map((plan) => {
+			const marketing = planMarketing(plan.code);
+			const hasFounderDeal =
+				plan.founder_discount_percent > 0 &&
+				plan.checkout_price_amount > 0 &&
+				plan.checkout_price_amount < plan.price_amount;
+			const displayPrice = hasFounderDeal ? plan.checkout_price_amount : plan.price_amount;
+			const showConsolidated =
+				plan.code === 'PREMIUM' &&
+				plan.monthly_total > displayPrice &&
+				current.addons_monthly_amount > 0;
+			const planAction = current.billing_exempt
+				? 'immediate'
+				: plan.price_amount < currentCatalogPrice ||
+					  (plan.code === 'BASE' && current.plan_code === 'PREMIUM')
+					? 'schedule'
+					: 'activate';
+			const isDowngradeCta = planAction === 'schedule';
+			const isLockedCurrent = plan.is_current && !needsPaidSelection;
+			const isPendingTarget = current.pending_plan_code === plan.code;
+			const featured = plan.code === 'PREMIUM';
+			const benefits =
+				marketing?.benefits ?? plan.features.map((code) => ({ title: featureLabel(code) }));
+
+			return (
+				<article
+					class:list={[
+						'plan-compare-card',
+						featured && 'plan-compare-card--featured',
+						isLockedCurrent && 'plan-compare-card--current',
+					]}
+				>
+					<div class="plan-compare-card-head">
+						<div class="plan-compare-name-row">
+							<h2 class="plan-compare-name">{plan.name}</h2>
+							{isLockedCurrent ? (
+								<span class="plan-compare-ribbon plan-compare-ribbon--current">Incluido</span>
+							) : featured ? (
+								<span class="plan-compare-ribbon">Recomendado</span>
+							) : null}
+						</div>
+						{marketing ? <p class="plan-compare-tagline">{marketing.tagline}</p> : null}
+
+						<div class="plan-compare-price-row">
+							{hasFounderDeal ? (
+								<span class="plan-compare-price-old">{formatPlanGs(plan.price_amount)}</span>
+							) : null}
+							<span class="plan-compare-price">{formatPlanGs(displayPrice)}</span>
+							<span class="plan-compare-period">/ mes</span>
+						</div>
+						{hasFounderDeal ? (
+							<p class="plan-compare-deal">{plan.founder_discount_percent}% de por vida</p>
+						) : null}
+						{showConsolidated ? (
+							<p class="plan-compare-extra">
+								Con almacenamiento: {formatPlanGs(plan.monthly_total)} / mes
+							</p>
+						) : null}
+					</div>
+
+					<div class="plan-compare-body">
+						{marketing?.includesBase ? (
+							<p class="plan-compare-includes">Todo lo de Base, y:</p>
+						) : null}
+						<ul class="plan-compare-features">
+							{benefits.map((benefit) => (
+								<li>
+									<span class="plan-compare-check" aria-hidden="true">
+										<span class="material-symbols-rounded">check</span>
+									</span>
+									{benefit.title}
+								</li>
+							))}
+						</ul>
+					</div>
+
+					<div class="plan-compare-cta">
+						{isLockedCurrent ? (
+							<button type="button" class="plan-btn plan-btn-current" disabled>Plan actual</button>
+						) : isPendingTarget ? (
+							<button type="button" class="plan-btn plan-btn-current" disabled>Cambio programado</button>
+						) : isAdmin ? (
+							<>
+								<button
+									type="button"
+									class={`plan-btn ${isDowngradeCta ? 'plan-btn-outline' : 'plan-btn-primary'}`}
+									data-plan-select
+									data-plan-code={plan.code}
+									data-plan-name={plan.name}
+									data-plan-price={String(displayPrice)}
+									data-plan-monthly-total={String(showConsolidated ? plan.monthly_total : displayPrice)}
+									data-billing-exempt={current.billing_exempt ? '1' : '0'}
+									data-plan-action={planAction}
+									data-period-end={current.current_period_end || ''}
+								>
+									{ctaLabel(plan, isDowngradeCta)}
+								</button>
+							</>
+						) : (
+							<button type="button" class="plan-btn plan-btn-current" disabled>
+								Solo el administrador puede cambiarlo
+							</button>
+						)}
+					</div>
+				</article>
+			);
+		})}
+	</div>
+
+	{!current.billing_configured && isAdmin ? (
+		<p class="plan-compare-gate">
+			La pasarela de pago de suscripción aún no está configurada en este entorno. El checkout se habilitará al cargar las credenciales de Pagopar de la plataforma.
+		</p>
+	) : null}
+</section>
+
+<style>
+	.plan-compare {
+		display: grid;
+		gap: 1.75rem;
+		width: min(100%, 56rem);
+		margin-inline: auto;
+	}
+	.plan-compare-head {
+		display: grid;
+		gap: 0.4rem;
+		justify-items: center;
+		text-align: center;
+	}
+	.plan-compare-title {
+		margin: 0;
+		font-size: 1.9rem;
+		font-weight: 800;
+		letter-spacing: -0.045em;
+		line-height: 1.1;
+		color: var(--on-surface);
+	}
+	@media (min-width: 640px) {
+		.plan-compare-title {
+			font-size: 2.35rem;
+		}
+	}
+	.plan-compare-lead {
+		margin: 0;
+		font-size: 0.95rem;
+		font-weight: 500;
+		line-height: 1.4;
+		color: var(--on-surface-variant);
+	}
+	.plan-compare-grid {
+		display: grid;
+		gap: 1rem;
+		width: 100%;
+	}
+	@media (min-width: 800px) {
+		.plan-compare-grid {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+			gap: 1.15rem;
+			align-items: stretch;
+		}
+	}
+	.plan-compare-card {
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+		min-width: 0;
+		min-height: 100%;
+		padding: 1.65rem 1.45rem 1.35rem;
+		border-radius: 1.25rem;
+		border: 1px solid color-mix(in srgb, var(--shell-border) 100%, transparent);
+		background: var(--sidebar-surface, #fff);
+	}
+	.plan-compare-card--featured {
+		border-color: color-mix(in srgb, var(--primary) 38%, var(--shell-border));
+		background: color-mix(in srgb, var(--primary) 5%, var(--surface-bright, #fff));
+	}
+	.plan-compare-name-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		min-height: 1.5rem;
+	}
+	.plan-compare-ribbon {
+		display: inline-flex;
+		align-items: center;
+		flex-shrink: 0;
+		padding: 0.28rem 0.65rem;
+		border-radius: 999px;
+		background: var(--primary);
+		color: #fff;
+		font-size: 0.68rem;
+		font-weight: 750;
+		line-height: 1.1;
+	}
+	.plan-compare-ribbon--current {
+		background: color-mix(in srgb, var(--on-surface-variant) 16%, transparent);
+		color: var(--on-surface);
+	}
+	.plan-compare-card-head {
+		display: grid;
+		gap: 0.2rem;
+	}
+	.plan-compare-name {
+		margin: 0;
+		font-size: 1.15rem;
+		font-weight: 800;
+		letter-spacing: -0.03em;
+		color: var(--on-surface);
+	}
+	.plan-compare-tagline {
+		margin: 0;
+		font-size: 0.86rem;
+		font-weight: 500;
+		line-height: 1.35;
+		color: var(--on-surface-variant);
+	}
+	.plan-compare-price-row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: end;
+		gap: 0.3rem 0.45rem;
+		margin-top: 0.85rem;
+	}
+	.plan-compare-price-old {
+		padding-bottom: 0.18rem;
+		font-size: 0.92rem;
+		font-weight: 600;
+		color: var(--on-surface-variant);
+		text-decoration: line-through;
+	}
+	.plan-compare-price {
+		font-size: 2.05rem;
+		font-weight: 800;
+		letter-spacing: -0.045em;
+		line-height: 1;
+		color: var(--on-surface);
+	}
+	.plan-compare-period {
+		padding-bottom: 0.12rem;
+		font-size: 0.86rem;
+		font-weight: 600;
+		color: var(--on-surface-variant);
+	}
+	.plan-compare-deal {
+		margin: 0.15rem 0 0;
+		font-size: 0.78rem;
+		font-weight: 650;
+		color: var(--on-surface-variant);
+	}
+	.plan-compare-extra {
+		margin: 0.1rem 0 0;
+		font-size: 0.78rem;
+		font-weight: 550;
+		color: var(--on-surface-variant);
+	}
+	.plan-compare-body {
+		display: grid;
+		gap: 0.85rem;
+		flex: 1 1 auto;
+	}
+	.plan-compare-includes {
+		margin: 0;
+		font-size: 0.86rem;
+		font-weight: 700;
+		color: var(--on-surface);
+	}
+	.plan-compare-features {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 0.7rem;
+	}
+	.plan-compare-features li {
+		display: flex;
+		align-items: center;
+		gap: 0.7rem;
+		font-size: 0.9rem;
+		font-weight: 550;
+		line-height: 1.3;
+		color: var(--on-surface);
+	}
+	.plan-compare-check {
+		display: inline-grid;
+		place-items: center;
+		flex-shrink: 0;
+		width: 1.2rem;
+		height: 1.2rem;
+		border-radius: 999px;
+		border: 1.5px solid color-mix(in srgb, var(--on-surface-variant) 38%, transparent);
+		color: var(--on-surface-variant);
+	}
+	.plan-compare-check .material-symbols-rounded {
+		font-size: 0.82rem;
+		font-variation-settings: 'wght' 600;
+		line-height: 1;
+	}
+	.plan-compare-cta {
+		display: grid;
+		gap: 0.45rem;
+		margin-top: auto;
+	}
+	.plan-compare-gate {
+		margin: 0;
+		border-radius: 1rem;
+		background: color-mix(in srgb, #f59e0b 12%, transparent);
+		padding: 0.85rem 1rem;
+		font-size: 0.85rem;
+		font-weight: 650;
+		color: #b45309;
+	}
+	:global(html[data-theme='dark']) .plan-compare-gate {
+		color: #fcd34d;
+	}
+
+	.plan-btn {
+		width: 100%;
+		border: 0;
+		cursor: pointer;
+		border-radius: 0.85rem;
+		padding: 0.78rem 1.1rem;
+		font-size: 0.9rem;
+		font-weight: 750;
+		transition: filter 0.15s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+	}
+	.plan-btn:disabled {
+		cursor: default;
+		opacity: 0.78;
+	}
+	.plan-btn-primary {
+		background: var(--primary);
+		color: #fff;
+	}
+	.plan-btn-primary:hover {
+		filter: brightness(1.05);
+	}
+	.plan-btn-outline {
+		background: color-mix(in srgb, var(--on-surface) 8%, var(--sidebar-surface, #fff));
+		color: var(--on-surface);
+		border: 1px solid color-mix(in srgb, var(--on-surface) 12%, var(--shell-border));
+	}
+	.plan-btn-outline:hover {
+		background: color-mix(in srgb, var(--on-surface) 12%, var(--sidebar-surface, #fff));
+	}
+	.plan-btn-current {
+		background: color-mix(in srgb, var(--on-surface-variant) 14%, transparent);
+		color: var(--on-surface-variant);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.plan-btn {
+			transition: none;
+		}
+	}
+</style>

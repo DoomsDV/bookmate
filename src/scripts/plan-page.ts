@@ -22,6 +22,15 @@ const formatGs = (amount: number) => `${currency.format(Math.max(0, Math.round(a
 
 const CARD_STATUS_PREFIX = 'add_new_card';
 
+const refreshAfterMutation = (delay = 900) => {
+	const canvas = document.querySelector<HTMLElement>('.plan-canvas');
+	const href = canvas?.dataset.afterChange?.trim() || '';
+	setTimeout(() => {
+		if (href) window.location.assign(href);
+		else window.location.reload();
+	}, delay);
+};
+
 export function initPlanPage() {
 	const root = document.querySelector<HTMLElement>('.plan-canvas');
 	if (!root) return;
@@ -625,7 +634,7 @@ export function initPlanPage() {
 						: 'Listo. Se sumará al cargo de la próxima renovación.',
 					'success'
 				);
-				setTimeout(() => window.location.reload(), 1200);
+				refreshAfterMutation(1200);
 			}
 		} catch (error) {
 			// Rechazo definitivo del servidor (validación, tarjeta rechazada, etc.): se
@@ -638,10 +647,17 @@ export function initPlanPage() {
 	}
 
 	const formatDateEs = (iso: string) => {
-		if (!iso) return 'el fin del periodo';
+		if (!iso) return '';
 		const d = new Date(iso);
-		if (Number.isNaN(d.getTime())) return 'el fin del periodo';
-		return d.toLocaleDateString('es-PY', { day: 'numeric', month: 'long', year: 'numeric' });
+		if (Number.isNaN(d.getTime())) return '';
+		const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long' };
+		if (d.getFullYear() !== new Date().getFullYear()) opts.year = 'numeric';
+		return d.toLocaleDateString('es-PY', opts);
+	};
+
+	const isFutureIso = (iso: string) => {
+		const d = new Date(iso);
+		return Boolean(iso) && !Number.isNaN(d.getTime()) && d.getTime() > Date.now();
 	};
 
 	// --- Selección de plan ---
@@ -661,15 +677,18 @@ export function initPlanPage() {
 			}
 
 			if (action === 'schedule') {
+				const when = isFutureIso(periodEnd)
+					? `El cambio se aplica el ${formatDateEs(periodEnd)}.`
+					: 'El cambio se aplica al fin de tu ciclo.';
 				const confirmed = window.BookmateAlert?.confirm
 					? await window.BookmateAlert.confirm({
 							type: 'info',
 							title: `Pasar a ${name}`,
-							message: `Seguirás con tu plan actual hasta el ${formatDateEs(periodEnd)}. Ese día pasás a ${name} y se cobra ${formatGs(price)} / mes. No se genera saldo a favor por el plan (disfrutás el mes ya pagado).`,
-							confirmText: 'Programar cambio',
+							message: when,
+							confirmText: 'Confirmar',
 							cancelText: 'Cancelar',
 						})
-					: window.confirm(`Programar cambio a ${name} el ${formatDateEs(periodEnd)}?`);
+					: window.confirm(`${when} ¿Pasar a ${name}?`);
 				if (!confirmed) return;
 				await changePlan(code, name, btn, true);
 				return;
@@ -702,25 +721,6 @@ export function initPlanPage() {
 
 	document.querySelectorAll<HTMLButtonElement>('[data-terminate-sub]').forEach((btn) => {
 		btn.addEventListener('click', () => void terminateSubscription(btn));
-	});
-
-	// --- Downgrade Premium → Base (modal de retención) ---
-	const downgradeModal = document.querySelector<HTMLElement>('[data-downgrade-modal]');
-	const closeDowngradeModal = () => downgradeModal?.classList.add('hidden');
-	document.querySelectorAll<HTMLButtonElement>('[data-downgrade-open]').forEach((btn) => {
-		btn.addEventListener('click', () => downgradeModal?.classList.remove('hidden'));
-	});
-	document.querySelector<HTMLButtonElement>('[data-downgrade-keep]')?.addEventListener('click', closeDowngradeModal);
-	document.querySelector<HTMLButtonElement>('[data-downgrade-close]')?.addEventListener('click', closeDowngradeModal);
-	downgradeModal?.addEventListener('click', (event) => {
-		if (event.target === downgradeModal) closeDowngradeModal();
-	});
-	document.querySelector<HTMLButtonElement>('[data-downgrade-confirm]')?.addEventListener('click', (event) => {
-		const btn = event.currentTarget as HTMLButtonElement;
-		const code = btn.dataset.planCode || 'BASE';
-		const name = btn.dataset.planName || 'Base';
-		closeDowngradeModal();
-		void changePlan(code, name, btn, true);
 	});
 
 	document.querySelectorAll<HTMLButtonElement>('[data-undo-cancel]').forEach((btn) => {
@@ -908,7 +908,7 @@ window.addEventListener('message', (event: MessageEvent) => {
 					? `Cambio a ${data?.data?.pending_plan_code || name} programado.`
 					: `Tu plan cambió a ${name}.`);
 			flash(msg, 'success');
-			setTimeout(() => window.location.reload(), 900);
+			refreshAfterMutation(900);
 		} catch (error) {
 			btn.disabled = false;
 			btn.textContent = original;
@@ -1027,7 +1027,7 @@ async function pollInvoice(hash: string) {
 			const status = data?.data?.status;
 			if (res.ok && data?.status === 'success' && status === 'PAID') {
 				flash('¡Pago confirmado! Tu plan quedó activo.', 'success');
-				setTimeout(() => window.location.reload(), 1200);
+				refreshAfterMutation(1200);
 				return;
 			}
 			if (status === 'FAILED') {

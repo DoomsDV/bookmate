@@ -4,7 +4,7 @@ import { ROLES } from '../../config/roles';
 import SideNav from '../../components/SideNav.astro';
 import TopBar from '../../components/TopBar.astro';
 import AppAlert from '../../components/AppAlert.astro';
-import BillingProfileForm from '../../components/BillingProfileForm.astro';
+import PlanCheckoutModals from '../../components/PlanCheckoutModals.astro';
 import Layout from '../../layouts/Layout.astro';
 import { panelPageTitle } from '../../lib/panel-page-title';
 import {
@@ -139,87 +139,6 @@ const formatStorageUsed = (bytes: number) => {
 	return `${Math.max(1, Math.round(kb))} KB`;
 };
 
-const FEATURE_LABELS: Record<string, string> = {
-	WEB_BOOKING: 'Reservas web 24/7',
-	NOTIFICATIONS: 'Notificaciones al instante',
-	CUSTOMERS: 'Gestión de clientes',
-	SERVICES: 'Servicios y catálogo',
-	TEAM_MULTI_BRANCH: 'Equipo y sucursales sin límites',
-	AI_MORNING_DIGEST: 'Resumen Inteligente (IA)',
-	VOICE_RECEPTION: 'Recepción Inteligente por voz',
-	DEPOSIT_COLLECTION: 'Cobro seguro por señas',
-	APPOINTMENT_HISTORY: 'Historial completo del cliente',
-	PROFITABILITY_ANALYTICS: 'Análisis de rentabilidad',
-};
-const featureLabel = (code: string) => FEATURE_LABELS[code] ?? code;
-
-type PlanBenefit = { title: string; description: string };
-type PlanMarketing = {
-	tagline: string;
-	includesBase?: boolean;
-	benefits: PlanBenefit[];
-};
-
-const PLAN_MARKETING: Record<string, PlanMarketing> = {
-	BASE: {
-		tagline: 'Para digitalizar y ordenar tu negocio sin límites.',
-		benefits: [
-			{
-				title: 'Equipo y sucursales sin límites',
-				description: 'Agregá todos los profesionales y locales que necesites desde el primer día.',
-			},
-			{
-				title: 'Reservas web 24/7',
-				description: 'Tu página para que los clientes agenden turnos solos, en cualquier momento.',
-			},
-			{
-				title: 'Notificaciones al instante',
-				description: 'Avisos automáticos al equipo sobre reservas, cambios o cancelaciones.',
-			},
-			{
-				title: 'Gestión de clientes y servicios',
-				description: 'Controlá tu base de clientes y organizá todo el catálogo en un solo lugar.',
-			},
-			{
-				title: 'Resumen Inteligente (IA)',
-				description: 'Hasel analiza tu agenda y te da un panorama claro cada mañana.',
-			},
-			{
-				title: 'Análisis de rentabilidad',
-				description: 'Reportes de ingresos y asistencia de cada cliente para conocer tu negocio.',
-			},
-			{
-				title: 'Almacenamiento en la nube (1 GB)',
-				description: 'Espacio para el logo, fotos del equipo y adjuntos básicos del día a día.',
-			},
-		],
-	},
-	PREMIUM: {
-		tagline: 'Nuestra solución más completa para ahorrar tiempo, asegurar ingresos y fidelizar clientes.',
-		includesBase: true,
-		benefits: [
-			{
-				title: 'Recepción Inteligente por voz',
-				description: 'Olvidate de tipear. Creá turnos al instante dictándole a nuestra IA.',
-			},
-			{
-				title: 'Cobro seguro por señas',
-				description: 'Cobrá un anticipo al momento de reservar y reducí el ausentismo a cero.',
-			},
-			{
-				title: 'Historial completo del cliente',
-				description: 'Registrá visitas con notas internas, fotos del "antes y después" y documentos PDF.',
-			},
-			{
-				title: '5 GB de almacenamiento total',
-				description: 'Espacio garantizado para no perder nunca tus fotos y archivos.',
-			},
-		],
-	},
-};
-
-const planMarketing = (code: string): PlanMarketing | null => PLAN_MARKETING[code] ?? null;
-
 const current = catalog?.current ?? null;
 const effState = current?.effective_status ?? 'NONE';
 
@@ -304,21 +223,12 @@ const isAtMaxPlan =
 	current.plan_code === 'PREMIUM' &&
 	!['TRIAL', 'TRIAL_EXPIRED', 'READ_ONLY'].includes(effState);
 
-const showUpgradeOnly =
+const canOpenCompare =
+	isAdmin &&
 	!!current &&
-	current.plan_code === 'BASE' &&
-	!['TRIAL_EXPIRED', 'READ_ONLY'].includes(effState) &&
-	!isContinuity;
+	!cancelScheduled &&
+	!current.pending_plan_code;
 
-const showFullPlanCatalog = !isAtMaxPlan && !showUpgradeOnly;
-const plansToShow =
-	catalog?.plans.filter((plan) => {
-		if (showUpgradeOnly) return plan.code === 'PREMIUM';
-		if (showFullPlanCatalog) return true;
-		return false;
-	}) ?? [];
-
-const premiumMarketing = planMarketing('PREMIUM');
 const currentPlanCatalog =
 	catalog?.plans.find((p) => p.is_current || p.code === current?.plan_code) ?? null;
 const hasCurrentFounderDeal =
@@ -330,27 +240,6 @@ const currentOriginalMonthlyTotal =
 	hasCurrentFounderDeal && current
 		? currentPlanCatalog.price_amount + current.addons_monthly_amount
 		: 0;
-const basePlan = catalog?.plans.find((p) => p.code === 'BASE') ?? null;
-const canDowngradeToBase =
-	isAdmin &&
-	isAtMaxPlan &&
-	!cancelScheduled &&
-	!current?.billing_exempt &&
-	!current?.pending_plan_code &&
-	!!basePlan;
-
-const DOWNGRADE_KEEP_FEATURES = [
-	'CUSTOMERS',
-	'WEB_BOOKING',
-	'SERVICES',
-	'AI_MORNING_DIGEST',
-	'PROFITABILITY_ANALYTICS',
-] as const;
-const DOWNGRADE_LOSE_FEATURES = [
-	'VOICE_RECEPTION',
-	'DEPOSIT_COLLECTION',
-	'APPOINTMENT_HISTORY',
-] as const;
 const formatMaskedCard = (masked: string | null) => {
 	const raw = String(masked || '').replace(/\s+/g, '');
 	if (!raw) return '•••• •••• •••• ••••';
@@ -536,9 +425,10 @@ const defaultCardHint = defaultCard
 												<div class="grid gap-1">
 													<p class="m-0 font-bold text-(--on-surface)">Modo Continuidad (solo lectura)</p>
 													<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)">
-														Podés consultar historial y exportar clientes. Para volver a agendar, elegí Base o Premium abajo.
+														Podés consultar historial y exportar clientes. Para volver a agendar, elegí Base o Premium.
 													</p>
 												</div>
+												<div class="flex flex-wrap items-center gap-2">
 												<a
 													href="/api/customers/export"
 													class="plan-btn plan-btn-soft"
@@ -546,22 +436,45 @@ const defaultCardHint = defaultCard
 												>
 													Exportar clientes
 												</a>
+												{canOpenCompare ? (
+													<a
+														href="/panel/plan/cambiar"
+														data-astro-reload
+														data-astro-prefetch="false"
+														class="plan-btn plan-btn-outline plan-btn--auto inline-flex items-center justify-center no-underline"
+													>
+														Ver planes
+													</a>
+												) : null}
+												</div>
 											</div>
 										</div>
 									) : null}
 
 									{showDay15 && (
 										<div class="plan-day15">
-											<div class="flex items-start gap-3">
-												<span class="material-symbols-rounded text-[1.4rem] text-(--primary)">workspace_premium</span>
-												<div class="grid gap-1">
-													<p class="m-0 font-bold text-(--on-surface)">
-														{effState === 'TRIAL' ? '¿Listo para continuar?' : 'Elegí tu plan para reactivar'}
-													</p>
-													<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)">
-														Cuando termine tu prueba podés seguir con <strong>Premium</strong> o pasar al plan <strong>Base</strong>.
-													</p>
+											<div class="flex flex-wrap items-start justify-between gap-3">
+												<div class="flex items-start gap-3">
+													<span class="material-symbols-rounded text-[1.4rem] text-(--primary)">workspace_premium</span>
+													<div class="grid gap-1">
+														<p class="m-0 font-bold text-(--on-surface)">
+															{effState === 'TRIAL' ? '¿Listo para continuar?' : 'Elegí tu plan para reactivar'}
+														</p>
+														<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)">
+															Cuando termine tu prueba podés seguir con <strong>Premium</strong> o pasar al plan <strong>Base</strong>.
+														</p>
+													</div>
 												</div>
+												{canOpenCompare ? (
+													<a
+														href="/panel/plan/cambiar"
+														data-astro-reload
+														data-astro-prefetch="false"
+														class="plan-btn plan-btn-soft"
+													>
+														Ver planes
+													</a>
+												) : null}
 											</div>
 										</div>
 									)}
@@ -602,192 +515,6 @@ const defaultCardHint = defaultCard
 											</article>
 										</div>
 									</section>
-								) : null}
-
-								{/* ---- Planes / upgrade ---- */}
-								{plansToShow.length > 0 ? (
-								<section class="grid gap-4">
-									<div class="grid gap-1">
-										<h2 class="m-0 text-lg font-bold text-(--on-surface)">
-											{showUpgradeOnly ? 'Potenciá tu negocio' : 'Elegí tu plan'}
-										</h2>
-										{showUpgradeOnly ? (
-											<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)">
-												Pasá a Premium y desbloqueá herramientas que no están en el plan Base.
-											</p>
-										) : null}
-									</div>
-									<div class:list={[
-										'plan-cards-carousel md:grid md:gap-4',
-										showUpgradeOnly ? 'plan-cards-carousel--single md:grid-cols-1 md:max-w-xl' : 'md:grid-cols-2',
-									]}>
-										{plansToShow.map((plan) => {
-											const marketing = planMarketing(plan.code);
-											const hasFounderDeal =
-												plan.founder_discount_percent > 0 &&
-												plan.checkout_price_amount > 0 &&
-												plan.checkout_price_amount < plan.price_amount;
-											const displayPrice = hasFounderDeal
-												? plan.checkout_price_amount
-												: plan.price_amount;
-											const showConsolidated =
-												plan.code === 'PREMIUM' &&
-												plan.monthly_total > displayPrice &&
-												current.addons_monthly_amount > 0;
-											const isFounderViewer =
-												!!current.is_founder ||
-												effState === 'FOUNDER' ||
-												catalog.plans.some(
-													(p) =>
-														p.code === 'PREMIUM' &&
-														p.founder_discount_percent > 0 &&
-														p.checkout_price_amount > 0 &&
-														p.checkout_price_amount < p.price_amount
-												);
-											const showRegularPriceTag =
-												plan.code === 'BASE' && isFounderViewer && !hasFounderDeal;
-											const planAction = current.billing_exempt
-												? 'immediate'
-												: plan.price_amount < (catalog.plans.find((p) => p.is_current)?.price_amount ?? 0) ||
-													  (plan.code === 'BASE' && current.plan_code === 'PREMIUM')
-													? 'schedule'
-													: 'activate';
-											const isDowngradeCta = planAction === 'schedule';
-											return (
-											<article class:list={[
-												'plan-card',
-												plan.is_current && 'plan-card-current',
-												(plan.code === 'PREMIUM' || showUpgradeOnly) && 'plan-card-featured',
-												showUpgradeOnly && 'plan-card-upgrade',
-											]}>
-												{plan.is_current ? (
-													<span class="plan-ribbon plan-ribbon--included">Incluido</span>
-												) : plan.code === 'PREMIUM' ? (
-													<span class="plan-ribbon">{showUpgradeOnly ? 'Tu próximo paso' : 'Recomendado'}</span>
-												) : null}
-												<div class="plan-card-head grid gap-1">
-													<span class="plan-card-name text-sm font-bold uppercase tracking-wide text-(--on-surface-variant)">{plan.name}</span>
-													<div class="plan-card-price-row flex flex-wrap items-end gap-x-2 gap-y-1">
-														{hasFounderDeal ? (
-															<span class="plan-card-price-old pb-1 text-[0.95rem] font-semibold text-(--on-surface-variant) line-through">
-																{formatGs(plan.price_amount)}
-															</span>
-														) : null}
-														<span class="plan-card-price text-3xl font-extrabold text-(--on-surface)">{formatGs(displayPrice)}</span>
-														<span class="plan-card-period pb-1 text-[0.85rem] font-semibold text-(--on-surface-variant)">/ {plan.billing_period === 'YEARLY' ? 'año' : 'mes'}</span>
-													</div>
-													{hasFounderDeal ? (
-														<span class="plan-card-deal text-[0.82rem] font-bold text-(--primary)">
-															Precio fundador · {plan.founder_discount_percent}% off de por vida
-														</span>
-													) : null}
-													{showRegularPriceTag ? (
-														<span class="plan-price-tag">Precio Regular</span>
-													) : null}
-													{showConsolidated ? (
-														<span class="plan-card-extra text-[0.82rem] font-semibold text-(--on-surface-variant)">
-															Con almacenamiento: {formatGs(plan.monthly_total)} / mes
-														</span>
-													) : null}
-													{marketing ? (
-														<p class="plan-tagline m-0">{marketing.tagline}</p>
-													) : plan.storage_limit_bytes > 0 ? (
-														<span class="text-[0.82rem] font-semibold text-(--primary)">Incluye {formatGb(plan.storage_limit_bytes)} de almacenamiento</span>
-													) : null}
-												</div>
-												<div class="plan-card-divider" aria-hidden="true"></div>
-												{marketing ? (
-													<div class="plan-card-body grid gap-3">
-														{marketing.includesBase ? (
-															<p class="plan-includes-base m-0">Incluye todo lo del Plan Base, más:</p>
-														) : (
-															<p class="plan-features-label m-0">Características</p>
-														)}
-														<ul class="plan-feature-list">
-															{marketing.benefits.map((benefit) => (
-																<li>
-																	<span class="material-symbols-rounded plan-feature-check" aria-hidden="true">check_circle</span>
-																	<span class="plan-feature-copy">
-																		<strong>{benefit.title}</strong>
-																		<button
-																			type="button"
-																			class="plan-feature-info"
-																			aria-label={benefit.description}
-																			data-tooltip={benefit.description}
-																		>
-																			<span class="material-symbols-rounded" aria-hidden="true">info</span>
-																		</button>
-																	</span>
-																</li>
-															))}
-														</ul>
-													</div>
-												) : (
-													<div class="plan-card-body grid gap-3">
-														<p class="plan-features-label m-0">Características</p>
-														<ul class="plan-feature-list">
-															{plan.features.map((f) => (
-																<li><span class="material-symbols-rounded plan-feature-check" aria-hidden="true">check_circle</span>{featureLabel(f)}</li>
-															))}
-														</ul>
-													</div>
-												)}
-												{showUpgradeOnly && premiumMarketing ? (
-													<div class="plan-upgrade-missing">
-														<p class="plan-upgrade-missing-title m-0">Lo que te estás perdiendo en Base</p>
-														<ul class="plan-upgrade-missing-list">
-															{premiumMarketing.benefits.map((benefit) => (
-																<li>
-																	<span class="material-symbols-rounded" aria-hidden="true">lock_open</span>
-																	<span>
-																		<strong>{benefit.title}</strong>
-																		<small>{benefit.description}</small>
-																	</span>
-																</li>
-															))}
-														</ul>
-													</div>
-												) : null}
-												<div class="plan-card-cta mt-auto">
-													{plan.is_current ? (
-														<button type="button" class="plan-btn plan-btn-current" disabled>Plan actual</button>
-													) : isAdmin ? (
-														<button
-															type="button"
-															class={`plan-btn ${isDowngradeCta ? 'plan-btn-outline' : 'plan-btn-primary'}`}
-															data-plan-select
-															data-plan-code={plan.code}
-															data-plan-name={plan.name}
-															data-plan-price={String(displayPrice)}
-															data-plan-monthly-total={String(showConsolidated ? plan.monthly_total : displayPrice)}
-															data-billing-exempt={current.billing_exempt ? '1' : '0'}
-															data-plan-action={planAction}
-															data-period-end={current.current_period_end || ''}
-														>
-															{current.billing_exempt
-																? 'Cambiar a este plan'
-																: showUpgradeOnly
-																	? 'Mejorar a Premium'
-																	: current.plan_code === 'FREE' || effState === 'READ_ONLY'
-																		? `Renovar con ${plan.name}`
-																		: plan.code === 'BASE' && current.plan_code === 'PREMIUM'
-																			? `Pasar a ${plan.name}`
-																			: `Elegir ${plan.name}`}
-														</button>
-													) : (
-														<button type="button" class="plan-btn plan-btn-current" disabled>Solo el administrador puede cambiarlo</button>
-													)}
-												</div>
-											</article>
-											);
-										})}
-									</div>
-									{!current.billing_configured && isAdmin && (
-										<p class="m-0 rounded-xl bg-amber-50 px-4 py-3 text-[0.85rem] font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
-											La pasarela de pago de suscripción aún no está configurada en este entorno. El checkout se habilitará al cargar las credenciales de Pagopar de la plataforma.
-										</p>
-									)}
-								</section>
 								) : null}
 
 								{/* ---- Add-ons de storage ---- */}
@@ -888,18 +615,27 @@ const defaultCardHint = defaultCard
 									</section>
 								)}
 
-								{canDowngradeToBase ? (
+								{canOpenCompare ? (
 									<section class="grid gap-3 rounded-2xl bg-(--sidebar-surface) px-4 py-4 sm:px-5">
 										<div class="grid gap-1">
 											<h2 class="m-0 text-lg font-bold text-(--on-surface)">Cambiar de plan</h2>
 											<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)">
-												Podés cambiarte al Plan Base en cualquier momento. Se aplicará en tu próximo ciclo de facturación.
+												{isAtMaxPlan
+													? 'Podés cambiarte al Plan Base en cualquier momento. Se aplica en tu próximo ciclo de facturación.'
+												: current.plan_code === 'BASE'
+													? 'Pasá a Premium cuando quieras. El cambio se cobra hoy.'
+													: 'Compará Base y Premium. Solo cobro mensual.'}
 											</p>
 										</div>
 										<div>
-											<button type="button" class="plan-btn plan-btn-outline plan-btn--auto" data-downgrade-open>
-												Pasar al Plan Base
-											</button>
+											<a
+												href="/panel/plan/cambiar"
+												data-astro-reload
+												data-astro-prefetch="false"
+												class="plan-btn plan-btn-outline plan-btn--auto inline-flex items-center justify-center no-underline"
+											>
+												Cambiar de plan
+											</a>
 										</div>
 									</section>
 								) : null}
@@ -1391,195 +1127,13 @@ const defaultCardHint = defaultCard
 		</div>
 	</div>
 
-	{/* Modal de retención — downgrade Premium → Base */}
-	{canDowngradeToBase && current && basePlan ? (
-		<div class="plan-modal-backdrop hidden" data-downgrade-modal>
-			<div
-				class="plan-modal plan-downgrade-modal"
-				role="dialog"
-				aria-modal="true"
-				aria-labelledby="plan-downgrade-title"
-			>
-				<div class="plan-modal-head">
-					<h3 id="plan-downgrade-title" class="m-0 text-lg font-bold text-(--on-surface)">
-						¿Seguro que querés cambiar al Plan Base?
-					</h3>
-					<button type="button" class="panel-modal-header__close" data-downgrade-close aria-label="Cerrar">
-						<span class="material-symbols-rounded">close</span>
-					</button>
-				</div>
-				<div class="plan-downgrade-compare">
-					<div class="plan-downgrade-col plan-downgrade-col--keep">
-						<p class="plan-downgrade-col-title m-0">Plan Base</p>
-						<ul class="plan-downgrade-list">
-							{DOWNGRADE_KEEP_FEATURES.map((code) => (
-								<li>
-									<span class="material-symbols-rounded plan-downgrade-icon-keep" aria-hidden="true">check_circle</span>
-									<span>{featureLabel(code)}</span>
-								</li>
-							))}
-						</ul>
-					</div>
-					<div class="plan-downgrade-col plan-downgrade-col--lose">
-						<p class="plan-downgrade-col-title m-0">Lo que perdés</p>
-						<ul class="plan-downgrade-list">
-							{DOWNGRADE_LOSE_FEATURES.map((code) => (
-								<li>
-									<span class="material-symbols-rounded plan-downgrade-icon-lose" aria-hidden="true">cancel</span>
-									<span class="plan-downgrade-lose-text">{featureLabel(code)}</span>
-								</li>
-							))}
-							<li>
-								<span class="material-symbols-rounded plan-downgrade-icon-lose" aria-hidden="true">cancel</span>
-								<span class="plan-downgrade-lose-text">
-									{formatGb(current.storage_limit_bytes)} → {formatGb(basePlan.storage_limit_bytes)} de almacenamiento
-								</span>
-							</li>
-						</ul>
-					</div>
-				</div>
-				<p class="m-0 text-[0.84rem] font-medium text-(--on-surface-variant)">
-					El cambio se programa para el{' '}
-					{current.current_period_end
-						? formatDateEs(current.current_period_end)
-						: 'fin de tu ciclo actual'}
-					. Hasta entonces seguís con {current.plan_name}.
-				</p>
-				<div class="grid gap-2">
-					<button type="button" class="plan-btn plan-btn-primary" data-downgrade-keep>
-						Mantener mi plan {current.plan_name}
-					</button>
-					<button
-						type="button"
-						class="plan-btn plan-btn-ghost"
-						data-downgrade-confirm
-						data-plan-code={basePlan.code}
-						data-plan-name={basePlan.name}
-					>
-						Sí, pasar al Plan Base
-					</button>
-				</div>
-			</div>
-		</div>
-	) : null}
-
-	{/* Modal de confirmación de cobro — bottom sheet en mobile/tablet */}
-	<div class="plan-modal-backdrop plan-pay-modal-backdrop hidden" data-pay-modal>
-		<div class="plan-modal plan-pay-sheet" role="dialog" aria-modal="true" aria-labelledby="plan-pay-title">
-			<div class="plan-sheet-handle" aria-hidden="true"><span></span></div>
-			<div class="grid gap-3">
-				<h3 id="plan-pay-title" class="m-0 text-lg font-bold text-(--on-surface)" data-pay-title>Confirmar suscripción</h3>
-
-				{/* Formato recibo: cobro hoy vs renovación */}
-				<div class="plan-pay-receipt" data-pay-receipt>
-					<div class="plan-pay-receipt-today">
-						<span class="plan-pay-receipt-label" data-pay-today-label>A pagar hoy</span>
-						<span class="plan-pay-receipt-amount" data-pay-today-amount>—</span>
-						<span class="plan-pay-receipt-note hidden" data-pay-today-note></span>
-					</div>
-					<div class="plan-pay-receipt-future hidden" data-pay-future>
-						<span class="plan-pay-receipt-future-text" data-pay-future-note></span>
-					</div>
-				</div>
-
-				{/* Fallback legacy (oculto si hay recibo) */}
-				<p class="m-0 hidden text-[0.88rem] font-medium text-(--on-surface-variant)" data-pay-summary></p>
-				<p class="m-0 hidden text-[0.82rem] font-medium text-(--on-surface-variant)" data-pay-detail></p>
-			</div>
-
-			{/* Con tarjeta: confirmar cobro */}
-			<div class="grid gap-3" data-pay-has-card>
-				<div class="plan-pay-card" data-pay-card-info>
-					<span class="material-symbols-rounded">credit_card</span>
-					<span class="grid text-left gap-0.5">
-						<strong data-pay-card-label>{defaultCardLabel}</strong>
-						<small data-pay-card-hint>{defaultCardHint}</small>
-						<small class="opacity-80">Cobro con la tarjeta predeterminada · se renueva cada mes.</small>
-					</span>
-				</div>
-				<button type="button" class="plan-btn plan-btn-primary" data-confirm-pay>Pagar y activar</button>
-			</div>
-
-			{/* Sin tarjeta: pedir catastro */}
-			<div class="grid gap-3 hidden" data-pay-need-card>
-				<p class="m-0 rounded-xl bg-amber-50 px-4 py-3 text-[0.85rem] font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
-					Para continuar necesitás registrar una tarjeta. El cobro es automático cada mes.
-				</p>
-				<button type="button" class="plan-btn plan-btn-primary" data-add-card-cta>
-					<span class="material-symbols-rounded align-middle text-[1.1rem]">add_card</span> Registrar tarjeta
-				</button>
-			</div>
-
-			<button type="button" class="plan-btn plan-btn-ghost" data-pay-cancel>Cancelar</button>
-			<div class="plan-loading-chip hidden" data-pay-loading aria-live="polite">
-				<span class="material-symbols-rounded animate-spin text-[1.1rem] text-(--primary)">progress_activity</span>
-				<span>Procesando el cobro…</span>
-			</div>
-		</div>
-	</div>
-
-	{/* Modal del iframe uPay — bottom sheet en mobile/tablet */}
-	<div class="plan-modal-backdrop plan-card-modal-backdrop hidden" data-card-modal>
-		<div class="plan-modal plan-modal-wide plan-card-sheet" role="dialog" aria-modal="true" aria-labelledby="plan-card-title">
-			<div class="plan-sheet-handle" aria-hidden="true"><span></span></div>
-			<div class="plan-card-sheet-head">
-				<div class="plan-card-sheet-copy">
-					<h3 id="plan-card-title" class="m-0 text-lg font-bold text-(--on-surface)">Registrar tarjeta</h3>
-					<p class="m-0 text-[0.85rem] font-medium text-(--on-surface-variant)">Crédito o débito · Visa / Mastercard</p>
-				</div>
-				<button type="button" class="plan-card-close" data-card-close aria-label="Cerrar">
-					<span class="material-symbols-rounded">close</span>
-				</button>
-			</div>
-			<div class="plan-iframe-wrap">
-				<div class="plan-iframe-loading" data-card-loading aria-live="polite" aria-busy="true">
-					<span class="plan-loading-chip">
-						<span class="material-symbols-rounded animate-spin text-[1.1rem] text-(--primary)">progress_activity</span>
-						<span>Cargando formulario seguro…</span>
-					</span>
-				</div>
-				<iframe class="plan-card-iframe hidden" data-card-iframe title="Registro de tarjeta" allow="payment"></iframe>
-			</div>
-		</div>
-	</div>
-
-	{/* Drawer datos de facturación — PC (mismo tamaño que ATC) */}
-	{showPaymentMethod && (
-		<dialog
-			data-billing-profile-drawer
-			class="plan-billing-profile-drawer m-0 mt-auto mb-0 h-[min(34rem,92svh)] w-screen max-w-none open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:m-0 sm:ml-auto sm:mr-0 sm:mt-0 sm:mb-0 sm:h-[100dvh] sm:max-h-[100dvh] sm:w-[min(32rem,100%)] sm:max-w-[min(32rem,100%)] sm:rounded-none sm:border-y-0 sm:border-r-0 sm:shadow-none"
-			aria-labelledby="plan-billing-profile-drawer-title"
-		>
-			<header class="flex shrink-0 items-start justify-between gap-3 border-b border-(--shell-border) px-4 py-3 sm:px-5 sm:py-4">
-				<div class="flex min-w-0 items-center gap-3">
-					<div class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-(--primary)">
-						<span class="material-symbols-rounded text-[1.35rem]" aria-hidden="true">receipt_long</span>
-					</div>
-					<div class="min-w-0">
-						<h2 id="plan-billing-profile-drawer-title" class="text-[1.05rem] font-extrabold tracking-tight text-(--on-surface)">
-							Datos de facturación
-						</h2>
-						<p class="truncate text-[0.82rem] font-medium text-(--on-surface-variant)">
-							Requeridos para registrar tu tarjeta
-						</p>
-					</div>
-				</div>
-				<button
-					type="button"
-					class="flex size-10 shrink-0 items-center justify-center rounded-full border border-(--shell-border) text-(--on-surface-variant) transition hover:bg-(--control-surface)"
-					data-billing-profile-drawer-close
-					aria-label="Cerrar datos de facturación"
-				>
-					<span class="material-symbols-rounded text-[1.2rem]" aria-hidden="true">close</span>
-				</button>
-			</header>
-			<BillingProfileForm
-				variant="drawer"
-				billingProfile={billingProfile}
-				billingProfileComplete={billingProfileComplete}
-			/>
-		</dialog>
-	)}
+	<PlanCheckoutModals
+		defaultCardLabel={defaultCardLabel}
+		defaultCardHint={defaultCardHint}
+		showBillingDrawer={showPaymentMethod}
+		billingProfile={billingProfile}
+		billingProfileComplete={billingProfileComplete}
+	/>
 
 	{/* Modal detalle de facturación — solo mobile */}
 	<div class="plan-modal-backdrop plan-billing-detail-backdrop hidden" data-billing-detail-modal>
@@ -1830,18 +1384,6 @@ const defaultCardHint = defaultCard
 		color: var(--on-surface-variant);
 		pointer-events: none;
 	}
-	.plan-price-tag {
-		display: inline-flex;
-		align-items: center;
-		margin-top: 0.15rem;
-		padding: 0.15rem 0.55rem;
-		border-radius: 999px;
-		font-size: 0.7rem;
-		font-weight: 800;
-		letter-spacing: 0.02em;
-		background: color-mix(in srgb, var(--on-surface-variant) 14%, transparent);
-		color: var(--on-surface-variant);
-	}
 	.plan-status-side {
 		display: grid;
 		gap: 0.35rem;
@@ -1949,36 +1491,6 @@ const defaultCardHint = defaultCard
 		background: color-mix(in srgb, var(--primary) 8%, transparent);
 		border: 1px dashed color-mix(in srgb, var(--primary) 40%, transparent);
 		padding: 1rem 1.15rem;
-	}
-
-	.plan-card {
-		position: relative;
-		display: flex; flex-direction: column; gap: 1rem;
-		border-radius: 1.25rem;
-		border: none;
-		background: var(--sidebar-surface, #fff);
-		padding: 1.5rem;
-		overflow: hidden;
-		box-shadow: none;
-	}
-	.plan-card-featured {
-		border: none;
-		border-top: 4px solid var(--primary);
-		background: color-mix(in srgb, var(--primary) 4%, var(--surface-bright, #fff));
-		box-shadow: none;
-	}
-	.plan-card-current { outline: none; }
-	.plan-card-divider {
-		display: none;
-		height: 0;
-		border: 0;
-		border-top: 1px dashed color-mix(in srgb, var(--on-surface) 16%, transparent);
-	}
-	.plan-features-label {
-		font-size: 0.82rem;
-		font-weight: 800;
-		letter-spacing: 0.02em;
-		color: var(--on-surface);
 	}
 
 	@media (max-width: 767px) {
@@ -2106,215 +1618,6 @@ const defaultCardHint = defaultCard
 			color: var(--on-surface-variant);
 		}
 
-		.plan-cards-carousel {
-			display: flex;
-			align-items: stretch;
-			gap: 0.9rem;
-			overflow-x: auto;
-			overscroll-behavior-x: contain;
-			scroll-snap-type: x mandatory;
-			scroll-padding-inline: 0.15rem;
-			padding: 0.35rem 0.1rem 0.65rem;
-			-webkit-overflow-scrolling: touch;
-			scrollbar-width: none;
-		}
-
-		.plan-cards-carousel::-webkit-scrollbar {
-			display: none;
-		}
-
-		.plan-cards-carousel .plan-card {
-			flex: 0 0 min(88vw, 22.75rem);
-			width: min(88vw, 22.75rem);
-			max-width: 88vw;
-			scroll-snap-align: center;
-			scroll-snap-stop: always;
-			gap: 1.05rem;
-			padding: 1.35rem 1.2rem 1.2rem;
-			border-radius: 1.35rem;
-			border-width: 1.5px;
-			box-shadow: 0 12px 28px -24px rgba(15, 23, 42, 0.35);
-		}
-
-		.plan-cards-carousel .plan-card-head {
-			padding-right: 3.25rem;
-		}
-
-		.plan-cards-carousel .plan-card-divider {
-			display: block;
-			margin: 0.15rem 0;
-		}
-
-		.plan-cards-carousel .plan-card-current {
-			outline: 0;
-			border: none;
-			border-top: 4px solid var(--primary);
-			background: color-mix(in srgb, var(--primary) 5%, var(--surface-bright, #fff));
-			color: var(--on-surface);
-			box-shadow: none;
-		}
-
-		.plan-cards-carousel .plan-card-current .plan-card-name,
-		.plan-cards-carousel .plan-card-current .plan-card-period,
-		.plan-cards-carousel .plan-card-current .plan-card-price-old,
-		.plan-cards-carousel .plan-card-current .plan-card-extra,
-		.plan-cards-carousel .plan-card-current .plan-tagline,
-		.plan-cards-carousel .plan-card-current .plan-includes-base,
-		.plan-cards-carousel .plan-card-current .plan-features-label,
-		.plan-cards-carousel .plan-card-current .plan-feature-list li {
-			color: var(--on-surface-variant);
-		}
-
-		.plan-cards-carousel .plan-card-current .plan-card-price,
-		.plan-cards-carousel .plan-card-current .plan-feature-copy strong,
-		.plan-cards-carousel .plan-card-current .plan-features-label {
-			color: var(--on-surface);
-		}
-
-		.plan-cards-carousel .plan-card-current .plan-card-deal,
-		.plan-cards-carousel .plan-card-current .plan-card-price {
-			color: var(--primary);
-		}
-
-		.plan-cards-carousel .plan-card-current .plan-card-divider {
-			border-top-color: color-mix(in srgb, var(--shell-border) 90%, transparent);
-		}
-
-		.plan-cards-carousel .plan-card-current .plan-feature-check {
-			color: #059669;
-		}
-
-		.plan-cards-carousel .plan-card-current .plan-feature-info {
-			color: var(--on-surface-variant);
-		}
-
-		.plan-cards-carousel .plan-card-current .plan-btn-current {
-			background: color-mix(in srgb, var(--primary) 12%, transparent);
-			color: var(--primary);
-		}
-
-		.plan-cards-carousel .plan-card-price {
-			font-size: 2rem;
-			letter-spacing: -0.02em;
-		}
-	}
-	.plan-ribbon {
-		position: absolute;
-		top: 0.85rem;
-		right: 0.85rem;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		background: var(--primary);
-		color: #fff;
-		font-size: 0.68rem;
-		font-weight: 800;
-		letter-spacing: 0.04em;
-		line-height: 1.1;
-		padding: 0.32rem 0.7rem;
-		border-radius: 999px;
-		z-index: 2;
-		box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--primary) 70%, transparent);
-	}
-	.plan-ribbon--included {
-		background: color-mix(in srgb, var(--on-surface-variant) 28%, transparent);
-		color: var(--on-surface);
-		box-shadow: none;
-	}
-
-	@media (max-width: 767px) {
-		.plan-cards-carousel .plan-ribbon,
-		.plan-cards-carousel .plan-ribbon--included {
-			top: 0.85rem;
-			right: 0.85rem;
-		}
-	}
-
-	.plan-tagline {
-		margin-top: 0.35rem;
-		font-size: 0.9rem;
-		font-weight: 550;
-		line-height: 1.45;
-		color: var(--on-surface-variant);
-	}
-	.plan-includes-base {
-		font-size: 0.82rem;
-		font-weight: 750;
-		letter-spacing: 0.01em;
-		color: var(--primary);
-	}
-	.plan-feature-list { list-style: none; margin: 0; padding: 0.35rem 0 0.15rem; display: grid; gap: 0.9rem; }
-	.plan-feature-list li { display: flex; align-items: center; gap: 0.65rem; padding: 0.15rem 0; font-size: 0.88rem; font-weight: 600; color: var(--on-surface); }
-	.plan-feature-check { font-size: 1.15rem; color: #059669; flex-shrink: 0; }
-	.plan-feature-copy {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.35rem;
-		min-width: 0;
-	}
-	.plan-feature-copy strong {
-		font-size: 0.9rem;
-		font-weight: 750;
-		line-height: 1.3;
-		color: var(--on-surface);
-	}
-	.plan-feature-info {
-		position: relative;
-		display: inline-grid;
-		place-items: center;
-		width: 1.25rem;
-		height: 1.25rem;
-		padding: 0;
-		border: 0;
-		border-radius: 999px;
-		background: transparent;
-		color: color-mix(in srgb, var(--on-surface-variant) 72%, transparent);
-		cursor: help;
-		flex-shrink: 0;
-	}
-	.plan-feature-info .material-symbols-rounded {
-		font-size: 1rem;
-		line-height: 1;
-		color: inherit;
-	}
-	.plan-feature-info:hover,
-	.plan-feature-info:focus-visible {
-		color: var(--on-surface-variant);
-		outline: none;
-	}
-	.plan-feature-info:focus-visible {
-		box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 35%, transparent);
-	}
-	.plan-feature-info::after {
-		content: attr(data-tooltip);
-		position: absolute;
-		left: 50%;
-		bottom: calc(100% + 0.45rem);
-		z-index: 5;
-		width: max-content;
-		max-width: min(16rem, 70vw);
-		padding: 0.55rem 0.7rem;
-		border-radius: 0.7rem;
-		background: var(--on-surface);
-		color: var(--surface-bright, #fff);
-		font-size: 0.75rem;
-		font-weight: 550;
-		line-height: 1.35;
-		text-align: left;
-		white-space: normal;
-		opacity: 0;
-		visibility: hidden;
-		pointer-events: none;
-		transform: translateX(-50%) translateY(0.2rem);
-		transition: opacity 120ms ease, transform 120ms ease, visibility 0s linear 120ms;
-		box-shadow: 0 10px 28px rgba(15, 23, 42, 0.22);
-	}
-	.plan-feature-info:hover::after,
-	.plan-feature-info:focus-visible::after {
-		opacity: 1;
-		visibility: visible;
-		transform: translateX(-50%) translateY(0);
-		transition-delay: 0s;
 	}
 
 	.plan-btn {
@@ -2458,65 +1761,6 @@ const defaultCardHint = defaultCard
 
 	.plan-mgmt-chevron {
 		margin-left: auto;
-		color: var(--on-surface-variant);
-	}
-
-	.plan-cards-carousel--single .plan-card-upgrade {
-		border-color: color-mix(in srgb, var(--primary) 35%, var(--shell-border));
-		box-shadow: 0 18px 40px -28px color-mix(in srgb, var(--primary) 55%, transparent);
-	}
-
-	.plan-upgrade-missing {
-		display: grid;
-		gap: 0.75rem;
-		padding: 0.95rem 1rem;
-		border-radius: 1rem;
-		background: color-mix(in srgb, var(--primary) 7%, transparent);
-		border: 1px solid color-mix(in srgb, var(--primary) 18%, transparent);
-	}
-
-	.plan-upgrade-missing-title {
-		font-size: 0.82rem;
-		font-weight: 800;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		color: var(--primary);
-	}
-
-	.plan-upgrade-missing-list {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		display: grid;
-		gap: 0.7rem;
-	}
-
-	.plan-upgrade-missing-list li {
-		display: flex;
-		align-items: flex-start;
-		gap: 0.65rem;
-	}
-
-	.plan-upgrade-missing-list .material-symbols-rounded {
-		font-size: 1.1rem;
-		color: var(--primary);
-		margin-top: 0.1rem;
-		flex-shrink: 0;
-	}
-
-	.plan-upgrade-missing-list strong {
-		display: block;
-		font-size: 0.9rem;
-		font-weight: 800;
-		color: var(--on-surface);
-	}
-
-	.plan-upgrade-missing-list small {
-		display: block;
-		margin-top: 0.15rem;
-		font-size: 0.8rem;
-		font-weight: 550;
-		line-height: 1.4;
 		color: var(--on-surface-variant);
 	}
 
@@ -3411,168 +2655,6 @@ const defaultCardHint = defaultCard
 		border-radius: 1.25rem; background: var(--surface-bright, #fff);
 		padding: 1.5rem; display: grid; gap: 1.1rem;
 	}
-	.plan-downgrade-modal {
-		max-width: 42rem;
-	}
-	.plan-modal-head {
-		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-		gap: 0.75rem;
-	}
-	.plan-modal-head h3 {
-		flex: 1;
-		min-width: 0;
-		padding-right: 0.25rem;
-	}
-	.plan-downgrade-compare {
-		display: grid;
-		gap: 0.85rem;
-	}
-	@media (min-width: 640px) {
-		.plan-downgrade-compare {
-			grid-template-columns: 1fr 1fr;
-		}
-	}
-	.plan-downgrade-col {
-		display: grid;
-		gap: 0.65rem;
-		padding: 0.95rem 1rem;
-		border-radius: 1rem;
-		border: none;
-		background: color-mix(in srgb, var(--on-surface) 3%, transparent);
-	}
-	.plan-downgrade-col-title {
-		font-size: 0.75rem;
-		font-weight: 600;
-		letter-spacing: 0.05em;
-		text-transform: uppercase;
-		color: #52525b;
-	}
-	:global(.dark) .plan-downgrade-col-title {
-		color: #e4e4e7;
-	}
-	.plan-downgrade-list {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		display: grid;
-		gap: 0.55rem;
-	}
-	.plan-downgrade-list li {
-		display: flex;
-		align-items: flex-start;
-		gap: 0.5rem;
-		font-size: 0.86rem;
-		font-weight: 500;
-		line-height: 1.35;
-	}
-	.plan-downgrade-col--keep .plan-downgrade-list li {
-		color: #a1a1aa;
-	}
-	:global(.dark) .plan-downgrade-col--keep .plan-downgrade-list li {
-		color: #d4d4d8;
-	}
-	.plan-downgrade-col--lose .plan-downgrade-list li {
-		color: #71717a;
-	}
-	:global(.dark) .plan-downgrade-col--lose .plan-downgrade-list li {
-		color: #a1a1aa;
-	}
-	.plan-downgrade-icon-keep {
-		font-size: 1.05rem;
-		color: #34d399;
-		flex-shrink: 0;
-		margin-top: 0.05rem;
-	}
-	.plan-downgrade-icon-lose {
-		font-size: 1.05rem;
-		color: #fb7185;
-		flex-shrink: 0;
-		margin-top: 0.05rem;
-	}
-	.plan-downgrade-lose-text {
-		opacity: 0.9;
-	}
-	.plan-pay-receipt {
-		display: grid;
-		gap: 0.85rem;
-		border-radius: 1rem;
-		border: 1px solid var(--shell-border);
-		background: color-mix(in srgb, var(--on-surface) 3%, transparent);
-		padding: 1rem 1.1rem;
-	}
-	.plan-pay-receipt-today {
-		display: grid;
-		gap: 0.2rem;
-	}
-	.plan-pay-receipt-label {
-		font-size: 0.72rem;
-		font-weight: 700;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-		color: var(--on-surface-variant);
-	}
-	.plan-pay-receipt-amount {
-		font-size: 1.75rem;
-		font-weight: 800;
-		letter-spacing: -0.02em;
-		line-height: 1.15;
-		color: var(--on-surface);
-	}
-	.plan-pay-receipt-note {
-		font-size: 0.8rem;
-		font-weight: 550;
-		color: var(--on-surface-variant);
-	}
-	.plan-pay-receipt-note.hidden,
-	.plan-pay-receipt-future.hidden { display: none; }
-	.plan-pay-receipt-future {
-		padding-top: 0.85rem;
-		border-top: 1px solid var(--shell-border);
-	}
-	.plan-pay-receipt-future-text {
-		display: block;
-		font-size: 0.84rem;
-		font-weight: 600;
-		line-height: 1.4;
-		color: var(--on-surface-variant);
-	}
-	.plan-pay-option {
-		display: flex; align-items: center; gap: 0.8rem;
-		border: 1px solid var(--shell-border); border-radius: 1rem;
-		background: transparent; padding: 0.9rem 1rem; cursor: pointer; text-align: left;
-		transition: border-color .15s ease, background .15s ease;
-	}
-	.plan-pay-option:hover { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 8%, transparent); }
-	.plan-pay-option .material-symbols-rounded { color: var(--primary); font-size: 1.5rem; }
-	.plan-pay-option small { color: var(--on-surface-variant); font-size: 0.78rem; }
-	.plan-loading-chip {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.55rem;
-		border-radius: 999px;
-		border: 1px solid var(--shell-border);
-		background: color-mix(in srgb, var(--surface-bright, #fff) 92%, transparent);
-		padding: 0.55rem 0.95rem;
-		font-size: 0.84rem;
-		font-weight: 700;
-		color: var(--on-surface-variant);
-		box-shadow: 0 8px 22px rgba(15, 23, 42, 0.12);
-	}
-	.plan-loading-chip.hidden { display: none; }
-	.plan-iframe-loading {
-		position: absolute;
-		inset: 0;
-		z-index: 2;
-		display: grid;
-		place-items: center;
-		border-radius: 0.75rem;
-		background: color-mix(in srgb, var(--surface-bright, #fff) 55%, transparent);
-		backdrop-filter: blur(3px);
-		-webkit-backdrop-filter: blur(3px);
-	}
-	.plan-iframe-loading.hidden { display: none; }
 
 	/* Método de pago — ghost unificado (móvil + PC) */
 	.plan-billing-view-link {
@@ -3854,16 +2936,6 @@ const defaultCardHint = defaultCard
 	.plan-plastic-del:hover { background: rgba(244,63,94,.35); color: #fff; }
 	.plan-plastic-del .material-symbols-rounded { font-size: 1.15rem; }
 
-	.plan-pay-card {
-		display: flex; align-items: center; gap: 0.8rem;
-		border: none; border-radius: 1rem;
-		padding: 0.9rem 1rem;
-		background: var(--sidebar-surface, #fff);
-		box-shadow: none;
-	}
-	.plan-pay-card .material-symbols-rounded { color: var(--primary); font-size: 1.5rem; }
-	.plan-pay-card small { color: var(--on-surface-variant); font-size: 0.78rem; }
-
 	.plan-sheet-handle {
 		display: none;
 		justify-content: center;
@@ -3876,87 +2948,17 @@ const defaultCardHint = defaultCard
 		background: color-mix(in srgb, var(--on-surface-variant) 35%, transparent);
 	}
 
-	.plan-modal-wide {
-		max-width: 36rem;
-		width: min(100%, 36rem);
-		max-height: min(92vh, 52rem);
-		overflow: hidden;
-	}
-	.plan-card-sheet {
-		display: grid;
-		grid-template-rows: auto auto minmax(0, 1fr);
-		gap: 0.85rem;
-	}
-	.plan-card-sheet-head {
-		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-		gap: 0.75rem;
-		min-width: 0;
-	}
-	.plan-card-sheet-copy {
-		display: grid;
-		gap: 0.2rem;
-		min-width: 0;
-		flex: 1 1 auto;
-	}
-	.plan-card-close {
-		display: inline-grid;
-		place-items: center;
-		flex-shrink: 0;
-		width: 2.4rem;
-		height: 2.4rem;
-		border: 0;
-		border-radius: 999px;
-		background: color-mix(in srgb, var(--on-surface-variant) 14%, transparent);
-		color: var(--on-surface);
-		cursor: pointer;
-	}
-	.plan-card-close .material-symbols-rounded { font-size: 1.25rem; }
-	.plan-iframe-wrap {
-		position: relative;
-		display: grid;
-		min-height: min(68vh, 36rem);
-		height: min(68vh, 36rem);
-		min-width: 0;
-		overflow: hidden;
-	}
-	.plan-card-iframe {
-		width: 100%;
-		height: 100%;
-		min-height: 0;
-		border: 0;
-		border-radius: 0.75rem;
-		background: #fff;
-	}
-
-	/* Bottom sheet en mobile + tablet (pago + uPay + detalle facturación) */
 	@media (min-width: 768px) {
 		.plan-billing-detail-backdrop {
 			display: none !important;
 		}
 	}
 	@media (max-width: 1023px) {
-		.plan-pay-modal-backdrop:not(.hidden),
-		.plan-card-modal-backdrop:not(.hidden),
 		.plan-billing-detail-backdrop:not(.hidden) {
 			display: flex;
 			align-items: flex-end;
 			justify-content: center;
 			padding: 0;
-		}
-		.plan-pay-sheet {
-			width: 100%;
-			max-width: 100%;
-			height: auto;
-			max-height: min(92dvh, 40rem);
-			margin: 0;
-			overflow-y: auto;
-			border-radius: 1.8rem 1.8rem 0 0;
-			padding: 0.35rem 1.15rem calc(1rem + env(safe-area-inset-bottom, 0px));
-			gap: 1rem;
-			animation: plan-card-sheet-in 180ms cubic-bezier(0.4, 0, 0.2, 1);
-			box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.28);
 		}
 		.plan-billing-detail-sheet {
 			width: 100%;
@@ -3977,57 +2979,11 @@ const defaultCardHint = defaultCard
 			justify-content: space-between;
 			gap: 0.75rem;
 		}
-		.plan-card-sheet {
-			/* Ancho típico del formulario uPay; no estira a pantalla completa */
-			width: min(100%, 26.5rem);
-			max-width: min(100%, 26.5rem);
-			height: auto;
-			max-height: min(94dvh, 40rem);
-			margin: 0;
-			border-radius: 1.8rem 1.8rem 0 0;
-			padding: 0.35rem 0.55rem calc(0.55rem + env(safe-area-inset-bottom, 0px));
-			gap: 0.55rem;
-			grid-template-rows: auto auto auto;
-			animation: plan-card-sheet-in 180ms cubic-bezier(0.4, 0, 0.2, 1);
-			box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.28);
-		}
-		.plan-pay-sheet .plan-sheet-handle,
-		.plan-card-sheet .plan-sheet-handle,
 		.plan-billing-detail-sheet .plan-sheet-handle,
 		.plan-sheet-handle {
 			display: flex;
 			padding-top: 0.15rem;
 			padding-bottom: 0.05rem;
-		}
-		.plan-card-sheet-head {
-			align-items: center;
-			padding-inline: 0.2rem;
-		}
-		.plan-card-sheet-copy h3 {
-			font-size: 1.05rem;
-			line-height: 1.25;
-		}
-		.plan-card-sheet-copy p {
-			font-size: 0.78rem;
-			line-height: 1.3;
-		}
-		.plan-iframe-wrap,
-		.plan-card-iframe {
-			/* Alto del form uPay (campos + botón + badges), sin relleno vacío */
-			height: min(28.5rem, 58dvh);
-			min-height: min(28.5rem, 58dvh);
-			max-height: min(28.5rem, 58dvh);
-		}
-		.plan-card-iframe {
-			border-radius: 0.9rem;
-		}
-	}
-	@media (max-width: 1023px) and (max-height: 720px) {
-		.plan-iframe-wrap,
-		.plan-card-iframe {
-			height: min(26rem, 52dvh);
-			min-height: min(26rem, 52dvh);
-			max-height: min(26rem, 52dvh);
 		}
 	}
 	@keyframes plan-card-sheet-in {
@@ -4035,64 +2991,7 @@ const defaultCardHint = defaultCard
 		to { transform: translateY(0); opacity: 1; }
 	}
 	@media (prefers-reduced-motion: reduce) {
-		.plan-pay-sheet,
-		.plan-card-sheet { animation: none; }
-	}
-
-	/* Drawer datos de facturación — mismo patrón que ATC */
-	.plan-billing-profile-drawer {
-		animation: plan-billing-drawer-modal-in var(--modal-open-duration, 220ms) var(--modal-easing, ease);
-	}
-	.plan-billing-profile-drawer::backdrop {
-		background: var(--modal-backdrop-scrim);
-		backdrop-filter: blur(var(--modal-backdrop-blur));
-		-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
-		animation: plan-billing-drawer-backdrop-in var(--modal-open-duration, 220ms) var(--modal-easing, ease);
-	}
-	.plan-billing-profile-drawer.is-closing {
-		animation: plan-billing-drawer-modal-out var(--modal-close-duration, 200ms) var(--modal-easing, ease) forwards;
-	}
-	.plan-billing-profile-drawer.is-closing::backdrop {
-		animation: plan-billing-drawer-backdrop-out var(--modal-close-duration, 200ms) var(--modal-easing, ease) forwards;
-	}
-	@keyframes plan-billing-drawer-modal-in {
-		from { opacity: 0; transform: translateY(100%); }
-		to { opacity: 1; transform: translateY(0); }
-	}
-	@keyframes plan-billing-drawer-modal-out {
-		from { opacity: 1; transform: translateY(0); }
-		to { opacity: 0; transform: translateY(100%); }
-	}
-	@keyframes plan-billing-drawer-backdrop-in {
-		from { opacity: 0; }
-		to { opacity: 1; }
-	}
-	@keyframes plan-billing-drawer-backdrop-out {
-		from { opacity: 1; }
-		to { opacity: 0; }
-	}
-	@media (min-width: 640px) {
-		.plan-billing-profile-drawer {
-			inset: 0 0 0 auto;
-			height: 100dvh;
-			max-height: 100dvh;
-			width: min(32rem, 100vw);
-			max-width: min(32rem, 100vw);
-			border-radius: 0;
-			box-shadow: none;
-			animation-name: plan-billing-drawer-side-in;
-		}
-		.plan-billing-profile-drawer.is-closing {
-			animation-name: plan-billing-drawer-side-out;
-		}
-		@keyframes plan-billing-drawer-side-in {
-			from { opacity: 0; transform: translateX(100%); }
-			to { opacity: 1; transform: translateX(0); }
-		}
-		@keyframes plan-billing-drawer-side-out {
-			from { opacity: 1; transform: translateX(0); }
-			to { opacity: 0; transform: translateX(100%); }
-		}
+		.plan-billing-detail-sheet { animation: none; }
 	}
 </style>
 
