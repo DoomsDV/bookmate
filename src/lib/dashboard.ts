@@ -44,11 +44,20 @@ export interface DashboardUpcomingAppointment {
 	status: string;
 }
 
+export interface DashboardDayCount {
+	date: string;
+	count: number;
+}
+
 export interface DashboardMainData {
 	kpis: DashboardKpis;
 	upcoming_appointments: DashboardUpcomingAppointment[];
+	appointments_by_day: DashboardDayCount[];
 	pagination: DashboardPaginationMeta;
 }
+
+export const DASHBOARD_DAY_WINDOW = 7;
+export const DASHBOARD_APP_TZ = 'America/Asuncion';
 
 export interface DashboardProfitabilityRow {
 	id: number;
@@ -121,6 +130,46 @@ const toNumber = (value: unknown, fallback = 0) => {
 };
 
 const toText = (value: unknown) => String(value ?? '').trim();
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+export const asuncionTodayIso = (now = new Date()) => {
+	const parts = new Intl.DateTimeFormat('en-CA', {
+		timeZone: DASHBOARD_APP_TZ,
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit',
+	}).formatToParts(now);
+	const year = parts.find((part) => part.type === 'year')?.value || '1970';
+	const month = parts.find((part) => part.type === 'month')?.value || '01';
+	const day = parts.find((part) => part.type === 'day')?.value || '01';
+	return `${year}-${month}-${day}`;
+};
+
+export const fillAppointmentsByDay = (value: unknown, now = new Date()): DashboardDayCount[] => {
+	const byDate = new Map<string, number>();
+	if (Array.isArray(value)) {
+		for (const item of value) {
+			if (!item || typeof item !== 'object') continue;
+			const source = item as Record<string, unknown>;
+			const date = toText(source.date);
+			if (!ISO_DATE_RE.test(date)) continue;
+			byDate.set(date, Math.max(0, Math.floor(toNumber(source.count, 0))));
+		}
+	}
+
+	const [year, month, day] = asuncionTodayIso(now).split('-').map(Number);
+	const start = Date.UTC(year, month - 1, day);
+
+	return Array.from({ length: DASHBOARD_DAY_WINDOW }, (_, index) => {
+		const next = new Date(start);
+		next.setUTCDate(next.getUTCDate() + index);
+		const iso = `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, '0')}-${String(next.getUTCDate()).padStart(2, '0')}`;
+		return {
+			date: iso,
+			count: byDate.get(iso) ?? 0,
+		};
+	});
+};
 
 const normalizePaginationMeta = (
 	value: unknown,
@@ -214,6 +263,7 @@ const normalizeMainData = (
 		return {
 			kpis: normalizeKpis(null),
 			upcoming_appointments: [],
+			appointments_by_day: fillAppointmentsByDay(null),
 			pagination: normalizePaginationMeta(paginationMeta, {
 				page: fallbackPagination.page,
 				limit: fallbackPagination.limit,
@@ -231,6 +281,7 @@ const normalizeMainData = (
 	return {
 		kpis: normalizeKpis(source.kpis),
 		upcoming_appointments: upcoming,
+		appointments_by_day: fillAppointmentsByDay(source.appointments_by_day),
 		pagination: normalizePaginationMeta(paginationMeta, {
 			page: fallbackPagination.page,
 			limit: fallbackPagination.limit,

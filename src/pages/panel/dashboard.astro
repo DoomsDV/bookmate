@@ -9,7 +9,13 @@ import AppointmentVoiceOverlay from '../../components/AppointmentVoiceOverlay.as
 import AgendaScanPreview from '../../components/AgendaScanPreview.astro';
 import AppointmentModalPanel from '../../components/AppointmentModalPanel.astro';
 import TopBar from '../../components/TopBar.astro';
-import { DashboardApiError, getMainDashboardWithOrds, type DashboardMainData } from '../../lib/dashboard';
+import {
+	DashboardApiError,
+	DASHBOARD_APP_TZ,
+	fillAppointmentsByDay,
+	getMainDashboardWithOrds,
+	type DashboardMainData,
+} from '../../lib/dashboard';
 import { getMyProfileWithOrds } from '../../lib/my-profile';
 import Layout from '../../layouts/Layout.astro';
 import { panelPageTitle } from '../../lib/panel-page-title';
@@ -19,11 +25,10 @@ import '../../styles/dashboard-ai-strip.css';
 const token = Astro.locals.token ?? '';
 const roleId = Number(Astro.locals.roleId ?? 0);
 const showTeamOverview = false;
-const showAlertsPanel = roleId === ROLES.ADMIN || roleId === ROLES.RECEPCIONISTA;
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 20;
 const rawPage = Number(Astro.url.searchParams.get('page') || '1');
 const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
-const APP_TZ = 'America/Asuncion';
+const APP_TZ = DASHBOARD_APP_TZ;
 
 let dashboard: DashboardMainData = {
 	kpis: {
@@ -35,6 +40,7 @@ let dashboard: DashboardMainData = {
 		total_customers: 6,
 	},
 	upcoming_appointments: [],
+	appointments_by_day: fillAppointmentsByDay(null),
 	pagination: {
 		current_page: currentPage,
 		per_page: PAGE_SIZE,
@@ -79,8 +85,7 @@ if (!token) {
 
 const dashboardDate = new Intl.DateTimeFormat('es-PY', {
 	day: 'numeric',
-	month: 'long',
-	year: 'numeric',
+	month: 'short',
 	timeZone: APP_TZ,
 }).format(new Date());
 
@@ -111,63 +116,35 @@ const greetingNamePieces = greetingNameWords.map((word, wordIndex) => {
 });
 
 const todayTotal = dashboard.kpis.today_appointments;
-const todayCompleted = Math.min(todayTotal, dashboard.kpis.today_completed_appointments || 0);
-const todayRemaining = Math.max(0, todayTotal - todayCompleted);
 const unconfirmedTotal = Math.max(0, dashboard.kpis.unconfirmed_appointments || 0);
-const dayProgressPct =
-	todayTotal > 0 ? Math.min(100, Math.round((todayCompleted / todayTotal) * 100)) : 0;
 
 const greetingSubtitle = `${organizationName} · ${dashboardDate}`;
 
-const dayProgressEmpty = todayTotal === 0;
-const progressHint = dayProgressEmpty
-	? ''
-	: todayCompleted === todayTotal
-		? 'Todos los turnos de hoy ya fueron completados.'
-		: `${todayTotal - todayCompleted} por atender todavía.`;
-const dayProgressMetricLabel = dayProgressEmpty
-	? 'Aún no tenés turnos programados para hoy'
-	: `${todayCompleted} de ${todayTotal} turnos completados`;
-const dayProgressSlotCap = 10;
-const dayProgressSlotCount = dayProgressEmpty ? 0 : Math.min(todayTotal, dayProgressSlotCap);
-const dayProgressFilledSlots = dayProgressEmpty
-	? 0
-	: Math.round((todayCompleted / Math.max(todayTotal, 1)) * dayProgressSlotCount);
-const dayProgressSlots = Array.from({ length: dayProgressSlotCount }, (_, index) => index < dayProgressFilledSlots);
-
 const weekDayLabelsByJs = ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'] as const;
-const asuncionDateParts = new Intl.DateTimeFormat('en-CA', {
-	timeZone: APP_TZ,
-	year: 'numeric',
-	month: '2-digit',
-	day: '2-digit',
-}).formatToParts(new Date());
-const asuncionY = Number(asuncionDateParts.find((p) => p.type === 'year')?.value || 0);
-const asuncionM = Number(asuncionDateParts.find((p) => p.type === 'month')?.value || 1);
-const asuncionD = Number(asuncionDateParts.find((p) => p.type === 'day')?.value || 1);
-const asuncionToday = new Date(Date.UTC(asuncionY, asuncionM - 1, asuncionD));
-const asuncionTodayIso = `${asuncionY}-${String(asuncionM).padStart(2, '0')}-${String(asuncionD).padStart(2, '0')}`;
-// Próximos 7 días desde hoy (alineado al listado), no la semana calendario Lu–Do.
-const weekGlance = Array.from({ length: 7 }, (_, index) => {
-	const day = new Date(asuncionToday);
-	day.setUTCDate(asuncionToday.getUTCDate() + index);
-	const iso = `${day.getUTCFullYear()}-${String(day.getUTCMonth() + 1).padStart(2, '0')}-${String(day.getUTCDate()).padStart(2, '0')}`;
-	const appointmentCount = dashboard.upcoming_appointments.filter(
-		(item) => item.appointment_date === iso
-	).length;
+const weekDayNamesByJs = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'] as const;
+const asuncionTodayIso = dashboard.appointments_by_day[0]?.date ?? '';
+const weekChartMax = Math.max(1, ...dashboard.appointments_by_day.map((item) => item.count));
+const weekChartTotal = dashboard.appointments_by_day.reduce((sum, item) => sum + item.count, 0);
+const weekChartEmpty = weekChartTotal === 0;
+const weekChartCountText = weekChartTotal === 1 ? '1 cita' : `${weekChartTotal} citas`;
+const weekGlance = dashboard.appointments_by_day.map((item) => {
+	const [year, month, dayNumber] = item.date.split('-').map(Number);
+	const utcDay = new Date(Date.UTC(year, month - 1, dayNumber));
+	const weekday = utcDay.getUTCDay();
 	return {
-		label: weekDayLabelsByJs[day.getUTCDay()],
-		dayNumber: day.getUTCDate(),
-		iso,
-		isToday: iso === asuncionTodayIso,
-		hasAppointments: appointmentCount > 0,
-		appointmentCount,
+		label: weekDayLabelsByJs[weekday],
+		weekdayName: weekDayNamesByJs[weekday],
+		dayNumber,
+		iso: item.date,
+		isToday: item.date === asuncionTodayIso,
+		hasAppointments: item.count > 0,
+		appointmentCount: item.count,
+		barPct: weekChartEmpty ? 0 : Math.round((item.count / weekChartMax) * 100),
 	};
 });
-
-const pendingConfirmAlerts = dashboard.upcoming_appointments
-	.filter((item) => item.status === 'PENDIENTE')
-	.slice(0, 4);
+const weekChartAria = weekGlance
+	.map((day) => `${day.weekdayName}: ${day.appointmentCount}`)
+	.join('. ');
 
 const getStatusLabel = (status: string) => {
 	switch (status) {
@@ -443,152 +420,67 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 								</div>
 							)}
 
-							<div class="dashboard-ops-duo">
-								<div
-									class="dashboard-ai-strip"
-									data-ai-summary-card
-									data-role-id={String(roleId)}
-									data-default-summary-short={defaultAiSummaryShort}
-									data-default-summary-full={defaultAiSummaryFull}
-									aria-live="polite"
-									aria-busy="false"
-								>
-									<div class="dashboard-ai-strip__body">
-										<span class="dashboard-ai-strip__spine" aria-hidden="true"></span>
-										<div class="dashboard-ai-strip__copy">
-											<div class="dashboard-ai-strip__head">
-												<span class="dashboard-ai-strip__badge" aria-hidden="true">
-													<span class="dashboard-ai-strip__icon material-symbols-rounded">
-														auto_awesome
-													</span>
+							<div
+								class="dashboard-ai-strip"
+								data-ai-summary-card
+								data-role-id={String(roleId)}
+								data-default-summary-short={defaultAiSummaryShort}
+								data-default-summary-full={defaultAiSummaryFull}
+								aria-live="polite"
+								aria-busy="false"
+							>
+								<div class="dashboard-ai-strip__body">
+									<span class="dashboard-ai-strip__spine" aria-hidden="true"></span>
+									<div class="dashboard-ai-strip__copy">
+										<div class="dashboard-ai-strip__head">
+											<span class="dashboard-ai-strip__badge" aria-hidden="true">
+												<span class="dashboard-ai-strip__icon material-symbols-rounded">
+													auto_awesome
 												</span>
-												<div class="dashboard-ai-strip__heading">
-													<p class="dashboard-ai-strip__eyebrow">
-														Resumen inteligente del día
-													</p>
-													<p class="dashboard-ai-strip__status" data-ai-summary-status>
-														Leyendo la agenda de hoy
-													</p>
-												</div>
+											</span>
+											<div class="dashboard-ai-strip__heading">
+												<p class="dashboard-ai-strip__eyebrow">
+													Resumen del día
+												</p>
+												<p class="dashboard-ai-strip__status" data-ai-summary-status>
+													Leyendo la agenda de hoy
+												</p>
 											</div>
-											<div class="dashboard-ai-strip__skeleton" aria-hidden="true">
-												<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--lg"></span>
-												<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--md"></span>
-												<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--sm"></span>
-												<span class="dashboard-ai-strip__skel-cta"></span>
-											</div>
-											<p class="dashboard-ai-strip__text" data-ai-summary-line>
-												{defaultAiSummaryShort}
-											</p>
-											<button
-												type="button"
-												class="dashboard-ai-strip__action"
-												data-open-ai-summary-modal
-												hidden
-											>
-												<span class="dashboard-ai-strip__action-label">Ver análisis completo</span>
-												<span class="dashboard-ai-strip__action-icon" aria-hidden="true">
-													<span class="material-symbols-rounded">arrow_forward</span>
-												</span>
-											</button>
 										</div>
+										<button
+											type="button"
+											class="dashboard-ai-strip__action"
+											data-open-ai-summary-modal
+											hidden
+										>
+											<span class="dashboard-ai-strip__action-label">Ver más</span>
+											<span class="dashboard-ai-strip__action-icon" aria-hidden="true">
+												<span class="material-symbols-rounded">arrow_forward</span>
+											</span>
+										</button>
+										<div class="dashboard-ai-strip__skeleton" aria-hidden="true">
+											<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--lg"></span>
+											<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--md"></span>
+										</div>
+										<p class="dashboard-ai-strip__text" data-ai-summary-line>
+											{defaultAiSummaryShort}
+										</p>
 									</div>
 								</div>
+							</div>
 
 							{
 								loadError ? (
 									<div class="rounded-xl bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-700 dark:bg-[#3B191E] dark:text-[#FFB4AB] shadow-sm">
 										{loadError}
 									</div>
-								) : (
-									<div class="dashboard-floor dashboard-floor--today">
-										<article
-											class:list={['dashboard-day-progress', dayProgressEmpty && 'is-empty']}
-											style={`--day-progress:${dayProgressPct}`}
-											aria-label="Progreso del día"
-										>
-											<div class="dashboard-day-progress__inner">
-												<header class="dashboard-day-progress__head">
-													<div class="dashboard-day-progress__title">
-														<span class="dashboard-day-progress__icon" aria-hidden="true">
-															<span class="material-symbols-rounded">
-																{dayProgressEmpty ? 'event_busy' : 'event_available'}
-															</span>
-														</span>
-														<div class="dashboard-day-progress__copy">
-															<p class="dashboard-day-progress__kicker">Hoy</p>
-															<h2 class="dashboard-day-progress__eyebrow">Progreso del día</h2>
-														</div>
-													</div>
-													{!dayProgressEmpty ? (
-														<span class="dashboard-day-progress__pct">{dayProgressPct}%</span>
-													) : null}
-												</header>
-
-												{dayProgressEmpty ? (
-													<p class="dashboard-day-progress__metric dashboard-day-progress__metric--empty">
-														Aún no tenés turnos programados para hoy
-													</p>
-												) : (
-													<div class="dashboard-day-progress__split">
-														<div class="dashboard-day-progress__hero">
-															<p class="dashboard-day-progress__metric">
-																<span data-day-completed>{todayCompleted}</span>
-																<span class="dashboard-day-progress__of">/{todayTotal}</span>
-															</p>
-															<p class="dashboard-day-progress__unit">turnos atendidos</p>
-															<div
-																class="dashboard-day-progress__rail"
-																style={`--slots:${dayProgressSlotCount}`}
-																role="progressbar"
-																aria-valuemin="0"
-																aria-valuemax={Math.max(todayTotal, 1)}
-																aria-valuenow={todayCompleted}
-																aria-label={dayProgressMetricLabel}
-															>
-																{
-																	dayProgressSlots.map((filled, index) => (
-																		<span
-																			class:list={['dashboard-day-progress__slot', filled && 'is-done']}
-																			style={`--i:${index}`}
-																		></span>
-																	))
-																}
-															</div>
-														</div>
-
-														<ul class="dashboard-day-progress__islands">
-															<li class="dashboard-day-progress__island is-done">
-																<strong>{todayCompleted}</strong>
-																<span>Completados</span>
-															</li>
-															<li class:list={['dashboard-day-progress__island', 'is-left', todayRemaining === 0 && 'is-clear']}>
-																<strong>{todayRemaining}</strong>
-																<span>Restantes</span>
-															</li>
-															<li class="dashboard-day-progress__island is-plan">
-																<div class="dashboard-day-progress__plan">
-																	<strong>{todayTotal}</strong>
-																	<span>Programados</span>
-																</div>
-																{progressHint ? (
-																	<p class="dashboard-day-progress__hint">{progressHint}</p>
-																) : null}
-															</li>
-														</ul>
-													</div>
-												)}
-											</div>
-										</article>
-									</div>
-								)
+								) : null
 							}
-							</div>
 
 							{
 								!loadError && (
 									<>
-									<div class:list={['dashboard-floor', 'dashboard-floor--action', showAlertsPanel && 'dashboard-floor--split']}>
+									<div class="dashboard-floor dashboard-floor--action dashboard-floor--split">
 										<div
 											id="dashboard-upcoming-appointments"
 											class="dashboard-report-shell dashboard-floor__panel p-5 sm:p-7 transition-colors duration-300"
@@ -596,45 +488,48 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 											<div class="dashboard-upcoming-head mb-4 flex items-center justify-between gap-3">
 												<div class="min-w-0">
 													<h2 class="text-xl font-semibold text-[#1e293b] dark:text-[#E5E7EB]">Próximas citas</h2>
-													<p class="dashboard-appointments-subtitle">Siguientes 7 días</p>
+													<p class="dashboard-appointments-subtitle" data-week-subtitle>Siguientes 7 días</p>
 												</div>
 												<div class="dashboard-appointments-actions">
 													<a href="/panel/calendar" class="dashboard-upcoming-create-cta">
 														<span class="material-symbols-rounded" aria-hidden="true">add</span>
 														Crear cita
 													</a>
-													<span class="dashboard-appointments-count">{appointmentsCountText}</span>
+													<span class="dashboard-appointments-count" data-week-count>{appointmentsCountText}</span>
 												</div>
 											</div>
 
-											<div class="dashboard-week-glance" aria-label="Próximos 7 días">
+											<div class="dashboard-week-glance" aria-label="Próximos 7 días" data-week-glance>
 												{
 													weekGlance.map((day) => (
-														<div
+														<button
+															type="button"
 															class:list={[
 																'dashboard-week-glance__day',
 																day.isToday && 'is-today',
 																day.hasAppointments && 'has-appointments',
 															]}
-															title={
-																day.hasAppointments
-																	? `${day.appointmentCount} cita(s)`
-																	: day.isToday
-																		? 'Hoy'
-																		: undefined
+															data-week-day={day.iso}
+															data-day-count={String(day.appointmentCount)}
+															data-day-label={`${day.weekdayName} ${String(day.dayNumber).padStart(2, '0')}`}
+															aria-pressed="false"
+															aria-label={
+																day.appointmentCount === 1
+																	? `${day.weekdayName} ${day.dayNumber}, 1 cita`
+																	: `${day.weekdayName} ${day.dayNumber}, ${day.appointmentCount} citas`
 															}
 														>
 															<span class="dashboard-week-glance__label">{day.label}</span>
 															<span class="dashboard-week-glance__number">{day.dayNumber}</span>
 															<span class="dashboard-week-glance__dot" aria-hidden="true"></span>
-														</div>
+														</button>
 													))
 												}
 											</div>
 
 											{
 												dashboard.upcoming_appointments.length === 0 ? (
-													<div class="rounded-xl bg-[#F8F9FA] dark:bg-(--surface-container) px-6 py-8 text-center transition-colors duration-300">
+													<div class="rounded-xl bg-[#F8F9FA] dark:bg-(--surface-container) px-6 py-8 text-center transition-colors duration-300" data-week-idle>
 														<div class="w-14 h-14 bg-white dark:bg-[#2B2D31] rounded-full flex items-center justify-center mx-auto mb-3 shadow-[0_4px_15px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_15px_rgba(0,0,0,0.2)] transition-colors duration-300">
 															<span class="material-symbols-rounded text-[#BDC1C6] dark:text-[#C4C7C5] text-2xl">event_busy</span>
 														</div>
@@ -644,7 +539,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 														</a>
 													</div>
 												) : (
-													<div class="dashboard-report-list">
+													<div class="dashboard-report-list" data-week-list>
 														{
 															dashboard.upcoming_appointments.map((appointment) => {
 																const appointmentDateLabel = formatUpcomingAppointmentDate(
@@ -659,6 +554,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 																			appointment.status === 'PENDIENTE' && 'is-pending',
 																			appointment.status === 'CANCELADO' && 'is-canceled',
 																		]}
+																		data-appointment-date={appointment.appointment_date || ''}
 																	>
 																		<div class="dashboard-report-time">
 																			<span class="dashboard-report-time__hour">{appointment.time_start}</span>
@@ -688,9 +584,21 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 												)
 											}
 
+											<div class="dashboard-day-empty" data-day-empty hidden>
+												<div class="w-14 h-14 bg-white dark:bg-[#2B2D31] rounded-full flex items-center justify-center mx-auto mb-3 shadow-[0_4px_15px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_15px_rgba(0,0,0,0.2)]">
+													<span class="material-symbols-rounded text-[#BDC1C6] dark:text-[#C4C7C5] text-2xl">event_busy</span>
+												</div>
+												<p class="text-base font-medium text-[#64748b] dark:text-[#C4C7C5]" data-day-empty-copy>
+													No hay citas este día.
+												</p>
+												<a href="/panel/calendar" class="dashboard-appointments-see-all">
+													Ver agenda
+												</a>
+											</div>
+
 											{
 												dashboard.upcoming_appointments.length > 0 ? (
-													<a href="/panel/calendar" class="dashboard-appointments-see-all dashboard-appointments-see-all--list">
+													<a href="/panel/calendar" class="dashboard-appointments-see-all dashboard-appointments-see-all--list" data-week-see-all>
 														Ver agenda
 													</a>
 												) : null
@@ -713,108 +621,61 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 											}
 										</div>
 
-										{showAlertsPanel && (
-											<aside
-												class:list={[
-													'dashboard-alerts-shell',
-													'dashboard-inbox',
-													'dashboard-floor__panel',
-													'p-5 sm:p-7',
-													'transition-colors duration-300',
-													pendingConfirmAlerts.length === 0 && 'is-clear',
-												]}
-												data-dashboard-alerts
-											>
-												<div class="dashboard-alerts-head">
+										<aside
+											class:list={[
+												'dashboard-week-chart',
+												'dashboard-floor__panel',
+												weekChartEmpty && 'is-empty',
+											]}
+											aria-label={`Citas por día. ${weekChartAria}`}
+										>
+											<div class="dashboard-week-chart__inner">
+												<div class="dashboard-week-chart__head">
 													<div class="min-w-0">
-														<h2 class="text-xl font-semibold text-[#1e293b] dark:text-[#E5E7EB]">Pendientes</h2>
-														<p class="dashboard-inbox__pulse" data-dashboard-inbox-status>
-															{pendingConfirmAlerts.length === 0
-																? 'Todo al día'
-																: pendingConfirmAlerts.length === 1
-																	? '1 cita por confirmar'
-																	: `${pendingConfirmAlerts.length} citas por confirmar`}
-														</p>
+														<h2 class="text-xl font-semibold text-[#1e293b] dark:text-[#E5E7EB]">Citas por día</h2>
+														<p class="dashboard-appointments-subtitle">Siguientes 7 días</p>
 													</div>
+													<span class="dashboard-appointments-count">{weekChartCountText}</span>
 												</div>
 
-												<div class="dashboard-inbox__trays">
-													<section
-														class:list={[
-															'dashboard-inbox-tray',
-															pendingConfirmAlerts.length > 0 ? 'is-hot' : 'is-clear',
-														]}
-														data-inbox-tray="confirm"
-													>
-														<header class="dashboard-inbox-tray__head">
-															<h3>Confirmaciones</h3>
-															<span class="dashboard-inbox-tray__count" data-inbox-confirm-count>
-																{pendingConfirmAlerts.length}
-															</span>
-														</header>
-														<p
-															class:list={[
-																'dashboard-inbox-tray__idle',
-																pendingConfirmAlerts.length > 0 && 'hidden',
-															]}
-															data-inbox-confirm-idle
-														>
-															Nadie espera confirmación
-														</p>
-														<ul
-															class:list={[
-																'dashboard-alerts-list m-0 grid list-none gap-2 p-0',
-																pendingConfirmAlerts.length === 0 && 'hidden',
-															]}
-															data-dashboard-alerts-list
-														>
-															{
-																pendingConfirmAlerts.map((appointment) => {
-																	const when = [
-																		formatUpcomingAppointmentDate(appointment.appointment_date || ''),
-																		appointment.time_start,
-																	]
-																		.filter(Boolean)
-																		.join(' · ');
-
-																	return (
-																		<li class="dashboard-alert-item">
-																			<div class="dashboard-alert-body">
-																				<p class="dashboard-alert-title">{appointment.customer_name}</p>
-																				<p class="dashboard-alert-meta">{when || 'Cita pendiente de confirmar'}</p>
-																			</div>
-																			<a href="/panel/calendar" class="dashboard-alert-action">Revisar</a>
-																		</li>
-																	);
-																})
-															}
-														</ul>
-													</section>
-
-													<section
-														class="dashboard-inbox-tray is-clear is-loading"
-														data-inbox-tray="cobros"
-														data-dashboard-cobros-alert-slot
-													>
-														<header class="dashboard-inbox-tray__head">
-															<h3>Cobros</h3>
-															<span class="dashboard-inbox-tray__count" data-dashboard-cobros-alert-count>0</span>
-														</header>
-														<p class="dashboard-inbox-tray__idle" data-dashboard-cobros-alert-title>
-															Revisando señas y reembolsos
-														</p>
-														<p class="dashboard-inbox-tray__note hidden" data-dashboard-cobros-alert-meta></p>
-														<a
-															href="/panel/cobros?status=pending"
-															class="dashboard-inbox-tray__action hidden"
-															data-dashboard-cobros-alert-action
-														>
-															Validar
-														</a>
-													</section>
+												<div class="dashboard-week-chart__plot" role="img" aria-hidden="true">
+													{
+														weekGlance.map((day) => (
+															<div
+																class:list={[
+																	'dashboard-week-chart__col',
+																	day.isToday && 'is-today',
+																	!day.hasAppointments && 'is-empty',
+																]}
+																title={
+																	day.isToday
+																		? `Hoy · ${day.appointmentCount} ${day.appointmentCount === 1 ? 'cita' : 'citas'}`
+																		: `${day.weekdayName} ${String(day.dayNumber).padStart(2, '0')} · ${day.appointmentCount} ${day.appointmentCount === 1 ? 'cita' : 'citas'}`
+																}
+															>
+																<span class="dashboard-week-chart__value">
+																	{day.appointmentCount}
+																</span>
+																<span class="dashboard-week-chart__track">
+																	<span
+																		class="dashboard-week-chart__bar"
+																		style={`--h:${Math.max(day.barPct, day.hasAppointments ? 12 : 6)}`}
+																	></span>
+																</span>
+																<span class="dashboard-week-chart__label">{day.label}</span>
+																<span class="dashboard-week-chart__number">{day.dayNumber}</span>
+															</div>
+														))
+													}
 												</div>
-											</aside>
-										)}
+
+												{
+													weekChartEmpty ? (
+														<p class="dashboard-week-chart__idle">Aún no hay citas en los próximos 7 días.</p>
+													) : null
+												}
+											</div>
+										</aside>
 									</div>
 								</>
 							)
@@ -1361,8 +1222,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			.filter(Boolean);
 		const lineText =
 			sentenceParts.length > 1
-				? sentenceParts.slice(0, 3).join('\n')
-				: truncatePreviewText(rawPreview, 220);
+				? sentenceParts.slice(0, 2).join(' ')
+				: truncatePreviewText(rawPreview, 160);
 
 		lineNode.textContent = lineText;
 	};
@@ -1803,137 +1664,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		return `Gs. ${safe.toLocaleString('es-PY')}`;
 	};
 
-	const syncDashboardInbox = () => {
-		const shell = document.querySelector<HTMLElement>('[data-dashboard-alerts]');
-		if (!shell) return;
-
-		const confirmTray = shell.querySelector<HTMLElement>('[data-inbox-tray="confirm"]');
-		const cobrosTray = shell.querySelector<HTMLElement>('[data-dashboard-cobros-alert-slot]');
-		const list = shell.querySelector<HTMLElement>('[data-dashboard-alerts-list]');
-		const idle = shell.querySelector<HTMLElement>('[data-inbox-confirm-idle]');
-		const status = shell.querySelector<HTMLElement>('[data-dashboard-inbox-status]');
-		const confirmCountNode = shell.querySelector<HTMLElement>('[data-inbox-confirm-count]');
-
-		const confirmCount = list
-			? Array.from(list.children).filter((node) => node instanceof HTMLElement && !node.hidden).length
-			: 0;
-		const cobrosHot = Boolean(cobrosTray && !cobrosTray.hidden && cobrosTray.classList.contains('is-hot'));
-		const cobrosCount = Number(cobrosTray?.querySelector('[data-dashboard-cobros-alert-count]')?.textContent ?? 0);
-
-		if (confirmCountNode) confirmCountNode.textContent = String(confirmCount);
-		confirmTray?.classList.toggle('is-hot', confirmCount > 0);
-		confirmTray?.classList.toggle('is-clear', confirmCount === 0);
-		idle?.classList.toggle('hidden', confirmCount > 0);
-		list?.classList.toggle('hidden', confirmCount === 0);
-
-		const total = confirmCount + (cobrosHot ? Math.max(cobrosCount, 1) : 0);
-		shell.classList.toggle('is-clear', total === 0);
-		if (status) {
-			if (total === 0) status.textContent = 'Todo al día';
-			else if (confirmCount > 0 && cobrosHot) status.textContent = `${total} por revisar`;
-			else if (confirmCount === 1) status.textContent = '1 cita por confirmar';
-			else if (confirmCount > 1) status.textContent = `${confirmCount} citas por confirmar`;
-			else status.textContent = cobrosCount === 1 ? '1 cobro por revisar' : `${Math.max(cobrosCount, 1)} cobros por revisar`;
-		}
-	};
-
-	const setCobrosTrayClear = (slot: HTMLElement, title: string) => {
-		const countNode = slot.querySelector<HTMLElement>('[data-dashboard-cobros-alert-count]');
-		const titleNode = slot.querySelector<HTMLElement>('[data-dashboard-cobros-alert-title]');
-		const meta = slot.querySelector<HTMLElement>('[data-dashboard-cobros-alert-meta]');
-		const action = slot.querySelector<HTMLAnchorElement>('[data-dashboard-cobros-alert-action]');
-		if (countNode) countNode.textContent = '0';
-		if (titleNode) titleNode.textContent = title;
-		titleNode?.classList.remove('hidden');
-		meta?.classList.add('hidden');
-		action?.classList.add('hidden');
-		slot.hidden = false;
-		slot.classList.remove('is-hot', 'is-loading');
-		slot.classList.add('is-clear');
-	};
-
-	const loadDashboardCobrosAlert = async (options?: { force?: boolean }) => {
-		const slot = document.querySelector<HTMLElement>('[data-dashboard-cobros-alert-slot]');
-		if (!slot) return;
-
-		const hasFeature = window.HaselSubscription?.hasFeature?.('DEPOSIT_COLLECTION');
-		if (hasFeature === false) {
-			slot.hidden = true;
-			syncDashboardInbox();
-			return;
-		}
-
-		try {
-			const { fetchCobrosPendingCount } = await import('../../scripts/cobros-pending-badge');
-			const [count, pendingPayload] = await Promise.all([
-				fetchCobrosPendingCount(options),
-				fetch('/api/cobros?status=pending&date_preset=all&page=1&limit=1', {
-					headers: { Accept: 'application/json' },
-				})
-					.then((response) => response.json())
-					.catch(() => null),
-			]);
-			if (count === null) {
-				setCobrosTrayClear(slot, 'Nada por validar');
-				syncDashboardInbox();
-				return;
-			}
-
-			const receiptCount = Number(pendingPayload?.meta?.total ?? 0) || 0;
-			const title = slot.querySelector<HTMLElement>('[data-dashboard-cobros-alert-title]');
-			const meta = slot.querySelector<HTMLElement>('[data-dashboard-cobros-alert-meta]');
-			const action = slot.querySelector<HTMLAnchorElement>('[data-dashboard-cobros-alert-action]');
-			const countNode = slot.querySelector<HTMLElement>('[data-dashboard-cobros-alert-count]');
-
-			if (receiptCount <= 0 && count <= 0) {
-				setCobrosTrayClear(slot, 'Nada por validar');
-				syncDashboardInbox();
-				return;
-			}
-
-			const hotCount = receiptCount > 0 ? receiptCount : count;
-			if (countNode) countNode.textContent = String(hotCount);
-			if (receiptCount > 0) {
-				if (title) {
-					title.textContent =
-						receiptCount === 1
-							? '1 comprobante por validar'
-							: `${receiptCount} comprobantes por validar`;
-				}
-				if (meta) {
-					meta.textContent = 'Señas SIPAP pendientes de revisión.';
-					meta.classList.remove('hidden');
-				}
-				if (action) {
-					action.textContent = 'Validar';
-					action.href = '/panel/cobros?status=pending';
-					action.classList.remove('hidden');
-				}
-			} else {
-				if (title) {
-					title.textContent =
-						count === 1 ? '1 reembolso por revisar' : `${count} reembolsos por revisar`;
-				}
-				if (meta) {
-					meta.textContent = 'Hay devoluciones o disputas que requieren tu atención.';
-					meta.classList.remove('hidden');
-				}
-				if (action) {
-					action.textContent = 'Revisar';
-					action.href = '/panel/cobros?status=refunded';
-					action.classList.remove('hidden');
-				}
-			}
-			slot.hidden = false;
-			slot.classList.remove('is-loading', 'is-clear');
-			slot.classList.add('is-hot');
-		} catch {
-			setCobrosTrayClear(slot, 'Nada por validar');
-		} finally {
-			syncDashboardInbox();
-		}
-	};
-
 	const dismissProfitabilityPanel = (panel: HTMLElement) => {
 		panel.dataset.loaded = '';
 		panel.setAttribute('aria-busy', 'false');
@@ -1994,13 +1724,99 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		initDashboardGreeting(main);
 	};
 
+	const applyUpcomingDayFilter = (shell: HTMLElement, iso: string) => {
+		const glance = shell.querySelector<HTMLElement>('[data-week-glance]');
+		const list = shell.querySelector<HTMLElement>('[data-week-list]');
+		const idle = shell.querySelector<HTMLElement>('[data-week-idle]');
+		const empty = shell.querySelector<HTMLElement>('[data-day-empty]');
+		const emptyCopy = shell.querySelector<HTMLElement>('[data-day-empty-copy]');
+		const subtitle = shell.querySelector<HTMLElement>('[data-week-subtitle]');
+		const countNode = shell.querySelector<HTMLElement>('[data-week-count]');
+		const seeAll = shell.querySelector<HTMLElement>('[data-week-see-all]');
+		const pagination = shell.querySelector<HTMLElement>('.dashboard-appointments-pagination');
+		const buttons = [...(glance?.querySelectorAll<HTMLButtonElement>('[data-week-day]') ?? [])];
+		const cards = [...(list?.querySelectorAll<HTMLElement>('[data-appointment-date]') ?? [])];
+		const selected = buttons.find((button) => button.getAttribute('data-week-day') === iso) ?? null;
+
+		glance?.classList.toggle('is-filtering', Boolean(iso));
+
+		for (const button of buttons) {
+			const isSelected = Boolean(iso) && button === selected;
+			button.classList.toggle('is-selected', isSelected);
+			button.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+		}
+
+		if (!iso) {
+			list?.classList.remove('is-day-filtered');
+			for (const card of cards) card.classList.remove('is-day-match');
+			if (empty) empty.hidden = true;
+			if (idle) idle.hidden = false;
+			if (list) list.hidden = false;
+			if (seeAll) seeAll.hidden = false;
+			if (pagination) pagination.hidden = false;
+			if (subtitle) subtitle.textContent = 'Siguientes 7 días';
+			if (countNode) {
+				countNode.textContent = countNode.getAttribute('data-default-count') || '0 citas';
+			}
+			return;
+		}
+
+		const matches = cards.filter((card) => card.getAttribute('data-appointment-date') === iso);
+		const dayCount = Number(selected?.getAttribute('data-day-count') || '0');
+		const dayLabel = selected?.getAttribute('data-day-label') || '';
+
+		list?.classList.add('is-day-filtered');
+		for (const card of cards) {
+			card.classList.toggle('is-day-match', card.getAttribute('data-appointment-date') === iso);
+		}
+
+		const hasMatches = matches.length > 0;
+		if (list) list.hidden = !hasMatches;
+		if (idle) idle.hidden = true;
+		if (empty) empty.hidden = hasMatches;
+		if (seeAll) seeAll.hidden = !hasMatches;
+		if (pagination) pagination.hidden = true;
+
+		if (subtitle) subtitle.textContent = dayLabel ? dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1) : 'Ese día';
+		if (countNode) {
+			const shown = hasMatches ? matches.length : dayCount;
+			countNode.textContent = shown === 1 ? '1 cita' : `${shown} citas`;
+		}
+		if (emptyCopy) {
+			emptyCopy.textContent = dayCount > 0 && !hasMatches
+				? `Hay ${dayCount === 1 ? '1 cita' : `${dayCount} citas`} este día.`
+				: 'No hay citas este día.';
+		}
+	};
+
+	const bindUpcomingDayFilter = () => {
+		const shell = document.getElementById('dashboard-upcoming-appointments');
+		if (!shell || shell.dataset.dayFilterBound === '1') return;
+		shell.dataset.dayFilterBound = '1';
+
+		const countNode = shell.querySelector<HTMLElement>('[data-week-count]');
+		if (countNode && !countNode.getAttribute('data-default-count')) {
+			countNode.setAttribute('data-default-count', countNode.textContent?.trim() || '');
+		}
+
+		shell.addEventListener('click', (event) => {
+			const target = event.target;
+			if (!(target instanceof Element)) return;
+			const button = target.closest<HTMLButtonElement>('[data-week-day]');
+			if (!button || !shell.contains(button)) return;
+
+			const iso = button.getAttribute('data-week-day') || '';
+			const alreadyOn = button.getAttribute('aria-pressed') === 'true';
+			applyUpcomingDayFilter(shell, alreadyOn ? '' : iso);
+		});
+	};
+
 	const initializeDashboardPage = () => {
 		playDashboardIntro();
 		loadTeamOverview();
 		loadProfitability();
-		loadDashboardCobrosAlert();
 		loadAiSummary();
-		syncDashboardInbox();
+		bindUpcomingDayFilter();
 		scrollToUpcomingAppointmentsIfNeeded();
 	};
 
@@ -2011,16 +1827,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		};
 		syncPageHidden();
 		document.addEventListener('visibilitychange', syncPageHidden);
-	}
-
-	if (!(window as unknown as { __haselDashCobrosListeners?: boolean }).__haselDashCobrosListeners) {
-		(window as unknown as { __haselDashCobrosListeners?: boolean }).__haselDashCobrosListeners = true;
-		document.addEventListener('hasel:subscription', () => {
-			void loadDashboardCobrosAlert();
-		});
-		document.addEventListener('hasel:cobros-changed', () => {
-			void loadDashboardCobrosAlert({ force: true });
-		});
 	}
 
 	const UPCOMING_APPOINTMENTS_ANCHOR_ID = 'dashboard-upcoming-appointments';
@@ -2571,24 +2377,26 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	.dashboard-greeting__title {
 		display: flex;
-		flex-direction: row;
-		flex-wrap: wrap;
-		align-items: baseline;
-		gap: 0.22em 0.32em;
-		font-size: clamp(2.05rem, 3.1vw, 2.5rem);
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.02em;
+		font-size: clamp(1.7rem, 3.2vw, 2.2rem);
 		font-weight: 600;
 		line-height: 1.12;
 		letter-spacing: -0.038em;
 	}
 
 	.dashboard-greeting__word {
-		display: inline-block;
+		display: block;
 		white-space: nowrap;
+		font-weight: 500;
+		color: color-mix(in srgb, var(--on-surface-variant) 42%, var(--on-surface) 58%);
 	}
 
 	.dashboard-greeting__name {
-		display: inline-block;
+		display: block;
 		max-width: 100%;
+		font-weight: 600;
 	}
 
 	.dashboard-greeting__name-piece {
@@ -2624,8 +2432,9 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	.dashboard-greeting__sub {
-		font-size: 0.9rem;
-		line-height: 1.4;
+		margin: 0.12rem 0 0;
+		font-size: 0.78rem;
+		line-height: 1.35;
 		overflow-wrap: anywhere;
 		word-break: break-word;
 		opacity: 0;
@@ -2643,6 +2452,10 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	html[data-theme='dark'] .dashboard-greeting__sub {
 		color: color-mix(in srgb, var(--on-surface-variant) 72%, #c4c7c5 28%);
+	}
+
+	html[data-theme='dark'] .dashboard-greeting__word {
+		color: color-mix(in srgb, var(--on-surface-variant) 48%, #e5e7eb 52%);
 	}
 
 	@media (prefers-reduced-motion: reduce) {
@@ -2868,54 +2681,10 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		gap: var(--dashboard-gap, 8px);
 	}
 
-	.dashboard-ops-duo {
-		display: grid;
-		grid-template-columns: var(--dashboard-duo-columns);
-		gap: var(--dashboard-duo-gap);
-		align-items: stretch;
-		width: 100%;
-		min-width: 0;
-	}
-
-	.dashboard-ops-duo > .dashboard-ai-strip,
-	.dashboard-ops-duo > .dashboard-floor--today {
-		min-width: 0;
-		height: 100%;
-		align-self: stretch;
-	}
-
 	@media (min-width: 1280px) {
 		.dashboard-main-stack {
 			--dashboard-duo-columns: minmax(0, 1.15fr) minmax(0, 1fr);
 			--dashboard-duo-gap: var(--dashboard-gap, 8px);
-		}
-
-		.dashboard-ops-duo > .dashboard-ai-strip {
-			display: flex;
-			flex-direction: column;
-			height: 100%;
-			min-height: 0;
-		}
-
-		.dashboard-ops-duo > .dashboard-ai-strip .dashboard-ai-strip__body {
-			flex: 1 1 auto;
-			min-height: 0;
-		}
-
-		.dashboard-ops-duo > .dashboard-floor--today {
-			display: flex;
-			flex-direction: column;
-			min-height: 0;
-		}
-
-		.dashboard-ops-duo > .dashboard-floor--today .dashboard-day-progress {
-			flex: 1 1 auto;
-			height: 100%;
-			min-height: 0;
-		}
-
-		.dashboard-ops-duo .dashboard-ai-strip__text {
-			max-width: none;
 		}
 	}
 
@@ -3228,7 +2997,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		min-width: 0;
 	}
 
-	.dashboard-floor--today,
 	.dashboard-floor--action {
 		--dashboard-floor-gap: var(--dashboard-gap, 8px);
 		gap: var(--dashboard-floor-gap);
@@ -3240,416 +3008,11 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		height: 100%;
 	}
 
-	.dashboard-floor--action .dashboard-alerts-shell {
+	.dashboard-floor--action .dashboard-week-chart {
 		height: 100%;
 		align-self: stretch;
 	}
 
-	.dashboard-day-progress {
-		--day-ease: cubic-bezier(0.32, 0.72, 0, 1);
-		position: relative;
-		display: flex;
-		align-items: stretch;
-		overflow: hidden;
-		height: 100%;
-		min-height: 0;
-		padding: 0;
-		border: 0;
-		border-radius: var(--dashboard-card-radius, 0.75rem);
-		color: var(--on-surface, #202124);
-		background: transparent;
-		box-shadow: none;
-		isolation: isolate;
-		box-sizing: border-box;
-		transition: border-color 320ms var(--day-ease);
-	}
-
-	.dashboard-day-progress__inner {
-		position: relative;
-		z-index: 1;
-		display: flex;
-		flex-direction: column;
-		justify-content: flex-start;
-		gap: 0.7rem;
-		width: 100%;
-		min-height: 100%;
-		overflow: hidden;
-		padding: 1.35rem 1.4rem 1.25rem;
-		border: 1px solid var(--dashboard-card-border, var(--shell-border));
-		border-radius: var(--dashboard-card-radius, 0.75rem);
-		background: var(--dashboard-card-bg, #ffffff);
-		box-shadow: none;
-	}
-
-	.dashboard-day-progress.is-empty {
-		height: 100%;
-	}
-
-	.dashboard-day-progress.is-empty .dashboard-day-progress__inner {
-		min-height: 100%;
-		flex-direction: row;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: center;
-		gap: 0.45rem 1rem;
-		padding: 1.2rem 1.4rem;
-	}
-
-	.dashboard-day-progress.is-empty .dashboard-day-progress__head {
-		animation: none;
-		flex: 0 1 auto;
-	}
-
-	.dashboard-day-progress.is-empty .dashboard-day-progress__kicker {
-		display: none;
-	}
-
-	.dashboard-day-progress.is-empty .dashboard-day-progress__icon {
-		width: 1.85rem;
-		height: 1.85rem;
-	}
-
-	.dashboard-day-progress.is-empty .dashboard-day-progress__eyebrow {
-		font-size: 0.95rem;
-	}
-
-	.dashboard-day-progress.is-empty .dashboard-day-progress__metric--empty {
-		flex: 0 1 auto;
-		margin: 0;
-		max-width: 28rem;
-		font-size: var(--dashboard-copy-size, 0.92rem);
-		font-weight: var(--dashboard-copy-weight, 500);
-		letter-spacing: -0.01em;
-		line-height: var(--dashboard-copy-leading, 1.4);
-		color: var(--dashboard-copy-color, var(--on-surface-variant));
-		animation: none;
-	}
-
-	.dashboard-day-progress__head {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.75rem;
-		animation: dashboard-day-rise 720ms var(--day-ease) both;
-	}
-
-	.dashboard-day-progress__title {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		min-width: 0;
-	}
-
-	.dashboard-day-progress__copy {
-		display: flex;
-		flex-direction: column;
-		gap: 0.18rem;
-		min-width: 0;
-	}
-
-	.dashboard-day-progress__kicker {
-		margin: 0;
-		width: fit-content;
-		padding: 0.16rem 0.48rem;
-		border-radius: 999px;
-		background: color-mix(in srgb, var(--primary) 12%, transparent);
-		color: var(--primary);
-		font-size: 0.6rem;
-		font-weight: 600;
-		letter-spacing: 0.18em;
-		line-height: 1;
-		text-transform: uppercase;
-	}
-
-	.dashboard-day-progress__eyebrow {
-		margin: 0;
-		font-size: 1rem;
-		font-weight: 600;
-		letter-spacing: -0.025em;
-		line-height: 1.15;
-		text-transform: none;
-		color: #1e293b;
-	}
-
-	.dashboard-day-progress__pct {
-		flex-shrink: 0;
-		padding: 0.28rem 0.62rem;
-		border-radius: 999px;
-		background: var(--surface-container-high);
-		box-shadow: none;
-		color: color-mix(in srgb, var(--on-surface-variant) 70%, var(--on-surface) 30%);
-		font-size: 0.72rem;
-		font-weight: 600;
-		letter-spacing: 0.02em;
-		font-variant-numeric: tabular-nums lining-nums;
-	}
-
-	.dashboard-day-progress__split {
-		display: grid;
-		grid-template-columns: minmax(10.5rem, 0.42fr) minmax(0, 1fr);
-		align-items: center;
-		gap: 1.15rem 1.5rem;
-		animation: dashboard-day-rise 780ms var(--day-ease) 70ms both;
-	}
-
-	.dashboard-day-progress__hero {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-start;
-		gap: 0.45rem;
-		min-width: 0;
-	}
-
-	.dashboard-day-progress__metric {
-		margin: 0;
-		display: flex;
-		align-items: baseline;
-		gap: 0.12rem;
-		font-size: clamp(2.55rem, 5vw, 3.55rem);
-		font-weight: 500;
-		letter-spacing: -0.055em;
-		line-height: 0.88;
-		font-variant-numeric: tabular-nums lining-nums;
-		color: #1e293b;
-	}
-
-	.dashboard-day-progress__metric--empty {
-		display: block;
-		max-width: none;
-		font-size: var(--dashboard-copy-size, 0.92rem);
-		font-weight: var(--dashboard-copy-weight, 500);
-		letter-spacing: -0.01em;
-		line-height: var(--dashboard-copy-leading, 1.4);
-		font-variant-numeric: normal;
-		color: var(--dashboard-copy-color, var(--on-surface-variant));
-		text-align: left;
-		text-wrap: pretty;
-		animation: dashboard-day-rise 720ms var(--day-ease) 50ms both;
-	}
-
-	.dashboard-day-progress__of {
-		font-size: 0.42em;
-		font-weight: 500;
-		letter-spacing: -0.03em;
-		color: color-mix(in srgb, var(--on-surface-variant) 72%, var(--on-surface) 28%);
-	}
-
-	.dashboard-day-progress__unit {
-		margin: 0;
-		font-size: 0.78rem;
-		font-weight: 650;
-		letter-spacing: 0.01em;
-		color: color-mix(in srgb, var(--on-surface-variant) 78%, var(--on-surface) 22%);
-	}
-
-	.dashboard-day-progress__rail {
-		display: grid;
-		grid-template-columns: repeat(var(--slots, 1), minmax(0, 1fr));
-		gap: 0.28rem;
-		width: 100%;
-		max-width: 16rem;
-		margin-top: 0.45rem;
-	}
-
-	.dashboard-day-progress__slot {
-		position: relative;
-		height: 0.7rem;
-		border-radius: 999px;
-		background: var(--surface-container-high);
-		box-shadow: none;
-		overflow: hidden;
-	}
-
-	.dashboard-day-progress__slot.is-done::after {
-		content: '';
-		position: absolute;
-		inset: 0;
-		border-radius: inherit;
-		background: var(--primary);
-		transform-origin: left center;
-		animation: dashboard-day-slot 720ms var(--day-ease) calc(var(--i, 0) * 70ms) both;
-	}
-
-	.dashboard-day-progress__islands {
-		display: grid;
-		grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-		gap: 0.55rem;
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-
-	.dashboard-day-progress__island {
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		gap: 0.18rem;
-		min-width: 0;
-		padding: 0.72rem 0.8rem 0.7rem;
-		border-radius: var(--dashboard-card-radius-inner, 0.55rem);
-		background: var(--surface-container-high);
-		box-shadow: none;
-		animation: dashboard-day-rise 760ms var(--day-ease) both;
-	}
-
-	.dashboard-day-progress__island.is-done {
-		background: color-mix(in srgb, var(--primary) 10%, #f7f8fb);
-		animation-delay: 110ms;
-	}
-
-	.dashboard-day-progress__island.is-left {
-		background: color-mix(in srgb, #b45309 8%, #f8f6f2);
-		animation-delay: 160ms;
-	}
-
-	.dashboard-day-progress__island.is-left.is-clear {
-		background: color-mix(in srgb, #15803d 8%, #f4f8f5);
-	}
-
-	.dashboard-day-progress__island.is-plan {
-		grid-column: 1 / -1;
-		flex-direction: row;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.8rem;
-		animation-delay: 210ms;
-	}
-
-	.dashboard-day-progress__island strong {
-		font-size: 1.28rem;
-		font-weight: 500;
-		letter-spacing: -0.035em;
-		line-height: 1;
-		font-variant-numeric: tabular-nums lining-nums;
-		color: var(--on-surface);
-	}
-
-	.dashboard-day-progress__island span {
-		font-size: 0.7rem;
-		font-weight: 650;
-		letter-spacing: 0.01em;
-		color: color-mix(in srgb, var(--on-surface-variant) 78%, var(--on-surface) 22%);
-	}
-
-	.dashboard-day-progress__plan {
-		display: flex;
-		flex-direction: column;
-		gap: 0.16rem;
-	}
-
-	.dashboard-day-progress__hint {
-		margin: 0;
-		max-width: 16rem;
-		text-align: right;
-		font-size: 0.78rem;
-		font-weight: 650;
-		line-height: 1.35;
-		color: color-mix(in srgb, var(--on-surface-variant, #5f6368) 76%, var(--on-surface) 24%);
-	}
-
-	.dashboard-day-progress__icon {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 2.35rem;
-		height: 2.35rem;
-		border-radius: 0.85rem;
-		background: color-mix(in srgb, var(--primary) 14%, var(--surface-bright));
-		box-shadow: none;
-		color: var(--primary);
-		flex-shrink: 0;
-	}
-
-	.dashboard-day-progress__icon .material-symbols-rounded {
-		font-size: 1.2rem;
-		font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
-	}
-
-	@keyframes dashboard-day-rise {
-		from {
-			opacity: 0;
-			transform: translateY(10px);
-		}
-
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-
-	@keyframes dashboard-day-slot {
-		from {
-			opacity: 0;
-			transform: scaleX(0);
-		}
-
-		to {
-			opacity: 1;
-			transform: scaleX(1);
-		}
-	}
-
-	html[data-theme='dark'] .dashboard-day-progress {
-		color: var(--on-surface, #e3e3e3);
-		background: transparent;
-		box-shadow: none;
-	}
-
-	html[data-theme='dark'] .dashboard-day-progress__inner {
-		border-color: var(--dashboard-card-border, transparent);
-		background: var(--surface-bright);
-		box-shadow: none;
-	}
-
-	html[data-theme='dark'] .dashboard-day-progress__eyebrow,
-	html[data-theme='dark'] .dashboard-day-progress__metric {
-		color: var(--on-surface, #e3e3e3);
-	}
-
-	html[data-theme='dark'] .dashboard-day-progress__of,
-	html[data-theme='dark'] .dashboard-day-progress__unit,
-	html[data-theme='dark'] .dashboard-day-progress__hint,
-	html[data-theme='dark'] .dashboard-day-progress__island span {
-		color: color-mix(in srgb, var(--on-surface-variant) 42%, #e8eaed 58%);
-	}
-
-	html[data-theme='dark'] .dashboard-day-progress__pct {
-		background: var(--surface-container-high);
-		box-shadow: none;
-		color: color-mix(in srgb, var(--on-surface-variant) 40%, #e8eaed 60%);
-	}
-
-	html[data-theme='dark'] .dashboard-day-progress__icon {
-		background: color-mix(in srgb, var(--primary) 18%, #1a1c21);
-		box-shadow: none;
-		color: color-mix(in srgb, var(--primary) 72%, white 28%);
-	}
-
-	html[data-theme='dark'] .dashboard-day-progress__slot {
-		background: var(--surface-container-high);
-		box-shadow: none;
-	}
-
-	html[data-theme='dark'] .dashboard-day-progress__island {
-		background: var(--surface-container-high);
-		box-shadow: none;
-	}
-
-	html[data-theme='dark'] .dashboard-day-progress__island.is-done {
-		background: color-mix(in srgb, var(--primary) 16%, rgba(255, 255, 255, 0.03));
-	}
-
-	html[data-theme='dark'] .dashboard-day-progress__island.is-left {
-		background: color-mix(in srgb, #f5b56b 12%, rgba(255, 255, 255, 0.03));
-	}
-
-	html[data-theme='dark'] .dashboard-day-progress__island.is-left.is-clear {
-		background: color-mix(in srgb, #86efac 10%, rgba(255, 255, 255, 0.03));
-	}
-
-	html[data-theme='dark'] .dashboard-day-progress__island strong {
-		color: var(--on-surface, #e3e3e3);
-	}
 
 	.dashboard-report-shell.dashboard-floor__panel {
 		display: flex;
@@ -3698,13 +3061,28 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		flex-direction: column;
 		align-items: center;
 		gap: 0.35rem;
+		width: 100%;
 		min-width: 0;
 		padding: 0.55rem 0.2rem 0.5rem;
 		border-radius: 999px;
 		border: 1px solid transparent;
 		background: var(--surface-container, #f1f3f4);
 		color: #5f6368;
+		font: inherit;
+		cursor: pointer;
+		appearance: none;
+		-webkit-tap-highlight-color: transparent;
 		transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease;
+	}
+
+	.dashboard-week-glance__day:hover:not(.is-selected):not(.is-today) {
+		border-color: color-mix(in srgb, var(--primary) 28%, transparent);
+		background: color-mix(in srgb, var(--primary) 8%, var(--surface-container, #f1f3f4));
+	}
+
+	.dashboard-week-glance__day:focus-visible {
+		outline: 2px solid var(--primary);
+		outline-offset: 2px;
 	}
 
 	.dashboard-week-glance__label {
@@ -3735,7 +3113,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		background: transparent;
 	}
 
-	.dashboard-week-glance__day.has-appointments:not(.is-today) {
+	.dashboard-week-glance__day.has-appointments:not(.is-today):not(.is-selected) {
 		border-color: color-mix(in srgb, var(--primary) 30%, transparent);
 		background: color-mix(in srgb, var(--primary) 6%, var(--surface-container, #f1f3f4));
 	}
@@ -3758,256 +3136,207 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		background: rgba(255, 255, 255, 0.9);
 	}
 
-	html[data-theme='dark'] .dashboard-week-glance__day {
-		color: var(--on-surface-variant, #a7aaa8);
-		background: var(--surface-container, #1e1f22);
-	}
-
-	html[data-theme='dark'] .dashboard-week-glance__day.has-appointments:not(.is-today) {
-		border-color: color-mix(in srgb, var(--primary) 34%, transparent);
-		background: color-mix(in srgb, var(--primary) 12%, var(--surface-container, #1e1f22));
-	}
-
-	html[data-theme='dark'] .dashboard-week-glance__day.is-today {
+	.dashboard-week-glance__day.is-selected,
+	.dashboard-week-glance__day.is-selected:hover {
 		background: var(--primary);
 		border-color: var(--primary);
 		color: #ffffff;
 	}
 
-	.dashboard-alerts-shell {
+	.dashboard-week-glance__day.is-selected .dashboard-week-glance__number {
+		background: rgba(255, 255, 255, 0.16);
+	}
+
+	.dashboard-week-glance__day.is-selected .dashboard-week-glance__dot {
+		background: rgba(255, 255, 255, 0.9);
+	}
+
+	.dashboard-week-glance.is-filtering .dashboard-week-glance__day.is-today:not(.is-selected) {
+		background: var(--surface-container, #f1f3f4);
+		border-color: color-mix(in srgb, var(--primary) 42%, transparent);
+		color: #5f6368;
+	}
+
+	.dashboard-week-glance.is-filtering .dashboard-week-glance__day.is-today:not(.is-selected) .dashboard-week-glance__number {
+		background: transparent;
+		box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--primary) 55%, transparent);
+	}
+
+	.dashboard-week-glance.is-filtering .dashboard-week-glance__day.is-today:not(.is-selected) .dashboard-week-glance__dot {
+		background: var(--primary);
+	}
+
+	html[data-theme='dark'] .dashboard-week-glance__day {
+		color: var(--on-surface-variant, #a7aaa8);
+		background: var(--surface-container, #1e1f22);
+	}
+
+	html[data-theme='dark'] .dashboard-week-glance__day.has-appointments:not(.is-today):not(.is-selected) {
+		border-color: color-mix(in srgb, var(--primary) 34%, transparent);
+		background: color-mix(in srgb, var(--primary) 12%, var(--surface-container, #1e1f22));
+	}
+
+	html[data-theme='dark'] .dashboard-week-glance__day.is-today,
+	html[data-theme='dark'] .dashboard-week-glance__day.is-selected {
+		background: var(--primary);
+		border-color: var(--primary);
+		color: #ffffff;
+	}
+
+	html[data-theme='dark'] .dashboard-week-glance.is-filtering .dashboard-week-glance__day.is-today:not(.is-selected) {
+		background: var(--surface-container, #1e1f22);
+		border-color: color-mix(in srgb, var(--primary) 42%, transparent);
+		color: var(--on-surface-variant, #a7aaa8);
+	}
+
+	.dashboard-week-chart {
+		--week-bar: #7c3aed;
+		--week-bar-strong: #6d28d9;
 		display: flex;
 		flex-direction: column;
+		min-height: 0;
+		height: 100%;
+		align-self: stretch;
+		box-sizing: border-box;
+	}
+
+	.dashboard-week-chart__inner {
+		display: flex;
+		flex-direction: column;
+		gap: 0.9rem;
+		width: 100%;
+		height: 100%;
+		min-height: 17.5rem;
+		padding: 1.35rem 1.4rem 1.15rem;
 		border: 1px solid var(--dashboard-card-border, var(--shell-border));
 		border-radius: var(--dashboard-card-radius, 0.75rem);
 		background: var(--dashboard-card-bg, #ffffff);
 		box-shadow: none;
-		min-height: 0;
 		box-sizing: border-box;
 	}
 
-	.dashboard-alerts-head {
+	html[data-theme='dark'] .dashboard-week-chart__inner {
+		background: var(--surface-bright);
+		border-color: var(--dashboard-card-border, transparent);
+	}
+
+	.dashboard-week-chart__head {
 		display: flex;
 		align-items: flex-start;
 		justify-content: space-between;
 		gap: 0.75rem;
-		margin-bottom: 0.85rem;
 		flex-shrink: 0;
 	}
 
-	.dashboard-alerts-list {
+	.dashboard-week-chart__plot {
+		display: grid;
+		grid-template-columns: repeat(7, minmax(0, 1fr));
+		align-items: stretch;
+		gap: 0.35rem;
 		flex: 1 1 auto;
-		align-content: start;
-		min-height: 0;
+		min-height: 13.75rem;
 	}
 
-	html[data-theme='dark'] .dashboard-alerts-shell {
-		background: var(--surface-bright);
-		border: 1px solid var(--dashboard-card-border, transparent);
-		box-shadow: none;
-	}
-
-	.dashboard-alert-item {
+	.dashboard-week-chart__col {
 		display: flex;
+		flex-direction: column;
 		align-items: center;
-		gap: 0.7rem;
-		padding: 0.75rem 0.8rem;
-		border-radius: var(--dashboard-card-radius-inner, 0.55rem);
-		border: 0;
-		background: var(--surface-container-high);
-	}
-
-	html[data-theme='dark'] .dashboard-alert-item {
-		border: 0;
-		background: color-mix(in srgb, var(--surface-container-highest, #282828) 88%, #000 12%);
-	}
-
-	.dashboard-alert-icon {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 2rem;
-		height: 2rem;
-		border-radius: 0.7rem;
-		font-size: 1.1rem;
-		flex-shrink: 0;
-	}
-
-	.dashboard-alert-icon--amber {
-		color: #b45309;
-		background: #fef3c7;
-	}
-
-	.dashboard-alert-icon--rose {
-		color: #b42318;
-		background: #fce8e6;
-	}
-
-	html[data-theme='dark'] .dashboard-alert-icon--amber {
-		color: #ffd9a0;
-		background: rgba(255, 183, 77, 0.16);
-	}
-
-	html[data-theme='dark'] .dashboard-alert-icon--rose {
-		color: #ffcdc7;
-		background: rgba(255, 180, 171, 0.14);
-	}
-
-	.dashboard-alert-body {
+		justify-content: flex-end;
+		gap: 0.32rem;
 		min-width: 0;
+		height: 100%;
+	}
+
+	.dashboard-week-chart__value {
+		font-size: 0.78rem;
+		font-weight: 650;
+		letter-spacing: -0.03em;
+		line-height: 1;
+		font-variant-numeric: tabular-nums lining-nums;
+		color: var(--on-surface);
+	}
+
+	.dashboard-week-chart__track {
+		position: relative;
+		display: flex;
+		align-items: flex-end;
+		justify-content: center;
+		width: 100%;
+		height: 10rem;
 		flex: 1 1 auto;
+		border-bottom: 1px solid color-mix(in srgb, var(--on-surface) 10%, transparent);
 	}
 
-	.dashboard-alert-title {
-		margin: 0;
-		font-size: 0.86rem;
+	.dashboard-week-chart__bar {
+		display: block;
+		width: 100%;
+		max-width: 1.7rem;
+		height: max(0.34rem, calc(var(--h) * 1%));
+		border-radius: 999px 999px 0.35rem 0.35rem;
+		background: var(--week-bar);
+		transform-origin: bottom center;
+		animation: dashboard-week-bar 640ms cubic-bezier(0.32, 0.72, 0, 1) both;
+	}
+
+	.dashboard-week-chart__col.is-today .dashboard-week-chart__bar {
+		background: var(--week-bar-strong);
+	}
+
+	.dashboard-week-chart__col.is-empty .dashboard-week-chart__bar {
+		background: color-mix(in srgb, var(--week-bar) 32%, var(--surface-container-high));
+	}
+
+	html[data-theme='dark'] .dashboard-week-chart {
+		--week-bar: #a78bfa;
+		--week-bar-strong: #c4b5fd;
+	}
+
+	.dashboard-week-chart__label {
+		font-size: 0.7rem;
+		font-weight: 650;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: color-mix(in srgb, var(--on-surface-variant) 78%, var(--on-surface) 22%);
+	}
+
+	.dashboard-week-chart__number {
+		font-size: 0.78rem;
 		font-weight: 600;
-		color: #1e293b;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+		line-height: 1;
+		font-variant-numeric: tabular-nums;
+		color: var(--on-surface);
 	}
 
-	.dashboard-alert-meta {
-		margin: 0.15rem 0 0;
-		font-size: 0.74rem;
-		font-weight: 600;
-		color: #5f6368;
-	}
-
-	html[data-theme='dark'] .dashboard-alert-title {
-		color: var(--on-surface, #e3e3e3);
-	}
-
-	html[data-theme='dark'] .dashboard-alert-meta {
-		color: var(--on-surface-variant, #a7aaa8);
-	}
-
-	.dashboard-alert-action {
-		flex-shrink: 0;
-		font-size: 0.74rem;
-		font-weight: 600;
+	.dashboard-week-chart__col.is-today .dashboard-week-chart__value,
+	.dashboard-week-chart__col.is-today .dashboard-week-chart__label,
+	.dashboard-week-chart__col.is-today .dashboard-week-chart__number {
 		color: var(--primary);
-		text-decoration: none;
 	}
 
-	.dashboard-alert-action:hover {
-		text-decoration: underline;
-	}
-
-	.dashboard-inbox {
-		min-height: 0;
-	}
-
-	.dashboard-inbox__pulse {
-		margin: 0.18rem 0 0;
+	.dashboard-week-chart__idle {
+		margin: 0;
 		font-size: 0.8rem;
 		font-weight: 500;
 		letter-spacing: -0.01em;
 		color: var(--on-surface-variant);
 	}
 
-	.dashboard-inbox.is-clear .dashboard-inbox__pulse {
-		color: color-mix(in srgb, var(--on-surface-variant) 78%, #86efac 22%);
+	@keyframes dashboard-week-bar {
+		from {
+			opacity: 0.35;
+			transform: scaleY(0);
+		}
+
+		to {
+			opacity: 1;
+			transform: scaleY(1);
+		}
 	}
 
-	.dashboard-inbox__trays {
-		display: flex;
-		flex-direction: column;
-		flex: 1 1 auto;
-		min-height: 0;
-	}
-
-	.dashboard-inbox-tray {
-		display: flex;
-		flex-direction: column;
-		gap: 0.55rem;
-		flex: 1 1 0;
-		min-height: 0;
-		padding: 0.1rem 0 0.2rem;
-	}
-
-	.dashboard-inbox-tray + .dashboard-inbox-tray {
-		margin-top: 0.35rem;
-		padding-top: 0.95rem;
-		border-top: 1px solid var(--shell-border);
-	}
-
-	.dashboard-inbox-tray[hidden] {
-		display: none;
-	}
-
-	.dashboard-inbox-tray__head {
-		display: flex;
-		align-items: baseline;
-		justify-content: space-between;
-		gap: 0.75rem;
-	}
-
-	.dashboard-inbox-tray__head h3 {
-		margin: 0;
-		font-size: 0.78rem;
-		font-weight: 600;
-		letter-spacing: -0.01em;
-		color: color-mix(in srgb, var(--on-surface-variant) 82%, var(--on-surface) 18%);
-	}
-
-	.dashboard-inbox-tray__count {
-		font-size: 1.45rem;
-		font-weight: 600;
-		letter-spacing: -0.05em;
-		line-height: 1;
-		font-variant-numeric: tabular-nums lining-nums;
-		color: var(--on-surface);
-	}
-
-	.dashboard-inbox-tray.is-clear .dashboard-inbox-tray__count {
-		color: color-mix(in srgb, var(--on-surface-variant) 62%, var(--on-surface) 38%);
-		opacity: 0.7;
-	}
-
-	.dashboard-inbox-tray.is-hot[data-inbox-tray='confirm'] .dashboard-inbox-tray__count {
-		color: #d97706;
-	}
-
-	.dashboard-inbox-tray.is-hot[data-inbox-tray='cobros'] .dashboard-inbox-tray__count {
-		color: #e11d48;
-	}
-
-	html[data-theme='dark'] .dashboard-inbox-tray.is-hot[data-inbox-tray='confirm'] .dashboard-inbox-tray__count {
-		color: #fbbf24;
-	}
-
-	html[data-theme='dark'] .dashboard-inbox-tray.is-hot[data-inbox-tray='cobros'] .dashboard-inbox-tray__count {
-		color: #fb7185;
-	}
-
-	.dashboard-inbox-tray__idle,
-	.dashboard-inbox-tray__note {
-		margin: 0;
-		font-size: var(--dashboard-copy-size, 0.92rem);
-		font-weight: var(--dashboard-copy-weight, 500);
-		letter-spacing: -0.01em;
-		line-height: var(--dashboard-copy-leading, 1.4);
-		color: var(--dashboard-copy-color, var(--on-surface-variant));
-	}
-
-	.dashboard-inbox-tray__action {
-		align-self: flex-start;
-		margin-top: 0.15rem;
-		font-size: 0.78rem;
-		font-weight: 600;
-		color: var(--primary);
-		text-decoration: none;
-	}
-
-	.dashboard-inbox-tray__action:hover {
-		text-decoration: underline;
-	}
-
-	.dashboard-inbox-tray .dashboard-alerts-list {
-		flex: 1 1 auto;
-		overflow-y: auto;
-		min-height: 0;
+	@media (prefers-reduced-motion: reduce) {
+		.dashboard-week-chart__bar {
+			animation: none;
+		}
 	}
 
 	@media (min-width: 1024px) {
@@ -4024,40 +3353,14 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			max-height: min(34rem, calc(100dvh - 10rem));
 		}
 
-		.dashboard-floor--action .dashboard-alerts-shell {
+		.dashboard-floor--action .dashboard-week-chart {
 			position: sticky;
 			top: 1.25rem;
 			align-self: stretch;
 			height: 100%;
-			border-radius: var(--dashboard-card-radius, 0.75rem);
-			background: var(--dashboard-card-bg, #ffffff);
+			max-height: min(34rem, calc(100dvh - 10rem));
 		}
 
-		html[data-theme='dark'] .dashboard-floor--action .dashboard-alerts-shell {
-			background: var(--surface-bright);
-		}
-
-		.dashboard-floor--action .dashboard-alerts-head {
-			margin-bottom: 0.8rem;
-		}
-
-		.dashboard-floor--action .dashboard-alerts-list {
-			flex: 1 1 auto;
-		}
-
-		.dashboard-floor--action .dashboard-inbox__trays {
-			flex: 1 1 auto;
-		}
-
-		.dashboard-floor--today {
-			grid-template-columns: 1fr;
-			min-height: 0;
-		}
-
-		.dashboard-floor--today .dashboard-day-progress {
-			width: 100%;
-			height: auto;
-		}
 	}
 
 	@media (min-width: 1280px) {
@@ -4105,9 +3408,9 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	.dashboard-profitability-shell.is-loading .dashboard-profit-value:not(.dashboard-profit-value--static) {
-		min-height: 1.7rem;
-		max-width: 8.2rem;
-		margin-top: 0.7rem;
+		min-height: 1.45rem;
+		max-width: 7rem;
+		margin-top: 0.2rem;
 	}
 
 	.dashboard-profitability-shell.is-loading .dashboard-profit-stat__value:not(.dashboard-profit-value--static),
@@ -4217,58 +3520,35 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	.dashboard-profit-metrics-track {
-		display: flex;
-		grid-template-columns: none;
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: var(--dashboard-gap, 8px);
 		width: 100%;
 		max-width: 100%;
 		min-width: 0;
-		overflow-x: auto;
-		overscroll-behavior-x: contain;
-		scroll-snap-type: x mandatory;
-		scroll-padding-inline: 0;
-		-webkit-overflow-scrolling: touch;
-		scrollbar-width: none;
+		overflow: visible;
 		padding: 0;
 		margin-inline: 0;
 		box-sizing: border-box;
-	}
-
-	.dashboard-profit-metrics-track::-webkit-scrollbar {
-		display: none;
+		align-items: stretch;
 	}
 
 	.dashboard-profit-metrics-track > .dashboard-profit-card {
-		flex: 0 0 min(78%, 19.5rem);
-		scroll-snap-align: start;
-		min-height: 11rem;
+		flex: none;
+		min-height: 6.75rem;
+		height: 100%;
 		min-width: 0;
-		max-width: 100%;
+		max-width: none;
 		box-sizing: border-box;
 	}
 
-	.dashboard-profit-metrics-track > .dashboard-profit-card:last-child {
-		scroll-snap-align: end;
-	}
-
-	@container profit (min-width: 70rem) {
+	@media (min-width: 1024px) {
 		.dashboard-profit-metrics-track {
-			display: grid;
 			grid-template-columns: repeat(4, minmax(0, 1fr));
-			gap: var(--dashboard-gap, 8px);
-			overflow: visible;
-			scroll-snap-type: none;
-			padding: 0;
 		}
 
 		.dashboard-profit-metrics-track > .dashboard-profit-card {
-			flex: none;
-			scroll-snap-align: unset;
-			max-width: none;
-		}
-
-		.dashboard-profit-metrics-track > .dashboard-profit-card:last-child {
-			scroll-snap-align: unset;
+			min-height: 10.5rem;
 		}
 	}
 
@@ -4366,24 +3646,13 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.dashboard-profit-card,
-		.dashboard-day-progress,
-		.dashboard-day-progress__head,
-		.dashboard-day-progress__split,
-		.dashboard-day-progress__metric--empty,
-		.dashboard-day-progress__island {
+		.dashboard-profit-card {
 			transition: none;
 			animation: none;
 		}
 
-		.dashboard-day-progress__slot.is-done::after {
-			animation: none;
-			transform: scaleX(1);
-		}
-
 		.dashboard-profit-card:hover,
-		.dashboard-profit-card:active,
-		.dashboard-day-progress:hover {
+		.dashboard-profit-card:active {
 			transform: none;
 		}
 	}
@@ -4425,12 +3694,34 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	.dashboard-profit-card--simple {
 		align-items: stretch;
-		justify-content: flex-start;
-		gap: 0.5rem;
-		padding: 1.45rem 1.4rem 1.3rem;
-		min-height: 11rem;
+		justify-content: space-between;
+		gap: 0.28rem;
+		padding: 0.85rem 0.9rem 0.8rem;
+		min-height: 6.75rem;
+		overflow: visible;
 		text-align: left;
 		background: var(--dashboard-card-bg, #ffffff);
+	}
+
+	a.dashboard-profit-card--simple {
+		position: relative;
+	}
+
+	@media (min-width: 1024px) {
+		.dashboard-profit-card--simple {
+			min-height: 10.25rem;
+			padding: 1.25rem 1.2rem 1.15rem;
+			gap: 0.42rem;
+		}
+
+		.dashboard-profit-card--simple .dashboard-profit-value {
+			margin-top: 0.55rem;
+			font-size: clamp(1.9rem, 2.1vw, 2.4rem);
+		}
+
+		.dashboard-profit-card--simple .dashboard-profit-caption {
+			margin-top: 0.28rem;
+		}
 	}
 
 	.dashboard-profit-card--simple .dashboard-profit-card__head {
@@ -4458,13 +3749,21 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	.dashboard-profit-card__go {
+		display: none;
 		margin-left: auto;
 		flex-shrink: 0;
-		font-size: 0.98rem;
+		font-size: 1rem;
 		line-height: 1;
 		color: var(--on-surface-variant);
-		opacity: 0.42;
+		opacity: 0.45;
 		transition: opacity 200ms ease, transform 200ms ease, color 200ms ease;
+	}
+
+	a.dashboard-profit-card--simple .dashboard-profit-card__go {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
 	}
 
 	a.dashboard-profit-card--simple:hover .dashboard-profit-card__go {
@@ -4476,31 +3775,39 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	.dashboard-profit-card--simple .dashboard-profit-label {
 		flex: 1 1 auto;
 		min-width: 0;
-		font-size: 0.88rem;
+		font-size: 0.86rem;
 		font-weight: 500;
 		letter-spacing: -0.01em;
 		line-height: 1.2;
+		overflow: visible;
+		text-overflow: unset;
+		white-space: nowrap;
 		color: color-mix(in srgb, var(--on-surface-variant) 82%, var(--on-surface) 18%);
 	}
 
 	.dashboard-profit-card--simple .dashboard-profit-value {
-		margin: 0.38rem 0 0;
+		margin: 0.2rem 0 0;
 		padding-left: 0;
-		font-size: clamp(2.15rem, 3vw, 2.7rem);
+		font-size: clamp(1.45rem, 2.4vw, 1.85rem);
 		font-weight: 600;
 		letter-spacing: -0.05em;
-		line-height: 0.95;
-		text-wrap: balance;
+		line-height: 1;
+		overflow: visible;
+		text-wrap: unset;
 		color: #1e293b;
 	}
 
 	.dashboard-profit-card--simple .dashboard-profit-caption {
-		margin: 0.18rem 0 0;
-		padding-left: 0;
+		margin: 0.12rem 0 0;
+		padding: 0;
 		max-width: none;
-		font-size: 0.78rem;
+		font-size: 0.74rem;
 		font-weight: 450;
 		letter-spacing: -0.01em;
+		line-height: 1.25;
+		overflow: visible;
+		white-space: normal;
+		border-top: 0;
 		color: color-mix(in srgb, var(--on-surface-variant) 72%, var(--on-surface) 28%);
 	}
 
@@ -4522,14 +3829,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		color: color-mix(in srgb, var(--on-surface-variant) 70%, #9aa0a6 30%);
 	}
 
-	html[data-theme='dark'] .dashboard-day-progress__eyebrow,
-	html[data-theme='dark'] .dashboard-day-progress__metric {
-		color: #e5e7eb;
-	}
-
-	html[data-theme='dark'] .dashboard-day-progress__metric--empty {
-		color: var(--dashboard-copy-color, var(--on-surface-variant));
-	}
 
 	html[data-theme='dark'] .dashboard-profit-card--simple .dashboard-profit-icon {
 		background: color-mix(in srgb, var(--profit-accent) 18%, #1a1c21);
@@ -4891,6 +4190,25 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		box-shadow: none;
 	}
 
+	.dashboard-report-list.is-day-filtered > .dashboard-report-card:not(.is-day-match) {
+		display: none;
+	}
+
+	.dashboard-day-empty {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		margin: 0.35rem 0 0;
+		padding: 1.5rem 1rem 1.35rem;
+		border-radius: var(--dashboard-card-radius, 0.75rem);
+		background: var(--surface-container-high);
+		text-align: center;
+	}
+
+	.dashboard-day-empty[hidden] {
+		display: none;
+	}
+
 	html[data-theme='dark'] .dashboard-report-list {
 		background: var(--surface-container-high);
 		box-shadow: none;
@@ -5196,14 +4514,14 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	@media (max-width: 768px) {
 		.dashboard-greeting__title {
-			font-size: clamp(1.55rem, 6.2vw, 1.85rem);
-			line-height: 1.18;
-			gap: 0.18em 0.28em;
+			font-size: clamp(1.55rem, 6.6vw, 1.9rem);
+			line-height: 1.14;
 		}
 
 		.dashboard-greeting__sub {
-			font-size: 0.78rem;
-			line-height: 1.35;
+			margin-top: 0.08rem;
+			font-size: 0.74rem;
+			line-height: 1.3;
 		}
 
 		.dashboard-profitability-shell {
@@ -5238,7 +4556,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 
 		.dashboard-profit-metrics-track > .dashboard-profit-card {
-			flex: 0 0 min(88%, 18.5rem);
+			flex: none;
 		}
 
 		.dashboard-profit-card__hero {
@@ -5252,7 +4570,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 
 		.dashboard-profit-card--simple .dashboard-profit-value {
-			font-size: clamp(1.6rem, 7vw, 1.95rem);
+			font-size: clamp(1.42rem, 6.4vw, 1.7rem);
 		}
 
 		.dashboard-profit-viz--split {
@@ -5260,55 +4578,17 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 
 		.dashboard-profit-label {
-			font-size: 0.86rem;
+			font-size: 0.82rem;
 			letter-spacing: -0.01em;
 			line-height: 1.25;
 			min-width: 0;
 		}
 
 		.dashboard-profit-card--simple .dashboard-profit-label {
-			font-size: 0.75rem;
+			font-size: 0.82rem;
+			white-space: nowrap;
 		}
 
-		.dashboard-day-progress {
-			min-height: 0;
-		}
-
-		.dashboard-day-progress__inner {
-			padding: 0.75rem 0.8rem;
-			gap: 0.8rem;
-		}
-
-		.dashboard-day-progress.is-empty .dashboard-day-progress__inner {
-			padding: 0.7rem 0.85rem;
-			gap: 0.4rem 0.85rem;
-		}
-
-		.dashboard-day-progress__island {
-			padding: 0.58rem 0.65rem 0.55rem;
-		}
-
-		.dashboard-day-progress__split {
-			grid-template-columns: 1fr;
-			gap: 0.95rem;
-		}
-
-		.dashboard-day-progress__rail {
-			max-width: none;
-		}
-
-		.dashboard-day-progress__metric {
-			font-size: clamp(2.15rem, 11vw, 2.7rem);
-		}
-
-		.dashboard-day-progress__metric--empty {
-			font-size: var(--dashboard-copy-size, 0.92rem);
-		}
-
-		.dashboard-day-progress__hint {
-			text-align: left;
-			max-width: none;
-		}
 
 		.dashboard-week-glance {
 			gap: 0.15rem;
@@ -5361,23 +4641,40 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			display: none;
 		}
 
-		.dashboard-report-list > .dashboard-report-card:nth-child(n + 4) {
+		.dashboard-report-list > .dashboard-report-card:nth-child(n + 2) {
 			display: none;
+		}
+
+		.dashboard-report-list.is-day-filtered > .dashboard-report-card {
+			display: none;
+		}
+
+		.dashboard-report-list.is-day-filtered > .dashboard-report-card.is-day-match {
+			display: grid;
 		}
 
 		.dashboard-floor--action.dashboard-floor--split {
 			min-height: 0;
 		}
 
-		.dashboard-alerts-shell {
+		.dashboard-week-chart {
 			min-height: 0;
+		}
+
+		.dashboard-week-chart__inner {
+			min-height: 16rem;
+			padding: 1.1rem 1rem 1rem;
+		}
+
+		.dashboard-week-chart__track {
+			height: 8.5rem;
 		}
 	}
 
 	@media (max-width: 380px) {
-		/* Mantener carrusel horizontal también en pantallas muy angostas */
+		/* Grilla 2×2 también en pantallas muy angostas */
 		.dashboard-profit-metrics-track > .dashboard-profit-card {
-			flex: 0 0 min(86%, 15.5rem);
+			flex: none;
 		}
 
 		.dashboard-profit-card {
@@ -5385,17 +4682,10 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 
 		.dashboard-profit-card.dashboard-profit-card--simple {
-			padding: 1.1rem 1.05rem 1rem;
-			min-height: 8rem;
+			padding: 0.8rem 0.78rem 0.72rem;
+			min-height: 6.5rem;
 		}
 
-		.dashboard-day-progress__inner {
-			padding: 0.7rem 0.72rem;
-		}
-
-		.dashboard-day-progress__island {
-			padding: 0.5rem 0.58rem;
-		}
 	}
 
 	.m3-card {
