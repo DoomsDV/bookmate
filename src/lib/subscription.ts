@@ -176,6 +176,21 @@ const toNullableString = (value: unknown): string | null => {
 	return str === '' ? null : str;
 };
 
+/** Próximo cobro: si el ciclo guardado ya venció, avanza de a un mes. */
+const toUpcomingBillingIso = (iso: string | null): string | null => {
+	if (!iso) return null;
+	const start = new Date(iso);
+	if (Number.isNaN(start.getTime())) return null;
+	const now = Date.now();
+	const next = new Date(start.getTime());
+	let guard = 0;
+	while (next.getTime() <= now && guard < 36) {
+		next.setUTCMonth(next.getUTCMonth() + 1);
+		guard += 1;
+	}
+	return next.getTime() <= now ? iso : next.toISOString();
+};
+
 const normalizeSubscription = (value: unknown): SubscriptionData | null => {
 	if (!value || typeof value !== 'object') return null;
 	const source = value as Record<string, unknown>;
@@ -478,7 +493,9 @@ const normalizePlansCatalog = (value: unknown): PlansCatalog => {
 			days_remaining_in_period: toNumber(cur.days_remaining_in_period, 0),
 			period_days: toNumber(cur.period_days, 30),
 			account_balance: toNumber(cur.account_balance, 0),
-			next_billing_at: toNullableString(cur.next_billing_at) || toNullableString(cur.current_period_end),
+			next_billing_at: toUpcomingBillingIso(
+				toNullableString(cur.next_billing_at) || toNullableString(cur.current_period_end)
+			),
 			next_charge_estimate: toNumber(
 				cur.next_charge_estimate,
 				Math.max(
@@ -736,7 +753,7 @@ const normalizeBillingHistory = (value: unknown): BillingHistory => {
 	const d = (value ?? {}) as Record<string, unknown>;
 	const invoicesRaw = Array.isArray(d.invoices) ? d.invoices : [];
 	return {
-		next_billing_at: toNullableString(d.next_billing_at),
+		next_billing_at: toUpcomingBillingIso(toNullableString(d.next_billing_at)),
 		plan_code: String(d.plan_code || '').trim(),
 		plan_name: String(d.plan_name || '').trim(),
 		plan_monthly_amount: toNumber(d.plan_monthly_amount, 0),
