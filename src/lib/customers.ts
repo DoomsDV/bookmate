@@ -1,5 +1,12 @@
+import { applyArchiveFilterToListResult } from './customer-archive-filter';
 import { resolveOrdsApiUrl } from './env-urls';
 import { hasAnySessionNote, normalizeSessionNotesHistory } from './session-notes';
+
+export {
+	applyArchiveFilterToListResult,
+	applyCustomerArchiveFilter,
+	customerMatchesArchiveFilter,
+} from './customer-archive-filter';
 
 export const CUSTOMERS_URL = resolveOrdsApiUrl(
 	import.meta.env.ORDS_CUSTOMERS_URL,
@@ -282,11 +289,12 @@ export const listCustomersWithOrds = async (
 	const limit =
 		Number.isInteger(options.limit) && Number(options.limit) > 0 ? Number(options.limit) : 9;
 	const search = String(options.search || '').trim();
+	const archived = Boolean(options.archived);
 
 	const customersUrl = new URL(CUSTOMERS_URL);
 	customersUrl.searchParams.set('page', String(page));
 	customersUrl.searchParams.set('limit', String(limit));
-	customersUrl.searchParams.set('archived', options.archived ? '1' : '0');
+	customersUrl.searchParams.set('archived', archived ? '1' : '0');
 
 	if (Number.isInteger(options.pro_id) && Number(options.pro_id) > 0) {
 		customersUrl.searchParams.set('pro_id', String(options.pro_id));
@@ -305,7 +313,8 @@ export const listCustomersWithOrds = async (
 		},
 	});
 
-	return parseCustomersResponse(response, { page, limit });
+	const result = await parseCustomersResponse(response, { page, limit });
+	return applyArchiveFilterToListResult(result, archived);
 };
 
 const normalizeAppointmentAttachment = (

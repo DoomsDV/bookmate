@@ -1,4 +1,5 @@
 import { ROLES } from '../config/roles';
+import { applyCustomerArchiveFilter } from '../lib/customer-archive-filter';
 import type {
 	CustomerAppointmentSummary,
 	CustomerProfile,
@@ -5157,9 +5158,7 @@ class CustomerManager extends HTMLElement {
 			if (this.searchQuery) {
 				query.set('search', this.searchQuery);
 			}
-			if (this.showArchived) {
-				query.set('archived', '1');
-			}
+			query.set('archived', this.showArchived ? '1' : '0');
 
 			const response = await fetch(`/api/customers?${query.toString()}`, {
 				method: 'GET',
@@ -5177,7 +5176,22 @@ class CustomerManager extends HTMLElement {
 			this.totalRecords = Number(data.meta?.total_records || 0);
 			this.totalPages = Math.max(1, Number(data.meta?.total_pages || 0));
 
-			this.renderCustomers(data.data);
+			const incoming = data.data.map((customer) => ({
+				...customer,
+				is_active: customer.is_active === 0 ? (0 as const) : (1 as const),
+			}));
+			const visible = applyCustomerArchiveFilter(incoming, this.showArchived);
+			if (
+				visible.length !== incoming.length &&
+				this.page === 1 &&
+				this.totalRecords <= this.limit &&
+				incoming.length === this.totalRecords
+			) {
+				this.totalRecords = visible.length;
+				this.totalPages = 1;
+			}
+
+			this.renderCustomers(visible);
 			this.renderSummary();
 			this.updateControls();
 		} catch (error) {
