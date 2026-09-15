@@ -26,6 +26,7 @@ import {
 	formatSeriesConflictDate,
 	formatSeriesDateShort,
 	formatSeriesPreview,
+	seriesCreateSubmitLabel,
 	SERIES_MAX_COUNT,
 	SERIES_MIN_COUNT,
 	toDateInputValue,
@@ -266,6 +267,7 @@ class AppointmentModal extends HTMLElement {
 	recurrenceUntilInput: HTMLInputElement | null = null;
 	recurrencePreview: HTMLElement | null = null;
 	recurrenceDates: HTMLElement | null = null;
+	recurrenceSyncRaf = 0;
 	seriesNote: HTMLElement | null = null;
 	seriesNoteText: HTMLElement | null = null;
 	statusInput: HTMLSelectElement | null = null;
@@ -580,7 +582,7 @@ class AppointmentModal extends HTMLElement {
 		requiredNodes.modalProfessional.addEventListener('change', this.handleProfessionalChange, { signal });
 		requiredNodes.startInput.addEventListener('change', this.handleStartTimeChange, { signal });
 		requiredNodes.endInput.addEventListener('change', this.handleEndTimeChange, { signal });
-		this.recurrenceEnabledInput?.addEventListener('change', this.handleRecurrenceChange, { signal });
+		this.recurrenceEnabledInput?.addEventListener('input', this.handleRecurrenceToggle, { signal });
 		this.recurrenceCountInput?.addEventListener('input', this.handleRecurrenceChange, { signal });
 		this.recurrenceUntilInput?.addEventListener('change', this.handleRecurrenceChange, { signal });
 		for (const mode of this.form?.querySelectorAll<HTMLInputElement>('[data-recurrence-mode]') ?? []) {
@@ -619,6 +621,7 @@ class AppointmentModal extends HTMLElement {
 			this.#bindRetryTimer = null;
 		}
 		this.#bindRetryAttempts = 0;
+		this.cancelRecurrenceDetailsSync();
 		if (this.closeTimer) {
 			window.clearTimeout(this.closeTimer);
 			this.closeTimer = null;
@@ -1221,12 +1224,11 @@ class AppointmentModal extends HTMLElement {
 		this.tabsScroll.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
 	}
 
-	private syncSubmitLabel() {
+	private syncSubmitLabel(occurrences?: Date[] | null) {
 		if (!this.submitLabel || this.isSubmitting) return;
 		if (this.mode === 'create') {
-			const count = this.getRecurrenceOccurrences()?.length ?? 0;
-			this.submitLabel.textContent =
-				this.isRecurrenceEnabled() && count > 1 ? `Crear ${count} citas` : 'Crear reserva';
+			const count = (occurrences ?? this.getRecurrenceOccurrences())?.length ?? 0;
+			this.submitLabel.textContent = seriesCreateSubmitLabel(this.isRecurrenceEnabled(), count);
 			return;
 		}
 		if (this.isImmutableReadOnly) return;
@@ -2669,13 +2671,16 @@ class AppointmentModal extends HTMLElement {
 	handleStartTimeChange = () => {
 		this.syncDateBounds();
 		this.setFieldError('start_time', '');
-		this.syncRecurrencePreview();
+		this.scheduleRecurrenceDetailsSync();
+	};
+
+	handleRecurrenceToggle = () => {
+		this.recurrenceWrap?.classList.toggle('is-enabled', this.isRecurrenceEnabled());
+		this.scheduleRecurrenceDetailsSync();
 	};
 
 	handleRecurrenceChange = () => {
-		this.syncRecurrenceFields();
-		this.syncRecurrencePreview();
-		this.syncSubmitLabel();
+		this.scheduleRecurrenceDetailsSync();
 	};
 
 	private isRecurrenceEnabled() {
@@ -2690,15 +2695,16 @@ class AppointmentModal extends HTMLElement {
 	}
 
 	private resetRecurrenceForm() {
+		this.cancelRecurrenceDetailsSync();
 		if (this.recurrenceEnabledInput) this.recurrenceEnabledInput.checked = false;
+		this.recurrenceWrap?.classList.remove('is-enabled');
 		if (this.recurrenceCountInput) this.recurrenceCountInput.value = '4';
 		if (this.recurrenceUntilInput) this.recurrenceUntilInput.value = '';
 		const countMode = this.form?.querySelector<HTMLInputElement>(
 			'[data-recurrence-mode][value="count"]'
 		);
 		if (countMode) countMode.checked = true;
-		this.syncRecurrenceFields();
-		this.syncRecurrencePreview();
+		this.syncRecurrenceDetails();
 	}
 
 	private setRecurrenceVisible(visible: boolean) {
@@ -2725,13 +2731,34 @@ class AppointmentModal extends HTMLElement {
 		this.seriesNote.removeAttribute('hidden');
 	}
 
+	private cancelRecurrenceDetailsSync() {
+		if (!this.recurrenceSyncRaf) return;
+		window.cancelAnimationFrame(this.recurrenceSyncRaf);
+		this.recurrenceSyncRaf = 0;
+	}
+
+	private scheduleRecurrenceDetailsSync() {
+		if (this.recurrenceSyncRaf) return;
+		this.recurrenceSyncRaf = window.requestAnimationFrame(() => {
+			this.recurrenceSyncRaf = 0;
+			this.syncRecurrenceDetails();
+		});
+	}
+
 	private syncRecurrenceFields() {
 		const enabled = this.isRecurrenceEnabled();
-		this.recurrenceFields?.classList.toggle('hidden', !enabled);
-		this.recurrenceFields?.toggleAttribute('hidden', !enabled);
+		this.recurrenceWrap?.classList.toggle('is-enabled', enabled);
+		this.recurrenceFields?.toggleAttribute('inert', !enabled);
 		const mode = this.getRecurrenceMode();
 		if (this.recurrenceCountInput) this.recurrenceCountInput.disabled = !enabled || mode !== 'count';
 		if (this.recurrenceUntilInput) this.recurrenceUntilInput.disabled = !enabled || mode !== 'until';
+	}
+
+	private syncRecurrenceDetails() {
+		this.syncRecurrenceFields();
+		const occurrences = this.isRecurrenceEnabled() ? this.getRecurrenceOccurrences() : null;
+		this.syncRecurrencePreview(occurrences);
+		this.syncSubmitLabel(occurrences);
 	}
 
 	private getRecurrenceOccurrences() {
@@ -2751,7 +2778,7 @@ class AppointmentModal extends HTMLElement {
 		return buildWeeklyOccurrences(startDate, { count });
 	}
 
-	private syncRecurrencePreview() {
+	private syncRecurrencePreview(occurrences = this.getRecurrenceOccurrences()) {
 		if (!this.recurrencePreview || !this.recurrenceDates) return;
 		if (!this.isRecurrenceEnabled()) {
 			this.recurrencePreview.textContent = '';
@@ -2766,16 +2793,16 @@ class AppointmentModal extends HTMLElement {
 			this.recurrenceDates.textContent = '';
 			return;
 		}
-		const occurrences = this.getRecurrenceOccurrences() ?? [];
-		this.recurrencePreview.textContent = formatSeriesPreview(startDate, occurrences);
-		if (occurrences.length > 1) {
-			const shown = occurrences.slice(0, 6).map((date) => formatSeriesDateShort(date));
-			const extra = occurrences.length > 6 ? ` +${occurrences.length - 6} más` : '';
+		const dates = occurrences ?? [];
+		this.recurrencePreview.textContent = formatSeriesPreview(startDate, dates);
+		if (dates.length > 1) {
+			const shown = dates.slice(0, 6).map((date) => formatSeriesDateShort(date));
+			const extra = dates.length > 6 ? ` +${dates.length - 6} más` : '';
 			this.recurrenceDates.textContent = shown.join(' · ') + extra;
 		} else {
 			this.recurrenceDates.textContent = '';
 		}
-		if (this.recurrenceUntilInput && !this.recurrenceUntilInput.value && occurrences.length === 0) {
+		if (this.recurrenceUntilInput && !this.recurrenceUntilInput.value && dates.length === 0) {
 			const hint = addWeeks(startDate, 3);
 			this.recurrenceUntilInput.min = toDateInputValue(startDate);
 			if (this.getRecurrenceMode() === 'until') {
