@@ -3,6 +3,7 @@ import { ROLES } from '../../config/roles';
 import { FEATURE_FLAGS } from '../../config/feature-flags';
 import SideNav from '../../components/SideNav.astro';
 import DashboardQuickActions from '../../components/DashboardQuickActions.astro';
+import DashboardAlerts from '../../components/DashboardAlerts.astro';
 import AppAlert from '../../components/AppAlert.astro';
 import AppPagination from '../../components/AppPagination.astro';
 import AppointmentVoiceOverlay from '../../components/AppointmentVoiceOverlay.astro';
@@ -24,6 +25,11 @@ import {
 	resolveDashboardHubHref,
 	resolveNewCustomerHref,
 } from '../../lib/dashboard-quick-actions';
+import {
+	buildDashboardAlerts,
+	type DashboardAlert,
+} from '../../lib/dashboard-alerts';
+import { collectDashboardAlertSources } from '../../lib/dashboard-alerts-sources';
 import { getMyProfileWithOrds } from '../../lib/my-profile';
 import { hasCapability } from '../../lib/permissions';
 import { resolvePublicSiteOrigin } from '../../lib/public-profile-url';
@@ -64,18 +70,27 @@ let dashboard: DashboardMainData = {
 };
 let loadError = '';
 let userDisplayName = '';
+let dashboardAlerts: DashboardAlert[] = [];
 const defaultAiSummaryShort = '¡Buen día! Preparate para una excelente jornada de trabajo.';
 const defaultAiSummaryFull = defaultAiSummaryShort;
+const dashboardAlertCaps = {
+	canViewProfessionals: hasCapability(Astro.locals, CAPABILITIES.PROFESSIONALS_VIEW),
+	canViewCobros: hasCapability(Astro.locals, CAPABILITIES.COBROS_VIEW),
+	canViewServices: hasCapability(Astro.locals, CAPABILITIES.SERVICES_VIEW),
+	canViewLocations: hasCapability(Astro.locals, CAPABILITIES.LOCATIONS_VIEW),
+	canViewSchedules: hasCapability(Astro.locals, CAPABILITIES.SCHEDULES_VIEW),
+};
 
 if (!token) {
 	loadError = 'No hay sesion valida para consultar el dashboard.';
 } else {
-	const [dashboardResult, profileResult] = await Promise.allSettled([
+	const [dashboardResult, profileResult, alertsResult] = await Promise.allSettled([
 		getMainDashboardWithOrds(token, {
 			page: currentPage,
 			limit: PAGE_SIZE,
 		}),
 		getMyProfileWithOrds(token),
+		collectDashboardAlertSources(token, dashboardAlertCaps),
 	]);
 
 	if (dashboardResult.status === 'fulfilled') {
@@ -94,6 +109,10 @@ if (!token) {
 		userDisplayName = firstName || lastName;
 	} else {
 		userDisplayName = '';
+	}
+
+	if (alertsResult.status === 'fulfilled') {
+		dashboardAlerts = buildDashboardAlerts(alertsResult.value);
 	}
 }
 
@@ -414,6 +433,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 									</div>
 								</section>
 							)}
+
+							{dashboardAlerts.length > 0 ? <DashboardAlerts alerts={dashboardAlerts} /> : null}
 
 							{showTeamOverview && (
 								<div
