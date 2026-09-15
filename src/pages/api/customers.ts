@@ -50,6 +50,8 @@ export const GET: APIRoute = async ({ locals, url }) => {
 		const searchQuery = String(
 			url.searchParams.get('search') || url.searchParams.get('q') || ''
 		).trim();
+		const archivedRaw = String(url.searchParams.get('archived') || '').trim().toLowerCase();
+		const archived = archivedRaw === '1' || archivedRaw === 'true';
 
 		if (roleId === ROLES.PROFESIONAL) {
 			const currentProfessionalId = await getCurrentProfessionalId(token);
@@ -71,6 +73,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
 			limit,
 			pro_id: professionalId,
 			search: searchQuery || undefined,
+			archived,
 		});
 
 		return Response.json(
