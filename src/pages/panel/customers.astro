@@ -588,7 +588,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 			aria-labelledby="customer-profile-modal-title"
 		>
 			<div
-				class="customer-profile-modal__panel relative flex h-[90dvh] max-h-[90dvh] w-full max-w-none flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:h-[100dvh] sm:max-h-[100dvh] sm:w-[max(50vw,40rem)] sm:max-w-[max(50vw,40rem)] sm:rounded-none sm:border-y-0 sm:border-r-0 sm:shadow-none"
+				class="customer-profile-modal__panel relative flex h-[min(90dvh,100%)] max-h-[min(90dvh,100%)] w-full max-w-none flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:h-full sm:max-h-full sm:w-[max(50vw,40rem)] sm:max-w-[max(50vw,40rem)] sm:rounded-none sm:border-y-0 sm:border-r-0 sm:shadow-none"
 				data-customer-profile-panel
 			>
 			<div class="panel-modal-header panel-modal-header--shadow">
@@ -1425,7 +1425,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 			</div>
 
 			<div
-				class="customer-profile-modal-footer shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-4 py-4 sm:px-7"
+				class="customer-profile-modal-footer z-20 mt-auto shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-4 py-4 sm:px-7"
 				data-customer-profile-footer
 			>
 				<span
@@ -2130,73 +2130,60 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		display: none;
 	}
 
+	/* display:flex en los grupos pisa la utilidad .hidden de Tailwind. */
+	.customer-profile-modal-footer__edit.hidden,
+	.customer-profile-modal-footer__archive.hidden,
+	.customer-profile-modal-footer__restore.hidden {
+		display: none !important;
+	}
+
 	.customer-profile-modal__panel[data-editing-profile='1'] .customer-profile-modal-footer,
 	.customer-profile-modal__panel[data-archive-actions='1'] .customer-profile-modal-footer {
 		display: flex;
-		align-items: center;
-		justify-content: flex-end;
-		gap: 0.75rem;
-	}
-
-	.customer-profile-modal-footer__edit {
-		display: flex;
-		width: 100%;
+		flex-wrap: wrap;
 		align-items: stretch;
 		justify-content: flex-end;
 		gap: 0.65rem;
-	}
-
-	.customer-profile-modal-footer__edit .modal-action-secondary,
-	.customer-profile-modal-footer__edit .modal-action-primary {
-		flex: 1 1 0;
-		width: auto;
-		min-width: 0;
-	}
-
-	@media (min-width: 640px) {
-		.customer-profile-modal-footer__edit {
-			width: auto;
-			margin-left: auto;
-		}
-
-		.customer-profile-modal-footer__edit .modal-action-secondary,
-		.customer-profile-modal-footer__edit .modal-action-primary {
-			flex: 0 0 auto;
-		}
+		position: sticky;
+		bottom: 0;
+		z-index: 20;
+		padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
 	}
 
 	.customer-profile-modal-footer__edit:not(.hidden),
 	.customer-profile-modal-footer__archive:not(.hidden),
 	.customer-profile-modal-footer__restore:not(.hidden) {
 		display: flex;
+		flex: 1 1 100%;
 		width: 100%;
+		min-width: 0;
+		flex-wrap: wrap;
 		align-items: stretch;
 		justify-content: flex-end;
 		gap: 0.65rem;
 	}
 
+	.customer-profile-modal-footer__edit .modal-action-secondary,
+	.customer-profile-modal-footer__edit .modal-action-primary,
 	.customer-profile-modal-footer__archive .modal-action-secondary,
 	.customer-profile-modal-footer__restore .modal-action-primary {
-		flex: 1 1 0;
+		flex: 1 1 auto;
 		width: auto;
-		min-width: 0;
+		min-width: min(100%, 9.5rem);
+		white-space: nowrap;
 	}
 
 	@media (min-width: 640px) {
-		.customer-profile-modal-footer__archive,
-		.customer-profile-modal-footer__restore {
-			width: auto;
-			margin-left: auto;
-		}
-
-		.customer-profile-modal-footer__archive .modal-action-secondary,
-		.customer-profile-modal-footer__restore .modal-action-primary {
-			flex: 0 0 auto;
+		.customer-profile-modal-footer__edit:not(.hidden),
+		.customer-profile-modal-footer__archive:not(.hidden),
+		.customer-profile-modal-footer__restore:not(.hidden) {
+			flex: 1 1 auto;
 		}
 	}
 
+	/* El global .modal-action-secondary { display:none } en ≤767px no aplica acá. */
 	@media (max-width: 767px) {
-		.customer-profile-modal-footer__edit .modal-action-secondary {
+		.customer-profile-modal-footer .modal-action-secondary {
 			display: inline-flex;
 		}
 	}
@@ -2355,20 +2342,26 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		display: flex;
 	}
 
-	/* Mobile: bottom sheet al 90% del viewport */
+	/* Mobile: bottom sheet al 90% del viewport, sin pasarse del dialog. */
 	dialog[data-customer-profile-modal][open] .customer-profile-modal__panel {
-		min-height: 90dvh;
+		min-height: 0;
+		height: min(90dvh, 100%);
+		max-height: min(90dvh, 100%);
 	}
 
 	@media (min-width: 640px) {
 		dialog[data-customer-profile-modal][open] .customer-profile-modal__panel {
-			min-height: 100dvh;
+			min-height: 0;
+			height: 100%;
+			max-height: 100%;
 		}
 	}
 
 	.customer-profile-modal-body {
-		flex: 1 1 auto;
+		flex: 1 1 0;
 		min-height: 0;
+		overflow-x: hidden;
+		overflow-y: auto;
 	}
 
 	.customer-profile-tab-panel[data-customer-profile-tab-panel='history']:not([hidden]) {
@@ -2425,7 +2418,9 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		}
 
 		dialog[data-customer-profile-modal][open] .customer-profile-modal__panel {
-			min-height: 100dvh;
+			min-height: 0;
+			height: 100%;
+			max-height: 100%;
 			margin-left: auto;
 		}
 
