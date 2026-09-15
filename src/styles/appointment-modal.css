@@ -1038,7 +1038,8 @@ dialog[data-appointment-modal] .bookmate-searchable-select-dropdown {
 		input[type='tel'],
 		input[type='email'],
 		select
-	) {
+	),
+	dialog[data-appointment-modal] .appointment-recurrence-date__text {
 		min-height: 2.85rem;
 		height: auto;
 		padding: 0.7rem 0.85rem;
@@ -1133,7 +1134,12 @@ dialog[data-appointment-modal] .bookmate-searchable-select-dropdown {
 
 .appointment-recurrence__modes {
 	display: grid;
-	grid-template-columns: auto minmax(4.5rem, 6rem);
+	gap: 0.65rem;
+}
+
+.appointment-recurrence__row {
+	display: grid;
+	grid-template-columns: minmax(8.25rem, auto) minmax(0, 1fr);
 	gap: 0.55rem 0.75rem;
 	align-items: center;
 }
@@ -1148,7 +1154,7 @@ dialog[data-appointment-modal] .bookmate-searchable-select-dropdown {
 }
 
 .appointment-recurrence__count,
-.appointment-recurrence__until {
+.appointment-recurrence-date__text {
 	min-height: 2.6rem;
 	border-radius: 0.75rem;
 	border: 1px solid var(--shell-border);
@@ -1160,10 +1166,96 @@ dialog[data-appointment-modal] .bookmate-searchable-select-dropdown {
 	outline: none;
 }
 
+.appointment-recurrence__count {
+	max-width: 6rem;
+	width: 100%;
+}
+
+.appointment-recurrence__count.is-inactive {
+	opacity: 0.62;
+}
+
 .appointment-recurrence__count:focus,
-.appointment-recurrence__until:focus {
+.appointment-recurrence-date__text:focus {
 	border-color: var(--primary);
 	box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+.appointment-recurrence-date {
+	position: relative;
+	display: block;
+	min-width: 11.75rem;
+	max-width: 16rem;
+}
+
+.appointment-recurrence-date__text {
+	width: 100%;
+	padding-right: 2.85rem;
+	font-variant-numeric: tabular-nums;
+	letter-spacing: 0.02em;
+}
+
+.appointment-recurrence-date__text::placeholder {
+	color: color-mix(in srgb, var(--on-surface-variant) 78%, transparent);
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	opacity: 1;
+}
+
+.appointment-recurrence-date__text.is-invalid {
+	border-color: color-mix(in srgb, #f43f5e 55%, var(--shell-border));
+}
+
+.appointment-recurrence-date__picker {
+	position: absolute;
+	top: 50%;
+	right: 0.3rem;
+	z-index: 1;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.15rem;
+	height: 2.15rem;
+	padding: 0;
+	border: 0;
+	border-radius: 0.65rem;
+	background: transparent;
+	color: var(--on-surface-variant);
+	cursor: pointer;
+	transform: translateY(-50%);
+}
+
+.appointment-recurrence-date__picker:hover,
+.appointment-recurrence-date:focus-within .appointment-recurrence-date__picker {
+	color: var(--primary);
+	background: color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+.appointment-recurrence-date__picker .material-symbols-rounded {
+	font-size: 1.15rem;
+	line-height: 1;
+}
+
+.appointment-recurrence-date__native {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	opacity: 0.01;
+	pointer-events: none;
+	color-scheme: light;
+}
+
+.appointment-recurrence-date.is-disabled .appointment-recurrence-date__text,
+.appointment-recurrence-date.is-disabled .appointment-recurrence-date__picker {
+	opacity: 0.62;
+	cursor: not-allowed;
+}
+
+html[data-theme='dark'] .appointment-recurrence-date__native {
+	color-scheme: dark;
 }
 
 .appointment-recurrence__preview,
