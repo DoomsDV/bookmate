@@ -120,6 +120,7 @@ test('HAS-50: Dashboard ya no monta el gráfico 7/15/30', () => {
 	assert.doesNotMatch(dashboard, /DASHBOARD_CHART_WINDOWS/);
 	assert.match(dashboard, /Próximas citas/);
 	assert.match(dashboard, /Por confirmar/);
+	assert.match(dashboard, /data-dashboard-today-metrics/);
 
 	const analiticas = readFileSync(new URL('../src/pages/panel/analiticas.astro', import.meta.url), 'utf8');
 	assert.match(analiticas, /data-day-chart/);

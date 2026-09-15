@@ -50,6 +50,13 @@ export const DASHBOARD_PROFITABILITY_URL = resolveOrdsApiUrl(
 export interface DashboardKpis {
 	today_appointments: number;
 	today_completed_appointments: number;
+	today_confirmed_appointments: number;
+	today_pending_appointments: number;
+	week_appointments: number;
+	week_confirmed_appointments: number;
+	week_pending_appointments: number;
+	pending_deposits_count: number;
+	pending_deposits_amount: number;
 	pending_appointments: number;
 	unconfirmed_appointments: number;
 	my_customers: number;
@@ -188,6 +195,13 @@ const normalizeKpis = (value: unknown): DashboardKpis => {
 		return {
 			today_appointments: 0,
 			today_completed_appointments: 0,
+			today_confirmed_appointments: 0,
+			today_pending_appointments: 0,
+			week_appointments: 0,
+			week_confirmed_appointments: 0,
+			week_pending_appointments: 0,
+			pending_deposits_count: 0,
+			pending_deposits_amount: 0,
 			pending_appointments: 0,
 			unconfirmed_appointments: 0,
 			my_customers: 0,
@@ -211,6 +225,25 @@ const normalizeKpis = (value: unknown): DashboardKpis => {
 	return {
 		today_appointments: todayAppointments,
 		today_completed_appointments: todayCompleted,
+		today_confirmed_appointments: Math.max(
+			0,
+			Math.floor(toNumber(source.today_confirmed_appointments, 0))
+		),
+		today_pending_appointments: Math.max(
+			0,
+			Math.floor(toNumber(source.today_pending_appointments, 0))
+		),
+		week_appointments: Math.max(0, Math.floor(toNumber(source.week_appointments, 0))),
+		week_confirmed_appointments: Math.max(
+			0,
+			Math.floor(toNumber(source.week_confirmed_appointments, 0))
+		),
+		week_pending_appointments: Math.max(
+			0,
+			Math.floor(toNumber(source.week_pending_appointments, 0))
+		),
+		pending_deposits_count: Math.max(0, Math.floor(toNumber(source.pending_deposits_count, 0))),
+		pending_deposits_amount: Math.max(0, toNumber(source.pending_deposits_amount, 0)),
 		pending_appointments: Math.max(0, Math.floor(toNumber(source.pending_appointments, 0))),
 		unconfirmed_appointments: Math.max(0, Math.floor(toNumber(source.unconfirmed_appointments, 0))),
 		my_customers: Math.max(0, Math.floor(toNumber(source.my_customers, 0))),
