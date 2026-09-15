@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 
-import { ROLES } from '../../../config/roles';
+import { CAPABILITIES } from '../../../config/capabilities';
 import {
 	CUSTOMER_CSV_MAX_BYTES,
 	CustomerCsvError,
@@ -8,6 +8,7 @@ import {
 	summarizeCustomerCsv,
 } from '../../../lib/customer-csv';
 import { createCustomerWithOrds, CustomersApiError } from '../../../lib/customers';
+import { requireCapability } from '../../../lib/permissions';
 import {
 	requireToken as requireApiToken,
 	toErrorResponse as toApiErrorResponse,
@@ -76,10 +77,12 @@ const readCsvText = async (request: Request) => {
 export const POST: APIRoute = async ({ locals, request }) => {
 	try {
 		const token = requireToken(locals.token);
-		const roleId = Number(locals.roleId ?? 0);
-		if (roleId !== ROLES.ADMIN && roleId !== ROLES.RECEPCIONISTA) {
-			throw new CustomersApiError('No tienes permisos para importar clientes.', 403);
-		}
+		requireCapability(
+			locals,
+			CAPABILITIES.CUSTOMERS_CREATE,
+			(message, status) => new CustomersApiError(message, status),
+			'No tienes permisos para importar clientes.'
+		);
 
 		const { text, preview } = await readCsvText(request);
 		if (!text.trim()) {

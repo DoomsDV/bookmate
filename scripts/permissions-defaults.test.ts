@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import {
@@ -47,6 +48,28 @@ test('Apagar customers.create en recepción bloquea la capability', () => {
 	const tightened = reception.filter((code) => code !== CAPABILITIES.CUSTOMERS_CREATE);
 	assert.equal(isCapabilityGranted(tightened, CAPABILITIES.CUSTOMERS_CREATE), false);
 	assert.ok(isCapabilityGranted(tightened, CAPABILITIES.CUSTOMERS_VIEW));
+});
+
+test('Import CSV comparte customers.create con el alta (no un capability nuevo)', () => {
+	const importCapability = CAPABILITIES.CUSTOMERS_CREATE;
+	assert.equal(importCapability, 'customers.create');
+	assert.ok(isCapabilityGranted(admin, importCapability));
+	assert.ok(isCapabilityGranted(reception, importCapability));
+	assert.equal(isCapabilityGranted(pro, importCapability), false);
+
+	const receptionWithoutCreate = reception.filter((code) => code !== importCapability);
+	assert.equal(isCapabilityGranted(receptionWithoutCreate, importCapability), false);
+
+	const proWithCreate = [...pro, importCapability];
+	assert.ok(isCapabilityGranted(proWithCreate, importCapability));
+});
+
+test('POST /api/customers/import usa requireCapability(customers.create), no roles hardcodeados', () => {
+	const src = readFileSync(new URL('../src/pages/api/customers/import.ts', import.meta.url), 'utf8');
+	assert.match(src, /requireCapability/);
+	assert.match(src, /CAPABILITIES\.CUSTOMERS_CREATE/);
+	assert.doesNotMatch(src, /ROLES\.ADMIN/);
+	assert.doesNotMatch(src, /ROLES\.RECEPCIONISTA/);
 });
 
 test('Rutas sin mapping quedan abiertas (inbox, profile, subscription read)', () => {
