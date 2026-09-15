@@ -33,6 +33,7 @@ import {
 	syncSearchableSelect,
 } from '../searchable-select';
 import { maybeShowCalendarTour, showCalendarTour } from '../../lib/calendar-tour';
+import { consumePanelNewQuery, withCurrentLocation } from '../../lib/dashboard-quick-actions';
 import {
 	APPOINTMENT_AI_DRAFT_STORAGE_KEY,
 	type StoredAppointmentAiDraft,
@@ -2939,8 +2940,29 @@ class CalendarManager extends HTMLElement {
 
 		this.initializeCalendar(requiredNodes);
 		this.applyAiDraftFromStorage(requiredNodes);
+		this.applyNewAppointmentFromUrl();
 		this.applyAppointmentFocusFromUrl();
 		maybeShowCalendarTour();
+	}
+
+	private applyNewAppointmentFromUrl() {
+		if (typeof window === 'undefined') return;
+
+		const { shouldOpen, nextSearch } = consumePanelNewQuery(window.location.search);
+		if (!shouldOpen) return;
+
+		window.history.replaceState(
+			{},
+			'',
+			withCurrentLocation(window.location.pathname, nextSearch, window.location.hash)
+		);
+
+		const modalAlreadyOpen = Boolean(
+			document.querySelector<HTMLDialogElement>('[data-appointment-modal]')?.open
+		);
+		if (modalAlreadyOpen) return;
+
+		this.handleOpenCreateModal();
 	}
 
 	private handleAppointmentVoiceSuccess = (event: Event) => {
