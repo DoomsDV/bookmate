@@ -7,12 +7,13 @@ import HaselPublicFooter from '../../components/HaselPublicFooter.astro';
 import { LocationMap, formatMapCoordinates } from '../../components/ui/location-map';
 import { formatBusinessHoursForDisplay } from '../../lib/business-hours';
 import { PublicBookingApiError, getPublicProfileSpecialtyLabel } from '../../lib/public-booking';
-import { buildGoogleMapsUrl } from '../../lib/public-booking-locations';
+import { buildGoogleMapsUrl, buildLocationTelHref } from '../../lib/public-booking-locations';
 import {
 	formatPublicProfessionalRating,
 	getPublicOrgHubWithOrds,
 	type PublicOrgHub,
 } from '../../lib/public-org-hub';
+import { HUB_NO_ONLINE_SLOTS_MESSAGE } from '../../lib/workspace-settings-shared';
 import {
 	appendPublicBookingFromHubParam,
 	buildOrgHubPath,
@@ -324,14 +325,16 @@ const serializedProfessionals = professionals.length
 										WhatsApp
 									</a>
 								) : null}
-								<a
-									href={reserveHref}
-									class="hub-btn hub-btn--filled"
-									data-hub-reserve-cta
-								>
-									<span class="material-symbols-rounded" aria-hidden="true">event</span>
-									Reservar
-								</a>
+								{professionals.length ? (
+									<a
+										href={reserveHref}
+										class="hub-btn hub-btn--filled"
+										data-hub-reserve-cta
+									>
+										<span class="material-symbols-rounded" aria-hidden="true">event</span>
+										Reservar
+									</a>
+								) : null}
 							</div>
 						</div>
 					</section>
@@ -353,7 +356,11 @@ const serializedProfessionals = professionals.length
 							class="hub-panel is-active"
 							data-hub-panel="overview"
 							aria-labelledby={
-								businessHoursRows.length ? 'hub-hours-title' : 'hub-services-title'
+								businessHoursRows.length
+									? 'hub-hours-title'
+									: serviceCategories.length || professionals.length
+										? 'hub-services-title'
+										: 'hub-no-slots'
 							}
 						>
 							<div class="hub-overview-stack">
@@ -420,8 +427,13 @@ const serializedProfessionals = professionals.length
 											))}
 										</ul>
 									</div>
-								) : (
+								) : professionals.length ? (
 									<p class="hub-empty">Todavía no hay servicios destacados.</p>
+								) : null}
+								{professionals.length ? null : (
+									<p id="hub-no-slots" class="hub-empty" role="status">
+										{HUB_NO_ONLINE_SLOTS_MESSAGE}
+									</p>
 								)}
 							</div>
 						</section>
@@ -593,17 +605,16 @@ const serializedProfessionals = professionals.length
 																	>
 																		{specialty || '\u00a0'}
 																	</p>
+																	{pro.short_bio ? (
+																		<p class="hub-pro-card__bio">{pro.short_bio}</p>
+																	) : null}
 																</div>
-																<p
-																	class:list={[
-																		'hub-pro-card__rating',
-																		!rating.hasRating && 'hub-pro-card__rating--empty',
-																	]}
-																	aria-label={rating.aria}
-																>
-																	<span class="material-symbols-rounded" aria-hidden="true">star</span>
-																	<span>{rating.label}</span>
-																</p>
+																{rating.hasRating ? (
+																	<p class="hub-pro-card__rating" aria-label={rating.aria}>
+																		<span class="material-symbols-rounded" aria-hidden="true">star</span>
+																		<span>{rating.label}</span>
+																	</p>
+																) : null}
 															</div>
 															<span class="hub-pro-card__btn hub-pro-card__btn--book">
 																Reservar
@@ -617,12 +628,12 @@ const serializedProfessionals = professionals.length
 									</div>
 								</>
 							) : (
-								<p class="hub-empty">
-									Todavía no hay profesionales con agenda pública en este negocio.
+								<p class="hub-empty" role="status">
+									{HUB_NO_ONLINE_SLOTS_MESSAGE}
 								</p>
 							)}
 							<p class="hub-empty" data-hub-team-empty-filter hidden>
-								No hay profesionales con agenda en esta sucursal.
+								Aún no hay turnos online en esta sucursal.
 							</p>
 						</section>
 
@@ -656,6 +667,7 @@ const serializedProfessionals = professionals.length
 									<div class="hub-locations-grid" data-hub-locations-grid>
 										{locations.map((loc) => {
 											const mapsUrl = buildGoogleMapsUrl(loc);
+											const callHref = buildLocationTelHref(loc.phone);
 											const latitude = Number(loc.latitude);
 											const longitude = Number(loc.longitude);
 											const hasCoords =
@@ -700,6 +712,19 @@ const serializedProfessionals = professionals.length
 														) : (
 															<p class="hub-location-map__pros">{prosMeta}</p>
 														)}
+														{callHref ? (
+															<a
+																class="hub-location-map__call-btn"
+																href={callHref}
+																data-hub-location-call
+																aria-label={`Llamar a ${loc.name}`}
+															>
+																<span class="material-symbols-rounded" aria-hidden="true"
+																	>call</span
+																>
+																Llamar a esta sucursal
+															</a>
+														) : null}
 														<button
 															type="button"
 															class="hub-location-map__map-btn"

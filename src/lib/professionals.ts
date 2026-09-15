@@ -1,6 +1,7 @@
 import { ordsFailureDetails } from './api-error-codes';
 import { resolveOrdsApiUrl } from './env-urls';
 import { ROLES } from '../config/roles';
+import { normalizeProfessionalShortBio } from './professional-hub-profile';
 import { normalizePublicProfessionalRating } from './public-professional-rating';
 
 export const PROFESSIONALS_URL = resolveOrdsApiUrl(
@@ -35,6 +36,7 @@ export interface Professional {
 	display_name: string;
 	profile_slug: string;
 	profile_image_url: string;
+	short_bio: string;
 	phone_number: string;
 	is_active: 0 | 1;
 	created_at: string;
@@ -113,6 +115,7 @@ export interface CreateProfessionalWithUserPayload {
 	spe_id_specialty?: number;
 	profile_slug?: string;
 	prof_is_active?: 0 | 1;
+	short_bio?: string;
 	/** JPEG recortado en cliente (p. ej. 512×512) codificado en base64 sin prefijo data URL. */
 	image_base64?: string;
 	image_name?: string;
@@ -134,6 +137,7 @@ export interface UpdateProfessionalWithUserPayload {
 	spe_id_specialty?: number;
 	profile_slug?: string;
 	prof_is_active?: 0 | 1;
+	short_bio?: string;
 	/** JPEG recortado en cliente (p. ej. 512×512) codificado en base64 sin prefijo data URL. */
 	image_base64?: string;
 	image_name?: string;
@@ -410,6 +414,7 @@ const normalizeProfessional = (value: unknown): Professional | null => {
 		display_name: String(source.display_name || '').trim(),
 		profile_slug: String(source.profile_slug || '').trim(),
 		profile_image_url: String(source.profile_image_url || '').trim(),
+		short_bio: normalizeProfessionalShortBio(source.short_bio),
 		phone_number: String(source.phone_number || '').trim(),
 		is_active:
 			source.is_active === 1 || source.is_active === '1' || source.is_active === true ? 1 : 0,

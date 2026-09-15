@@ -6,6 +6,7 @@ import TopBar from '../../components/TopBar.astro';
 import { ROLES } from '../../config/roles';
 import Layout from '../../layouts/Layout.astro';
 import { panelPageTitle } from '../../lib/panel-page-title';
+import { BOOKABLE_SCHEDULE_OWNER_HINT } from '../../lib/workspace-settings-shared';
 import '../../styles/global.css';
 
 const token = Astro.locals.token ?? '';
@@ -231,7 +232,20 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 												<div data-schedule-view-template>
 													<p class="schedule-week-kicker">
 														<span>Plantilla</span>
-														Horario habitual que se repite cada semana.
+														{BOOKABLE_SCHEDULE_OWNER_HINT}
+														{
+															canManageSchedules ? (
+																<>
+																	{' '}
+																	<a
+																		href="/panel/perfil-publico"
+																		class="schedule-week-kicker__link"
+																	>
+																		Editar horario de la página
+																	</a>
+																</>
+															) : null
+														}
 													</p>
 													<div
 														class="schedule-loading-skeleton hidden grid gap-5 sm:gap-6"
@@ -521,6 +535,10 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 	[data-weekly-planner] {
 		min-width: 0;
 		max-width: 100%;
+	}
+
+	.schedule-setup-empty {
+		min-height: 20rem;
 	}
 
 	.schedule-error-anchor {
@@ -1159,6 +1177,17 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		font-weight: 750;
 		letter-spacing: 0.16em;
 		text-transform: uppercase;
+	}
+
+	.schedule-week-kicker__link {
+		color: var(--primary);
+		font-weight: 750;
+		text-decoration: underline;
+		text-underline-offset: 0.18em;
+	}
+
+	.schedule-week-kicker__link:hover {
+		color: color-mix(in srgb, var(--primary) 80%, var(--on-surface));
 	}
 
 	.schedule-day-card {

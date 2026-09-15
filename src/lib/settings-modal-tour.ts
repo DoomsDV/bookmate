@@ -1,19 +1,32 @@
 import type { DriveStep } from 'driver.js';
-import { runBookmateTour, type BookmateTourRunOptions } from './product-tour';
+import {
+	hasSeenBookmateTour,
+	runBookmateTour,
+	type BookmateTourRunOptions,
+} from './product-tour';
+import {
+	PAYMENTS_SENAS_TOUR_STEPS,
+	PAYMENTS_SENAS_TOUR_STORAGE_KEY,
+	PAYMENTS_SIPAP_SELECTOR,
+} from './settings-payments-tour-steps';
+
+export {
+	PAYMENTS_SENAS_TOUR_STEPS,
+	PAYMENTS_SENAS_TOUR_STORAGE_KEY,
+} from './settings-payments-tour-steps';
 
 const PUBLIC_PROFILE_FIELD_SELECTOR = '[data-settings-public-profile-field]';
 const PROFILE_PHOTO_SELECTOR = '[data-settings-tour-photo]';
 const PROFILE_PHONE_SELECTOR = '[data-settings-tour-phone]';
 const PROFILE_PUSH_SELECTOR = '[data-settings-push-notifications]';
 const SETTINGS_MODAL_SELECTOR = '[data-settings-modal]';
-const PAYMENTS_ENABLE_SELECTOR = '[data-payments-tour-enable]';
-const PAYMENTS_POLICY_SELECTOR = '[data-payments-tour-policy]';
-const PAYMENTS_SIPAP_SELECTOR = '[data-payments-tour-sipap]';
 const PAYMENTS_DETAILS_SELECTOR = '[data-payments-details]';
+const PAYMENTS_FORM_SELECTOR = '[data-settings-payments-form]';
 const SYSTEM_SLOT_SELECTOR = '[data-settings-tour-system-slot]';
 const SYSTEM_SLOT_PREVIEW_SELECTOR = '[data-settings-tour-system-slot-preview]';
 const SYSTEM_REMINDER_SELECTOR = '[data-settings-tour-system-reminder]';
 const SYSTEM_ALERT_SELECTOR = '[data-settings-tour-system-alert]';
+const SYSTEM_SURVEY_SELECTOR = '[data-settings-tour-system-survey-auto]';
 const SYSTEM_PUSH_SELECTOR = '[data-settings-tour-system-push]';
 const SYSTEM_NOTIFY_ALL_SELECTOR = '[data-settings-tour-system-notify-all]';
 
@@ -60,8 +73,16 @@ function isPublicProfileFieldVisible() {
 	return Boolean(document.querySelector(PUBLIC_PROFILE_FIELD_SELECTOR));
 }
 
+function paymentsFormAllowsTour() {
+	const form = document.querySelector<HTMLElement>(PAYMENTS_FORM_SELECTOR);
+	if (!form || form.classList.contains('hidden')) return false;
+	if (form.dataset.paymentsPlanAllows === '0') return false;
+	return true;
+}
+
 function isPaymentsTourAvailable() {
-	return Boolean(document.querySelector(PAYMENTS_ENABLE_SELECTOR));
+	if (!paymentsFormAllowsTour()) return false;
+	return Boolean(document.querySelector(PAYMENTS_SIPAP_SELECTOR));
 }
 
 function isSystemTourAvailable() {
@@ -139,49 +160,20 @@ function buildProfileTourSteps(): DriveStep[] {
 	return steps;
 }
 
-function buildPaymentsTourSteps(): DriveStep[] {
+export function buildPaymentsTourSteps(): DriveStep[] {
 	if (!isPaymentsTourAvailable()) return [];
 
-	const steps: DriveStep[] = [
-		{
-			element: PAYMENTS_ENABLE_SELECTOR,
+	return PAYMENTS_SENAS_TOUR_STEPS.filter((step) => document.querySelector(step.selector)).map(
+		(step) => ({
+			element: step.selector,
 			popover: {
-				title: 'Cobro de señas',
-				description:
-					'Activá este interruptor para pedir una seña por transferencia SIPAP al reservar. El dinero va directo a tu cuenta; Hasel no intermedia el pago.',
-				side: 'bottom',
-				align: 'start',
+				title: step.title,
+				description: step.description,
+				side: step.side,
+				align: step.align,
 			},
-		},
-	];
-
-	if (document.querySelector(PAYMENTS_POLICY_SELECTOR)) {
-		steps.push({
-			element: PAYMENTS_POLICY_SELECTOR,
-			popover: {
-				title: 'Política de cancelación',
-				description:
-					'Elegí Flexible, Moderada o Estricta. El cliente la acepta al reservar y define cuánto se reembolsa si cancela (ventana de 24 horas antes del turno).',
-				side: 'bottom',
-				align: 'start',
-			},
-		});
-	}
-
-	if (document.querySelector(PAYMENTS_SIPAP_SELECTOR)) {
-		steps.push({
-			element: PAYMENTS_SIPAP_SELECTOR,
-			popover: {
-				title: 'Datos para recibir la transferencia',
-				description:
-					'Completá banco, titular, documento y alias. El cliente usa estos datos y el código HASEL en el asunto de la transferencia.',
-				side: 'top',
-				align: 'start',
-			},
-		});
-	}
-
-	return steps;
+		})
+	);
 }
 
 function buildSystemTourSteps(): DriveStep[] {
@@ -239,6 +231,19 @@ function buildSystemTourSteps(): DriveStep[] {
 		});
 	}
 
+	if (document.querySelector(SYSTEM_SURVEY_SELECTOR)) {
+		steps.push({
+			element: SYSTEM_SURVEY_SELECTOR,
+			popover: {
+				title: 'Encuesta de satisfacción',
+				description:
+					'Activá el envío automático para que el cliente reciba la encuesta por WhatsApp. Las estrellas del perfil público salen de esas respuestas.',
+				side: 'bottom',
+				align: 'start',
+			},
+		});
+	}
+
 	if (document.querySelector(SYSTEM_PUSH_SELECTOR)) {
 		steps.push({
 			element: SYSTEM_PUSH_SELECTOR,
@@ -268,12 +273,18 @@ function buildSystemTourSteps(): DriveStep[] {
 	return steps;
 }
 
-function runSettingsTour(steps: DriveStep[], onDestroyed?: () => void) {
+function runSettingsTour(
+	steps: DriveStep[],
+	onDestroyed?: () => void,
+	options?: Pick<BookmateTourRunOptions, 'force' | 'persistCompletion' | 'storageKey'>
+) {
 	if (steps.length === 0) return;
 
 	runBookmateTour(steps, {
 		...settingsTourShellOptions(),
-		storageKey: 'bookmate_settings_modal_tour',
+		storageKey: options?.storageKey ?? 'bookmate_settings_modal_tour',
+		force: options?.force ?? true,
+		persistCompletion: options?.persistCompletion ?? false,
 		onDestroyed,
 	});
 }
@@ -287,7 +298,10 @@ function showProfileTour(context: SettingsModalTourContext) {
 	});
 }
 
-function showPaymentsTour(context: SettingsModalTourContext) {
+function runPaymentsTour(
+	context: SettingsModalTourContext,
+	options?: Pick<BookmateTourRunOptions, 'force' | 'persistCompletion'>
+) {
 	context.activatePaymentsTab?.();
 	const restore = context.revealPaymentsDetailsForTour?.();
 
@@ -297,9 +311,17 @@ function showPaymentsTour(context: SettingsModalTourContext) {
 			if (typeof restore === 'function') restore();
 			return;
 		}
-		runSettingsTour(steps, () => {
-			if (typeof restore === 'function') restore();
-		});
+		runSettingsTour(
+			steps,
+			() => {
+				if (typeof restore === 'function') restore();
+			},
+			{
+				force: options?.force ?? true,
+				persistCompletion: options?.persistCompletion ?? false,
+				storageKey: PAYMENTS_SENAS_TOUR_STORAGE_KEY,
+			}
+		);
 	});
 }
 
@@ -319,8 +341,7 @@ export function hasSettingsModalTourForTab(tab: string): boolean {
 	if (tab === 'payments') return isPaymentsTourAvailable();
 	if (tab === 'profile') {
 		return (
-			isPublicProfileFieldVisible() ||
-			Boolean(document.querySelector(PROFILE_PHOTO_SELECTOR))
+			isPublicProfileFieldVisible() || Boolean(document.querySelector(PROFILE_PHOTO_SELECTOR))
 		);
 	}
 	if (tab === 'system') return isSystemTourAvailable();
@@ -329,16 +350,16 @@ export function hasSettingsModalTourForTab(tab: string): boolean {
 
 /**
  * Guía contextual del modal de ajustes.
- * En Pagos: cobro de señas → políticas → datos SIPAP.
+ * En Pagos (HAS-20): alias SIPAP → política de reembolso → cómo se ve un cobro.
  * En Mi perfil: enlace personal (si está disponible).
- * En Sistema: slots, recordatorios, alertas y notificaciones.
+ * En Sistema: slots, recordatorios, alertas, encuesta y notificaciones.
  */
 export function showSettingsModalTour(context: SettingsModalTourContext = {}) {
 	const tab = context.getActiveTab?.() ?? 'profile';
 
 	if (tab === 'payments') {
 		if (!isPaymentsTourAvailable()) return;
-		showPaymentsTour(context);
+		runPaymentsTour(context, { force: true, persistCompletion: false });
 		return;
 	}
 
@@ -351,6 +372,13 @@ export function showSettingsModalTour(context: SettingsModalTourContext = {}) {
 	if (tab === 'profile') {
 		showProfileTour(context);
 	}
+}
+
+/** Primera vez que un admin Premium abre Ajustes → Pagos. */
+export function maybeShowPaymentsSettingsTour(context: SettingsModalTourContext = {}) {
+	if (hasSeenBookmateTour(PAYMENTS_SENAS_TOUR_STORAGE_KEY)) return;
+	if (!isPaymentsTourAvailable()) return;
+	runPaymentsTour(context, { force: false, persistCompletion: true });
 }
 
 /** Fuerza mostrar `[data-payments-details]` sin cambiar el toggle; restaura con `classList`. */

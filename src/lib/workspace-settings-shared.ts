@@ -109,3 +109,14 @@ export const getCancelWaitOptionsForReminder = (
 		(option) => (option.hours ?? 0) > 0 && (option.hours ?? 0) < reminderHours
 	);
 };
+
+/** Horario de vitrina (Perfil público): solo se muestra; no abre reservas. */
+export const STOREFRONT_HOURS_OWNER_HINT =
+	'Esto se muestra en tu página. Los turnos los abre el horario de cada persona.';
+
+/** Plantilla semanal (Horarios): sí genera turnos reservables. */
+export const BOOKABLE_SCHEDULE_OWNER_HINT =
+	'Este horario abre los turnos online. El de la página pública solo se muestra.';
+
+/** Empty state del hub cuando no hay profesionales con agenda pública. */
+export const HUB_NO_ONLINE_SLOTS_MESSAGE = 'Aún no hay turnos online.';

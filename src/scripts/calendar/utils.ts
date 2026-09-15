@@ -1,4 +1,4 @@
-import type { ApiFieldError } from './types';
+import type { ApiFieldError, AppointmentSeriesConflict } from './types';
 
 export const toInt = (value: unknown, fallback = 0) => {
 	const parsed = Number(value);
@@ -166,12 +166,17 @@ export class ApiClientError extends Error {
 	fieldErrors: ApiFieldError[];
 	code?: string;
 	scheduleMisalignedReason?: string | null;
+	conflicts: AppointmentSeriesConflict[];
 
 	constructor(
 		message: string,
 		status = 400,
 		fieldErrors: ApiFieldError[] = [],
-		options?: { code?: string; scheduleMisalignedReason?: string | null }
+		options?: {
+			code?: string;
+			scheduleMisalignedReason?: string | null;
+			conflicts?: AppointmentSeriesConflict[];
+		}
 	) {
 		super(message);
 		this.name = 'ApiClientError';
@@ -179,6 +184,7 @@ export class ApiClientError extends Error {
 		this.fieldErrors = fieldErrors;
 		this.code = options?.code;
 		this.scheduleMisalignedReason = options?.scheduleMisalignedReason ?? null;
+		this.conflicts = options?.conflicts ?? [];
 	}
 }
 

@@ -4,6 +4,7 @@ import {
 	PUBLIC_PROFILE_PREVIEW_EVENT,
 	type PublicProfilePreviewState,
 } from '../lib/public-profile-preview-events';
+import { HUB_NO_ONLINE_SLOTS_MESSAGE } from '../lib/workspace-settings-shared';
 import { FacebookIcon, InstagramIcon, WhatsAppIcon } from './hub-brand-icons';
 
 type PreviewTab = 'overview' | 'galeria' | 'equipo' | 'sucursales';
@@ -167,12 +168,14 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 									WhatsApp
 								</span>
 							) : null}
-							<span className="hub-btn hub-btn--filled">
-								<span className="material-symbols-rounded" aria-hidden="true">
-									event
+							{professionals.length ? (
+								<span className="hub-btn hub-btn--filled">
+									<span className="material-symbols-rounded" aria-hidden="true">
+										event
+									</span>
+									Reservar
 								</span>
-								Reservar
-							</span>
+							) : null}
 						</div>
 					</div>
 				</section>
@@ -291,8 +294,13 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 										))}
 									</ul>
 								</div>
-							) : (
+							) : professionals.length ? (
 								<p className="hub-empty">Todavía no hay servicios destacados.</p>
+							) : null}
+							{professionals.length ? null : (
+								<p className="hub-empty" role="status">
+									{HUB_NO_ONLINE_SLOTS_MESSAGE}
+								</p>
 							)}
 						</div>
 					</section>
@@ -367,16 +375,18 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 														>
 															{pro.specialty || '\u00a0'}
 														</p>
+														{pro.shortBio ? (
+															<p className="hub-pro-card__bio">{pro.shortBio}</p>
+														) : null}
 													</div>
-													<p
-														className={`hub-pro-card__rating${rating.hasRating ? '' : ' hub-pro-card__rating--empty'}`}
-														aria-label={rating.aria}
-													>
-														<span className="material-symbols-rounded" aria-hidden="true">
-															star
-														</span>
-														<span>{rating.label}</span>
-													</p>
+													{rating.hasRating ? (
+														<p className="hub-pro-card__rating" aria-label={rating.aria}>
+															<span className="material-symbols-rounded" aria-hidden="true">
+																star
+															</span>
+															<span>{rating.label}</span>
+														</p>
+													) : null}
 												</div>
 												<span className="hub-pro-card__btn hub-pro-card__btn--book">
 													Reservar
@@ -391,7 +401,9 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 								})}
 							</div>
 						) : (
-							<p className="hub-empty">Todavía no hay profesionales.</p>
+							<p className="hub-empty" role="status">
+								{HUB_NO_ONLINE_SLOTS_MESSAGE}
+							</p>
 						)}
 					</section>
 
@@ -417,6 +429,14 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 												<h3 className="hub-pro-card__name">{loc.name}</h3>
 												{loc.address ? (
 													<p className="hub-pro-card__specialty">{loc.address}</p>
+												) : null}
+												{loc.phone ? (
+													<p className="hub-pro-card__hint">
+														<span className="material-symbols-rounded" aria-hidden="true">
+															call
+														</span>
+														{loc.phone}
+													</p>
 												) : null}
 												<p className="hub-pro-card__hint">
 													<span className="material-symbols-rounded" aria-hidden="true">

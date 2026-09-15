@@ -1,5 +1,9 @@
 import { resolveOrdsAiUrl } from './env-urls';
 
+/**
+ * ATC es la ayuda de producto del panel. No es el chat de agenda Oracle (retirado)
+ * ni el chat de negocio futuro, que irá en un servicio LangGraph aparte.
+ */
 export class AtcChatApiError extends Error {
 	status: number;
 	details?: unknown;

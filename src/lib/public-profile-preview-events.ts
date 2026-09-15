@@ -5,6 +5,7 @@ export type PublicProfilePreviewProfessional = {
 	fullName: string;
 	specialty: string | null;
 	imageUrl: string;
+	shortBio: string;
 	initials: string;
 	ratingAvg: number | null;
 	ratingCount: number;
@@ -14,6 +15,7 @@ export type PublicProfilePreviewLocation = {
 	id: number;
 	name: string;
 	address: string;
+	phone?: string;
 };
 
 export type PublicProfilePreviewState = {

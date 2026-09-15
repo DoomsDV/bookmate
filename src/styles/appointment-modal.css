@@ -1081,4 +1081,116 @@ dialog[data-appointment-modal] .bookmate-searchable-select-dropdown {
 	}
 }
 
+.appointment-recurrence {
+	display: grid;
+	gap: 0.75rem;
+	border-radius: 1rem;
+	border: 1px solid color-mix(in srgb, var(--shell-border) 88%, transparent);
+	background: color-mix(in srgb, var(--surface-variant) 22%, var(--surface-bright));
+	padding: 0.9rem 1rem;
+}
+
+.appointment-recurrence.is-edit-hidden {
+	display: none;
+}
+
+.appointment-recurrence__toggle {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.75rem;
+	cursor: pointer;
+}
+
+.appointment-recurrence__checkbox {
+	margin-top: 0.2rem;
+	inline-size: 1.05rem;
+	block-size: 1.05rem;
+	accent-color: var(--primary);
+}
+
+.appointment-recurrence__copy {
+	display: grid;
+	gap: 0.15rem;
+	min-width: 0;
+}
+
+.appointment-recurrence__title {
+	font-size: 0.95rem;
+	font-weight: 800;
+	color: var(--on-surface);
+}
+
+.appointment-recurrence__hint {
+	font-size: 0.8rem;
+	font-weight: 600;
+	color: var(--on-surface-variant);
+}
+
+.appointment-recurrence__fields {
+	display: grid;
+	gap: 0.65rem;
+}
+
+.appointment-recurrence__modes {
+	display: grid;
+	grid-template-columns: auto minmax(4.5rem, 6rem);
+	gap: 0.55rem 0.75rem;
+	align-items: center;
+}
+
+.appointment-recurrence__mode {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.45rem;
+	font-size: 0.86rem;
+	font-weight: 700;
+	color: var(--on-surface);
+}
+
+.appointment-recurrence__count,
+.appointment-recurrence__until {
+	min-height: 2.6rem;
+	border-radius: 0.75rem;
+	border: 1px solid var(--shell-border);
+	background: var(--surface-bright);
+	padding: 0.4rem 0.7rem;
+	font-size: 0.9rem;
+	font-weight: 700;
+	color: var(--on-surface);
+	outline: none;
+}
+
+.appointment-recurrence__count:focus,
+.appointment-recurrence__until:focus {
+	border-color: var(--primary);
+	box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+.appointment-recurrence__preview,
+.appointment-recurrence__dates {
+	margin: 0;
+	font-size: 0.82rem;
+	font-weight: 650;
+	line-height: 1.4;
+	color: var(--on-surface-variant);
+}
+
+.appointment-series-note {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.55rem;
+	margin: 0 1rem 1rem;
+	border-radius: 0.9rem;
+	border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--shell-border));
+	background: color-mix(in srgb, var(--primary) 8%, var(--surface-bright));
+	padding: 0.7rem 0.85rem;
+	font-size: 0.82rem;
+	font-weight: 700;
+	color: var(--on-surface);
+}
+
+.appointment-series-note[hidden] {
+	display: none;
+}
+
 

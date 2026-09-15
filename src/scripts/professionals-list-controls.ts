@@ -5,13 +5,19 @@ import {
 } from '../lib/panel-filter-popover';
 import { parseParaguayMobilePhone } from '../lib/paraguay-phone';
 import { updateAppPaginationDom } from '../lib/pagination';
+import {
+	formatProfessionalHubListingHint,
+	getProfessionalHubGaps,
+} from '../lib/professional-hub-profile';
 import { formatPublicProfessionalRating } from '../lib/public-professional-rating';
+import { renderSetupEmptyCta, SCREEN_EMPTY } from '../lib/setup-empty-cta';
 
 type ProfessionalItem = {
 	id_professional: number;
 	display_name?: string | null;
 	phone_number?: string | null;
 	profile_image_url?: string | null;
+	short_bio?: string | null;
 	is_active?: 0 | 1;
 	membership_status?: string | null;
 	user?: {
@@ -125,6 +131,15 @@ const renderProfessionalCard = (professional: ProfessionalItem) => {
 	const ratingClass = rating.hasRating
 		? 'professionals-card__rating'
 		: 'professionals-card__rating professionals-card__rating--empty';
+	const hubListingHint = formatProfessionalHubListingHint(
+		getProfessionalHubGaps({
+			profileImageUrl: imageUrl,
+			shortBio: professional.short_bio,
+		})
+	);
+	const hubGapHtml = hubListingHint
+		? `<p class="professionals-card__hub-gap">${escapeHtml(hubListingHint)}</p>`
+		: '';
 
 	const avatarClasses = imageUrl
 		? 'professionals-card-avatar'
@@ -172,6 +187,7 @@ const renderProfessionalCard = (professional: ProfessionalItem) => {
 							<span>${escapeHtml(rating.label)}</span>
 						</p>
 						<p class="professionals-card__email line-clamp-1">${escapeHtml(email)}</p>
+						${hubGapHtml}
 					</div>
 				</div>
 				<div class="professionals-card__meta">
@@ -202,13 +218,19 @@ const updateEmptyOrGrid = (
 	const hasFilters = hasSearch || hasStatusFilter;
 
 	if (professionals.length === 0) {
+		const ctaHtml = !hasFilters
+			? renderSetupEmptyCta({
+					label: SCREEN_EMPTY.professionals.ctaLabel,
+					attrs: 'data-open-professional-modal data-requires-write',
+				})
+			: '';
 		results.innerHTML = `
 			<div class="professionals-empty-state" data-professionals-empty>
 				<div class="professionals-empty-icon">
-					<span class="material-symbols-rounded text-[2rem]">${hasFilters ? 'search_off' : 'badge'}</span>
+					<span class="material-symbols-rounded text-[2rem]">${hasFilters ? 'search_off' : SCREEN_EMPTY.professionals.icon}</span>
 				</div>
 				<h3 class="text-[1.1rem] font-bold text-(--on-surface)">
-					${hasFilters ? 'No se encontraron profesionales' : 'No hay profesionales registrados'}
+					${hasFilters ? 'No se encontraron profesionales' : SCREEN_EMPTY.professionals.title}
 				</h3>
 				<p class="mt-1.5 max-w-sm text-[0.95rem] leading-relaxed text-(--on-surface-variant)">
 					${
@@ -216,9 +238,10 @@ const updateEmptyOrGrid = (
 							? 'Probá con otro nombre, email o teléfono.'
 							: hasStatusFilter
 								? 'No hay profesionales con ese estado.'
-								: 'Aún no has agregado a ningún profesional a esta organización. Comienza creando tu primer registro de personal.'
+								: SCREEN_EMPTY.professionals.copy
 					}
 				</p>
+				${ctaHtml}
 			</div>
 		`;
 		return;
