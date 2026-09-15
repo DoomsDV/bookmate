@@ -46,8 +46,12 @@ sqlcl_version_ok() {
   local sql_bin=$1
   local out
   [[ -x "$sql_bin" ]] || return 1
-  out="$("$sql_bin" -version 2>&1 || true)"
-  grep -qi 'sqlcl' <<<"$out"
+  # Require a real version banner. A ClassNotFoundException mentions "SqlCli"
+  # and would match a naive case-insensitive 'sqlcl' grep.
+  if ! out="$("$sql_bin" -version 2>&1)"; then
+    return 1
+  fi
+  grep -q 'SQLcl:' <<<"$out"
 }
 
 find_sqlcl() {
@@ -101,6 +105,8 @@ install_sqlcl() {
         echo "[install] ERROR: /opt/sqlcl/bin/sql missing after unzip" >&2
         exit 1
       fi
+      # OTN zip ships jars as 640; make them readable for the runtime user.
+      sudo chmod -R a+rX /opt/sqlcl
       sudo ln -sfn /opt/sqlcl/bin/sql /usr/local/bin/sql
     else
       mkdir -p "$HOME/.local/opt" "$HOME/.local/bin"
@@ -109,6 +115,7 @@ install_sqlcl() {
         echo "[install] ERROR: $HOME/.local/opt/sqlcl/bin/sql missing after unzip" >&2
         exit 1
       fi
+      chmod -R a+rX "$HOME/.local/opt/sqlcl"
       ln -sfn "$HOME/.local/opt/sqlcl/bin/sql" "$HOME/.local/bin/sql"
     fi
   )
