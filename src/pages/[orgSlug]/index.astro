@@ -7,7 +7,7 @@ import HaselPublicFooter from '../../components/HaselPublicFooter.astro';
 import { LocationMap, formatMapCoordinates } from '../../components/ui/location-map';
 import { formatBusinessHoursForDisplay } from '../../lib/business-hours';
 import { PublicBookingApiError, getPublicProfileSpecialtyLabel } from '../../lib/public-booking';
-import { buildGoogleMapsUrl } from '../../lib/public-booking-locations';
+import { buildGoogleMapsUrl, buildLocationTelHref } from '../../lib/public-booking-locations';
 import {
 	formatPublicProfessionalRating,
 	getPublicOrgHubWithOrds,
@@ -656,6 +656,7 @@ const serializedProfessionals = professionals.length
 									<div class="hub-locations-grid" data-hub-locations-grid>
 										{locations.map((loc) => {
 											const mapsUrl = buildGoogleMapsUrl(loc);
+											const callHref = buildLocationTelHref(loc.phone);
 											const latitude = Number(loc.latitude);
 											const longitude = Number(loc.longitude);
 											const hasCoords =
@@ -700,6 +701,19 @@ const serializedProfessionals = professionals.length
 														) : (
 															<p class="hub-location-map__pros">{prosMeta}</p>
 														)}
+														{callHref ? (
+															<a
+																class="hub-location-map__call-btn"
+																href={callHref}
+																data-hub-location-call
+																aria-label={`Llamar a ${loc.name}`}
+															>
+																<span class="material-symbols-rounded" aria-hidden="true"
+																	>call</span
+																>
+																Llamar a esta sucursal
+															</a>
+														) : null}
 														<button
 															type="button"
 															class="hub-location-map__map-btn"

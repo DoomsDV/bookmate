@@ -178,10 +178,12 @@ const mapPreviewLocations = (raw: unknown): PublicProfilePreviewLocation[] => {
 			const row = item as Record<string, unknown>;
 			const name = String(row.name || '').trim();
 			if (!name && !String(row.address || '').trim()) return null;
+			const phone = String(row.phone || '').trim();
 			return {
 				id: Number(row.id_location) || 0,
 				name: name || 'Sucursal',
 				address: String(row.address || '').trim(),
+				phone: phone || undefined,
 			} satisfies PublicProfilePreviewLocation;
 		})
 		.filter((item): item is PublicProfilePreviewLocation => item !== null);

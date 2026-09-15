@@ -26,6 +26,7 @@ export interface PublicOrgHubLocation {
 	id_location: number;
 	name: string;
 	address: string;
+	phone?: string;
 	latitude?: number;
 	longitude?: number;
 }

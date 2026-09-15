@@ -16,6 +16,7 @@ type LocationItem = {
 	id_location: number;
 	name?: string | null;
 	address?: string | null;
+	phone?: string | null;
 	is_active?: 0 | 1;
 	latitude?: number | null;
 	longitude?: number | null;
@@ -135,15 +136,19 @@ const readStateFromUrl = () => {
 	const url = new URL(window.location.href);
 	const rawPage = Number(url.searchParams.get('page') || '1');
 	const page = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
+	const search = String(url.searchParams.get('search') || '').trim();
 	const rawIsActive = String(url.searchParams.get('is_active') || '').trim();
 	const isActive = rawIsActive === '0' || rawIsActive === '1' ? Number(rawIsActive) : null;
-	return { page, isActive };
+	return { page, search, isActive };
 };
 
-const syncUrl = (state: { page: number; isActive: number | null }) => {
+const syncUrl = (state: { page: number; search: string; isActive: number | null }) => {
 	const url = new URL(window.location.href);
 	if (state.page > 1) url.searchParams.set('page', String(state.page));
 	else url.searchParams.delete('page');
+
+	if (state.search) url.searchParams.set('search', state.search);
+	else url.searchParams.delete('search');
 
 	if (state.isActive === 0 || state.isActive === 1) {
 		url.searchParams.set('is_active', String(state.isActive));
@@ -193,7 +198,11 @@ const renderLocationCard = (location: LocationItem, index = 0) => {
 		? ` title="Cerrado: ${escapeHtml(String(location.current_closure_name))}"`
 		: '';
 	const address = location.address || 'Dirección no disponible';
+	const phone = String(location.phone || '').trim();
 	const placeLine = formatPlaceLine(location.city?.name, location.department?.name);
+	const phoneHtml = phone
+		? `<p class="locations-card__phone line-clamp-1"><span class="material-symbols-rounded" aria-hidden="true">call</span>${escapeHtml(phone)}</p>`
+		: '';
 
 	return `
 		<article
@@ -214,6 +223,7 @@ const renderLocationCard = (location: LocationItem, index = 0) => {
 						</span>
 					</div>
 					<p class="locations-card__address line-clamp-1">${escapeHtml(address)}</p>
+					${phoneHtml}
 					<div class="locations-card__route">
 						<span class="locations-card__pin" aria-hidden="true">
 							<span class="material-symbols-rounded">location_on</span>
@@ -230,27 +240,34 @@ const renderLocationCard = (location: LocationItem, index = 0) => {
 	`;
 };
 
-const updateEmptyOrGrid = (locations: LocationItem[], isActive: number | null) => {
+const updateEmptyOrGrid = (
+	locations: LocationItem[],
+	state: { search: string; isActive: number | null }
+) => {
 	const root = getListRoot();
 	const results = root?.querySelector<HTMLElement>('[data-locations-results]');
 	if (!results) return;
 
-	const hasStatusFilter = isActive === 0 || isActive === 1;
+	const hasSearch = Boolean(state.search);
+	const hasStatusFilter = state.isActive === 0 || state.isActive === 1;
+	const hasFilters = hasSearch || hasStatusFilter;
 
 	if (locations.length === 0) {
 		results.innerHTML = `
 			<div class="locations-empty-state" data-locations-empty>
 				<div class="locations-empty-icon">
-					<span class="material-symbols-rounded text-[2rem]">${hasStatusFilter ? 'search_off' : 'domain'}</span>
+					<span class="material-symbols-rounded text-[2rem]">${hasFilters ? 'search_off' : 'domain'}</span>
 				</div>
 				<h3 class="text-[1.1rem] font-bold text-(--on-surface)">
-					${hasStatusFilter ? 'No se encontraron sucursales' : 'No hay sucursales registradas'}
+					${hasFilters ? 'No se encontraron sucursales' : 'No hay sucursales registradas'}
 				</h3>
 				<p class="mt-1.5 max-w-sm text-[0.95rem] leading-relaxed text-(--on-surface-variant)">
 					${
-						hasStatusFilter
-							? 'No hay sucursales con ese estado.'
-							: 'Aún no has agregado ninguna sucursal a esta organización. Comienza creando tu primer local.'
+						hasSearch
+							? 'Probá con otro nombre, dirección o ciudad.'
+							: hasStatusFilter
+								? 'No hay sucursales con ese estado.'
+								: 'Aún no has agregado ninguna sucursal a esta organización. Comienza creando tu primer local.'
 					}
 				</p>
 			</div>
@@ -314,10 +331,11 @@ const updatePagination = (meta: LocationsListMeta) => {
 	});
 };
 
+let searchDebounceTimer: number | null = null;
 let loadRequestId = 0;
 let isLoading = false;
 
-const loadLocations = async (state: { page: number; isActive: number | null }) => {
+const loadLocations = async (state: { page: number; search: string; isActive: number | null }) => {
 	const requestId = ++loadRequestId;
 	isLoading = true;
 
@@ -326,6 +344,7 @@ const loadLocations = async (state: { page: number; isActive: number | null }) =
 			page: String(state.page),
 			limit: String(PAGE_SIZE),
 		});
+		if (state.search) query.set('search', state.search);
 		if (state.isActive === 0 || state.isActive === 1) {
 			query.set('is_active', String(state.isActive));
 		}
@@ -355,9 +374,10 @@ const loadLocations = async (state: { page: number; isActive: number | null }) =
 
 		syncUrl({
 			page: normalizedMeta.current_page,
+			search: state.search,
 			isActive: state.isActive,
 		});
-		updateEmptyOrGrid(locations, state.isActive);
+		updateEmptyOrGrid(locations, state);
 		hydrateMapPreviews();
 		updateFilterUi(state.isActive);
 		updatePagination(normalizedMeta);
@@ -385,6 +405,29 @@ export const initLocationsListControls = () => {
 	document.addEventListener('astro:page-load', syncLocationMapPreviewsOnPage);
 
 	hydrateMapPreviews();
+
+	document.addEventListener('input', (event) => {
+		const target = event.target;
+		if (!(target instanceof HTMLInputElement) || !target.matches('[data-locations-search]')) {
+			return;
+		}
+
+		const nextQuery = String(target.value || '').trim();
+		if (searchDebounceTimer !== null) {
+			window.clearTimeout(searchDebounceTimer);
+		}
+
+		searchDebounceTimer = window.setTimeout(() => {
+			searchDebounceTimer = null;
+			const current = readStateFromUrl();
+			if (nextQuery === current.search) return;
+			void loadLocations({
+				page: 1,
+				search: nextQuery,
+				isActive: current.isActive,
+			});
+		}, 300);
+	});
 
 	const themeObserver = new MutationObserver(() => {
 		syncLocationMapPreviews();
@@ -430,6 +473,7 @@ export const initLocationsListControls = () => {
 			if (nextIsActive === current.isActive) return;
 			void loadLocations({
 				page: 1,
+				search: current.search,
 				isActive: nextIsActive,
 			});
 			return;
@@ -445,6 +489,7 @@ export const initLocationsListControls = () => {
 			if (nextPage === current.page) return;
 			void loadLocations({
 				page: nextPage,
+				search: current.search,
 				isActive: current.isActive,
 			});
 		}

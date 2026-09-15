@@ -418,6 +418,14 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 												{loc.address ? (
 													<p className="hub-pro-card__specialty">{loc.address}</p>
 												) : null}
+												{loc.phone ? (
+													<p className="hub-pro-card__hint">
+														<span className="material-symbols-rounded" aria-hidden="true">
+															call
+														</span>
+														{loc.phone}
+													</p>
+												) : null}
 												<p className="hub-pro-card__hint">
 													<span className="material-symbols-rounded" aria-hidden="true">
 														groups

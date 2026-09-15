@@ -20,6 +20,7 @@ const rawPage = Number(pageProp || Astro.url.searchParams.get('page') || '1');
 const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 const rawIsActive = String(Astro.url.searchParams.get('is_active') || '').trim();
 const isActiveFilter = rawIsActive === '0' || rawIsActive === '1' ? Number(rawIsActive) : null;
+const searchQuery = String(Astro.url.searchParams.get('search') || '').trim();
 
 let locations: Location[] = [];
 let loadError = '';
@@ -35,7 +36,7 @@ if (!token) {
 } else {
 	try {
 		const apiClient = new LocationsClient(token);
-		const listResult = await apiClient.list(currentPage, PAGE_SIZE, isActiveFilter);
+		const listResult = await apiClient.list(currentPage, PAGE_SIZE, isActiveFilter, searchQuery);
 		locations = listResult.data;
 		pagination = listResult.meta;
 	} catch (error) {
@@ -58,6 +59,7 @@ const safeCurrentPage = Math.min(Math.max(1, pagination.current_page), totalPage
 			<LocationsGrid
 				locations={locations}
 				showCreateAction={canManageLocations}
+				searchQuery={searchQuery}
 				isActiveFilter={isActiveFilter}
 				currentPage={safeCurrentPage}
 				totalPages={totalPages}
