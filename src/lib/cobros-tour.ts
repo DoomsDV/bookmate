@@ -8,21 +8,23 @@ const HELP_SELECTOR = '[data-cobros-tour-help]';
 const INTRO_SELECTOR = '[data-cobros-tour-intro]';
 const TABS_SELECTOR = '[data-cobros-tour-tabs]';
 const EMPTY_SELECTOR = '[data-cobros-empty]';
-const CARD_SELECTOR = '[data-cobros-cards] .cobros-card, [data-cobros-table-body] tr';
+const TABLE_ROW_SELECTOR = '[data-cobros-table-body] tr';
+const CARD_SELECTOR = '[data-cobros-cards] .cobros-card';
 
 export function hasSeenCobrosTour() {
 	return hasSeenBookmateTour(COBROS_TOUR_STORAGE_KEY);
 }
 
 function isVisible(el: Element | null) {
-	if (!(el instanceof HTMLElement)) return false;
-	if (el.classList.contains('hidden') || el.hidden) return false;
-	if (el.closest('.hidden')) return false;
-	return el.getClientRects().length > 0;
+	if (!(el instanceof HTMLElement) || el.hidden) return false;
+	if (el.getClientRects().length === 0) return false;
+	return window.getComputedStyle(el).display !== 'none';
 }
 
 function firstVisibleSelector(selectors: string[]) {
-	return selectors.find((selector) => isVisible(document.querySelector(selector))) ?? null;
+	return selectors.find((selector) =>
+		Array.from(document.querySelectorAll(selector)).some((el) => isVisible(el))
+	) ?? null;
 }
 
 export function buildCobrosTourSteps(): DriveStep[] {
@@ -54,7 +56,7 @@ export function buildCobrosTourSteps(): DriveStep[] {
 		});
 	}
 
-	const exampleTarget = firstVisibleSelector([CARD_SELECTOR, EMPTY_SELECTOR]);
+	const exampleTarget = firstVisibleSelector([TABLE_ROW_SELECTOR, CARD_SELECTOR, EMPTY_SELECTOR]);
 	if (exampleTarget) {
 		steps.push({
 			element: exampleTarget,
