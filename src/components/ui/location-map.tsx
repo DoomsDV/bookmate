@@ -1,6 +1,11 @@
 import type { MouseEvent, ReactNode } from 'react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
+import {
+	isHubLocationExpanded,
+	shouldCollapseHubLocationOnPointerDown,
+	toggleHubLocationExpansion,
+} from '../../lib/hub-location-card-expansion';
 
 export const formatMapCoordinates = (latitude: number, longitude: number): string => {
 	if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return '';
@@ -10,6 +15,8 @@ export const formatMapCoordinates = (latitude: number, longitude: number): strin
 };
 
 type LocationMapProps = {
+	/** Id de sucursal: la expansión se guarda por este id, no en la grilla. */
+	locationId?: number;
 	location?: string;
 	coordinates?: string;
 	address?: string;
@@ -21,6 +28,7 @@ type LocationMapProps = {
 };
 
 export function LocationMap({
+	locationId,
 	location = 'Ubicación',
 	coordinates = '',
 	address = '',
@@ -55,7 +63,11 @@ export function LocationMap({
 		const target = event.target;
 		if (target instanceof Element && target.closest('.hub-location-map__actions')) return;
 		setSheetSettled(false);
-		setIsExpanded((open) => !open);
+		setIsExpanded((open) => {
+			const id = Number(locationId);
+			if (!Number.isInteger(id) || id <= 0) return !open;
+			return isHubLocationExpanded(toggleHubLocationExpansion(open ? [id] : [], id), id);
+		});
 	};
 
 	const resizeMap = () => {
@@ -75,9 +87,7 @@ export function LocationMap({
 	useEffect(() => {
 		if (!isExpanded) return;
 		const onPointerDown = (event: PointerEvent) => {
-			const root = rootRef.current;
-			const target = event.target;
-			if (!root || !(target instanceof Node) || root.contains(target)) return;
+			if (!shouldCollapseHubLocationOnPointerDown(rootRef.current, event.target)) return;
 			setSheetSettled(false);
 			setIsExpanded(false);
 		};
@@ -175,7 +185,9 @@ export function LocationMap({
 	return (
 		<motion.div
 			ref={rootRef}
-			className={`hub-location-map ${className}`.trim()}
+			className={`hub-location-map${isExpanded ? ' is-expanded' : ''} ${className}`.trim()}
+			data-location-id={locationId != null ? String(locationId) : undefined}
+			aria-expanded={isExpanded}
 			onMouseEnter={() => {
 				setIsHovered(true);
 				if (hasCoords) {
