@@ -50,6 +50,7 @@ const isItemActive = (item: NavItem) => {
  *  /panel/plan NO entra: es SSR pesado (4 llamadas ORDS) y usa data-astro-reload. */
 const prefetchTapPaths = new Set([
 	"/panel/dashboard",
+	"/panel/analiticas",
 	"/panel/calendar",
 	"/panel/customers",
 	"/panel/cobros",
@@ -67,6 +68,7 @@ const getPrefetchMode = (item: NavItem) =>
 
 const primaryItems: NavItem[] = [
 	{ label: "Dashboard", icon: "home", href: "/panel/dashboard" },
+	{ label: "Analíticas", icon: "monitoring", href: "/panel/analiticas" },
 	{ label: "Calendario", icon: "calendar_month", href: "/panel/calendar" },
 	{ label: "Clientes", icon: "group", href: "/panel/customers" },
 	{

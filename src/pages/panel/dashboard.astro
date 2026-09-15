@@ -11,17 +11,10 @@ import TopBar from '../../components/TopBar.astro';
 import {
 	DashboardApiError,
 	DASHBOARD_APP_TZ,
-	DASHBOARD_CHART_DEFAULT_DAYS,
-	DASHBOARD_CHART_WINDOWS,
 	DASHBOARD_UPCOMING_DAYS,
 	asuncionTodayIso,
-	chartBarTip,
-	chartWindowSubtitle,
-	chartYTicks,
 	fillAppointmentsByDay,
 	getMainDashboardWithOrds,
-	sliceChartWindow,
-	toDashboardChartDays,
 	type DashboardMainData,
 } from '../../lib/dashboard';
 import { getMyProfileWithOrds } from '../../lib/my-profile';
@@ -152,21 +145,6 @@ const weekGlance = fillAppointmentsByDay(dashboard.upcoming_by_day, {
 		appointmentCount: item.count,
 	};
 });
-const chartWindow = DASHBOARD_CHART_DEFAULT_DAYS;
-const chartDays = toDashboardChartDays(
-	sliceChartWindow(dashboard.appointments_by_day, chartWindow),
-	todayIso
-);
-const weekChartTotal = chartDays.reduce((sum, item) => sum + item.appointmentCount, 0);
-const weekChartEmpty = weekChartTotal === 0;
-const weekChartCountText = weekChartTotal === 1 ? '1 cita' : `${weekChartTotal} citas`;
-const weekChartAria = chartDays
-	.map((day) => `${day.weekdayName}: ${day.appointmentCount}`)
-	.join('. ');
-const chartY = chartYTicks(Math.max(0, ...chartDays.map((day) => day.appointmentCount)));
-const chartYMax = chartY[0] ?? 1;
-const chartSeriesJson = JSON.stringify(dashboard.appointments_by_day);
-
 const getStatusLabel = (status: string) => {
 	switch (status) {
 		case 'CONFIRMADO':
@@ -500,7 +478,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 							{
 								!loadError && (
 									<>
-									<div class="dashboard-floor dashboard-floor--action dashboard-floor--split">
+									<div class="dashboard-floor dashboard-floor--action">
 										<div
 											id="dashboard-upcoming-appointments"
 											class="dashboard-report-shell dashboard-floor__panel p-5 sm:p-7 transition-colors duration-300"
@@ -640,130 +618,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 												) : null
 											}
 										</div>
-
-										<aside
-											class:list={[
-												'dashboard-week-chart',
-												'dashboard-floor__panel',
-												weekChartEmpty && 'is-empty',
-											]}
-											aria-label={`Citas por día. ${weekChartAria}`}
-											data-day-chart
-											data-active-window={String(chartWindow)}
-											data-chart-series={chartSeriesJson}
-										>
-											<div class="dashboard-week-chart__inner">
-												<div class="dashboard-week-chart__head">
-													<div class="min-w-0">
-														<h2 class="text-xl font-semibold text-[#1e293b] dark:text-[#E5E7EB]">Citas por día</h2>
-														<p class="dashboard-appointments-subtitle" data-chart-subtitle>
-															{chartWindowSubtitle(chartWindow)}
-														</p>
-													</div>
-													<div class="dashboard-week-chart__tools">
-														<div class="dashboard-chart-windows" role="group" aria-label="Periodo del gráfico">
-															{
-																DASHBOARD_CHART_WINDOWS.map((days) => (
-																	<button
-																		type="button"
-																		data-chart-days={String(days)}
-																		aria-pressed={days === chartWindow ? 'true' : 'false'}
-																	>
-																		{days} días
-																	</button>
-																))
-															}
-														</div>
-														<span class="dashboard-appointments-count" data-chart-count>{weekChartCountText}</span>
-													</div>
-												</div>
-
-												<div class="dashboard-week-chart__frame">
-													<div class="dashboard-week-chart__y" aria-hidden="true" data-chart-y>
-														{
-															chartY.map((tick) => (
-																<span class="dashboard-week-chart__y-tick">{tick}</span>
-															))
-														}
-													</div>
-													<div class="dashboard-week-chart__area" data-chart-area>
-														<div
-															class="dashboard-week-chart__tip"
-															data-chart-tip
-															role="tooltip"
-															hidden
-														>
-															<strong data-chart-tip-title></strong>
-															<span data-chart-tip-count></span>
-														</div>
-														<div class="dashboard-week-chart__grid" aria-hidden="true" data-chart-grid>
-															{
-																chartY.map((tick) => (
-																	<span
-																		class:list={[
-																			'dashboard-week-chart__h-line',
-																			tick === 0 && 'is-baseline',
-																		]}
-																		style={`bottom:${chartYMax <= 0 ? 0 : (tick / chartYMax) * 100}%`}
-																	></span>
-																))
-															}
-														</div>
-														<div
-															class="dashboard-week-chart__plot"
-															data-chart-plot
-															data-window={String(chartWindow)}
-															style={`--chart-cols:${chartWindow}`}
-														>
-															{
-																chartDays.map((day) => {
-																	const tip = chartBarTip(day);
-																	return (
-																	<button
-																		type="button"
-																		class:list={[
-																			'dashboard-week-chart__col',
-																			day.isToday && 'is-today',
-																			!day.hasAppointments && 'is-empty',
-																			day.showTick && 'is-tick',
-																		]}
-																		data-chart-bar
-																		data-tip-title={tip.title}
-																		data-tip-count={tip.countLabel}
-																		aria-label={`${tip.title}, ${tip.countLabel}`}
-																	>
-																		<span class="dashboard-week-chart__value">
-																			{day.appointmentCount}
-																		</span>
-																		<span class="dashboard-week-chart__track">
-																			<span
-																				class="dashboard-week-chart__bar"
-																				style={`--h:${day.barPct}`}
-																			></span>
-																		</span>
-																		<span class="dashboard-week-chart__label">{day.label}</span>
-																		<span class="dashboard-week-chart__number">{day.dayNumber}</span>
-																	</button>
-																	);
-																})
-															}
-														</div>
-													</div>
-												</div>
-
-												{
-													weekChartEmpty ? (
-														<p class="dashboard-week-chart__idle" data-chart-idle>
-															No hay citas en los últimos {chartWindow} días.
-														</p>
-													) : (
-														<p class="dashboard-week-chart__idle" data-chart-idle hidden>
-															No hay citas en los últimos {chartWindow} días.
-														</p>
-													)
-												}
-											</div>
-										</aside>
 									</div>
 								</>
 							)
@@ -837,16 +691,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	import { initDashboardGreeting } from '../../lib/dashboard-greeting';
 	import { fetchWithTimeout } from '../../lib/fetch-with-timeout';
 	import { lockPanelScroll } from '../../lib/panel-scroll-lock';
-	import {
-		asuncionTodayIso,
-		chartBarTip,
-		chartWindowSubtitle,
-		chartYTicks,
-		normalizeChartWindow,
-		sliceChartWindow,
-		toDashboardChartDays,
-		type DashboardDayCount,
-	} from '../../lib/dashboard-chart';
+	import { asuncionTodayIso } from '../../lib/dashboard-chart';
 
 	const normalizeAiSummaryBase = (value: unknown): string =>
 		String(value ?? '')
@@ -1870,231 +1715,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 	};
 
-	const bindDayChart = () => {
-		const chart = document.querySelector<HTMLElement>('[data-day-chart]');
-		if (!chart || chart.dataset.chartBound === '1') return;
-		chart.dataset.chartBound = '1';
-
-		let series: DashboardDayCount[] = [];
-		try {
-			const parsed = JSON.parse(chart.getAttribute('data-chart-series') || '[]');
-			series = Array.isArray(parsed) ? parsed : [];
-		} catch {
-			series = [];
-		}
-
-		const plot = chart.querySelector<HTMLElement>('[data-chart-plot]');
-		const area = chart.querySelector<HTMLElement>('[data-chart-area]');
-		const tip = chart.querySelector<HTMLElement>('[data-chart-tip]');
-		const tipTitle = chart.querySelector<HTMLElement>('[data-chart-tip-title]');
-		const tipCount = chart.querySelector<HTMLElement>('[data-chart-tip-count]');
-		const yAxis = chart.querySelector<HTMLElement>('[data-chart-y]');
-		const grid = chart.querySelector<HTMLElement>('[data-chart-grid]');
-		const subtitle = chart.querySelector<HTMLElement>('[data-chart-subtitle]');
-		const countNode = chart.querySelector<HTMLElement>('[data-chart-count]');
-		const idle = chart.querySelector<HTMLElement>('[data-chart-idle]');
-		const chips = [...chart.querySelectorAll<HTMLButtonElement>('[data-chart-days]')];
-		const todayIso = asuncionTodayIso();
-		let pinnedBar: HTMLElement | null = null;
-		let barSettleTimer = 0;
-
-		const settleChartBars = () => {
-			window.clearTimeout(barSettleTimer);
-			chart.classList.remove('is-bars-settled');
-			barSettleTimer = window.setTimeout(() => {
-				chart.classList.add('is-bars-settled');
-			}, 720);
-		};
-
-		const canHoverTip = () => window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-
-		const hideChartTip = () => {
-			pinnedBar = null;
-			tip?.setAttribute('hidden', '');
-			tip?.classList.remove('is-below');
-			for (const col of chart.querySelectorAll('.dashboard-week-chart__col.is-active')) {
-				col.classList.remove('is-active');
-			}
-		};
-
-		const placeChartTip = (col: HTMLElement) => {
-			if (!tip || !area) return;
-			const bar = col.querySelector<HTMLElement>('.dashboard-week-chart__bar');
-			const areaRect = area.getBoundingClientRect();
-			const barRect = (bar ?? col).getBoundingClientRect();
-			tip.removeAttribute('hidden');
-			const tipWidth = tip.offsetWidth;
-			let left = barRect.left + barRect.width / 2 - areaRect.left;
-			const pad = 8;
-			const half = tipWidth / 2;
-			left = Math.min(Math.max(half + pad, left), Math.max(half + pad, areaRect.width - half - pad));
-			tip.classList.remove('is-below');
-			tip.style.left = `${left}px`;
-			tip.style.top = `${Math.max(barRect.top - areaRect.top, 0)}px`;
-		};
-
-		const showChartTip = (col: HTMLElement, pin: boolean) => {
-			if (!tip || !tipTitle || !tipCount) return;
-			if (pin) {
-				pinnedBar = col;
-			} else if (pinnedBar && pinnedBar !== col) {
-				return;
-			}
-			for (const other of chart.querySelectorAll('.dashboard-week-chart__col.is-active')) {
-				other.classList.remove('is-active');
-			}
-			col.classList.add('is-active');
-			tipTitle.textContent = col.getAttribute('data-tip-title') || '';
-			tipCount.textContent = col.getAttribute('data-tip-count') || '';
-			placeChartTip(col);
-		};
-
-		const applyWindow = (days: number) => {
-			hideChartTip();
-			const windowDays = normalizeChartWindow(days);
-			const items = toDashboardChartDays(sliceChartWindow(series, windowDays), todayIso);
-			const total = items.reduce((sum, item) => sum + item.appointmentCount, 0);
-			const empty = total === 0;
-			const yTicks = chartYTicks(Math.max(0, ...items.map((item) => item.appointmentCount)));
-			const yMax = yTicks[0] ?? 1;
-
-			chart.classList.toggle('is-empty', empty);
-			chart.setAttribute('data-active-window', String(windowDays));
-			chart.setAttribute(
-				'aria-label',
-				`Citas por día. ${items.map((item) => `${item.weekdayName}: ${item.appointmentCount}`).join('. ')}`
-			);
-
-			if (yAxis) {
-				yAxis.replaceChildren();
-				for (const tick of yTicks) {
-					const label = document.createElement('span');
-					label.className = 'dashboard-week-chart__y-tick';
-					label.textContent = String(tick);
-					yAxis.append(label);
-				}
-			}
-
-			if (grid) {
-				grid.replaceChildren();
-				for (const tick of yTicks) {
-					const line = document.createElement('span');
-					line.className = 'dashboard-week-chart__h-line';
-					if (tick === 0) line.classList.add('is-baseline');
-					line.style.bottom = `${yMax <= 0 ? 0 : (tick / yMax) * 100}%`;
-					grid.append(line);
-				}
-			}
-
-			if (plot) {
-				plot.setAttribute('data-window', String(windowDays));
-				plot.style.setProperty('--chart-cols', String(windowDays));
-				plot.replaceChildren();
-				for (const day of items) {
-					const tipCopy = chartBarTip(day);
-					const col = document.createElement('button');
-					col.type = 'button';
-					col.className = 'dashboard-week-chart__col';
-					if (day.isToday) col.classList.add('is-today');
-					if (!day.hasAppointments) col.classList.add('is-empty');
-					if (day.showTick) col.classList.add('is-tick');
-					col.dataset.chartBar = '';
-					col.dataset.tipTitle = tipCopy.title;
-					col.dataset.tipCount = tipCopy.countLabel;
-					col.setAttribute('aria-label', `${tipCopy.title}, ${tipCopy.countLabel}`);
-
-					const value = document.createElement('span');
-					value.className = 'dashboard-week-chart__value';
-					value.textContent = String(day.appointmentCount);
-
-					const track = document.createElement('span');
-					track.className = 'dashboard-week-chart__track';
-					const bar = document.createElement('span');
-					bar.className = 'dashboard-week-chart__bar';
-					bar.style.setProperty('--h', String(day.barPct));
-					track.append(bar);
-
-					const label = document.createElement('span');
-					label.className = 'dashboard-week-chart__label';
-					label.textContent = day.label;
-
-					const number = document.createElement('span');
-					number.className = 'dashboard-week-chart__number';
-					number.textContent = String(day.dayNumber);
-
-					col.append(value, track, label, number);
-					plot.append(col);
-				}
-			}
-
-			if (subtitle) subtitle.textContent = chartWindowSubtitle(windowDays);
-			if (countNode) countNode.textContent = total === 1 ? '1 cita' : `${total} citas`;
-			if (idle) {
-				idle.hidden = !empty;
-				idle.textContent = `No hay citas en los últimos ${windowDays} días.`;
-			}
-
-			for (const chip of chips) {
-				const on = Number(chip.getAttribute('data-chart-days')) === windowDays;
-				chip.setAttribute('aria-pressed', on ? 'true' : 'false');
-			}
-
-			settleChartBars();
-		};
-
-		chart.addEventListener('click', (event) => {
-			const target = event.target;
-			if (!(target instanceof Element)) return;
-			const chip = target.closest<HTMLButtonElement>('[data-chart-days]');
-			if (chip && chart.contains(chip)) {
-				applyWindow(Number(chip.getAttribute('data-chart-days')));
-				return;
-			}
-			const col = target.closest<HTMLElement>('[data-chart-bar]');
-			if (!col || !chart.contains(col)) return;
-			if (pinnedBar === col) {
-				hideChartTip();
-				return;
-			}
-			showChartTip(col, true);
-		});
-
-		chart.addEventListener('pointerover', (event) => {
-			if (!canHoverTip()) return;
-			const target = event.target;
-			if (!(target instanceof Element)) return;
-			const col = target.closest<HTMLElement>('[data-chart-bar]');
-			if (col && chart.contains(col)) {
-				if (pinnedBar) return;
-				showChartTip(col, false);
-				return;
-			}
-			if (!pinnedBar && !target.closest('[data-chart-tip]')) hideChartTip();
-		});
-
-		chart.addEventListener('pointerleave', () => {
-			if (pinnedBar) return;
-			hideChartTip();
-		});
-
-		if (!(window as unknown as { __haselChartTipBound?: boolean }).__haselChartTipBound) {
-			(window as unknown as { __haselChartTipBound?: boolean }).__haselChartTipBound = true;
-			document.addEventListener('pointerdown', (event) => {
-				const target = event.target;
-				const host = document.querySelector<HTMLElement>('[data-day-chart]');
-				if (!host || !(target instanceof Element) || host.contains(target)) return;
-				host.dispatchEvent(new Event('chart-tip-hide'));
-			});
-			document.addEventListener('keydown', (event) => {
-				if (event.key !== 'Escape') return;
-				document.querySelector('[data-day-chart]')?.dispatchEvent(new Event('chart-tip-hide'));
-			});
-		}
-
-		chart.addEventListener('chart-tip-hide', hideChartTip);
-		settleChartBars();
-	};
-
 	const bindUpcomingDayFilter = () => {
 		const shell = document.getElementById('dashboard-upcoming-appointments');
 		if (!shell || shell.dataset.dayFilterBound === '1') return;
@@ -2122,7 +1742,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		loadTeamOverview();
 		loadProfitability();
 		loadAiSummary();
-		bindDayChart();
 		bindUpcomingDayFilter();
 		scrollToUpcomingAppointmentsIfNeeded();
 	};

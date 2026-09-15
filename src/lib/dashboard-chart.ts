@@ -36,6 +36,18 @@ export type FillAppointmentsByDayOptions = {
 	days?: number;
 	direction?: 'back' | 'forward';
 	now?: Date;
+	startDate?: string;
+	endDate?: string;
+};
+
+const toUtcIso = (utcMs: number) => {
+	const next = new Date(utcMs);
+	return `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, '0')}-${String(next.getUTCDate()).padStart(2, '0')}`;
+};
+
+const utcMsFromIso = (iso: string) => {
+	const [year, month, day] = iso.split('-').map(Number);
+	return Date.UTC(year, month - 1, day);
 };
 
 export const fillAppointmentsByDay = (
@@ -43,7 +55,6 @@ export const fillAppointmentsByDay = (
 	options: FillAppointmentsByDayOptions | Date = {}
 ): DashboardDayCount[] => {
 	const resolved = options instanceof Date ? { now: options } : options;
-	const days = Math.max(1, Math.floor(resolved.days ?? DASHBOARD_CHART_MAX_DAYS));
 	const direction = resolved.direction ?? 'back';
 	const now = resolved.now ?? new Date();
 	const byDate = new Map<string, number>();
@@ -57,14 +68,28 @@ export const fillAppointmentsByDay = (
 		}
 	}
 
+	const startDate = toText(resolved.startDate);
+	const endDate = toText(resolved.endDate);
+	if (ISO_DATE_RE.test(startDate) && ISO_DATE_RE.test(endDate) && startDate <= endDate) {
+		const start = utcMsFromIso(startDate);
+		const end = utcMsFromIso(endDate);
+		const days = Math.min(90, Math.floor((end - start) / 86_400_000) + 1);
+		return Array.from({ length: Math.max(1, days) }, (_, index) => {
+			const iso = toUtcIso(start + index * 86_400_000);
+			return {
+				date: iso,
+				count: byDate.get(iso) ?? 0,
+			};
+		});
+	}
+
+	const days = Math.max(1, Math.floor(resolved.days ?? DASHBOARD_CHART_MAX_DAYS));
 	const [year, month, day] = asuncionTodayIso(now).split('-').map(Number);
 	const start = Date.UTC(year, month - 1, day);
 
 	return Array.from({ length: days }, (_, index) => {
 		const offset = direction === 'forward' ? index : index - (days - 1);
-		const next = new Date(start);
-		next.setUTCDate(next.getUTCDate() + offset);
-		const iso = `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, '0')}-${String(next.getUTCDate()).padStart(2, '0')}`;
+		const iso = toUtcIso(start + offset * 86_400_000);
 		return {
 			date: iso,
 			count: byDate.get(iso) ?? 0,
@@ -89,6 +114,25 @@ export const sliceChartWindow = (
 };
 
 export const chartWindowSubtitle = (days: number) => `Últimos ${days} días`;
+
+export const formatIsoDateLabel = (iso: string) => {
+	if (!ISO_DATE_RE.test(iso)) return iso;
+	const [year, month, day] = iso.split('-').map(Number);
+	return new Intl.DateTimeFormat('es-PY', {
+		day: 'numeric',
+		month: 'short',
+		year: 'numeric',
+		timeZone: 'UTC',
+	}).format(new Date(Date.UTC(year, month - 1, day)));
+};
+
+export const analyticsPeriodSubtitle = (from: string, to: string, kind: 'preset' | 'custom', days: number) => {
+	if (kind === 'custom' && ISO_DATE_RE.test(from) && ISO_DATE_RE.test(to)) {
+		if (from === to) return formatIsoDateLabel(from);
+		return `${formatIsoDateLabel(from)} – ${formatIsoDateLabel(to)}`;
+	}
+	return chartWindowSubtitle(days);
+};
 
 const Y_STEP_CANDIDATES = [1, 2, 5, 10, 20, 25, 50, 100];
 
@@ -120,7 +164,7 @@ export const chartYCeiling = (maxCount: number) => chartYTicks(maxCount)[0] ?? 1
 export const isChartDayTick = (index: number, total: number, isToday = false) => {
 	if (total <= 7) return true;
 	if (isToday || index === 0 || index === total - 1) return true;
-	const step = total >= 30 ? 5 : 3;
+	const step = total >= 60 ? 10 : total >= 30 ? 5 : 3;
 	return index % step === 0;
 };
 

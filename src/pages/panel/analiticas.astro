@@ -1,0 +1,551 @@
+---
+import SideNav from '../../components/SideNav.astro';
+import TopBar from '../../components/TopBar.astro';
+import FlashMessage from '../../components/FlashMessage.astro';
+import Layout from '../../layouts/Layout.astro';
+import { panelPageTitle } from '../../lib/panel-page-title';
+import {
+	ANALYTICS_MAX_CUSTOM_DAYS,
+	ANALYTICS_PERIODS,
+	AnalyticsApiError,
+	emptyAnalyticsData,
+	getAnalyticsWithOrds,
+	hasAnalyticsStatus,
+	normalizeAnalyticsQuery,
+	type AnalyticsData,
+} from '../../lib/analytics';
+import {
+	analyticsPeriodSubtitle,
+	asuncionTodayIso,
+	chartBarTip,
+	chartYTicks,
+	toDashboardChartDays,
+} from '../../lib/dashboard-chart';
+import '../../styles/global.css';
+import '../../styles/analiticas.css';
+
+const token = Astro.locals.token ?? '';
+const query = normalizeAnalyticsQuery({
+	days: Astro.url.searchParams.get('days'),
+	from: Astro.url.searchParams.get('from'),
+	to: Astro.url.searchParams.get('to'),
+	location_id: Astro.url.searchParams.get('location_id'),
+	professional_id: Astro.url.searchParams.get('professional_id'),
+});
+
+let analytics: AnalyticsData = emptyAnalyticsData(query);
+let loadError = '';
+
+if (!token) {
+	loadError = 'No hay sesión válida para consultar analíticas.';
+} else {
+	try {
+		analytics = await getAnalyticsWithOrds(token, query);
+	} catch (error) {
+		loadError =
+			error instanceof AnalyticsApiError
+				? error.message
+				: 'No fue posible cargar las analíticas.';
+	}
+}
+
+const todayIso = asuncionTodayIso();
+const chartDays = toDashboardChartDays(analytics.appointments_by_day, todayIso);
+const chartTotal = chartDays.reduce((sum, item) => sum + item.appointmentCount, 0);
+const chartEmpty = chartTotal === 0;
+const chartCountText = chartTotal === 1 ? '1 cita' : `${chartTotal} citas`;
+const chartAria = chartDays.map((day) => `${day.weekdayName}: ${day.appointmentCount}`).join('. ');
+const chartY = chartYTicks(Math.max(0, ...chartDays.map((day) => day.appointmentCount)));
+const chartYMax = chartY[0] ?? 1;
+const isCustomPeriod = analytics.period_kind === 'custom';
+const periodFrom = analytics.filters.from_date || analytics.meta.period_start;
+const periodTo = analytics.filters.to_date || analytics.meta.period_end;
+const periodSubtitle = analyticsPeriodSubtitle(
+	periodFrom,
+	periodTo,
+	analytics.period_kind,
+	analytics.period_days
+);
+const chartWindowKey = isCustomPeriod && analytics.period_days > 7 ? 'custom' : String(analytics.period_days);
+const emptyChartMessage = isCustomPeriod
+	? 'No hay citas en el período seleccionado.'
+	: `No hay citas en los últimos ${analytics.period_days} días.`;
+const defaultCustomFrom = (() => {
+	const [year, month, day] = todayIso.split('-').map(Number);
+	const start = new Date(Date.UTC(year, month - 1, day));
+	start.setUTCDate(start.getUTCDate() - 29);
+	return `${start.getUTCFullYear()}-${String(start.getUTCMonth() + 1).padStart(2, '0')}-${String(start.getUTCDate()).padStart(2, '0')}`;
+})();
+const customFromValue = isCustomPeriod ? periodFrom || defaultCustomFrom : defaultCustomFrom;
+const customToValue = isCustomPeriod ? periodTo || todayIso : todayIso;
+
+const statusItems = [
+	{ key: 'pendiente', label: 'Pendiente', value: analytics.by_status.pendiente },
+	{ key: 'confirmada', label: 'Confirmada', value: analytics.by_status.confirmada },
+	{ key: 'completada', label: 'Completada', value: analytics.by_status.completada },
+	{ key: 'cancelada', label: 'Cancelada', value: analytics.by_status.cancelada },
+] as const;
+
+const formatMoney = (amount: number, currency = 'PYG') =>
+	new Intl.NumberFormat('es-PY', {
+		style: 'currency',
+		currency,
+		maximumFractionDigits: 0,
+	}).format(Number(amount) || 0);
+
+const formatPct = (value: number | null) =>
+	value === null ? '—' : `${value.toLocaleString('es-PY', { maximumFractionDigits: 1 })}%`;
+
+const toHref = (next: {
+	days?: number;
+	from?: string | null;
+	to?: string | null;
+	custom?: boolean;
+	location_id?: number | null;
+	professional_id?: number | null;
+}) => {
+	const params = new URLSearchParams();
+	const locationId = next.location_id === undefined ? analytics.filters.location_id : next.location_id;
+	const professionalId =
+		next.professional_id === undefined ? analytics.filters.professional_id : next.professional_id;
+	if (next.custom || (next.from && next.to)) {
+		params.set('from', next.from || customFromValue);
+		params.set('to', next.to || customToValue);
+	} else {
+		params.set('days', String(next.days ?? (isCustomPeriod ? 7 : analytics.period_days)));
+	}
+	if (locationId) params.set('location_id', String(locationId));
+	if (professionalId) params.set('professional_id', String(professionalId));
+	return `/panel/analiticas?${params.toString()}`;
+};
+
+const maxBranch = Math.max(1, ...analytics.by_branch.map((item) => item.count));
+const maxProfessional = Math.max(1, ...analytics.by_professional.map((item) => item.count));
+const hasPayments =
+	analytics.payments.deposit_count > 0 ||
+	analytics.payments.paid_total > 0 ||
+	analytics.payments.pending_total > 0;
+const noShowTrend =
+	analytics.no_show.delta_pct === null
+		? null
+		: analytics.no_show.delta_pct > 0
+			? 'up'
+			: analytics.no_show.delta_pct < 0
+				? 'down'
+				: 'flat';
+---
+
+<Layout pageTitle={panelPageTitle('Analíticas')}>
+	<div class="min-h-screen bg-(--page-background)">
+		<div
+			class="app-shell grid min-h-screen overflow-hidden bg-transparent"
+			data-app-shell
+			data-sidebar-state="expanded"
+		>
+			<SideNav currentPath={Astro.url.pathname} />
+
+			<div class="grid min-h-full grid-rows-[auto_1fr]">
+				<TopBar />
+
+				<main class="px-4 py-4 sm:px-6 sm:py-6">
+					<section class="analiticas-page">
+						<header class="analiticas-header">
+							<h1>Analíticas</h1>
+							<p>Resumen de citas, inasistencias y señas del período. Sin el listado de cobros ni las próximas citas.</p>
+						</header>
+
+						{
+							loadError ? (
+								<FlashMessage message={loadError} type="error" expand={true} dismissible={false} />
+							) : (
+								<>
+									<form class="analiticas-filters" method="get" action="/panel/analiticas" data-analytics-filters>
+										<div class="analiticas-filters__group analiticas-filters__group--period">
+											<label id="analiticas-period-label">Período</label>
+											<div class="dashboard-chart-windows" role="group" aria-labelledby="analiticas-period-label">
+												{
+													ANALYTICS_PERIODS.map((days) => (
+														<a
+															href={toHref({ days })}
+															aria-current={!isCustomPeriod && days === analytics.period_days ? 'true' : undefined}
+														>
+															{days} días
+														</a>
+													))
+												}
+												<a
+													href={toHref({ custom: true, from: customFromValue, to: customToValue })}
+													aria-current={isCustomPeriod ? 'true' : undefined}
+													data-analytics-custom-link
+												>
+													Personalizado
+												</a>
+											</div>
+											{isCustomPeriod ? null : <input type="hidden" name="days" value={String(analytics.period_days)} />}
+										</div>
+
+										{
+											isCustomPeriod ? (
+												<div class="analiticas-filters__group analiticas-filters__group--dates">
+													<label for="analiticas-from">Desde</label>
+													<input
+														id="analiticas-from"
+														type="date"
+														name="from"
+														value={customFromValue}
+														max={todayIso}
+														data-analytics-date
+													/>
+												</div>
+											) : null
+										}
+										{
+											isCustomPeriod ? (
+												<div class="analiticas-filters__group analiticas-filters__group--dates">
+													<label for="analiticas-to">Hasta</label>
+													<input
+														id="analiticas-to"
+														type="date"
+														name="to"
+														value={customToValue}
+														max={todayIso}
+														data-analytics-date
+													/>
+													<p class="analiticas-filters__hint" data-analytics-date-error hidden>
+														Elegí un rango de hasta {ANALYTICS_MAX_CUSTOM_DAYS} días.
+													</p>
+												</div>
+											) : null
+										}
+
+										<div class="analiticas-filters__group">
+											<label for="analiticas-branch">Sucursal</label>
+											<select
+												id="analiticas-branch"
+												name="location_id"
+												data-analytics-filter
+											>
+												<option value="">Todas</option>
+												{
+													analytics.filters.branches.map((branch) => (
+														<option
+															value={String(branch.id)}
+															selected={branch.id === analytics.filters.location_id}
+														>
+															{branch.name}
+														</option>
+													))
+												}
+											</select>
+										</div>
+
+										{
+											analytics.filters.can_filter_professional ? (
+												<div class="analiticas-filters__group">
+													<label for="analiticas-professional">Profesional</label>
+													<select
+														id="analiticas-professional"
+														name="professional_id"
+														data-analytics-filter
+													>
+														<option value="">Todos</option>
+														{
+															analytics.filters.professionals.map((professional) => (
+																<option
+																	value={String(professional.id)}
+																	selected={professional.id === analytics.filters.professional_id}
+																>
+																	{professional.name}
+																</option>
+															))
+														}
+													</select>
+												</div>
+											) : null
+										}
+									</form>
+
+									<aside
+										class:list={[
+											'analiticas-card analiticas-chart dashboard-week-chart',
+											chartEmpty && 'is-empty',
+										]}
+										aria-label={`Citas por día. ${chartAria}`}
+										data-day-chart
+										data-active-window={chartWindowKey}
+									>
+										<div class="dashboard-week-chart__inner">
+											<div class="dashboard-week-chart__head">
+												<div class="min-w-0">
+													<h2>Citas por día</h2>
+													<p class="analiticas-card__sub">{periodSubtitle}</p>
+												</div>
+												<span class="analiticas-count">{chartCountText}</span>
+											</div>
+
+											<div class="dashboard-week-chart__frame">
+												<div class="dashboard-week-chart__y" aria-hidden="true">
+													{chartY.map((tick) => (
+														<span class="dashboard-week-chart__y-tick">{tick}</span>
+													))}
+												</div>
+												<div class="dashboard-week-chart__area" data-chart-area>
+													<div class="dashboard-week-chart__tip" data-chart-tip role="tooltip" hidden>
+														<strong data-chart-tip-title></strong>
+														<span data-chart-tip-count></span>
+													</div>
+													<div class="dashboard-week-chart__grid" aria-hidden="true">
+														{
+															chartY.map((tick) => (
+																<span
+																	class:list={[
+																		'dashboard-week-chart__h-line',
+																		tick === 0 && 'is-baseline',
+																	]}
+																	style={`bottom:${chartYMax <= 0 ? 0 : (tick / chartYMax) * 100}%`}
+																></span>
+															))
+														}
+													</div>
+													<div
+														class="dashboard-week-chart__plot"
+														data-window={chartWindowKey}
+														style={`--chart-cols:${analytics.period_days}`}
+													>
+														{
+															chartDays.map((day) => {
+																const tip = chartBarTip(day);
+																return (
+																	<button
+																		type="button"
+																		class:list={[
+																			'dashboard-week-chart__col',
+																			day.isToday && 'is-today',
+																			!day.hasAppointments && 'is-empty',
+																			day.showTick && 'is-tick',
+																		]}
+																		data-chart-bar
+																		data-tip-title={tip.title}
+																		data-tip-count={tip.countLabel}
+																		aria-label={`${tip.title}, ${tip.countLabel}`}
+																	>
+																		<span class="dashboard-week-chart__value">
+																			{day.appointmentCount}
+																		</span>
+																		<span class="dashboard-week-chart__track">
+																			<span
+																				class="dashboard-week-chart__bar"
+																				style={`--h:${day.barPct}`}
+																			></span>
+																		</span>
+																		<span class="dashboard-week-chart__label">{day.label}</span>
+																		<span class="dashboard-week-chart__number">{day.dayNumber}</span>
+																	</button>
+																);
+															})
+														}
+													</div>
+												</div>
+											</div>
+
+											{
+												chartEmpty ? (
+													<p class="dashboard-week-chart__idle">
+														{emptyChartMessage}
+													</p>
+												) : null
+											}
+										</div>
+									</aside>
+
+									<section class="analiticas-card" aria-labelledby="analiticas-status-title">
+										<div class="analiticas-card__head">
+											<div>
+												<h2 id="analiticas-status-title">Citas por estado</h2>
+												<p class="analiticas-card__sub">{periodSubtitle}</p>
+											</div>
+										</div>
+										{
+											hasAnalyticsStatus(analytics) ? (
+												<div class="analiticas-status">
+													{statusItems.map((item) => (
+														<article class="analiticas-status__item">
+															<p class="analiticas-status__label">{item.label}</p>
+															<p class="analiticas-status__value">{item.value}</p>
+														</article>
+													))}
+												</div>
+											) : (
+												<p class="analiticas-empty">No hay citas en este período.</p>
+											)
+										}
+									</section>
+
+									<div class="analiticas-grid analiticas-grid--split">
+										<section class="analiticas-card" aria-labelledby="analiticas-noshow-title">
+											<div class="analiticas-card__head">
+												<div>
+													<h2 id="analiticas-noshow-title">Inasistencias</h2>
+													<p class="analiticas-card__sub">
+														Citas vencidas que no se completaron ni se cancelaron
+													</p>
+												</div>
+											</div>
+											{
+												analytics.no_show.eligible_count > 0 ? (
+													<>
+														<p class="analiticas-no-show__value">{formatPct(analytics.no_show.pct)}</p>
+														<p class="analiticas-no-show__meta">
+															{analytics.no_show.count === 1
+																? '1 inasistencia'
+																: `${analytics.no_show.count} inasistencias`}{' '}
+															de {analytics.no_show.eligible_count}{' '}
+															{analytics.no_show.eligible_count === 1 ? 'cita vencida' : 'citas vencidas'}
+														</p>
+														{
+															noShowTrend ? (
+																<p
+																	class:list={[
+																		'analiticas-trend',
+																		noShowTrend === 'up' && 'is-up',
+																		noShowTrend === 'down' && 'is-down',
+																		noShowTrend === 'flat' && 'is-flat',
+																	]}
+																>
+																	{noShowTrend === 'flat'
+																		? 'Igual que el período anterior'
+																		: noShowTrend === 'down'
+																			? `${formatPct(Math.abs(analytics.no_show.delta_pct ?? 0))} menos que el período anterior`
+																			: `${formatPct(Math.abs(analytics.no_show.delta_pct ?? 0))} más que el período anterior`}
+																</p>
+															) : (
+																<p class="analiticas-no-show__meta">Sin dato del período anterior para comparar.</p>
+															)
+														}
+													</>
+												) : (
+													<p class="analiticas-empty">Todavía no hay citas vencidas en este período.</p>
+												)
+											}
+										</section>
+
+										<section class="analiticas-card" aria-labelledby="analiticas-payments-title">
+											<div class="analiticas-card__head">
+												<div>
+													<h2 id="analiticas-payments-title">Señas del período</h2>
+													<p class="analiticas-card__sub">Totales cobrados y pendientes. No es el listado de Cobros.</p>
+												</div>
+											</div>
+											{
+												hasPayments ? (
+													<div class="analiticas-payments">
+														<article class="analiticas-payments__item">
+															<p class="analiticas-payments__label">Cobradas</p>
+															<p class="analiticas-payments__value">
+																{formatMoney(analytics.payments.paid_total, analytics.payments.currency)}
+															</p>
+															<p class="analiticas-card__sub">
+																{analytics.payments.paid_count === 1
+																	? '1 seña'
+																	: `${analytics.payments.paid_count} señas`}
+															</p>
+														</article>
+														<article class="analiticas-payments__item">
+															<p class="analiticas-payments__label">Pendientes</p>
+															<p class="analiticas-payments__value">
+																{formatMoney(analytics.payments.pending_total, analytics.payments.currency)}
+															</p>
+															<p class="analiticas-card__sub">
+																{analytics.payments.pending_count === 1
+																	? '1 seña'
+																	: `${analytics.payments.pending_count} señas`}
+															</p>
+														</article>
+													</div>
+												) : (
+													<p class="analiticas-empty">No hay señas en este período.</p>
+												)
+											}
+										</section>
+									</div>
+
+									<div class="analiticas-grid analiticas-grid--split">
+										<section class="analiticas-card" aria-labelledby="analiticas-branch-title">
+											<div class="analiticas-card__head">
+												<div>
+													<h2 id="analiticas-branch-title">Por sucursal</h2>
+													<p class="analiticas-card__sub">{periodSubtitle}</p>
+												</div>
+											</div>
+											{
+												analytics.by_branch.length > 0 ? (
+													<div class="analiticas-bars">
+														{analytics.by_branch.map((item) => (
+															<div class="analiticas-bar">
+																<div class="analiticas-bar__row">
+																	<span class="analiticas-bar__name">{item.name}</span>
+																	<span class="analiticas-bar__count">
+																		{item.count === 1 ? '1 cita' : `${item.count} citas`}
+																	</span>
+																</div>
+																<div class="analiticas-bar__track" aria-hidden="true">
+																	<span
+																		class="analiticas-bar__fill"
+																		style={`width:${Math.max(6, (item.count / maxBranch) * 100)}%`}
+																	></span>
+																</div>
+															</div>
+														))}
+													</div>
+												) : (
+													<p class="analiticas-empty">No hay citas por sucursal en este período.</p>
+												)
+											}
+										</section>
+
+										<section class="analiticas-card" aria-labelledby="analiticas-pro-title">
+											<div class="analiticas-card__head">
+												<div>
+													<h2 id="analiticas-pro-title">Por profesional</h2>
+													<p class="analiticas-card__sub">{periodSubtitle}</p>
+												</div>
+											</div>
+											{
+												analytics.by_professional.length > 0 ? (
+													<div class="analiticas-bars">
+														{analytics.by_professional.map((item) => (
+															<div class="analiticas-bar">
+																<div class="analiticas-bar__row">
+																	<span class="analiticas-bar__name">{item.name}</span>
+																	<span class="analiticas-bar__count">
+																		{item.count === 1 ? '1 cita' : `${item.count} citas`}
+																	</span>
+																</div>
+																<div class="analiticas-bar__track" aria-hidden="true">
+																	<span
+																		class="analiticas-bar__fill"
+																		style={`width:${Math.max(6, (item.count / maxProfessional) * 100)}%`}
+																	></span>
+																</div>
+															</div>
+														))}
+													</div>
+												) : (
+													<p class="analiticas-empty">No hay citas por profesional en este período.</p>
+												)
+											}
+										</section>
+									</div>
+								</>
+							)
+						}
+					</section>
+				</main>
+			</div>
+		</div>
+	</div>
+</Layout>
+
+<script>
+	import '../../scripts/analiticas-page';
+</script>
