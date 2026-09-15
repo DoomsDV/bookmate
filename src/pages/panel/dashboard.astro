@@ -30,6 +30,12 @@ import {
 	type DashboardAlert,
 } from '../../lib/dashboard-alerts';
 import { collectDashboardAlertSources } from '../../lib/dashboard-alerts-sources';
+import {
+	extrasFromKpis,
+	formatDepositCaption,
+	formatTodayCaption,
+	formatWeekCaption,
+} from '../../lib/dashboard-today-kpis';
 import { getMyProfileWithOrds } from '../../lib/my-profile';
 import { hasCapability } from '../../lib/permissions';
 import { resolvePublicSiteOrigin } from '../../lib/public-profile-url';
@@ -50,6 +56,13 @@ let dashboard: DashboardMainData = {
 	kpis: {
 		today_appointments: 0,
 		today_completed_appointments: 0,
+		today_confirmed_appointments: 0,
+		today_pending_appointments: 0,
+		week_appointments: 0,
+		week_confirmed_appointments: 0,
+		week_pending_appointments: 0,
+		pending_deposits_count: 0,
+		pending_deposits_amount: 0,
 		pending_appointments: 0,
 		unconfirmed_appointments: 0,
 		my_customers: 2,
@@ -158,6 +171,10 @@ const greetingNamePieces = greetingNameWords.map((word, wordIndex) => {
 
 const todayTotal = dashboard.kpis.today_appointments;
 const unconfirmedTotal = Math.max(0, dashboard.kpis.unconfirmed_appointments || 0);
+const todayExtras = extrasFromKpis(dashboard.kpis);
+const todayCaption = formatTodayCaption(dashboard.kpis);
+const weekCaption = formatWeekCaption(dashboard.kpis);
+const depositCaption = formatDepositCaption(dashboard.kpis);
 
 const greetingSubtitle = `${organizationName} · ${dashboardDate}`;
 
@@ -380,7 +397,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 												<span class="dashboard-profit-card__go material-symbols-rounded" aria-hidden="true">arrow_outward</span>
 											</span>
 											<p class="dashboard-profit-value dashboard-profit-value--static">{todayTotal}</p>
-											<p class="dashboard-profit-caption">{todayTotal === 1 ? 'turno' : 'turnos'}</p>
+											<p class="dashboard-profit-caption">{todayCaption}</p>
 										</a>
 										<article
 											class:list={[
@@ -430,6 +447,22 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 											<p class="dashboard-profit-caption">Clientes este mes</p>
 										</a>
 									</div>
+									</div>
+									<div
+										class="dashboard-today-metrics"
+										data-dashboard-today-metrics
+										aria-label="Números de hoy y esta semana"
+									>
+										<article class="dashboard-today-metrics__item">
+											<p class="dashboard-today-metrics__label">Esta semana</p>
+											<p class="dashboard-today-metrics__value">{todayExtras.weekAppointments}</p>
+											<p class="dashboard-today-metrics__caption">{weekCaption}</p>
+										</article>
+										<article class="dashboard-today-metrics__item">
+											<p class="dashboard-today-metrics__label">Señas por cobrar</p>
+											<p class="dashboard-today-metrics__value">{todayExtras.pendingDepositsCount}</p>
+											<p class="dashboard-today-metrics__caption">{depositCaption}</p>
+										</article>
 									</div>
 								</section>
 							)}
@@ -3732,6 +3765,78 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 		.dashboard-profit-metrics-track > .dashboard-profit-card {
 			min-height: 10.5rem;
+		}
+	}
+
+	.dashboard-today-metrics {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: var(--dashboard-gap, 8px);
+		width: 100%;
+		min-width: 0;
+		margin-top: var(--dashboard-gap, 8px);
+	}
+
+	.dashboard-today-metrics__item {
+		min-width: 0;
+		padding: 0.7rem 0.85rem 0.65rem;
+		border: 1px solid var(--dashboard-card-border, var(--shell-border));
+		border-radius: var(--dashboard-card-radius, 0.75rem);
+		background: color-mix(in srgb, var(--dashboard-card-bg, #ffffff) 88%, transparent);
+	}
+
+	.dashboard-today-metrics__label {
+		margin: 0;
+		font-size: 0.74rem;
+		font-weight: 600;
+		letter-spacing: -0.01em;
+		line-height: 1.2;
+		color: color-mix(in srgb, var(--on-surface-variant) 82%, var(--on-surface) 18%);
+	}
+
+	.dashboard-today-metrics__value {
+		margin: 0.28rem 0 0;
+		font-size: 1.2rem;
+		font-weight: 600;
+		letter-spacing: -0.04em;
+		line-height: 1;
+		color: #1e293b;
+	}
+
+	.dashboard-today-metrics__caption {
+		margin: 0.28rem 0 0;
+		font-size: 0.72rem;
+		font-weight: 500;
+		letter-spacing: -0.01em;
+		line-height: 1.3;
+		color: color-mix(in srgb, var(--on-surface-variant) 72%, var(--on-surface) 28%);
+	}
+
+	html[data-theme='dark'] .dashboard-today-metrics__item {
+		background: color-mix(in srgb, var(--surface-bright) 88%, transparent);
+		border-color: var(--dashboard-card-border, transparent);
+	}
+
+	html[data-theme='dark'] .dashboard-today-metrics__value {
+		color: #e5e7eb;
+	}
+
+	html[data-theme='dark'] .dashboard-today-metrics__label,
+	html[data-theme='dark'] .dashboard-today-metrics__caption {
+		color: color-mix(in srgb, var(--on-surface-variant) 70%, #9aa0a6 30%);
+	}
+
+	@media (max-width: 640px) {
+		.dashboard-today-metrics__item {
+			padding: 0.6rem 0.7rem 0.55rem;
+		}
+
+		.dashboard-today-metrics__value {
+			font-size: 1.05rem;
+		}
+
+		.dashboard-today-metrics__caption {
+			font-size: 0.68rem;
 		}
 	}
 
