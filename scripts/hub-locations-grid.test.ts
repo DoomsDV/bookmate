@@ -39,3 +39,15 @@ test('HAS-42: footer de acciones queda al fondo; HAS-33 no recorta contenido', (
 	assert.match(sheetBlock, /min-height:\s*max\(11rem,\s*min-content\)/);
 	assert.match(sheetBlock, /overflow:\s*hidden/);
 });
+
+test('HAS-47: expandir una card no estira las hermanas por la fila', () => {
+	assert.match(
+		css,
+		/\.hub-locations-grid:has\(\.hub-location-map\.is-expanded\) \{\s*align-items:\s*start;/
+	);
+	assert.match(
+		css,
+		/\.hub-location-map-wrap:not\(:has\(\.hub-location-map\.is-expanded\)\)/
+	);
+	assert.match(css, /height:\s*max-content/);
+});

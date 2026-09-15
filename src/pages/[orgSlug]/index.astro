@@ -689,9 +689,14 @@ const serializedProfessionals = professionals.length
 												? formatMapCoordinates(latitude, longitude)
 												: '';
 											return (
-												<article class="hub-location-map-wrap" data-hub-location-card>
+												<article
+													class="hub-location-map-wrap"
+													data-hub-location-card
+													data-location-id={String(loc.id_location)}
+												>
 													<LocationMap
 														client:idle
+														locationId={loc.id_location}
 														location={loc.name}
 														coordinates={coordinates}
 														address={loc.address || ''}

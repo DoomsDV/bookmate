@@ -1187,6 +1187,16 @@ html[data-theme='dark'] .hub-location-filter {
 	align-self: stretch;
 }
 
+/* HAS-47: al expandir una card, las hermanas no heredan el alto de la fila. */
+.hub-locations-grid:has(.hub-location-map.is-expanded) {
+	align-items: start;
+}
+
+.hub-locations-grid:has(.hub-location-map.is-expanded) .hub-location-map-wrap:not(:has(.hub-location-map.is-expanded)) {
+	align-self: start;
+	height: max-content;
+}
+
 .hub-locations-grid[hidden] {
 	display: none !important;
 }
