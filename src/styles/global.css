@@ -428,8 +428,7 @@ html[data-theme='dark'] body {
 /* Overlays de modal (div/button): mismo scrim neutro + blur que dialog::backdrop */
 :where(
 	.calendar-help-sheet__backdrop,
-	.plan-modal-backdrop,
-	.ai-chat-backdrop
+	.plan-modal-backdrop
 ) {
 	background-color: var(--modal-backdrop-scrim) !important;
 	backdrop-filter: blur(var(--modal-backdrop-blur));

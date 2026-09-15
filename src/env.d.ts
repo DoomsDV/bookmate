@@ -79,10 +79,7 @@ interface ImportMetaEnv {
     readonly ORDS_DASHBOARD_URL?: string;
     readonly AI_SUMMARIZATION_URL?: string;
     readonly ORDS_AI_VOICE_APPOINTMENT_DRAFT?: string;
-    readonly ORDS_AI_SEND_CHAT?: string;
-    readonly ORDS_AI_GET_CHAT_SESSION?: string;
-    readonly ORDS_AI_GET_CHAT_MESSAGES?: string;
-    readonly ORDS_AI_DELETE_CHAT_SESSION?: string;
+    /** ATC = ayuda de producto. El chat de negocio futuro es un servicio LangGraph aparte (no estos endpoints Oracle). */
     readonly ORDS_AI_ATC_ASK?: string;
     readonly ORDS_PROFILE_ME_URL?: string;
     readonly ORDS_PROFILE_PUBLIC_SLUG_SUGGEST_URL?: string;
