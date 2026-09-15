@@ -6,6 +6,7 @@ import {
 	type CapabilityCode,
 } from '../config/capabilities';
 import { resolveOrdsApiUrl } from './env-urls';
+import { overlayPermissionMatrix } from './permissions-matrix-ui.ts';
 
 export const PERMISSIONS_ME_URL = resolveOrdsApiUrl(
 	import.meta.env.ORDS_PERMISSIONS_ME_URL,
@@ -150,13 +151,13 @@ export const getPermissionMatrixWithOrds = async (token: string): Promise<Permis
 		throw toPermissionsError(body, response.status, 'No fue posible obtener la matriz de permisos.');
 	}
 	const data = (body.data || {}) as PermissionMatrix;
-	return {
+	return overlayPermissionMatrix({
 		roles: Array.isArray(data.roles) ? data.roles : [],
 		catalog: Array.isArray(data.catalog) ? data.catalog : [],
 		grants: data.grants && typeof data.grants === 'object' ? data.grants : {},
 		entitlements:
 			data.entitlements && typeof data.entitlements === 'object' ? data.entitlements : {},
-	};
+	});
 };
 
 export const savePermissionMatrixWithOrds = async (
