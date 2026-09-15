@@ -2278,6 +2278,16 @@ class CalendarManager extends HTMLElement {
 						badgeContainer.prepend(badgeNode);
 					}
 				}
+
+				const seriesId = Number(arg.event.extendedProps?.series_id || 0);
+				if (Number.isInteger(seriesId) && seriesId > 0 && !arg.el.querySelector('.fc-event-series-badge')) {
+					arg.el.classList.add('fc-event-series');
+					const seriesBadge = document.createElement('span');
+					seriesBadge.className = 'fc-event-series-badge';
+					seriesBadge.title = 'Cita de una serie semanal';
+					seriesBadge.setAttribute('aria-hidden', 'true');
+					badgeContainer.prepend(seriesBadge);
+				}
 			},
 		});
 
