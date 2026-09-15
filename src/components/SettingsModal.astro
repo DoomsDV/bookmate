@@ -861,11 +861,11 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 														<span class="material-symbols-rounded text-[1.25rem] text-(--primary)">reviews</span>
 														<h5 class="inline-flex items-center gap-1 text-[0.98rem] font-bold text-(--on-surface)">
 															Envío automático
-															<SettingsHelpInfo text="Se envía por WhatsApp 2 horas después de que termina la cita. Solo si la marcás como Completado; en otro estado, el cliente no la recibe." />
+															<SettingsHelpInfo text="Se envía por WhatsApp 2 horas después de Completado. Las respuestas alimentan las estrellas del perfil público. En otro estado, el cliente no la recibe." />
 														</h5>
 													</div>
-													<p class="settings-help-inline">
-														WhatsApp, 2 h después de Completado.
+													<p class="settings-help-inline" data-settings-survey-ratings-hint>
+														Las estrellas del perfil salen de esta encuesta por WhatsApp.
 													</p>
 												</div>
 												<label class="settings-switch shrink-0">
