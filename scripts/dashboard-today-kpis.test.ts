@@ -35,6 +35,11 @@ test('HAS-56: Dashboard suma números extra sin reemplazar las 4 cards ni próxi
 	assert.doesNotMatch(dashboard, /KPIs extra/);
 	assert.match(dashboard, /DashboardAlerts/);
 	assert.match(dashboard, /DashboardQuickActions/);
+
+	const hoyIdx = dashboard.indexOf('>Hoy<');
+	const extrasIdx = dashboard.indexOf('data-dashboard-today-metrics');
+	const upcomingIdx = dashboard.indexOf('id="dashboard-upcoming-appointments"');
+	assert.ok(hoyIdx > 0 && extrasIdx > hoyIdx && extrasIdx < upcomingIdx);
 });
 
 test('HAS-56: nada de esto va a Analíticas', () => {
