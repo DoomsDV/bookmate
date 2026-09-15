@@ -153,6 +153,21 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 												) : null
 											}
 
+											{
+												canCreateCustomer ? (
+													<button
+														type="button"
+														class="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) text-(--on-surface-variant) shadow-sm transition hover:border-(--on-surface-variant) hover:text-(--on-surface) focus:border-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10"
+														data-open-import-customers
+														data-requires-write
+														aria-label="Importar CSV"
+														title="Importar CSV"
+													>
+														<span class="material-symbols-rounded text-[1.25rem]" aria-hidden="true">upload</span>
+													</button>
+												) : null
+											}
+
 											<a
 												href="/api/customers/export"
 												class="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) text-(--on-surface-variant) no-underline shadow-sm transition hover:border-(--on-surface-variant) hover:text-(--on-surface) focus:border-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10"
@@ -437,6 +452,116 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 					</div>
 				</div>
 			</form>
+		</dialog>
+
+		<dialog
+			class="m-0 mt-auto mb-0 w-screen max-w-none max-h-[86vh] open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:m-0 sm:ml-auto sm:mr-0 sm:mt-0 sm:mb-0 sm:h-[100dvh] sm:max-h-[100dvh] sm:w-[min(36rem,100%)] sm:max-w-[min(36rem,100%)] sm:rounded-none sm:border-y-0 sm:border-r-0 sm:shadow-none"
+			data-import-customers-modal
+			aria-labelledby="import-customers-modal-title"
+		>
+			<div class="panel-modal-header">
+				<div class="panel-modal-header__row">
+					<div class="panel-modal-header__leading">
+						<div class="panel-modal-header__icon">
+							<span class="material-symbols-rounded">upload_file</span>
+						</div>
+						<div class="panel-modal-header__text">
+							<h2 class="panel-modal-header__title" id="import-customers-modal-title">
+								Importar clientes
+							</h2>
+						</div>
+					</div>
+					<button
+						type="button"
+						class="panel-modal-header__close"
+						data-close-import-customers
+						aria-label="Cerrar modal"
+					>
+						<span class="material-symbols-rounded">close</span>
+					</button>
+				</div>
+			</div>
+
+			<div class="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-(--surface)/30">
+				<div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-7 sm:py-7">
+					<div class="grid gap-4">
+						<p class="m-0 text-[0.92rem] font-semibold leading-snug text-(--on-surface-variant)">
+							CSV con nombre, teléfono, CI y email. También acepta el archivo exportado.
+						</p>
+
+						<div
+							class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-bold text-rose-500 shadow-sm"
+							data-import-customers-error
+						></div>
+
+						<label
+							class="customers-import-dropzone"
+							data-import-customers-dropzone
+						>
+							<input
+								type="file"
+								accept=".csv,text/csv,text/plain"
+								class="sr-only"
+								data-import-customers-file
+							/>
+							<span class="material-symbols-rounded text-[1.8rem]" aria-hidden="true">csv</span>
+							<span class="customers-import-dropzone__title" data-import-customers-file-label>
+								Elegí un CSV o arrastralo acá
+							</span>
+							<span class="customers-import-dropzone__hint">Hasta 500 filas. Preview antes de importar.</span>
+						</label>
+
+						<button
+							type="button"
+							class="customers-import-template"
+							data-download-import-template
+						>
+							<span class="material-symbols-rounded text-[1.15rem]" aria-hidden="true">download</span>
+							Descargar plantilla
+						</button>
+
+						<div class="customers-import-preview hidden" data-import-customers-preview>
+							<div
+								class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.9rem] font-bold text-(--on-surface)"
+								data-import-customers-summary
+							></div>
+							<div class="customers-import-table-wrap">
+								<table class="customers-import-table">
+									<thead>
+										<tr>
+											<th>Fila</th>
+											<th>Nombre</th>
+											<th>Teléfono</th>
+											<th>Estado</th>
+										</tr>
+									</thead>
+									<tbody data-import-customers-rows></tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="z-20 mt-auto shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-4 py-4 sm:px-7 sm:py-5">
+					<div class="modal-footer">
+						<div class="modal-footer-actions">
+							<button type="button" class="modal-action-secondary" data-close-import-customers>
+								Cancelar
+							</button>
+							<button
+								type="button"
+								class="modal-action-primary"
+								data-submit-import-customers
+								data-requires-write
+								disabled
+							>
+								<span class="material-symbols-rounded text-[1.2rem]" aria-hidden="true">upload</span>
+								<span data-import-customers-submit-label>Importar</span>
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
 		</dialog>
 
 		<dialog
@@ -1504,6 +1629,105 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 
 	html[data-theme='dark'] .customers-create-btn:hover {
 		filter: brightness(1.06);
+	}
+
+	.customers-import-dropzone {
+		display: grid;
+		justify-items: center;
+		gap: 0.45rem;
+		padding: 1.35rem 1rem;
+		border-radius: 1.15rem;
+		border: 1.5px dashed color-mix(in srgb, var(--shell-border) 80%, var(--primary) 20%);
+		background: color-mix(in srgb, var(--surface-bright) 88%, var(--primary) 12%);
+		color: var(--on-surface-variant);
+		text-align: center;
+		cursor: pointer;
+	}
+
+	.customers-import-dropzone:hover,
+	.customers-import-dropzone[data-active='true'] {
+		border-color: var(--primary);
+		color: var(--on-surface);
+	}
+
+	.customers-import-dropzone__title {
+		font-size: 0.95rem;
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+
+	.customers-import-dropzone__hint {
+		font-size: 0.82rem;
+		font-weight: 650;
+	}
+
+	.customers-import-template {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.4rem;
+		width: fit-content;
+		padding: 0;
+		border: 0;
+		background: transparent;
+		color: var(--primary);
+		font-size: 0.88rem;
+		font-weight: 800;
+		cursor: pointer;
+	}
+
+	.customers-import-preview {
+		display: grid;
+		gap: 0.75rem;
+	}
+
+	.customers-import-preview.hidden {
+		display: none !important;
+	}
+
+	.customers-import-table-wrap {
+		overflow: auto;
+		max-height: 22rem;
+		border-radius: 1rem;
+		border: 1px solid var(--shell-border);
+	}
+
+	.customers-import-table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 0.82rem;
+	}
+
+	.customers-import-table th,
+	.customers-import-table td {
+		padding: 0.55rem 0.7rem;
+		text-align: left;
+		border-bottom: 1px solid var(--shell-border);
+		vertical-align: top;
+	}
+
+	.customers-import-table th {
+		position: sticky;
+		top: 0;
+		background: var(--surface-bright);
+		font-weight: 800;
+		color: var(--on-surface-variant);
+	}
+
+	.customers-import-row--error td {
+		background: color-mix(in srgb, #f43f5e 8%, var(--surface-bright) 92%);
+	}
+
+	.customers-import-status {
+		display: grid;
+		gap: 0.2rem;
+		font-weight: 750;
+	}
+
+	.customers-import-status__error {
+		font-size: 0.75rem;
+		font-weight: 650;
+		color: #e11d48;
 	}
 
 	.customers-grid {

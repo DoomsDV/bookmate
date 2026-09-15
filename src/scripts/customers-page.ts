@@ -13,6 +13,13 @@ import {
 	parseCustomerEmail,
 	splitCustomerFullName,
 } from '../lib/customer-contact';
+import {
+	CUSTOMER_CSV_TEMPLATE,
+	previewCustomerCsv,
+	type CustomerCsvPreview,
+	type CustomerCsvRowResult,
+} from '../lib/customer-csv';
+import { showFlashMessage } from '../lib/flash';
 import { PARAGUAY_CI_ERROR, parseParaguayCi } from '../lib/paraguay-ci';
 import {
 	formatParaguayMobilePhoneInput,
@@ -177,6 +184,20 @@ class CustomerManager extends HTMLElement {
 	private createSubmitBtn: HTMLButtonElement | null = null;
 	private createSubmitLabel: HTMLElement | null = null;
 	private isSavingCreate = false;
+
+	private importModal: HTMLDialogElement | null = null;
+	private importErrorNode: HTMLElement | null = null;
+	private importDropzone: HTMLElement | null = null;
+	private importFileInput: HTMLInputElement | null = null;
+	private importFileLabel: HTMLElement | null = null;
+	private importPreviewNode: HTMLElement | null = null;
+	private importSummaryNode: HTMLElement | null = null;
+	private importRowsNode: HTMLElement | null = null;
+	private importSubmitBtn: HTMLButtonElement | null = null;
+	private importSubmitLabel: HTMLElement | null = null;
+	private importFile: File | null = null;
+	private importPreview: CustomerCsvPreview | null = null;
+	private isImporting = false;
 
 	private profileModal: HTMLDialogElement | null = null;
 	private profilePanel: HTMLElement | null = null;
@@ -366,6 +387,16 @@ class CustomerManager extends HTMLElement {
 		this.createEmailInput = this.querySelector<HTMLInputElement>('[data-create-customer-email]');
 		this.createSubmitBtn = this.querySelector<HTMLButtonElement>('[data-submit-create-customer]');
 		this.createSubmitLabel = this.querySelector<HTMLElement>('[data-create-customer-submit-label]');
+		this.importModal = this.querySelector<HTMLDialogElement>('[data-import-customers-modal]');
+		this.importErrorNode = this.querySelector<HTMLElement>('[data-import-customers-error]');
+		this.importDropzone = this.querySelector<HTMLElement>('[data-import-customers-dropzone]');
+		this.importFileInput = this.querySelector<HTMLInputElement>('[data-import-customers-file]');
+		this.importFileLabel = this.querySelector<HTMLElement>('[data-import-customers-file-label]');
+		this.importPreviewNode = this.querySelector<HTMLElement>('[data-import-customers-preview]');
+		this.importSummaryNode = this.querySelector<HTMLElement>('[data-import-customers-summary]');
+		this.importRowsNode = this.querySelector<HTMLElement>('[data-import-customers-rows]');
+		this.importSubmitBtn = this.querySelector<HTMLButtonElement>('[data-submit-import-customers]');
+		this.importSubmitLabel = this.querySelector<HTMLElement>('[data-import-customers-submit-label]');
 
 		this.profileModal = this.querySelector<HTMLDialogElement>('[data-customer-profile-modal]');
 		this.profilePanel = this.querySelector<HTMLElement>('[data-customer-profile-panel]');
@@ -670,6 +701,13 @@ class CustomerManager extends HTMLElement {
 		this.createModal?.addEventListener('click', this.handleCreateModalClick, { signal });
 		this.createModal?.addEventListener('cancel', this.handleCreateModalCancel, { signal });
 		this.createPhoneInput?.addEventListener('input', this.handleCreatePhoneInput, { signal });
+		this.importModal?.addEventListener('click', this.handleImportModalClick, { signal });
+		this.importModal?.addEventListener('cancel', this.handleImportModalCancel, { signal });
+		this.importFileInput?.addEventListener('change', this.handleImportFileChange, { signal });
+		this.importDropzone?.addEventListener('dragover', this.handleImportDragOver, { signal });
+		this.importDropzone?.addEventListener('dragleave', this.handleImportDragLeave, { signal });
+		this.importDropzone?.addEventListener('drop', this.handleImportDrop, { signal });
+		this.importSubmitBtn?.addEventListener('click', this.handleImportSubmit, { signal });
 		for (const tab of this.profileTabButtons ?? []) {
 			tab.addEventListener('click', this.handleProfileTabClick, { signal });
 		}
@@ -1020,6 +1058,228 @@ class CustomerManager extends HTMLElement {
 		}
 	}
 
+	private resetImportCustomers() {
+		this.importFile = null;
+		this.importPreview = null;
+		this.isImporting = false;
+		if (this.importFileInput) this.importFileInput.value = '';
+		if (this.importFileLabel) {
+			this.importFileLabel.textContent = 'Elegí un CSV o arrastralo acá';
+		}
+		if (this.importErrorNode) {
+			this.importErrorNode.textContent = '';
+			this.importErrorNode.classList.add('hidden');
+		}
+		if (this.importPreviewNode) this.importPreviewNode.classList.add('hidden');
+		if (this.importSummaryNode) this.importSummaryNode.textContent = '';
+		if (this.importRowsNode) this.importRowsNode.replaceChildren();
+		this.importDropzone?.removeAttribute('data-active');
+		this.setImportCustomersLoading(false);
+		this.updateImportSubmitState();
+	}
+
+	private setImportCustomersError(message: string) {
+		if (!this.importErrorNode) return;
+		this.importErrorNode.textContent = message;
+		this.importErrorNode.classList.toggle('hidden', !message);
+	}
+
+	private setImportCustomersLoading(loading: boolean) {
+		this.isImporting = loading;
+		if (this.importFileInput) this.importFileInput.disabled = loading;
+		if (this.importSubmitLabel) {
+			this.importSubmitLabel.textContent = loading ? 'Importando…' : 'Importar';
+		}
+		this.updateImportSubmitState();
+	}
+
+	private updateImportSubmitState() {
+		const canImport = Boolean(this.importFile && this.importPreview && this.importPreview.valid_rows > 0);
+		if (this.importSubmitBtn) this.importSubmitBtn.disabled = this.isImporting || !canImport;
+	}
+
+	private openImportCustomersModal() {
+		if (!this.canCreateCustomer() || !this.importModal) return;
+		this.resetImportCustomers();
+		if (!this.importModal.open) openPanelModal(this.importModal);
+	}
+
+	private closeImportCustomersModal() {
+		if (!this.importModal?.open) return;
+		this.importModal.close();
+		this.resetImportCustomers();
+	}
+
+	private handleImportModalClick = (event: MouseEvent) => {
+		if (event.target === this.importModal) this.closeImportCustomersModal();
+	};
+
+	private handleImportModalCancel = (event: Event) => {
+		event.preventDefault();
+		this.closeImportCustomersModal();
+	};
+
+	private handleImportDragOver = (event: DragEvent) => {
+		event.preventDefault();
+		this.importDropzone?.setAttribute('data-active', 'true');
+	};
+
+	private handleImportDragLeave = () => {
+		this.importDropzone?.removeAttribute('data-active');
+	};
+
+	private handleImportDrop = (event: DragEvent) => {
+		event.preventDefault();
+		this.importDropzone?.removeAttribute('data-active');
+		const file = event.dataTransfer?.files?.[0];
+		if (file) void this.loadImportFile(file);
+	};
+
+	private handleImportFileChange = () => {
+		const file = this.importFileInput?.files?.[0];
+		if (file) void this.loadImportFile(file);
+	};
+
+	private downloadImportTemplate() {
+		const blob = new Blob([CUSTOMER_CSV_TEMPLATE], { type: 'text/csv;charset=utf-8' });
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement('a');
+		link.href = url;
+		link.download = 'hasel-clientes-plantilla.csv';
+		link.click();
+		URL.revokeObjectURL(url);
+	}
+
+	private importRowStatusLabel(row: CustomerCsvRowResult) {
+		if (row.status === 'imported') return 'Importado';
+		if (row.status === 'ok') return 'Listo';
+		return 'Error';
+	}
+
+	private renderImportPreview(preview: CustomerCsvPreview, imported = 0) {
+		this.importPreview = preview;
+		if (this.importPreviewNode) this.importPreviewNode.classList.remove('hidden');
+		if (this.importSummaryNode) {
+			const parts = [`${preview.total_rows} filas`, `${preview.valid_rows} listas`];
+			if (preview.error_rows > 0) parts.push(`${preview.error_rows} con error`);
+			if (imported > 0) parts.push(`${imported} importadas`);
+			this.importSummaryNode.textContent = parts.join(' · ');
+		}
+		if (this.importRowsNode) {
+			const fragment = document.createDocumentFragment();
+			for (const row of preview.rows) {
+				const tr = document.createElement('tr');
+				if (row.status === 'error') tr.className = 'customers-import-row--error';
+				const errorText = row.errors.map((error) => error.message).join(' ');
+				tr.innerHTML = `
+					<td>${row.row_number}</td>
+					<td>${this.escapeHtml(row.full_name || '—')}</td>
+					<td>${this.escapeHtml(row.phone_number || '—')}</td>
+					<td>
+						<div class="customers-import-status">
+							<span>${this.importRowStatusLabel(row)}</span>
+							${errorText ? `<span class="customers-import-status__error">${this.escapeHtml(errorText)}</span>` : ''}
+						</div>
+					</td>
+				`;
+				fragment.append(tr);
+			}
+			this.importRowsNode.replaceChildren(fragment);
+		}
+		this.updateImportSubmitState();
+	}
+
+	private escapeHtml(value: string) {
+		return String(value)
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;');
+	}
+
+	private async loadImportFile(file: File) {
+		if (this.isImporting) return;
+		this.setImportCustomersError('');
+		this.importFile = file;
+		if (this.importFileLabel) this.importFileLabel.textContent = file.name;
+		try {
+			const text = await file.text();
+			this.renderImportPreview(previewCustomerCsv(text));
+		} catch (error) {
+			this.importPreview = null;
+			if (this.importPreviewNode) this.importPreviewNode.classList.add('hidden');
+			this.setImportCustomersError(
+				error instanceof Error ? error.message : 'No fue posible leer el CSV.'
+			);
+			this.updateImportSubmitState();
+		}
+	}
+
+	private handleImportSubmit = () => {
+		void this.submitImportCustomers();
+	};
+
+	private async submitImportCustomers() {
+		if (this.isImporting || !this.canCreateCustomer() || !this.importFile) return;
+		if (!this.importPreview || this.importPreview.valid_rows <= 0) return;
+
+		this.setImportCustomersLoading(true);
+		this.setImportCustomersError('');
+		try {
+			const body = new FormData();
+			body.set('file', this.importFile);
+			const response = await fetch('/api/customers/import', {
+				method: 'POST',
+				headers: { Accept: 'application/json' },
+				body,
+			});
+			const data = await this.parseJson<{
+				preview: boolean;
+				imported: number;
+				skipped: number;
+				total_rows: number;
+				valid_rows: number;
+				error_rows: number;
+				rows: CustomerCsvRowResult[];
+			}>(response);
+			if (!response.ok || data.status !== 'success' || !data.data) {
+				this.setImportCustomersError(
+					this.getBackendMessage(data, 'No fue posible importar los clientes.')
+				);
+				return;
+			}
+
+			this.renderImportPreview(
+				{
+					total_rows: data.data.total_rows,
+					valid_rows: data.data.valid_rows,
+					error_rows: data.data.error_rows,
+					rows: data.data.rows,
+				},
+				data.data.imported
+			);
+
+			if (data.data.imported > 0) {
+				this.importFile = null;
+				this.page = 1;
+				await this.loadCustomers({ silent: true });
+				showFlashMessage({
+					type: 'success',
+					message:
+						data.data.error_rows > 0
+							? `Se importaron ${data.data.imported} clientes. ${data.data.error_rows} filas quedaron con error.`
+							: `Se importaron ${data.data.imported} clientes.`,
+				});
+			} else {
+				this.setImportCustomersError('No se importó ningún cliente. Revisá los errores por fila.');
+			}
+		} catch {
+			this.setImportCustomersError('No fue posible importar los clientes.');
+		} finally {
+			this.setImportCustomersLoading(false);
+		}
+	}
+
 	private handleProfessionalChange = () => {
 		if (!this.professionalSelect || !this.canFilterByProfessional()) return;
 		this.selectedProfessionalId = Number(this.professionalSelect.value || 0);
@@ -1277,6 +1537,18 @@ class CustomerManager extends HTMLElement {
 		}
 		if (target.closest('[data-close-create-customer]')) {
 			this.closeCreateCustomerModal();
+			return;
+		}
+		if (target.closest('[data-open-import-customers]')) {
+			this.openImportCustomersModal();
+			return;
+		}
+		if (target.closest('[data-close-import-customers]')) {
+			this.closeImportCustomersModal();
+			return;
+		}
+		if (target.closest('[data-download-import-template]')) {
+			this.downloadImportTemplate();
 			return;
 		}
 		if (target.closest('[data-edit-customer-profile-toggle]')) {
