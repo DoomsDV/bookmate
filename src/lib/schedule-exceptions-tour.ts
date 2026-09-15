@@ -32,7 +32,7 @@ function buildTourSteps(): DriveStep[] {
 			popover: {
 				title: 'Plantilla semanal',
 				description:
-					'Configura el horario habitual que se repite cada semana: turnos por día, sucursal y franja horaria. Los cambios se guardan con el botón «Guardar horarios» y aplican a todas las semanas hasta que los modifiques.',
+					'Este horario abre los turnos que se pueden reservar online. Configura turnos por día, sucursal y franja. El horario de Perfil público solo se muestra en la página: no genera reservas. Los cambios se guardan con «Guardar horarios».',
 				side: 'bottom',
 				align: 'center',
 			},

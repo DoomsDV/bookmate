@@ -9,7 +9,10 @@ import {
 } from '../lib/business-hours';
 import type { PublicOrgHub } from '../lib/public-org-hub';
 import { getPublicProfileSpecialtyLabel } from '../lib/public-profile-labels';
-import type { WorkspaceSettingsData } from '../lib/workspace-settings-shared';
+import {
+	STOREFRONT_HOURS_OWNER_HINT,
+	type WorkspaceSettingsData,
+} from '../lib/workspace-settings-shared';
 import { formatParaguayMobilePhoneInput } from '../lib/paraguay-phone';
 import {
 	buildOrgHubUrl,
@@ -511,7 +514,9 @@ const previewInitial = {
 							<div class="ppe-hours-head">
 								<p class="ppe-hours-kicker">
 									<span>Página</span>
-									Horario que se muestra a tus clientes. No cambia las reservas.
+									{STOREFRONT_HOURS_OWNER_HINT}
+									{' '}
+									<a href="/panel/schedules" class="ppe-hours-kicker__link">Abrir Horarios</a>
 								</p>
 								<button type="button" class="ppe-hours-copy" data-ppe-hours-copy-weekdays>
 									<span class="material-symbols-rounded" aria-hidden="true">content_copy</span>

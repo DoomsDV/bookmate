@@ -13,6 +13,7 @@ import {
 	getPublicOrgHubWithOrds,
 	type PublicOrgHub,
 } from '../../lib/public-org-hub';
+import { HUB_NO_ONLINE_SLOTS_MESSAGE } from '../../lib/workspace-settings-shared';
 import {
 	appendPublicBookingFromHubParam,
 	buildOrgHubPath,
@@ -324,14 +325,16 @@ const serializedProfessionals = professionals.length
 										WhatsApp
 									</a>
 								) : null}
-								<a
-									href={reserveHref}
-									class="hub-btn hub-btn--filled"
-									data-hub-reserve-cta
-								>
-									<span class="material-symbols-rounded" aria-hidden="true">event</span>
-									Reservar
-								</a>
+								{professionals.length ? (
+									<a
+										href={reserveHref}
+										class="hub-btn hub-btn--filled"
+										data-hub-reserve-cta
+									>
+										<span class="material-symbols-rounded" aria-hidden="true">event</span>
+										Reservar
+									</a>
+								) : null}
 							</div>
 						</div>
 					</section>
@@ -353,7 +356,11 @@ const serializedProfessionals = professionals.length
 							class="hub-panel is-active"
 							data-hub-panel="overview"
 							aria-labelledby={
-								businessHoursRows.length ? 'hub-hours-title' : 'hub-services-title'
+								businessHoursRows.length
+									? 'hub-hours-title'
+									: serviceCategories.length || professionals.length
+										? 'hub-services-title'
+										: 'hub-no-slots'
 							}
 						>
 							<div class="hub-overview-stack">
@@ -420,8 +427,13 @@ const serializedProfessionals = professionals.length
 											))}
 										</ul>
 									</div>
-								) : (
+								) : professionals.length ? (
 									<p class="hub-empty">Todavía no hay servicios destacados.</p>
+								) : null}
+								{professionals.length ? null : (
+									<p id="hub-no-slots" class="hub-empty" role="status">
+										{HUB_NO_ONLINE_SLOTS_MESSAGE}
+									</p>
 								)}
 							</div>
 						</section>
@@ -617,12 +629,12 @@ const serializedProfessionals = professionals.length
 									</div>
 								</>
 							) : (
-								<p class="hub-empty">
-									Todavía no hay profesionales con agenda pública en este negocio.
+								<p class="hub-empty" role="status">
+									{HUB_NO_ONLINE_SLOTS_MESSAGE}
 								</p>
 							)}
 							<p class="hub-empty" data-hub-team-empty-filter hidden>
-								No hay profesionales con agenda en esta sucursal.
+								Aún no hay turnos online en esta sucursal.
 							</p>
 						</section>
 

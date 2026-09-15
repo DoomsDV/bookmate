@@ -761,7 +761,10 @@ class ScheduleManager extends HTMLElement {
 		if (!this.plannerNode) return;
 
 		if (this.selectedProfessionalId <= 0) {
-			this.renderPlannerMessage('Selecciona un profesional para configurar sus horarios.', 'info');
+			this.renderPlannerMessage(
+				'Selecciona un profesional. Este horario es el que abre turnos online; el de la página pública solo se muestra.',
+				'info'
+			);
 			return;
 		}
 

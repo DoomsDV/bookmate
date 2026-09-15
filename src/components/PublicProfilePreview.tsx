@@ -4,6 +4,7 @@ import {
 	PUBLIC_PROFILE_PREVIEW_EVENT,
 	type PublicProfilePreviewState,
 } from '../lib/public-profile-preview-events';
+import { HUB_NO_ONLINE_SLOTS_MESSAGE } from '../lib/workspace-settings-shared';
 import { FacebookIcon, InstagramIcon, WhatsAppIcon } from './hub-brand-icons';
 
 type PreviewTab = 'overview' | 'galeria' | 'equipo' | 'sucursales';
@@ -167,12 +168,14 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 									WhatsApp
 								</span>
 							) : null}
-							<span className="hub-btn hub-btn--filled">
-								<span className="material-symbols-rounded" aria-hidden="true">
-									event
+							{professionals.length ? (
+								<span className="hub-btn hub-btn--filled">
+									<span className="material-symbols-rounded" aria-hidden="true">
+										event
+									</span>
+									Reservar
 								</span>
-								Reservar
-							</span>
+							) : null}
 						</div>
 					</div>
 				</section>
@@ -291,8 +294,13 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 										))}
 									</ul>
 								</div>
-							) : (
+							) : professionals.length ? (
 								<p className="hub-empty">Todavía no hay servicios destacados.</p>
+							) : null}
+							{professionals.length ? null : (
+								<p className="hub-empty" role="status">
+									{HUB_NO_ONLINE_SLOTS_MESSAGE}
+								</p>
 							)}
 						</div>
 					</section>
@@ -391,7 +399,9 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 								})}
 							</div>
 						) : (
-							<p className="hub-empty">Todavía no hay profesionales.</p>
+							<p className="hub-empty" role="status">
+								{HUB_NO_ONLINE_SLOTS_MESSAGE}
+							</p>
 						)}
 					</section>
 
