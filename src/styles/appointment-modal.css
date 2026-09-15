@@ -1084,7 +1084,9 @@ dialog[data-appointment-modal] .bookmate-searchable-select-dropdown {
 
 .appointment-recurrence {
 	display: grid;
-	gap: 0.75rem;
+	grid-template-rows: auto 0fr;
+	gap: 0;
+	contain: layout style;
 	border-radius: 1rem;
 	border: 1px solid color-mix(in srgb, var(--shell-border) 88%, transparent);
 	background: color-mix(in srgb, var(--surface-variant) 22%, var(--surface-bright));
@@ -1093,6 +1095,13 @@ dialog[data-appointment-modal] .bookmate-searchable-select-dropdown {
 
 .appointment-recurrence.is-edit-hidden {
 	display: none;
+}
+
+/* El check pinta el bloque en el mismo frame; JS solo actualiza preview/label después. */
+.appointment-recurrence:has([data-recurrence-enabled]:checked),
+.appointment-recurrence.is-enabled {
+	grid-template-rows: auto 1fr;
+	gap: 0.75rem;
 }
 
 .appointment-recurrence__toggle {
@@ -1130,6 +1139,16 @@ dialog[data-appointment-modal] .bookmate-searchable-select-dropdown {
 .appointment-recurrence__fields {
 	display: grid;
 	gap: 0.65rem;
+	min-height: 0;
+	overflow: hidden;
+	visibility: hidden;
+	pointer-events: none;
+}
+
+.appointment-recurrence:has([data-recurrence-enabled]:checked) .appointment-recurrence__fields,
+.appointment-recurrence.is-enabled .appointment-recurrence__fields {
+	visibility: visible;
+	pointer-events: auto;
 }
 
 .appointment-recurrence__modes {

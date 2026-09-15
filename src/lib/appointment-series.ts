@@ -78,6 +78,9 @@ export const buildWeeklyOccurrences = (
 	return occurrences;
 };
 
+export const seriesCreateSubmitLabel = (enabled: boolean, count: number) =>
+	enabled && count > 1 ? `Crear ${count} citas` : 'Crear reserva';
+
 export const formatSeriesPreview = (start: Date, occurrences: Date[]) => {
 	if (occurrences.length === 0) {
 		return 'Indicá cuántas citas o hasta qué fecha.';
