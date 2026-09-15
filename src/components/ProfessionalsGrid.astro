@@ -1,5 +1,9 @@
 ---
 import { parseParaguayMobilePhone } from '../lib/paraguay-phone';
+import {
+	formatProfessionalHubListingHint,
+	getProfessionalHubGaps,
+} from '../lib/professional-hub-profile';
 import { getProfessionalDisplayName, isProfessionalAccountActive, type Professional } from '../lib/professionals';
 import { formatPublicProfessionalRating } from '../lib/public-professional-rating';
 
@@ -45,11 +49,19 @@ const toPhoneLabel = (value?: string | null) => {
 	return parsed.isValid ? parsed.pretty : raw;
 };
 
-const cardItems = professionals.map((professional) => ({
-	professional,
-	profileImageUrl: toProfileImageUrl(professional),
-	rating: formatPublicProfessionalRating(professional.rating_avg, professional.rating_count),
-}));
+const cardItems = professionals.map((professional) => {
+	const profileImageUrl = toProfileImageUrl(professional);
+	const hubGaps = getProfessionalHubGaps({
+		profileImageUrl,
+		shortBio: professional.short_bio,
+	});
+	return {
+		professional,
+		profileImageUrl,
+		rating: formatPublicProfessionalRating(professional.rating_avg, professional.rating_count),
+		hubListingHint: formatProfessionalHubListingHint(hubGaps),
+	};
+});
 ---
 
 <section class="professionals-view">
@@ -316,6 +328,9 @@ const cardItems = professionals.map((professional) => ({
 								<p class="professionals-card__email line-clamp-1">
 									{toContactEmail(item.professional)}
 								</p>
+								{item.hubListingHint ? (
+									<p class="professionals-card__hub-gap">{item.hubListingHint}</p>
+								) : null}
 							</div>
 						</div>
 						<div class="professionals-card__meta">
@@ -613,6 +628,19 @@ const cardItems = professionals.map((professional) => ({
 		font-size: 0.78rem;
 		font-weight: 550;
 		color: var(--on-surface-variant);
+	}
+
+	professional-manager .professionals-card__hub-gap {
+		margin: 0.08rem 0 0;
+		font-size: 0.72rem;
+		font-weight: 700;
+		letter-spacing: -0.01em;
+		line-height: 1.3;
+		color: #9a6700;
+	}
+
+	html[data-theme='dark'] professional-manager .professionals-card__hub-gap {
+		color: #fcd34d;
 	}
 
 	professional-manager .professionals-card__meta {

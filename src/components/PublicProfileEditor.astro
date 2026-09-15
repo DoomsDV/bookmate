@@ -66,6 +66,7 @@ const previewProfessionals = (hub?.professionals || []).map((pro) => ({
 	fullName: String(pro.full_name || '').trim(),
 	specialty: getPublicProfileSpecialtyLabel(pro.specialty),
 	imageUrl: String(pro.image_url || '').trim(),
+	shortBio: String(pro.short_bio || '').trim(),
 	initials: personInitials(pro.full_name),
 	ratingAvg: pro.rating_avg,
 	ratingCount: pro.rating_count,

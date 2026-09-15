@@ -593,6 +593,9 @@ const serializedProfessionals = professionals.length
 																	>
 																		{specialty || '\u00a0'}
 																	</p>
+																	{pro.short_bio ? (
+																		<p class="hub-pro-card__bio">{pro.short_bio}</p>
+																	) : null}
 																</div>
 																<p
 																	class:list={[

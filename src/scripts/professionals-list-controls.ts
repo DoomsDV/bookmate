@@ -5,6 +5,10 @@ import {
 } from '../lib/panel-filter-popover';
 import { parseParaguayMobilePhone } from '../lib/paraguay-phone';
 import { updateAppPaginationDom } from '../lib/pagination';
+import {
+	formatProfessionalHubListingHint,
+	getProfessionalHubGaps,
+} from '../lib/professional-hub-profile';
 import { formatPublicProfessionalRating } from '../lib/public-professional-rating';
 
 type ProfessionalItem = {
@@ -12,6 +16,7 @@ type ProfessionalItem = {
 	display_name?: string | null;
 	phone_number?: string | null;
 	profile_image_url?: string | null;
+	short_bio?: string | null;
 	is_active?: 0 | 1;
 	membership_status?: string | null;
 	user?: {
@@ -125,6 +130,15 @@ const renderProfessionalCard = (professional: ProfessionalItem) => {
 	const ratingClass = rating.hasRating
 		? 'professionals-card__rating'
 		: 'professionals-card__rating professionals-card__rating--empty';
+	const hubListingHint = formatProfessionalHubListingHint(
+		getProfessionalHubGaps({
+			profileImageUrl: imageUrl,
+			shortBio: professional.short_bio,
+		})
+	);
+	const hubGapHtml = hubListingHint
+		? `<p class="professionals-card__hub-gap">${escapeHtml(hubListingHint)}</p>`
+		: '';
 
 	const avatarClasses = imageUrl
 		? 'professionals-card-avatar'
@@ -172,6 +186,7 @@ const renderProfessionalCard = (professional: ProfessionalItem) => {
 							<span>${escapeHtml(rating.label)}</span>
 						</p>
 						<p class="professionals-card__email line-clamp-1">${escapeHtml(email)}</p>
+						${hubGapHtml}
 					</div>
 				</div>
 				<div class="professionals-card__meta">

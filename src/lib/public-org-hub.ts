@@ -3,6 +3,10 @@ import { parseBusinessHours } from './business-hours';
 import { resolveOrdsPublicApiUrl } from './env-urls';
 import { PublicBookingApiError } from './public-booking-error';
 import { normalizePublicBookingLocations } from './public-booking-locations';
+import {
+	isHubListedProfessional,
+	normalizeProfessionalShortBio,
+} from './professional-hub-profile';
 import { normalizePublicProfessionalRating } from './public-professional-rating';
 
 export {
@@ -35,6 +39,7 @@ export interface PublicOrgHubProfessional {
 	full_name: string;
 	specialty: string;
 	image_url: string;
+	short_bio: string;
 	profile_slug: string;
 	booking_path: string;
 	location_ids: number[];
@@ -122,6 +127,7 @@ const normalizeProfessional = (
 		full_name: fullName,
 		specialty: String(source.specialty || '').trim() || 'Sin especialidad',
 		image_url: String(source.image_url || '').trim(),
+		short_bio: normalizeProfessionalShortBio(source.short_bio),
 		profile_slug: profileSlug,
 		booking_path: bookingPath || fallbackPath,
 		location_ids: normalizeLocationIds(source.location_ids),
@@ -145,6 +151,12 @@ const normalizeOrgHub = (value: unknown): PublicOrgHub | null => {
 		? source.professionals
 				.map((item) => normalizeProfessional(item, organizationSlug))
 				.filter((item): item is PublicOrgHubProfessional => item !== null)
+				.filter((item) =>
+					isHubListedProfessional({
+						imageUrl: item.image_url,
+						shortBio: item.short_bio,
+					})
+				)
 		: [];
 
 	const serviceCategories = Array.isArray(source.service_categories)

@@ -162,6 +162,7 @@ const mapPreviewProfessionals = (
 				fullName,
 				specialty: getPublicProfileSpecialtyLabel(String(row.specialty || '')),
 				imageUrl: String(row.image_url || '').trim(),
+				shortBio: String(row.short_bio || row.shortBio || '').trim(),
 				initials: initialsFromName(fullName),
 				ratingAvg: rating.rating_avg,
 				ratingCount: rating.rating_count,

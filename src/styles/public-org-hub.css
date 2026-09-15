@@ -1839,6 +1839,20 @@ html[data-theme='dark'] .hub-pro-card {
 	visibility: hidden;
 }
 
+.hub-pro-card--person .hub-pro-card__bio {
+	width: 100%;
+	margin: 0.05rem 0 0;
+	font-size: 0.8rem;
+	font-weight: 500;
+	line-height: 1.35;
+	color: color-mix(in srgb, var(--on-surface-variant, #64748b) 92%, var(--on-surface) 8%);
+	text-align: center;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
 .hub-pro-card--person .hub-pro-card__rating,
 .hub-pro-card--person .hub-pro-card__rating-skel {
 	position: absolute;
