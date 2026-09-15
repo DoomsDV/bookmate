@@ -878,6 +878,10 @@ class CustomerManager extends HTMLElement {
 		return this.canEditCustomerProfile();
 	}
 
+	private canImportCustomers() {
+		return this.canCreateCustomer();
+	}
+
 	private canArchiveCustomer() {
 		return this.canEditCustomerProfile();
 	}
@@ -1134,7 +1138,7 @@ class CustomerManager extends HTMLElement {
 	}
 
 	private openImportCustomersModal() {
-		if (!this.canCreateCustomer() || !this.importModal) return;
+		if (!this.canImportCustomers() || !this.importModal) return;
 		this.resetImportCustomers();
 		if (!this.importModal.open) openPanelModal(this.importModal);
 	}
@@ -1255,7 +1259,7 @@ class CustomerManager extends HTMLElement {
 	};
 
 	private async submitImportCustomers() {
-		if (this.isImporting || !this.canCreateCustomer() || !this.importFile) return;
+		if (this.isImporting || !this.canImportCustomers() || !this.importFile) return;
 		if (!this.importPreview || this.importPreview.valid_rows <= 0) return;
 
 		this.setImportCustomersLoading(true);

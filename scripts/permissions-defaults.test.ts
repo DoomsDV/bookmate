@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import {
@@ -47,6 +48,91 @@ test('Apagar customers.create en recepción bloquea la capability', () => {
 	const tightened = reception.filter((code) => code !== CAPABILITIES.CUSTOMERS_CREATE);
 	assert.equal(isCapabilityGranted(tightened, CAPABILITIES.CUSTOMERS_CREATE), false);
 	assert.ok(isCapabilityGranted(tightened, CAPABILITIES.CUSTOMERS_VIEW));
+});
+
+test('Import CSV comparte customers.create con el alta (no un capability nuevo)', () => {
+	const importCapability = CAPABILITIES.CUSTOMERS_CREATE;
+	assert.equal(importCapability, 'customers.create');
+	assert.ok(isCapabilityGranted(admin, importCapability));
+	assert.ok(isCapabilityGranted(reception, importCapability));
+	assert.equal(isCapabilityGranted(pro, importCapability), false);
+
+	const receptionWithoutCreate = reception.filter((code) => code !== importCapability);
+	assert.equal(isCapabilityGranted(receptionWithoutCreate, importCapability), false);
+
+	const proWithCreate = [...pro, importCapability];
+	assert.ok(isCapabilityGranted(proWithCreate, importCapability));
+});
+
+test('El gate de import lanza 403 sin customers.create (mismo helper que el alta)', () => {
+	class CustomersApiError extends Error {
+		status: number;
+		constructor(message: string, status = 400) {
+			super(message);
+			this.status = status;
+		}
+	}
+
+	const requireCapability = (
+		locals: { roleId?: number; capabilities?: readonly string[] },
+		code: string,
+		createError: (message: string, status: number) => Error,
+		message: string
+	) => {
+		if (!isCapabilityGranted(locals.capabilities, code, Number(locals.roleId || 0))) {
+			throw createError(message, 403);
+		}
+	};
+
+	const deny = (locals: { roleId?: number; capabilities?: readonly string[] }) =>
+		assert.throws(
+			() =>
+				requireCapability(
+					locals,
+					CAPABILITIES.CUSTOMERS_CREATE,
+					(message, status) => new CustomersApiError(message, status),
+					'No tienes permisos para importar clientes.'
+				),
+			(error: unknown) =>
+				error instanceof CustomersApiError &&
+				error.status === 403 &&
+				error.message === 'No tienes permisos para importar clientes.'
+		);
+
+	const allow = (locals: { roleId?: number; capabilities?: readonly string[] }) =>
+		assert.doesNotThrow(() =>
+			requireCapability(
+				locals,
+				CAPABILITIES.CUSTOMERS_CREATE,
+				(message, status) => new CustomersApiError(message, status),
+				'No tienes permisos para importar clientes.'
+			)
+		);
+
+	deny({ roleId: 2, capabilities: pro });
+	deny({ roleId: 3, capabilities: reception.filter((code) => code !== CAPABILITIES.CUSTOMERS_CREATE) });
+	deny({ roleId: 1, capabilities: [] });
+	allow({ roleId: 1, capabilities: admin });
+	allow({ roleId: 3, capabilities: reception });
+	allow({ roleId: 2, capabilities: [...pro, CAPABILITIES.CUSTOMERS_CREATE] });
+});
+
+test('POST /api/customers/import usa requireCapability(customers.create), no roles hardcodeados', () => {
+	const src = readFileSync(new URL('../src/pages/api/customers/import.ts', import.meta.url), 'utf8');
+	assert.match(src, /requireCapability/);
+	assert.match(src, /CAPABILITIES\.CUSTOMERS_CREATE/);
+	assert.doesNotMatch(src, /ROLES\.ADMIN/);
+	assert.doesNotMatch(src, /ROLES\.RECEPCIONISTA/);
+});
+
+test('UI de import CSV se oculta con la misma capability que crear', () => {
+	const page = readFileSync(new URL('../src/pages/panel/customers.astro', import.meta.url), 'utf8');
+	const script = readFileSync(new URL('../src/scripts/customers-page.ts', import.meta.url), 'utf8');
+	assert.match(page, /canImportCustomers = canCreateCustomer/);
+	assert.match(page, /canImportCustomers \? \(/);
+	assert.match(page, /data-open-import-customers/);
+	assert.match(script, /canImportCustomers\(\)/);
+	assert.match(script, /HaselPermissions\.has\('customers\.create'\)/);
 });
 
 test('Rutas sin mapping quedan abiertas (inbox, profile, subscription read)', () => {

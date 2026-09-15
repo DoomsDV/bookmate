@@ -26,6 +26,7 @@ const isProfessional = roleId === ROLES.PROFESIONAL;
 const canFilterByProfessional =
 	roleId === ROLES.ADMIN || roleId === ROLES.RECEPCIONISTA;
 const canCreateCustomer = hasCapability(Astro.locals, CAPABILITIES.CUSTOMERS_CREATE);
+const canImportCustomers = canCreateCustomer;
 const initialLoadError = token ? '' : 'No hay sesion valida para consultar clientes.';
 ---
 
@@ -159,7 +160,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 											}
 
 											{
-												canCreateCustomer ? (
+												canImportCustomers ? (
 													<button
 														type="button"
 														class="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) text-(--on-surface-variant) shadow-sm transition hover:border-(--on-surface-variant) hover:text-(--on-surface) focus:border-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10"
