@@ -188,8 +188,8 @@ export function LocationMap({
 			onClick={toggleExpanded}
 		>
 			<motion.div
-				className="hub-location-map__sheet"
-				animate={{ height: isExpanded ? 328 : 176 }}
+				className={`hub-location-map__sheet${isExpanded ? ' is-expanded' : ''}`}
+				animate={{ minHeight: isExpanded ? 360 : 176 }}
 				transition={
 					reduceMotion
 						? { duration: 0 }
