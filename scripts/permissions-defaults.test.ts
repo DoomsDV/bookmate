@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import {
 	CAPABILITIES,
+	CAPABILITY_ROUTES,
 	SAFE_FALLBACK_CAPABILITIES,
 	canAccessPathWithCapabilities,
 	defaultCapabilitiesForRole,
@@ -163,6 +164,26 @@ test('Fail-closed: fallback seguro no incluye manage/create', () => {
 		canAccessPathWithCapabilities('/api/appointments', SAFE_FALLBACK_CAPABILITIES, ROLES.ADMIN),
 		false
 	);
+});
+
+test('HAS-8: /panel/ops y /api/ops no existen en el producto Hasel', () => {
+	assert.equal(
+		CAPABILITY_ROUTES.some((rule) => rule.path === '/panel/ops' || rule.path.startsWith('/api/ops')),
+		false
+	);
+
+	const rolesSrc = readFileSync(new URL('../src/config/roles.ts', import.meta.url), 'utf8');
+	assert.doesNotMatch(rolesSrc, /\/panel\/ops/);
+	assert.doesNotMatch(rolesSrc, /\/api\/ops/);
+
+	assert.equal(existsSync(new URL('../src/pages/panel/ops.astro', import.meta.url)), false);
+	assert.equal(existsSync(new URL('../src/scripts/ops-page.ts', import.meta.url)), false);
+	assert.equal(existsSync(new URL('../src/lib/ops.ts', import.meta.url)), false);
+	assert.equal(existsSync(new URL('../src/pages/api/ops', import.meta.url)), false);
+
+	const navSrc = readFileSync(new URL('../src/components/SideNav.astro', import.meta.url), 'utf8');
+	assert.doesNotMatch(navSrc, /\/panel\/ops/);
+	assert.doesNotMatch(navSrc, /HASEL_OPS_USER_IDS/);
 });
 
 test('calendar.view no alcanza para mutar citas (403)', () => {

@@ -419,7 +419,6 @@ export const CAPABILITY_ROUTES: readonly CapabilityRoute[] = [
 	{ path: '/panel/plan', capability: CAPABILITIES.PLAN_VIEW, match: 'prefix' },
 	{ path: '/panel/ajustes', capability: CAPABILITIES.AJUSTES_VIEW },
 	{ path: '/panel/complementos', capability: CAPABILITIES.ADDONS_VIEW },
-	{ path: '/panel/ops', capability: CAPABILITIES.DASHBOARD_VIEW },
 
 	{ path: '/api/appointments', capability: CAPABILITIES.CALENDAR_VIEW, match: 'prefix' },
 	{ path: '/api/addons', capability: CAPABILITIES.ADDONS_VIEW, match: 'prefix' },
