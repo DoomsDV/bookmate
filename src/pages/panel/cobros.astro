@@ -36,7 +36,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 								) : (
 									<div class="grid gap-3 sm:gap-4">
 										<header class="flex items-start justify-between gap-3">
-											<div class="grid min-w-0 gap-1">
+											<div class="grid min-w-0 gap-1" data-cobros-tour-intro>
 												<h1 class="m-0 text-[1.5rem] font-bold leading-none tracking-tight text-(--on-surface) sm:text-[1.75rem]">
 													Cobros{' '}
 													<span class="font-semibold text-(--on-surface-variant)" data-cobros-summary>(0)</span>
@@ -45,19 +45,30 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 													Revisá señas SIPAP, validá comprobantes y respondé disputas.
 												</p>
 											</div>
-											<button
-												type="button"
-												class="cobros-period-filter-btn relative flex size-11 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) text-(--on-surface-variant) shadow-sm transition hover:border-(--on-surface-variant) hover:text-(--on-surface) focus:border-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10"
-												data-open-period-filter
-												aria-label="Filtrar por periodo"
-												aria-haspopup="dialog"
-												aria-controls="cobros-period-filter-sheet"
-												aria-pressed="false"
-												title="Filtrar por periodo"
-											>
-												<span class="material-symbols-rounded text-[1.25rem]" aria-hidden="true">tune</span>
-												<span class="cobros-period-filter-badge hidden" data-period-filter-badge aria-hidden="true"></span>
-											</button>
+											<div class="flex shrink-0 items-center gap-2">
+												<button
+													type="button"
+													class="cobros-period-filter-btn relative flex size-11 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) text-(--on-surface-variant) shadow-sm transition hover:border-(--on-surface-variant) hover:text-(--on-surface) focus:border-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10"
+													data-cobros-tour-help
+													aria-label="Guía de cobros"
+													title="Guía de cobros"
+												>
+													<span class="material-symbols-rounded text-[1.25rem]" aria-hidden="true">help</span>
+												</button>
+												<button
+													type="button"
+													class="cobros-period-filter-btn relative flex size-11 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) text-(--on-surface-variant) shadow-sm transition hover:border-(--on-surface-variant) hover:text-(--on-surface) focus:border-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10"
+													data-open-period-filter
+													aria-label="Filtrar por periodo"
+													aria-haspopup="dialog"
+													aria-controls="cobros-period-filter-sheet"
+													aria-pressed="false"
+													title="Filtrar por periodo"
+												>
+													<span class="material-symbols-rounded text-[1.25rem]" aria-hidden="true">tune</span>
+													<span class="cobros-period-filter-badge hidden" data-period-filter-badge aria-hidden="true"></span>
+												</button>
+											</div>
 										</header>
 
 										<select
@@ -73,7 +84,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 											<option value="custom">Personalizado</option>
 										</select>
 
-										<div class="hidden min-w-0 flex-wrap gap-2 md:flex" role="tablist" aria-label="Estado">
+										<div class="hidden min-w-0 flex-wrap gap-2 md:flex" role="tablist" aria-label="Estado" data-cobros-tour-tabs>
 											<button type="button" data-cobros-tab="all" class="cobros-tab is-active">Todos</button>
 											<button type="button" data-cobros-tab="pending" class="cobros-tab">Pendientes</button>
 											<button type="button" data-cobros-tab="approved" class="cobros-tab">Aprobados</button>
@@ -184,7 +195,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 												</div>
 												<h2 class="cobros-empty__title">No hay cobros</h2>
 												<p class="cobros-empty__copy">
-													No hay movimientos para el filtro seleccionado.
+													Cuando un cliente pague la seña por SIPAP y suba el comprobante, el cobro aparece acá para validarlo. Configurá alias y política en Ajustes → Pagos.
 												</p>
 											</div>
 
