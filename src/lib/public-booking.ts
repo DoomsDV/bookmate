@@ -118,6 +118,7 @@ export interface PublicBookingLocation {
 	id_location: number;
 	name: string;
 	address: string;
+	phone?: string;
 	latitude?: number;
 	longitude?: number;
 }
@@ -591,10 +592,13 @@ const normalizePublicLocationDetail = (value: unknown): PublicBookingLocation | 
 	const latitude = Number(source.latitude);
 	const longitude = Number(source.longitude);
 
+	const phone = String(source.phone || '').trim();
+
 	return {
 		id_location: idLocation,
 		name: String(source.name || '').trim() || `Sucursal #${idLocation}`,
 		address: String(source.address || '').trim(),
+		phone: phone || undefined,
 		latitude: Number.isFinite(latitude) ? latitude : undefined,
 		longitude: Number.isFinite(longitude) ? longitude : undefined,
 	};

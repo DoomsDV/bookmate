@@ -20,6 +20,7 @@ export interface Location {
 	id_location: number;
 	name: string;
 	address: string;
+	phone: string | null;
 	city: LocationCity;
 	department: LocationDepartment;
 	latitude: number | null;
@@ -49,6 +50,7 @@ export interface LocationFieldError {
 export interface CreateLocationPayload {
 	name: string;
 	address: string;
+	phone?: string | null;
 	cit_id_city: number;
 	dep_id_department: number;
 	latitude?: number;
@@ -186,10 +188,13 @@ const normalizeLocation = (value: unknown): Location | null => {
 			? closureNameRaw.trim()
 			: null;
 
+	const phoneRaw = String(source.phone || '').trim();
+
 	return {
 		id_location: idLocation,
 		name: String(source.name || '').trim(),
 		address: String(source.address || '').trim(),
+		phone: phoneRaw || null,
 		city: normalizeCity(source.city),
 		department: normalizeDepartment(source.department),
 		latitude: toNullableNumber(source.latitude),
@@ -294,16 +299,25 @@ export class LocationsClient {
 		return { response, data: body };
 	}
 
-	async list(page = 1, limit = 9, isActive?: number | null): Promise<LocationsListResult> {
+	async list(
+		page = 1,
+		limit = 9,
+		isActive?: number | null,
+		search?: string | null
+	): Promise<LocationsListResult> {
 		const safePage = Number.isInteger(page) && page > 0 ? page : 1;
 		const safeLimit = Number.isInteger(limit) && limit > 0 ? limit : 9;
 		const hasActiveFilter = isActive === 0 || isActive === 1;
+		const searchQuery = String(search || '').trim();
 
 		const locationUrl = new URL(LOCATIONS_URL);
 		locationUrl.searchParams.set('page', String(safePage));
 		locationUrl.searchParams.set('limit', String(safeLimit));
 		if (hasActiveFilter) {
 			locationUrl.searchParams.set('is_active', String(isActive));
+		}
+		if (searchQuery) {
+			locationUrl.searchParams.set('search', searchQuery);
 		}
 
 		const { response, data } = await this.request(locationUrl.toString(), { method: 'GET' }, 'list');
@@ -412,10 +426,10 @@ export class LocationsClient {
 
 export const listLocations = async (
 	token: string,
-	options: { page?: number; limit?: number; isActive?: number | null } = {}
+	options: { page?: number; limit?: number; isActive?: number | null; search?: string | null } = {}
 ): Promise<LocationsListResult> => {
 	const apiClient = new LocationsClient(token);
-	return apiClient.list(options.page, options.limit, options.isActive);
+	return apiClient.list(options.page, options.limit, options.isActive, options.search);
 };
 
 export const createLocationWithOrds = async (token: string, payload: CreateLocationPayload) => {

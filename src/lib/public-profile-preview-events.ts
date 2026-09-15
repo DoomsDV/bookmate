@@ -14,6 +14,7 @@ export type PublicProfilePreviewLocation = {
 	id: number;
 	name: string;
 	address: string;
+	phone?: string;
 };
 
 export type PublicProfilePreviewState = {
