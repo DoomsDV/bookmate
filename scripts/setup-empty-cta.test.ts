@@ -3,11 +3,13 @@ import {
 	renderSetupEmptyCta,
 	renderSetupEmptyCtaContent,
 	resolveBookableNextStep,
+	resolveHubTeamEmpty,
 	resolvePublicProfileNextStep,
 	SCREEN_EMPTY,
 	SETUP_EMPTY_CTA_ICON,
 	SETUP_PATHS,
 } from '../src/lib/setup-empty-cta.ts';
+import { HUB_NO_ONLINE_SLOTS_MESSAGE, HUB_NO_TEAM_MESSAGE } from '../src/lib/workspace-settings-shared.ts';
 
 const none = resolveBookableNextStep({
 	serviceCount: 0,
@@ -124,5 +126,46 @@ const linkedCta = renderSetupEmptyCta({
 assert.match(linkedCta, /class="panel-empty-cta"/);
 assert.match(linkedCta, /arrow_forward/);
 assert.equal(linkedCta.includes('→'), false);
+
+const publicTeamEmpty = resolveHubTeamEmpty({
+	hubListedCount: 0,
+	audience: 'public',
+});
+assert.equal(publicTeamEmpty?.kind, 'none_published');
+assert.equal(publicTeamEmpty?.title, HUB_NO_TEAM_MESSAGE);
+assert.notEqual(publicTeamEmpty?.title, HUB_NO_ONLINE_SLOTS_MESSAGE);
+assert.equal(publicTeamEmpty?.ctaLabel, undefined);
+
+const ownerIncomplete = resolveHubTeamEmpty({
+	hubListedCount: 0,
+	staffCount: 4,
+	audience: 'owner',
+});
+assert.equal(ownerIncomplete?.kind, 'staff_incomplete');
+assert.equal(ownerIncomplete?.title, SCREEN_EMPTY.professionalsNotOnHub.title);
+assert.equal(ownerIncomplete?.href, SETUP_PATHS.professionals);
+assert.equal(ownerIncomplete?.ctaLabel, 'Completar en Personal');
+assert.equal(ownerIncomplete?.ctaLabel?.includes('→'), false);
+
+const ownerUnknownStaff = resolveHubTeamEmpty({
+	hubListedCount: 0,
+	staffCount: null,
+	audience: 'owner',
+});
+assert.equal(ownerUnknownStaff?.kind, 'staff_incomplete');
+assert.notEqual(ownerUnknownStaff?.title, SCREEN_EMPTY.professionals.title);
+
+const ownerNoStaff = resolveHubTeamEmpty({
+	hubListedCount: 0,
+	staffCount: 0,
+	audience: 'owner',
+});
+assert.equal(ownerNoStaff?.kind, 'no_staff');
+assert.equal(ownerNoStaff?.title, SCREEN_EMPTY.professionals.title);
+
+assert.equal(
+	resolveHubTeamEmpty({ hubListedCount: 1, staffCount: 4, audience: 'owner' }),
+	null
+);
 
 console.log('setup-empty-cta: ok');

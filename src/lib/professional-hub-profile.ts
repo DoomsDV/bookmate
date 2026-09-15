@@ -26,11 +26,44 @@ export const getProfessionalHubGaps = (params: {
 	return gaps;
 };
 
+/** True si el payload ORDS/API trajo el campo de bio (aunque esté vacío). */
+export const payloadHasProfessionalShortBio = (value: unknown): boolean => {
+	if (!value || typeof value !== 'object') return false;
+	return (
+		Object.prototype.hasOwnProperty.call(value, 'short_bio') ||
+		Object.prototype.hasOwnProperty.call(value, 'shortBio')
+	);
+};
+
 export const isHubListedProfessional = (params: {
 	imageUrl?: unknown;
 	profileImageUrl?: unknown;
 	shortBio?: unknown;
-}): boolean => getProfessionalHubGaps(params).length === 0;
+	/**
+	 * `false` = payload legacy sin campo bio (ORDS hub actual no lo emite).
+	 * En ese caso no se descalifica por bio vacía: Personal ya exige foto+bio
+	 * y el listado público no debe vaciarse por un campo omitido.
+	 * Default `true` = mismo criterio que Personal (foto + bio).
+	 */
+	shortBioPresent?: boolean;
+}): boolean => {
+	if (!hasProfessionalHubPhoto(params.imageUrl ?? params.profileImageUrl)) {
+		return false;
+	}
+	if (params.shortBioPresent === false) return true;
+	return hasProfessionalHubBio(params.shortBio);
+};
+
+/** Misma regla que el hub público aplica a cada ítem de `professionals`. */
+export const isHubListedProfessionalPayload = (value: unknown): boolean => {
+	if (!value || typeof value !== 'object') return false;
+	const source = value as Record<string, unknown>;
+	return isHubListedProfessional({
+		imageUrl: source.image_url ?? source.profile_image_url,
+		shortBio: source.short_bio ?? source.shortBio,
+		shortBioPresent: payloadHasProfessionalShortBio(source),
+	});
+};
 
 export const formatProfessionalHubGapsLabel = (gaps: ProfessionalHubGap[]): string => {
 	if (gaps.includes('photo') && gaps.includes('bio')) return 'Falta foto y bio';

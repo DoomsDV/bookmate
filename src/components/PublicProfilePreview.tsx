@@ -4,6 +4,7 @@ import {
 	PUBLIC_PROFILE_PREVIEW_EVENT,
 	type PublicProfilePreviewState,
 } from '../lib/public-profile-preview-events';
+import { resolveHubTeamEmpty, SETUP_EMPTY_CTA_ICON } from '../lib/setup-empty-cta';
 import { HUB_NO_ONLINE_SLOTS_MESSAGE } from '../lib/workspace-settings-shared';
 import { FacebookIcon, InstagramIcon, WhatsAppIcon } from './hub-brand-icons';
 
@@ -65,6 +66,11 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 	const professionals = Array.isArray(state.professionals) ? state.professionals : [];
 	const locations = Array.isArray(state.locations) ? state.locations : [];
 	const teamCount = Number(state.teamCount || professionals.length || 0);
+	const teamEmpty = resolveHubTeamEmpty({
+		hubListedCount: professionals.length,
+		staffCount: state.staffCount ?? null,
+		audience: 'owner',
+	});
 	const servicesCount = state.serviceCategories?.length || 0;
 	const hoursLiveStatus =
 		state.businessHoursRows?.find((row) => row.liveStatus)?.liveStatus ?? null;
@@ -399,6 +405,21 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 									</div>
 									);
 								})}
+							</div>
+						) : teamEmpty ? (
+							<div className="hub-empty hub-empty--setup" role="status">
+								<p className="hub-empty__title">{teamEmpty.title}</p>
+								{teamEmpty.copy ? (
+									<p className="hub-empty__copy">{teamEmpty.copy}</p>
+								) : null}
+								{teamEmpty.href && teamEmpty.ctaLabel ? (
+									<a className="hub-empty__cta" href={teamEmpty.href}>
+										{teamEmpty.ctaLabel}
+										<span className="material-symbols-rounded" aria-hidden="true">
+											{SETUP_EMPTY_CTA_ICON}
+										</span>
+									</a>
+								) : null}
 							</div>
 						) : (
 							<p className="hub-empty" role="status">

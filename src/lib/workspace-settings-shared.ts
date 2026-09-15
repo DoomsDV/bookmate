@@ -120,3 +120,6 @@ export const BOOKABLE_SCHEDULE_OWNER_HINT =
 
 /** Empty state del hub cuando no hay profesionales con agenda pública. */
 export const HUB_NO_ONLINE_SLOTS_MESSAGE = 'Aún no hay turnos online.';
+
+/** Empty state del tab Equipo: no confundir con “sin turnos online” (HAS-16). */
+export const HUB_NO_TEAM_MESSAGE = 'Todavía no hay equipo publicado.';

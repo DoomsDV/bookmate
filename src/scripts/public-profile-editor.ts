@@ -975,6 +975,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			serviceCategories: previewHubMeta.serviceCategories,
 			locationLabel: previewHubMeta.locationLabel,
 			teamCount: previewHubMeta.teamCount,
+			staffCount: activeProfessionalCount,
 			professionals: previewHubMeta.professionals,
 			locations: previewHubMeta.locations,
 		});

@@ -9,7 +9,9 @@ import {
 	hasProfessionalHubBio,
 	hasProfessionalHubPhoto,
 	isHubListedProfessional,
+	isHubListedProfessionalPayload,
 	normalizeProfessionalShortBio,
+	payloadHasProfessionalShortBio,
 } from '../src/lib/professional-hub-profile.ts';
 
 test('normalizeProfessionalShortBio recorta espacios y tope', () => {
@@ -47,6 +49,25 @@ test('isHubListedProfessional exige foto y texto', () => {
 		}),
 		false
 	);
+	assert.equal(
+		isHubListedProfessional({
+			imageUrl: 'https://cdn.example/face.jpg',
+			shortBio: '',
+			shortBioPresent: false,
+		}),
+		true
+	);
+	assert.equal(
+		isHubListedProfessional({
+			imageUrl: '',
+			shortBio: '',
+			shortBioPresent: false,
+		}),
+		false
+	);
+	assert.equal(payloadHasProfessionalShortBio({ image_url: 'x' }), false);
+	assert.equal(payloadHasProfessionalShortBio({ short_bio: '' }), true);
+	assert.equal(payloadHasProfessionalShortBio({ shortBio: 'Hola' }), true);
 });
 
 test('gaps y labels dejan claro qué falta', () => {
@@ -62,4 +83,45 @@ test('gaps y labels dejan claro qué falta', () => {
 		'No aparece en el hub · Falta foto'
 	);
 	assert.equal(formatProfessionalHubListingHint([]), '');
+});
+
+test('payload ORDS legacy (sin short_bio) no vacía el equipo si hay foto', () => {
+	assert.equal(
+		isHubListedProfessionalPayload({
+			id_professional: 1,
+			full_name: 'Dann Villasanti',
+			image_url: 'https://cdn.example/dann.jpg',
+			profile_slug: 'dann-villasanti',
+		}),
+		true
+	);
+	assert.equal(
+		isHubListedProfessionalPayload({
+			id_professional: 3,
+			full_name: 'Alex Villalba',
+			image_url: '',
+			profile_slug: 'alex-villalba',
+		}),
+		false
+	);
+	assert.equal(
+		isHubListedProfessionalPayload({
+			id_professional: 2,
+			full_name: 'Sin Bio',
+			image_url: 'https://cdn.example/face.jpg',
+			short_bio: '',
+			profile_slug: 'sin-bio',
+		}),
+		false
+	);
+	assert.equal(
+		isHubListedProfessionalPayload({
+			id_professional: 1,
+			full_name: 'Dann Villasanti',
+			image_url: 'https://cdn.example/dann.jpg',
+			short_bio: 'Quiropráctico. Turnos puntuales.',
+			profile_slug: 'dann-villasanti',
+		}),
+		true
+	);
 });
