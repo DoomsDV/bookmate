@@ -1,0 +1,10 @@
+{
+  "name": "Bookmate (Hasel)",
+  "install": "bash /agent/repos/bookmate/.cursor/install.sh",
+  "terminals": [
+    {
+      "name": "astro-dev",
+      "command": "cd /agent/repos/bookmate && pnpm run dev --host 127.0.0.1 --port 4321"
+    }
+  ]
+}
