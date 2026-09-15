@@ -22,6 +22,16 @@ test('Admin tiene el catálogo completo incluido permissions.manage', () => {
 	assert.ok(admin.includes(CAPABILITIES.LOCATIONS_MANAGE));
 	assert.ok(admin.includes(CAPABILITIES.CUSTOMERS_CREATE));
 	assert.ok(admin.includes(CAPABILITIES.PLAN_MANAGE));
+	assert.ok(admin.includes(CAPABILITIES.ANALYTICS_VIEW));
+});
+
+test('HAS-50: Analíticas es Admin por default y queda fuera de recepción/profesional', () => {
+	assert.equal(reception.includes(CAPABILITIES.ANALYTICS_VIEW), false);
+	assert.equal(pro.includes(CAPABILITIES.ANALYTICS_VIEW), false);
+	assert.ok(canAccessPathWithCapabilities('/panel/analiticas', admin, ROLES.ADMIN));
+	assert.ok(canAccessPathWithCapabilities('/api/analytics', admin, ROLES.ADMIN));
+	assert.equal(canAccessPathWithCapabilities('/panel/analiticas', reception, ROLES.RECEPCIONISTA), false);
+	assert.equal(canAccessPathWithCapabilities('/panel/analiticas', pro, ROLES.PROFESIONAL), false);
 });
 
 test('Recepcionista ve sucursales pero no las edita', () => {

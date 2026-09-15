@@ -7,6 +7,7 @@ type BaseRoleId = typeof ADMIN | typeof PROFESIONAL | typeof RECEPCIONISTA;
 
 export const CAPABILITIES = {
 	DASHBOARD_VIEW: 'dashboard.view',
+	ANALYTICS_VIEW: 'analytics.view',
 	CALENDAR_VIEW: 'calendar.view',
 	CALENDAR_MANAGE: 'calendar.manage',
 	CUSTOMERS_VIEW: 'customers.view',
@@ -72,6 +73,7 @@ const R = RECEPCIONISTA;
 export const DEFAULT_ROLE_CAPABILITIES: Record<BaseRoleId, readonly CapabilityCode[]> = {
 	[A]: [
 		CAPABILITIES.DASHBOARD_VIEW,
+		CAPABILITIES.ANALYTICS_VIEW,
 		CAPABILITIES.CALENDAR_VIEW,
 		CAPABILITIES.CALENDAR_MANAGE,
 		CAPABILITIES.CUSTOMERS_VIEW,
@@ -145,6 +147,15 @@ export const CAPABILITY_CATALOG: readonly CapabilityDefinition[] = [
 		description: 'Entrar al inicio del negocio.',
 		kind: 'MENU',
 		sortOrder: 10,
+	},
+	{
+		code: CAPABILITIES.ANALYTICS_VIEW,
+		groupCode: 'analytics',
+		groupLabel: 'Analíticas',
+		label: 'Ver analíticas',
+		description: 'Ver el resumen de citas, inasistencias y señas del negocio.',
+		kind: 'MENU',
+		sortOrder: 15,
 	},
 	{
 		code: CAPABILITIES.CALENDAR_VIEW,
@@ -406,6 +417,7 @@ export const CAPABILITY_CATALOG: readonly CapabilityDefinition[] = [
 export const CAPABILITY_ROUTES: readonly CapabilityRoute[] = [
 	{ path: '/panel', capability: CAPABILITIES.DASHBOARD_VIEW },
 	{ path: '/panel/dashboard', capability: CAPABILITIES.DASHBOARD_VIEW },
+	{ path: '/panel/analiticas', capability: CAPABILITIES.ANALYTICS_VIEW },
 	{ path: '/panel/calendar', capability: CAPABILITIES.CALENDAR_VIEW },
 	{ path: '/calendar', capability: CAPABILITIES.CALENDAR_VIEW },
 	{ path: '/panel/customers', capability: CAPABILITIES.CUSTOMERS_VIEW },
@@ -420,6 +432,7 @@ export const CAPABILITY_ROUTES: readonly CapabilityRoute[] = [
 	{ path: '/panel/ajustes', capability: CAPABILITIES.AJUSTES_VIEW },
 	{ path: '/panel/complementos', capability: CAPABILITIES.ADDONS_VIEW },
 
+	{ path: '/api/analytics', capability: CAPABILITIES.ANALYTICS_VIEW, match: 'prefix' },
 	{ path: '/api/appointments', capability: CAPABILITIES.CALENDAR_VIEW, match: 'prefix' },
 	{ path: '/api/addons', capability: CAPABILITIES.ADDONS_VIEW, match: 'prefix' },
 	{ path: '/api/customers', capability: CAPABILITIES.CUSTOMERS_VIEW, match: 'prefix' },
