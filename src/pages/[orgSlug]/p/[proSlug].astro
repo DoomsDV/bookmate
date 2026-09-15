@@ -92,6 +92,7 @@ const metaDescription = profile
 			professionalName,
 			organizationName,
 			specialty: profile.specialty,
+			shortBio: profile.short_bio,
 		})
 	: 'Reservá turnos online con profesionales de la salud en Hasel.';
 const ogImageAlt = profile
@@ -180,6 +181,9 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 										) : null}
 										{specialtyLabel ? (
 											<p class="public-booking-profile__meta">{specialtyLabel}</p>
+										) : null}
+										{profile.short_bio ? (
+											<p class="public-booking-profile__bio">{profile.short_bio}</p>
 										) : null}
 									</div>
 								</div>

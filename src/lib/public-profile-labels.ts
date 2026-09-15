@@ -13,10 +13,18 @@ export const buildPublicProfileMetaDescription = (params: {
 	professionalName: string;
 	organizationName: string;
 	specialty?: string | null;
+	shortBio?: string | null;
 }): string => {
 	const name = String(params.professionalName || '').trim();
 	const org = String(params.organizationName || '').trim();
 	const specialty = getPublicProfileSpecialtyLabel(params.specialty);
+	const shortBio = String(params.shortBio || '').trim();
+
+	if (shortBio) {
+		return specialty
+			? `${shortBio} Reservá con ${name} (${specialty}) en ${org}.`
+			: `${shortBio} Reservá con ${name} en ${org}.`;
+	}
 
 	if (specialty) {
 		return `Reservá tu turno con ${name} (${specialty}) en ${org}. Elegí horario y confirmá online en segundos.`;

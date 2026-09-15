@@ -375,6 +375,9 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 														>
 															{pro.specialty || '\u00a0'}
 														</p>
+														{pro.shortBio ? (
+															<p className="hub-pro-card__bio">{pro.shortBio}</p>
+														) : null}
 													</div>
 													{rating.hasRating ? (
 														<p className="hub-pro-card__rating" aria-label={rating.aria}>
