@@ -2182,6 +2182,17 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 	text-transform: uppercase;
 }
 
+.ppe-hours-kicker__link {
+	color: var(--primary);
+	font-weight: 750;
+	text-decoration: underline;
+	text-underline-offset: 0.18em;
+}
+
+.ppe-hours-kicker__link:hover {
+	color: color-mix(in srgb, var(--primary) 80%, var(--on-surface));
+}
+
 .ppe-hours-copy {
 	appearance: none;
 	display: inline-flex;
