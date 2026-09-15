@@ -28,7 +28,7 @@ import { formatParaguayMobilePhoneInput } from '../lib/paraguay-phone';
 import { buildOrgHubUrl } from '../lib/public-profile-url';
 import { getPublicProfileSpecialtyLabel } from '../lib/public-profile-labels';
 import { isReservedOrgSlug } from '../lib/reserved-org-slugs';
-import { resolveBookableNextStep } from '../lib/setup-empty-cta';
+import { resolvePublicProfileNextStep } from '../lib/setup-empty-cta';
 
 type GalleryItem = { id: number; url: string; sort_order?: number };
 
@@ -898,7 +898,8 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		waField.classList.toggle('hidden', !enabled);
 	};
 
-	let hubReady = !String(bootstrap.workspace?.profile_slug || '').trim();
+	let hubReady = false;
+	let activeProfessionalCount: number | null = null;
 
 	const syncNextStep = () => {
 		const banner = root.querySelector<HTMLElement>('[data-ppe-next-step]');
@@ -909,9 +910,15 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		if (!banner || !titleNode || !copyNode || !cta) return;
 		if (!hubReady) return;
 
-		const step = resolveBookableNextStep({
+		const staffCount =
+			activeProfessionalCount === null
+				? Math.max(previewHubMeta.professionals.length, 1)
+				: activeProfessionalCount;
+
+		const step = resolvePublicProfileNextStep({
 			serviceCount: previewHubMeta.serviceCategories.length,
-			professionalCount: previewHubMeta.professionals.length,
+			professionalCount: staffCount,
+			hubListedProfessionalCount: previewHubMeta.professionals.length,
 			locationCount: previewHubMeta.locations.length,
 		});
 
@@ -1012,6 +1019,28 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			};
 		} catch {
 			/* preview enrichment is best-effort */
+		}
+	};
+
+	const fetchActiveProfessionalCount = async () => {
+		try {
+			const res = await fetch('/api/professionals?page=1&limit=1', {
+				headers: { Accept: 'application/json' },
+			});
+			const data = await res.json().catch(() => ({}));
+			if (!res.ok || data?.status !== 'success') return;
+			const total = Number(data?.meta?.total_records);
+			if (Number.isFinite(total) && total >= 0) {
+				activeProfessionalCount = total;
+			}
+		} catch {
+			/* staff count is best-effort; never treat unknown as zero staff */
+		}
+	};
+
+	const loadNextStepInventory = async () => {
+		try {
+			await Promise.all([enrichPreviewFromHub(), fetchActiveProfessionalCount()]);
 		} finally {
 			hubReady = true;
 			syncPreview();
@@ -2071,5 +2100,5 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	syncSidebarLogo(currentLogoUrl);
 	captureSavedSnapshot();
 	void checkSlug();
-	void enrichPreviewFromHub();
+	void loadNextStepInventory();
 };
