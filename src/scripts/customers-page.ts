@@ -20,6 +20,7 @@ import {
 	type CustomerCsvPreview,
 	type CustomerCsvRowResult,
 } from '../lib/customer-csv';
+import { consumePanelNewQuery, withCurrentLocation } from '../lib/dashboard-quick-actions';
 import { showFlashMessage } from '../lib/flash';
 import { PARAGUAY_CI_ERROR, parseParaguayCi } from '../lib/paraguay-ci';
 import {
@@ -842,6 +843,21 @@ class CustomerManager extends HTMLElement {
 
 		this.updateControls();
 		void this.loadMeta();
+		if (!deepLink) this.applyNewCustomerFromUrl();
+	}
+
+	private applyNewCustomerFromUrl() {
+		if (typeof window === 'undefined') return;
+
+		const { shouldOpen, nextSearch } = consumePanelNewQuery(window.location.search);
+		if (!shouldOpen) return;
+
+		window.history.replaceState(
+			{},
+			'',
+			withCurrentLocation(window.location.pathname, nextSearch, window.location.hash)
+		);
+		this.openCreateCustomerModal();
 	}
 
 	disconnectedCallback() {
