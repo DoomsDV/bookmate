@@ -36,7 +36,9 @@ export type SetupInventory = {
 	locationCount?: number;
 };
 
-export type PublicProfileSetupInventory = SetupInventory & {
+export type PublicProfileSetupInventory = Omit<SetupInventory, 'professionalCount'> & {
+	/** Personal del panel. `null` = todavía no se pudo contar; no asumir cero. */
+	professionalCount: number | null;
 	/** Profesionales que el hub público lista (foto + bio). */
 	hubListedProfessionalCount: number;
 };
@@ -144,9 +146,18 @@ export const resolvePublicProfileNextStep = (
 	inventory: PublicProfileSetupInventory
 ): SetupStep | null => {
 	if (inventory.serviceCount <= 0) return STEPS.create_service;
+	if (inventory.professionalCount === null) {
+		return resolveBookableNextStep({
+			...inventory,
+			professionalCount: Math.max(inventory.hubListedProfessionalCount, 1),
+		});
+	}
 	if (inventory.professionalCount <= 0) return STEPS.create_professional;
 	if (inventory.hubListedProfessionalCount <= 0) return STEPS.complete_professional_hub;
-	return resolveBookableNextStep(inventory);
+	return resolveBookableNextStep({
+		...inventory,
+		professionalCount: inventory.professionalCount,
+	});
 };
 
 export const renderSetupEmptyCta = (options: { label: string; href?: string; attrs?: string }) => {

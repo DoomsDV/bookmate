@@ -910,14 +910,9 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		if (!banner || !titleNode || !copyNode || !cta) return;
 		if (!hubReady) return;
 
-		const staffCount =
-			activeProfessionalCount === null
-				? Math.max(previewHubMeta.professionals.length, 1)
-				: activeProfessionalCount;
-
 		const step = resolvePublicProfileNextStep({
 			serviceCount: previewHubMeta.serviceCategories.length,
-			professionalCount: staffCount,
+			professionalCount: activeProfessionalCount,
 			hubListedProfessionalCount: previewHubMeta.professionals.length,
 			locationCount: previewHubMeta.locations.length,
 		});

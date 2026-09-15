@@ -91,4 +91,13 @@ const profileServicesFirst = resolvePublicProfileNextStep({
 });
 assert.equal(profileServicesFirst?.id, 'create_service');
 
+const profileUnknownStaff = resolvePublicProfileNextStep({
+	serviceCount: 2,
+	professionalCount: null,
+	hubListedProfessionalCount: 0,
+	locationCount: 1,
+});
+assert.equal(profileUnknownStaff, null);
+assert.notEqual(profileUnknownStaff?.id, 'create_professional');
+
 console.log('setup-empty-cta: ok');
