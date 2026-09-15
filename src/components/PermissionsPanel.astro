@@ -17,7 +17,50 @@
 			Cargando matriz…
 		</div>
 
-		<div data-permissions-grid class="hidden overflow-x-auto"></div>
+		<div data-permissions-toolbar class="hidden grid gap-2">
+			<div class="relative min-w-0 max-w-xl" data-panel-search>
+				<span
+					class="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-(--on-surface-variant)"
+					aria-hidden="true"
+				>
+					<span class="material-symbols-rounded text-[1.2rem]">search</span>
+				</span>
+				<input
+					type="text"
+					inputmode="search"
+					enterkeyhint="search"
+					data-permissions-search
+					placeholder="Buscar accesos o roles"
+					aria-label="Buscar accesos por nombre o descripción"
+					autocomplete="off"
+					class="w-full rounded-2xl border border-(--shell-border) bg-(--surface-bright) py-2.5 pl-11 pr-11 text-[0.95rem] font-semibold text-(--on-surface) outline-none transition placeholder:font-medium placeholder:text-(--on-surface-variant)/70 hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
+				/>
+				<button
+					type="button"
+					class="panel-search-clear"
+					data-panel-search-clear
+					hidden
+					aria-label="Limpiar búsqueda"
+				>
+					<span class="material-symbols-rounded" aria-hidden="true">close</span>
+				</button>
+			</div>
+			<p
+				data-permissions-count
+				class="m-0 text-[0.78rem] font-semibold text-(--on-surface-variant)"
+				aria-live="polite"
+			></p>
+		</div>
+
+		<p
+			data-permissions-empty
+			class="hidden rounded-2xl border border-dashed border-(--shell-border) bg-(--surface-bright) px-4 py-6 text-center text-[0.88rem] font-semibold text-(--on-surface-variant)"
+			aria-live="polite"
+		>
+			Ningún acceso coincide con la búsqueda.
+		</p>
+
+		<div data-permissions-grid class="permissions-table-wrap hidden overflow-x-auto"></div>
 
 		<div class="flex flex-wrap items-center gap-3">
 			<button
@@ -42,18 +85,31 @@
 
 <script>
 	import type { PermissionCatalogItem, PermissionMatrix } from '../lib/permissions';
+	import {
+		escapeHtml,
+		filterPermissionsMatrix,
+		permissionVisibleCopy,
+	} from '../lib/permissions-matrix-ui';
+	import { initPanelSearchClear } from '../scripts/panel-search-clear';
 
 	class PermissionsMatrix extends HTMLElement {
 		private matrix: PermissionMatrix | null = null;
 		private dirty = new Map<string, boolean>();
+		private bound = false;
 
 		connectedCallback() {
+			if (this.bound) return;
+			this.bound = true;
 			this.querySelector('[data-permissions-save]')?.addEventListener('click', () => {
 				void this.save();
 			});
 			this.querySelector('[data-permissions-reset]')?.addEventListener('click', () => {
 				void this.reset();
 			});
+			this.querySelector('[data-permissions-search]')?.addEventListener('input', () => {
+				this.applyFilter();
+			});
+			initPanelSearchClear();
 			void this.load();
 		}
 
@@ -84,9 +140,14 @@
 			return this.matrix?.grants[String(roleId)]?.[code]?.granted === true;
 		}
 
+		private searchQuery() {
+			return this.querySelector<HTMLInputElement>('[data-permissions-search]')?.value || '';
+		}
+
 		private async load() {
 			const loading = this.querySelector<HTMLElement>('[data-permissions-loading]');
 			const grid = this.querySelector<HTMLElement>('[data-permissions-grid]');
+			const toolbar = this.querySelector<HTMLElement>('[data-permissions-toolbar]');
 			try {
 				const response = await fetch('/api/permissions/matrix', { headers: { Accept: 'application/json' } });
 				const body = await response.json();
@@ -96,8 +157,10 @@
 				this.matrix = body.data as PermissionMatrix;
 				this.dirty.clear();
 				this.render();
+				this.applyFilter();
 				if (loading) loading.classList.add('hidden');
 				if (grid) grid.classList.remove('hidden');
+				if (toolbar) toolbar.classList.remove('hidden');
 				this.setBusy(false);
 			} catch (error) {
 				if (loading) {
@@ -133,32 +196,36 @@
 									const checked = this.isGranted(role.role_id, item.code);
 									const entitlementNote =
 										item.requires_entitlement && item.entitlement_active === false
-											? '<div class="text-[0.68rem] font-semibold text-amber-700">Requiere complemento</div>'
+											? '<div class="permissions-entitlement">Requiere complemento</div>'
 											: '';
-									return `<td class="px-3 py-2 text-center align-top">
-										<label class="inline-flex flex-col items-center gap-1">
+									return `<td class="permissions-cell" data-role-col="${role.role_id}">
+										<label class="permissions-check">
 											<input type="checkbox" ${checked ? 'checked' : ''} ${locked ? 'disabled' : ''}
-												data-role-id="${role.role_id}" data-code="${item.code}" />
+												data-role-id="${role.role_id}" data-code="${item.code}"
+												aria-label="${escapeHtml(`${item.label} — ${role.name}`)}" />
 											${entitlementNote}
 										</label>
 									</td>`;
 								})
 								.join('');
-							const kind =
-								item.kind === 'MENU' ? 'Menú' : item.kind === 'ADDON' ? 'Complemento' : 'Acción';
-							return `<tr class="border-t border-(--shell-border)">
-								<td class="px-3 py-2 align-top">
-									<div class="font-bold text-(--on-surface)">${item.label}</div>
-									<div class="text-[0.75rem] text-(--on-surface-variant)">${item.code} · ${kind}</div>
-									<div class="text-[0.78rem] text-(--on-surface-variant)">${item.description || ''}</div>
+							const copy = permissionVisibleCopy(item);
+							const description = copy.description
+								? `<p class="permissions-row__desc">${escapeHtml(copy.description)}</p>`
+								: '';
+							return `<tr class="permissions-row" data-permission-row data-code="${item.code}">
+								<td class="permissions-row__access">
+									<div class="permissions-row__label">${escapeHtml(copy.label)}</div>
+									${description}
 								</td>
 								${cells}
 							</tr>`;
 						})
 						.join('');
-					return `<tbody>
-						<tr class="bg-(--surface)/60">
-							<th colspan="${roles.length + 1}" class="px-3 py-2 text-left text-[0.78rem] font-bold uppercase tracking-wide text-(--on-surface-variant)">${groupLabel}</th>
+					return `<tbody data-permission-group>
+						<tr class="permissions-section">
+							<th colspan="${roles.length + 1}" scope="colgroup">
+								<span class="permissions-section__title">${escapeHtml(groupLabel)}</span>
+							</th>
 						</tr>
 						${body}
 					</tbody>`;
@@ -166,13 +233,16 @@
 				.join('');
 
 			const headers = roles
-				.map((role) => `<th class="px-3 py-2 text-center text-[0.82rem] font-bold">${role.name}</th>`)
+				.map(
+					(role) =>
+						`<th class="permissions-role" data-role-col="${role.role_id}" scope="col">${escapeHtml(role.name)}</th>`
+				)
 				.join('');
 
-			grid.innerHTML = `<table class="min-w-[720px] w-full border-collapse text-left text-[0.88rem]">
+			grid.innerHTML = `<table class="permissions-table">
 				<thead>
 					<tr>
-						<th class="px-3 py-2">Acceso</th>
+						<th class="permissions-access-head" scope="col">Acceso</th>
 						${headers}
 					</tr>
 				</thead>
@@ -186,6 +256,48 @@
 					this.dirty.set(this.grantKey(roleId, code), input.checked);
 				});
 			});
+		}
+
+		private applyFilter() {
+			if (!this.matrix) return;
+			const query = this.searchQuery();
+			const result = filterPermissionsMatrix(this.matrix.catalog, this.matrix.roles, query);
+			const empty = this.querySelector<HTMLElement>('[data-permissions-empty]');
+			const grid = this.querySelector<HTMLElement>('[data-permissions-grid]');
+			const count = this.querySelector<HTMLElement>('[data-permissions-count]');
+			const highlight = new Set(result.highlightRoleIds);
+
+			this.querySelectorAll<HTMLElement>('[data-permission-row]').forEach((row) => {
+				const code = String(row.dataset.code || '');
+				const visible = result.visibleCodes === null || result.visibleCodes.has(code);
+				row.hidden = !visible;
+			});
+
+			this.querySelectorAll<HTMLElement>('[data-permission-group]').forEach((group) => {
+				const visibleRows = group.querySelectorAll<HTMLElement>('[data-permission-row]:not([hidden])');
+				group.hidden = visibleRows.length === 0;
+			});
+
+			this.querySelectorAll<HTMLElement>('[data-role-col]').forEach((cell) => {
+				const roleId = Number(cell.dataset.roleCol || 0);
+				cell.classList.toggle('is-role-match', highlight.has(roleId));
+				cell.classList.toggle('is-role-dim', highlight.size > 0 && !highlight.has(roleId));
+			});
+
+			if (empty) empty.classList.toggle('hidden', !result.empty);
+			if (grid) grid.classList.toggle('is-empty', result.empty);
+
+			if (count) {
+				if (!query.trim()) {
+					count.textContent = `${result.visibleCount} accesos`;
+				} else if (result.empty) {
+					count.textContent = 'Sin resultados';
+				} else if (result.highlightRoleIds.length && result.visibleCodes === null) {
+					count.textContent = `Resaltando rol · ${result.visibleCount} accesos`;
+				} else {
+					count.textContent = `${result.visibleCount} acceso${result.visibleCount === 1 ? '' : 's'}`;
+				}
+			}
 		}
 
 		private collectGrants() {
@@ -256,3 +368,174 @@
 		customElements.define('permissions-matrix', PermissionsMatrix);
 	}
 </script>
+
+<style is:global>
+	.permissions-matrix .permissions-table-wrap {
+		border: 1px solid var(--shell-border);
+		border-radius: 1rem;
+		background: var(--surface-bright);
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.permissions-matrix .permissions-table-wrap.is-empty {
+		display: none;
+	}
+
+	.permissions-matrix [data-permission-group][hidden],
+	.permissions-matrix [data-permission-row][hidden] {
+		display: none;
+	}
+
+	.permissions-matrix .permissions-table {
+		width: 100%;
+		min-width: 36rem;
+		border-collapse: collapse;
+		text-align: left;
+		font-size: 0.88rem;
+	}
+
+	.permissions-matrix .permissions-access-head,
+	.permissions-matrix .permissions-role {
+		position: sticky;
+		top: 0;
+		z-index: 2;
+		padding: 0.7rem 0.85rem;
+		background: color-mix(in srgb, var(--sidebar-surface) 88%, var(--surface-bright));
+		border-bottom: 1px solid var(--shell-border);
+		font-size: 0.78rem;
+		font-weight: 800;
+		letter-spacing: 0.02em;
+		color: var(--on-surface);
+		white-space: nowrap;
+	}
+
+	.permissions-matrix .permissions-access-head {
+		left: 0;
+		z-index: 3;
+		min-width: 14rem;
+	}
+
+	.permissions-matrix .permissions-role {
+		text-align: center;
+		min-width: 6.5rem;
+	}
+
+	.permissions-matrix .permissions-section th {
+		padding: 0.95rem 1rem 0.7rem;
+		background: color-mix(in srgb, var(--primary) 12%, var(--sidebar-surface));
+		border-top: 1px solid color-mix(in srgb, var(--primary) 18%, var(--shell-border));
+		border-bottom: 1px solid color-mix(in srgb, var(--primary) 10%, var(--shell-border));
+		box-shadow: inset 4px 0 0 var(--primary);
+		text-align: left;
+	}
+
+	.permissions-matrix .permissions-section__title {
+		display: inline-block;
+		font-size: 0.72rem;
+		font-weight: 800;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--on-surface);
+	}
+
+	.permissions-matrix .permissions-row {
+		border-top: 1px solid color-mix(in srgb, var(--shell-border) 80%, transparent);
+	}
+
+	.permissions-matrix .permissions-row:last-child {
+		border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 70%, transparent);
+	}
+
+	.permissions-matrix .permissions-row__access {
+		position: sticky;
+		left: 0;
+		z-index: 1;
+		min-width: 14rem;
+		max-width: 22rem;
+		padding: 0.72rem 0.9rem 0.72rem 1.45rem;
+		background: var(--surface-bright);
+		box-shadow: inset 4px 0 0 color-mix(in srgb, var(--primary) 22%, transparent);
+		vertical-align: top;
+	}
+
+	.permissions-matrix .permissions-row__label {
+		font-size: 0.88rem;
+		font-weight: 600;
+		line-height: 1.35;
+		color: var(--on-surface);
+	}
+
+	.permissions-matrix .permissions-row__desc {
+		margin: 0.18rem 0 0;
+		font-size: 0.76rem;
+		font-weight: 500;
+		line-height: 1.4;
+		color: var(--on-surface-variant);
+	}
+
+	.permissions-matrix .permissions-cell {
+		padding: 0.65rem 0.7rem;
+		text-align: center;
+		vertical-align: middle;
+		background: var(--surface-bright);
+	}
+
+	.permissions-matrix .permissions-check {
+		display: inline-flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.2rem;
+	}
+
+	.permissions-matrix .permissions-check input[type='checkbox'] {
+		width: 1.05rem;
+		height: 1.05rem;
+		accent-color: var(--primary);
+	}
+
+	.permissions-matrix .permissions-entitlement {
+		font-size: 0.66rem;
+		font-weight: 700;
+		color: #b45309;
+	}
+
+	.permissions-matrix .permissions-row:hover .permissions-row__access,
+	.permissions-matrix .permissions-row:hover .permissions-cell {
+		background: color-mix(in srgb, var(--primary) 5%, var(--surface-bright));
+	}
+
+	.permissions-matrix [data-role-col].is-role-match {
+		background: color-mix(in srgb, var(--primary) 14%, var(--surface-bright));
+	}
+
+	.permissions-matrix thead [data-role-col].is-role-match {
+		background: color-mix(in srgb, var(--primary) 18%, var(--sidebar-surface));
+		box-shadow: inset 0 -3px 0 var(--primary);
+	}
+
+	.permissions-matrix [data-role-col].is-role-dim {
+		opacity: 0.42;
+	}
+
+	@media (max-width: 640px) {
+		.permissions-matrix .permissions-table {
+			min-width: 30rem;
+		}
+
+		.permissions-matrix .permissions-access-head,
+		.permissions-matrix .permissions-row__access {
+			min-width: 11.5rem;
+		}
+
+		.permissions-matrix .permissions-role {
+			min-width: 5.6rem;
+			padding-inline: 0.45rem;
+			font-size: 0.7rem;
+		}
+
+		.permissions-matrix .permissions-section th,
+		.permissions-matrix .permissions-row__access {
+			padding-left: 1.1rem;
+		}
+	}
+</style>
