@@ -5,6 +5,7 @@ import FlashMessage from '../../components/FlashMessage.astro';
 import Layout from '../../layouts/Layout.astro';
 import { panelPageTitle } from '../../lib/panel-page-title';
 import {
+	ANALYTICS_MAX_CUSTOM_DAYS,
 	ANALYTICS_PERIODS,
 	AnalyticsApiError,
 	emptyAnalyticsData,
@@ -14,9 +15,9 @@ import {
 	type AnalyticsData,
 } from '../../lib/analytics';
 import {
+	analyticsPeriodSubtitle,
 	asuncionTodayIso,
 	chartBarTip,
-	chartWindowSubtitle,
 	chartYTicks,
 	toDashboardChartDays,
 } from '../../lib/dashboard-chart';
@@ -26,6 +27,8 @@ import '../../styles/analiticas.css';
 const token = Astro.locals.token ?? '';
 const query = normalizeAnalyticsQuery({
 	days: Astro.url.searchParams.get('days'),
+	from: Astro.url.searchParams.get('from'),
+	to: Astro.url.searchParams.get('to'),
 	location_id: Astro.url.searchParams.get('location_id'),
 	professional_id: Astro.url.searchParams.get('professional_id'),
 });
@@ -54,7 +57,27 @@ const chartCountText = chartTotal === 1 ? '1 cita' : `${chartTotal} citas`;
 const chartAria = chartDays.map((day) => `${day.weekdayName}: ${day.appointmentCount}`).join('. ');
 const chartY = chartYTicks(Math.max(0, ...chartDays.map((day) => day.appointmentCount)));
 const chartYMax = chartY[0] ?? 1;
-const periodSubtitle = chartWindowSubtitle(analytics.period_days);
+const isCustomPeriod = analytics.period_kind === 'custom';
+const periodFrom = analytics.filters.from_date || analytics.meta.period_start;
+const periodTo = analytics.filters.to_date || analytics.meta.period_end;
+const periodSubtitle = analyticsPeriodSubtitle(
+	periodFrom,
+	periodTo,
+	analytics.period_kind,
+	analytics.period_days
+);
+const chartWindowKey = isCustomPeriod && analytics.period_days > 7 ? 'custom' : String(analytics.period_days);
+const emptyChartMessage = isCustomPeriod
+	? 'No hay citas en el período seleccionado.'
+	: `No hay citas en los últimos ${analytics.period_days} días.`;
+const defaultCustomFrom = (() => {
+	const [year, month, day] = todayIso.split('-').map(Number);
+	const start = new Date(Date.UTC(year, month - 1, day));
+	start.setUTCDate(start.getUTCDate() - 29);
+	return `${start.getUTCFullYear()}-${String(start.getUTCMonth() + 1).padStart(2, '0')}-${String(start.getUTCDate()).padStart(2, '0')}`;
+})();
+const customFromValue = isCustomPeriod ? periodFrom || defaultCustomFrom : defaultCustomFrom;
+const customToValue = isCustomPeriod ? periodTo || todayIso : todayIso;
 
 const statusItems = [
 	{ key: 'pendiente', label: 'Pendiente', value: analytics.by_status.pendiente },
@@ -73,12 +96,24 @@ const formatMoney = (amount: number, currency = 'PYG') =>
 const formatPct = (value: number | null) =>
 	value === null ? '—' : `${value.toLocaleString('es-PY', { maximumFractionDigits: 1 })}%`;
 
-const toHref = (next: { days?: number; location_id?: number | null; professional_id?: number | null }) => {
+const toHref = (next: {
+	days?: number;
+	from?: string | null;
+	to?: string | null;
+	custom?: boolean;
+	location_id?: number | null;
+	professional_id?: number | null;
+}) => {
 	const params = new URLSearchParams();
-	params.set('days', String(next.days ?? analytics.period_days));
 	const locationId = next.location_id === undefined ? analytics.filters.location_id : next.location_id;
 	const professionalId =
 		next.professional_id === undefined ? analytics.filters.professional_id : next.professional_id;
+	if (next.custom || (next.from && next.to)) {
+		params.set('from', next.from || customFromValue);
+		params.set('to', next.to || customToValue);
+	} else {
+		params.set('days', String(next.days ?? (isCustomPeriod ? 7 : analytics.period_days)));
+	}
 	if (locationId) params.set('location_id', String(locationId));
 	if (professionalId) params.set('professional_id', String(professionalId));
 	return `/panel/analiticas?${params.toString()}`;
@@ -132,15 +167,56 @@ const noShowTrend =
 													ANALYTICS_PERIODS.map((days) => (
 														<a
 															href={toHref({ days })}
-															aria-current={days === analytics.period_days ? 'true' : undefined}
+															aria-current={!isCustomPeriod && days === analytics.period_days ? 'true' : undefined}
 														>
 															{days} días
 														</a>
 													))
 												}
+												<a
+													href={toHref({ custom: true, from: customFromValue, to: customToValue })}
+													aria-current={isCustomPeriod ? 'true' : undefined}
+													data-analytics-custom-link
+												>
+													Personalizado
+												</a>
 											</div>
-											<input type="hidden" name="days" value={String(analytics.period_days)} />
+											{isCustomPeriod ? null : <input type="hidden" name="days" value={String(analytics.period_days)} />}
 										</div>
+
+										{
+											isCustomPeriod ? (
+												<div class="analiticas-filters__group analiticas-filters__group--dates">
+													<label for="analiticas-from">Desde</label>
+													<input
+														id="analiticas-from"
+														type="date"
+														name="from"
+														value={customFromValue}
+														max={todayIso}
+														data-analytics-date
+													/>
+												</div>
+											) : null
+										}
+										{
+											isCustomPeriod ? (
+												<div class="analiticas-filters__group analiticas-filters__group--dates">
+													<label for="analiticas-to">Hasta</label>
+													<input
+														id="analiticas-to"
+														type="date"
+														name="to"
+														value={customToValue}
+														max={todayIso}
+														data-analytics-date
+													/>
+													<p class="analiticas-filters__hint" data-analytics-date-error hidden>
+														Elegí un rango de hasta {ANALYTICS_MAX_CUSTOM_DAYS} días.
+													</p>
+												</div>
+											) : null
+										}
 
 										<div class="analiticas-filters__group">
 											<label for="analiticas-branch">Sucursal</label>
@@ -196,7 +272,7 @@ const noShowTrend =
 										]}
 										aria-label={`Citas por día. ${chartAria}`}
 										data-day-chart
-										data-active-window={String(analytics.period_days)}
+										data-active-window={chartWindowKey}
 									>
 										<div class="dashboard-week-chart__inner">
 											<div class="dashboard-week-chart__head">
@@ -233,7 +309,7 @@ const noShowTrend =
 													</div>
 													<div
 														class="dashboard-week-chart__plot"
-														data-window={String(analytics.period_days)}
+														data-window={chartWindowKey}
 														style={`--chart-cols:${analytics.period_days}`}
 													>
 														{
@@ -275,7 +351,7 @@ const noShowTrend =
 											{
 												chartEmpty ? (
 													<p class="dashboard-week-chart__idle">
-														No hay citas en los últimos {analytics.period_days} días.
+														{emptyChartMessage}
 													</p>
 												) : null
 											}

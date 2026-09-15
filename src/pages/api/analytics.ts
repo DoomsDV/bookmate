@@ -40,6 +40,8 @@ export const GET: APIRoute = async ({ locals, url }) => {
 
 		const data = await getAnalyticsWithOrds(token, {
 			days: url.searchParams.get('days'),
+			from: url.searchParams.get('from'),
+			to: url.searchParams.get('to'),
 			location_id: url.searchParams.get('location_id'),
 			professional_id: url.searchParams.get('professional_id'),
 		});
