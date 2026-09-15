@@ -28,6 +28,7 @@ import { formatParaguayMobilePhoneInput } from '../lib/paraguay-phone';
 import { buildOrgHubUrl } from '../lib/public-profile-url';
 import { getPublicProfileSpecialtyLabel } from '../lib/public-profile-labels';
 import { isReservedOrgSlug } from '../lib/reserved-org-slugs';
+import { resolveBookableNextStep } from '../lib/setup-empty-cta';
 
 type GalleryItem = { id: number; url: string; sort_order?: number };
 
@@ -896,6 +897,51 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		waField.classList.toggle('hidden', !enabled);
 	};
 
+	let hubReady = !String(bootstrap.workspace?.profile_slug || '').trim();
+
+	const syncNextStep = () => {
+		const banner = root.querySelector<HTMLElement>('[data-ppe-next-step]');
+		const titleNode = root.querySelector<HTMLElement>('[data-ppe-next-step-title]');
+		const copyNode = root.querySelector<HTMLElement>('[data-ppe-next-step-copy]');
+		const iconNode = root.querySelector<HTMLElement>('[data-ppe-next-step-icon]');
+		const cta = root.querySelector<HTMLAnchorElement>('[data-ppe-next-step-cta]');
+		if (!banner || !titleNode || !copyNode || !cta) return;
+		if (!hubReady) return;
+
+		const step = resolveBookableNextStep({
+			serviceCount: previewHubMeta.serviceCategories.length,
+			professionalCount: previewHubMeta.professionals.length,
+			locationCount: previewHubMeta.locations.length,
+		});
+
+		if (step) {
+			banner.hidden = false;
+			titleNode.textContent = step.title;
+			copyNode.textContent = step.copy;
+			if (iconNode) iconNode.textContent = step.icon;
+			cta.textContent = step.ctaLabel;
+			cta.href = step.href;
+			cta.removeAttribute('data-ppe-next-tab');
+			return;
+		}
+
+		const hasVitrina = Boolean(
+			String(descInput?.value || '').trim() || currentLogoUrl || galleryItems.length
+		);
+		if (hasVitrina) {
+			banner.hidden = true;
+			return;
+		}
+
+		banner.hidden = false;
+		titleNode.textContent = 'Tu página todavía está vacía';
+		copyNode.textContent = 'Sumá logo, fotos o una descripción para que te encuentren.';
+		if (iconNode) iconNode.textContent = 'palette';
+		cta.textContent = 'Completá tu perfil →';
+		cta.href = '#';
+		cta.setAttribute('data-ppe-next-tab', 'apariencia');
+	};
+
 	const syncPreview = () => {
 		const rawDescription = String(descInput?.value || '');
 		const description = rawDescription.trim();
@@ -929,6 +975,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			professionals: previewHubMeta.professionals,
 			locations: previewHubMeta.locations,
 		});
+		syncNextStep();
 	};
 
 	const enrichPreviewFromHub = async () => {
@@ -962,9 +1009,11 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 				professionals,
 				locations,
 			};
-			syncPreview();
 		} catch {
 			/* preview enrichment is best-effort */
+		} finally {
+			hubReady = true;
+			syncPreview();
 		}
 	};
 
@@ -1903,6 +1952,16 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		if (!previewModal?.open) return;
 		previewModal.close();
 	};
+
+	root.querySelector<HTMLAnchorElement>('[data-ppe-next-step-cta]')?.addEventListener(
+		'click',
+		(event) => {
+			const tab = (event.currentTarget as HTMLAnchorElement).getAttribute('data-ppe-next-tab');
+			if (!tab) return;
+			event.preventDefault();
+			activateTab(tab);
+		}
+	);
 
 	openPreviewButtons.forEach((btn) => {
 		btn.addEventListener('click', () => openPreviewModal());

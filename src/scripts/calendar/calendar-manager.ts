@@ -12,6 +12,12 @@ import listPlugin from '@fullcalendar/list';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import { navigate } from 'astro:transitions/client';
 import { ROLES } from '../../config/roles';
+import {
+	renderSetupEmptyCta,
+	renderSetupEmptyState,
+	resolveBookableNextStep,
+	type SetupStep,
+} from '../../lib/setup-empty-cta';
 import { AppointmentsClient } from './appointments-client';
 import {
 	isAttendanceAwaitingReconfirmation,
@@ -216,6 +222,7 @@ class CalendarManager extends HTMLElement {
 
 	private calendarEl: HTMLElement | null = null;
 	private calendarStageNode: HTMLElement | null = null;
+	private setupEmptyNode: HTMLElement | null = null;
 	private loadingNode: HTMLElement | null = null;
 	private pageErrorNode: HTMLElement | null = null;
 	private openModalButton: HTMLButtonElement | null = null;
@@ -252,6 +259,7 @@ class CalendarManager extends HTMLElement {
 
 		this.calendarEl = this.querySelector<HTMLElement>('[data-calendar-el]');
 		this.calendarStageNode = this.querySelector<HTMLElement>('[data-calendar-stage]');
+		this.setupEmptyNode = this.querySelector<HTMLElement>('[data-calendar-setup-empty]');
 		this.loadingNode = this.querySelector<HTMLElement>('[data-calendar-loading]');
 		this.pageErrorNode = this.querySelector<HTMLElement>('[data-calendar-error]');
 		this.openModalButton = this.querySelector<HTMLButtonElement>('[data-open-appointment-modal]');
@@ -2534,6 +2542,7 @@ class CalendarManager extends HTMLElement {
 				locations: this.locations,
 				services: this.services,
 			});
+			this.syncSetupEmptyState();
 		} catch (error) {
 			this.showPageError(
 				error instanceof Error
@@ -2543,6 +2552,55 @@ class CalendarManager extends HTMLElement {
 		} finally {
 			this.setCalendarLoading(false);
 		}
+	}
+
+	private canFollowSetupHref(step: SetupStep): boolean {
+		if (step.id === 'create_service') return this.roleId === ROLES.ADMIN;
+		if (step.id === 'create_professional' || step.id === 'assign_services') {
+			return this.roleId === ROLES.ADMIN || this.roleId === ROLES.RECEPCIONISTA;
+		}
+		if (step.id === 'create_location') {
+			return this.roleId === ROLES.ADMIN || this.roleId === ROLES.RECEPCIONISTA;
+		}
+		return false;
+	}
+
+	private syncSetupEmptyState(): void {
+		const host = this.setupEmptyNode;
+		const stage = this.calendarStageNode;
+		if (!host || !stage) return;
+
+		const assignedServiceProfessionalCount = this.professionals.filter(
+			(professional) => professional.services.length > 0
+		).length;
+		const step = resolveBookableNextStep({
+			serviceCount: this.services.length,
+			professionalCount: this.professionals.length,
+			assignedServiceProfessionalCount,
+			locationCount: this.locations.length,
+		});
+
+		if (!step) {
+			host.hidden = true;
+			host.innerHTML = '';
+			stage.classList.remove('has-setup-empty');
+			return;
+		}
+
+		const ctaHtml = this.canFollowSetupHref(step)
+			? renderSetupEmptyCta({ label: step.ctaLabel, href: step.href })
+			: '';
+		host.innerHTML = renderSetupEmptyState({
+			icon: step.icon,
+			title: step.title,
+			copy:
+				this.roleId === ROLES.PROFESIONAL && step.id === 'create_service'
+					? 'Cuando el administrador cree servicios, vas a poder agendar.'
+					: step.copy,
+			ctaHtml,
+		});
+		host.hidden = false;
+		stage.classList.add('has-setup-empty');
 	}
 
 	private handleOpenCreateModal = () => {
