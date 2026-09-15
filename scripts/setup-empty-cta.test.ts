@@ -1,8 +1,11 @@
 import assert from 'node:assert/strict';
 import {
+	renderSetupEmptyCta,
+	renderSetupEmptyCtaContent,
 	resolveBookableNextStep,
 	resolvePublicProfileNextStep,
 	SCREEN_EMPTY,
+	SETUP_EMPTY_CTA_ICON,
 	SETUP_PATHS,
 } from '../src/lib/setup-empty-cta.ts';
 
@@ -99,5 +102,27 @@ const profileUnknownStaff = resolvePublicProfileNextStep({
 });
 assert.equal(profileUnknownStaff, null);
 assert.notEqual(profileUnknownStaff?.id, 'create_professional');
+
+assert.equal(SCREEN_EMPTY.professionalsNotOnHub.ctaLabel, 'Completar en Personal');
+assert.equal(SCREEN_EMPTY.professionalsNotOnHub.ctaLabel.includes('→'), false);
+
+const hubCta = renderSetupEmptyCtaContent(SCREEN_EMPTY.professionalsNotOnHub.ctaLabel);
+assert.equal(hubCta.includes('→'), false);
+assert.match(hubCta, /Completar en Personal/);
+assert.match(hubCta, /material-symbols-rounded/);
+assert.match(hubCta, /text-\[1\.1rem\]/);
+assert.match(hubCta, new RegExp(SETUP_EMPTY_CTA_ICON));
+
+const legacyArrowStripped = renderSetupEmptyCtaContent('Completar en Personal →');
+assert.equal(legacyArrowStripped.includes('→'), false);
+assert.match(legacyArrowStripped, /Completar en Personal<span class="material-symbols-rounded/);
+
+const linkedCta = renderSetupEmptyCta({
+	label: SCREEN_EMPTY.professionalsNotOnHub.ctaLabel,
+	href: SETUP_PATHS.professionals,
+});
+assert.match(linkedCta, /class="panel-empty-cta"/);
+assert.match(linkedCta, /arrow_forward/);
+assert.equal(linkedCta.includes('→'), false);
 
 console.log('setup-empty-cta: ok');

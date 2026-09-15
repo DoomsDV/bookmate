@@ -47,33 +47,33 @@ export const SCREEN_EMPTY = {
 	services: {
 		title: 'Todavía no hay servicios',
 		copy: 'Sin un servicio, los clientes no pueden reservar.',
-		ctaLabel: 'Creá tu primer servicio →',
+		ctaLabel: 'Creá tu primer servicio',
 		icon: 'inbox',
 	},
 	professionals: {
 		title: 'Todavía no hay personal',
 		copy: 'Agregá a quien atiende para abrir turnos.',
-		ctaLabel: 'Agregá tu primer profesional →',
+		ctaLabel: 'Agregá tu primer profesional',
 		icon: 'badge',
 	},
 	professionalsNotOnHub: {
 		title: 'El personal no aparece en tu página',
 		copy: 'Ya tenés profesionales, pero sin foto y bio no se muestran en el hub público.',
-		ctaLabel: 'Completar en Personal →',
+		ctaLabel: 'Completar en Personal',
 		href: SETUP_PATHS.professionals,
 		icon: 'badge',
 	},
 	schedulesNoProfessionals: {
 		title: 'Todavía no hay personal',
 		copy: 'Primero agregá a quien atiende. Después configurás sus horarios.',
-		ctaLabel: 'Agregá personal →',
+		ctaLabel: 'Agregá personal',
 		href: SETUP_PATHS.professionals,
 		icon: 'badge',
 	},
 	schedulesNoLocations: {
 		title: 'Falta una sucursal',
 		copy: 'Los turnos se abren por sucursal.',
-		ctaLabel: 'Creá una sucursal →',
+		ctaLabel: 'Creá una sucursal',
 		href: SETUP_PATHS.locations,
 		icon: 'domain',
 	},
@@ -108,7 +108,7 @@ const STEPS: Record<SetupStepId, SetupStep> = {
 		id: 'assign_services',
 		title: 'Falta asignar servicios',
 		copy: 'Cada profesional necesita al menos un servicio para atender.',
-		ctaLabel: 'Asigná servicios en Personal →',
+		ctaLabel: 'Asigná servicios en Personal',
 		href: SETUP_PATHS.professionals,
 		icon: 'badge',
 	},
@@ -160,12 +160,20 @@ export const resolvePublicProfileNextStep = (
 	});
 };
 
+/** Misma flecha Material que Ver página pública / Guardar / sidebar. */
+export const SETUP_EMPTY_CTA_ICON = 'arrow_forward';
+
+const stripLegacyCtaArrow = (label: string) => label.replace(/\s*→\s*$/u, '').trimEnd();
+
+export const renderSetupEmptyCtaContent = (label: string) =>
+	`${escapeHtml(stripLegacyCtaArrow(label))}<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true">${SETUP_EMPTY_CTA_ICON}</span>`;
+
 export const renderSetupEmptyCta = (options: { label: string; href?: string; attrs?: string }) => {
-	const label = escapeHtml(options.label);
+	const content = renderSetupEmptyCtaContent(options.label);
 	if (options.href) {
-		return `<a class="panel-empty-cta" href="${escapeHtml(options.href)}">${label}</a>`;
+		return `<a class="panel-empty-cta" href="${escapeHtml(options.href)}">${content}</a>`;
 	}
-	return `<button type="button" class="panel-empty-cta" ${options.attrs || ''}>${label}</button>`;
+	return `<button type="button" class="panel-empty-cta" ${options.attrs || ''}>${content}</button>`;
 };
 
 export const renderSetupEmptyState = (options: {

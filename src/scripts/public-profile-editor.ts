@@ -28,7 +28,7 @@ import { formatParaguayMobilePhoneInput } from '../lib/paraguay-phone';
 import { buildOrgHubUrl } from '../lib/public-profile-url';
 import { getPublicProfileSpecialtyLabel } from '../lib/public-profile-labels';
 import { isReservedOrgSlug } from '../lib/reserved-org-slugs';
-import { resolvePublicProfileNextStep } from '../lib/setup-empty-cta';
+import { renderSetupEmptyCtaContent, resolvePublicProfileNextStep } from '../lib/setup-empty-cta';
 
 type GalleryItem = { id: number; url: string; sort_order?: number };
 
@@ -922,7 +922,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			titleNode.textContent = step.title;
 			copyNode.textContent = step.copy;
 			if (iconNode) iconNode.textContent = step.icon;
-			cta.textContent = step.ctaLabel;
+			cta.innerHTML = renderSetupEmptyCtaContent(step.ctaLabel);
 			cta.href = step.href;
 			cta.removeAttribute('data-ppe-next-tab');
 			return;
@@ -940,7 +940,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		titleNode.textContent = 'Tu página todavía está vacía';
 		copyNode.textContent = 'Sumá logo, fotos o una descripción para que te encuentren.';
 		if (iconNode) iconNode.textContent = 'palette';
-		cta.textContent = 'Completá tu perfil →';
+		cta.innerHTML = renderSetupEmptyCtaContent('Completá tu perfil');
 		cta.href = '#';
 		cta.setAttribute('data-ppe-next-tab', 'apariencia');
 	};

@@ -6,7 +6,7 @@ import {
 } from '../lib/professional-hub-profile';
 import { getProfessionalDisplayName, isProfessionalAccountActive, type Professional } from '../lib/professionals';
 import { formatPublicProfessionalRating } from '../lib/public-professional-rating';
-import { SCREEN_EMPTY } from '../lib/setup-empty-cta';
+import { renderSetupEmptyCtaContent, SCREEN_EMPTY } from '../lib/setup-empty-cta';
 
 interface Props {
 	professionals: Professional[];
@@ -244,9 +244,8 @@ const cardItems = professionals.map((professional) => {
 					class="panel-empty-cta"
 					data-open-professional-modal
 					data-requires-write
-				>
-					{SCREEN_EMPTY.professionals.ctaLabel}
-				</button>
+					set:html={renderSetupEmptyCtaContent(SCREEN_EMPTY.professionals.ctaLabel)}
+				></button>
 			) : null}
 		</div>
 	) : (

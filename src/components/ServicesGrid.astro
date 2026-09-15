@@ -1,5 +1,5 @@
 ---
-import { SCREEN_EMPTY } from '../lib/setup-empty-cta';
+import { renderSetupEmptyCtaContent, SCREEN_EMPTY } from '../lib/setup-empty-cta';
 import type { Service } from '../lib/services';
 
 interface Props {
@@ -236,9 +236,8 @@ const toDurationLabel = (value?: number | null) => {
 						class="panel-empty-cta"
 						data-open-service-modal
 						data-requires-write
-					>
-						{SCREEN_EMPTY.services.ctaLabel}
-					</button>
+						set:html={renderSetupEmptyCtaContent(SCREEN_EMPTY.services.ctaLabel)}
+					></button>
 				) : null}
 			</div>
 		) : (
