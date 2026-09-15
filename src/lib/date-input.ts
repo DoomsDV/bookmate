@@ -58,6 +58,17 @@ export const toIsoDate = (date: Date) =>
 type BindDateTextInputOptions = {
 	onChange?: () => void;
 	onError?: (message: string) => void;
+	onActivate?: () => void;
+	signal?: AbortSignal;
+};
+
+export const syncDateTextFromNative = (
+	textEl: HTMLInputElement | null,
+	nativeEl: HTMLInputElement | null
+) => {
+	if (!textEl) return;
+	textEl.value = isoToDisplay(nativeEl?.value || '');
+	textEl.classList.remove('is-invalid');
 };
 
 export const bindDateTextInput = (
@@ -66,44 +77,75 @@ export const bindDateTextInput = (
 	options: BindDateTextInputOptions = {}
 ) => {
 	const clearError = () => options.onError?.('');
+	const listenerOptions = options.signal ? { signal: options.signal } : undefined;
 
-	textEl?.addEventListener('input', () => {
-		const selection = textEl.selectionStart ?? textEl.value.length;
-		const digitsBeforeCaret = textEl.value.slice(0, selection).replace(/\D/g, '').length;
-		const next = maskDateDisplay(textEl.value);
-		textEl.value = next;
-		const nextCaret = caretAfterDigits(next, digitsBeforeCaret);
-		textEl.setSelectionRange(nextCaret, nextCaret);
-		textEl.classList.remove('is-invalid');
-		clearError();
-		if (next.length === 10) {
-			const iso = displayToIso(next);
-			if (iso && nativeEl) nativeEl.value = iso;
-		} else if (nativeEl && next.length < 10) {
-			nativeEl.value = '';
-		}
-		options.onChange?.();
-	});
-	textEl?.addEventListener('blur', () => {
-		if (!textEl.value.trim()) {
-			if (nativeEl) nativeEl.value = '';
+	textEl?.addEventListener(
+		'focus',
+		() => {
+			options.onActivate?.();
+		},
+		listenerOptions
+	);
+	textEl?.addEventListener(
+		'input',
+		() => {
+			options.onActivate?.();
+			const selection = textEl.selectionStart ?? textEl.value.length;
+			const digitsBeforeCaret = textEl.value.slice(0, selection).replace(/\D/g, '').length;
+			const next = maskDateDisplay(textEl.value);
+			textEl.value = next;
+			const nextCaret = caretAfterDigits(next, digitsBeforeCaret);
+			textEl.setSelectionRange(nextCaret, nextCaret);
+			textEl.classList.remove('is-invalid');
+			clearError();
+			if (next.length === 10) {
+				const iso = displayToIso(next);
+				if (iso && nativeEl) nativeEl.value = iso;
+				else if (nativeEl) nativeEl.value = '';
+			} else if (nativeEl && next.length < 10) {
+				nativeEl.value = '';
+			}
 			options.onChange?.();
-			return;
-		}
-		const iso = displayToIso(textEl.value);
-		if (!iso) {
-			textEl.classList.add('is-invalid');
-			return;
-		}
-		if (nativeEl) nativeEl.value = iso;
-		textEl.value = isoToDisplay(iso);
-		textEl.classList.remove('is-invalid');
-		options.onChange?.();
-	});
-	nativeEl?.addEventListener('change', () => {
-		if (textEl) textEl.value = isoToDisplay(nativeEl.value || '');
-		textEl?.classList.remove('is-invalid');
-		clearError();
-		options.onChange?.();
-	});
+		},
+		listenerOptions
+	);
+	textEl?.addEventListener(
+		'blur',
+		() => {
+			if (!textEl.value.trim()) {
+				if (nativeEl) nativeEl.value = '';
+				options.onChange?.();
+				return;
+			}
+			const iso = displayToIso(textEl.value);
+			if (!iso) {
+				textEl.classList.add('is-invalid');
+				options.onError?.('Usá una fecha válida (dd/mm/aaaa).');
+				return;
+			}
+			if (nativeEl) nativeEl.value = iso;
+			textEl.value = isoToDisplay(iso);
+			textEl.classList.remove('is-invalid');
+			options.onChange?.();
+		},
+		listenerOptions
+	);
+	nativeEl?.addEventListener(
+		'input',
+		() => {
+			syncDateTextFromNative(textEl, nativeEl);
+			clearError();
+			options.onChange?.();
+		},
+		listenerOptions
+	);
+	nativeEl?.addEventListener(
+		'change',
+		() => {
+			syncDateTextFromNative(textEl, nativeEl);
+			clearError();
+			options.onChange?.();
+		},
+		listenerOptions
+	);
 };
