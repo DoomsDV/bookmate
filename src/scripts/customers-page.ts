@@ -66,6 +66,7 @@ type Customer = {
 	email?: string | null;
 	phone_number: string;
 	created_at: string;
+	is_active?: 0 | 1;
 	appointment_count?: number;
 	last_appointment_at?: string | null;
 };
@@ -144,11 +145,14 @@ class CustomerManager extends HTMLElement {
 	private isProfileLoading = false;
 	private activeProfileCustomerId = 0;
 	private searchQuery = '';
+	private showArchived = false;
 	#searchDebounceTimer: number | null = null;
 	#loadRequestId = 0;
 
 	private professionalSelect: HTMLSelectElement | null = null;
 	private searchInput: HTMLInputElement | null = null;
+	private archivedToggleBtn: HTMLButtonElement | null = null;
+	private leadNode: HTMLElement | null = null;
 	private proFilterButton: HTMLButtonElement | null = null;
 	private proFilterBadge: HTMLElement | null = null;
 	private proFilterSheet: HTMLDialogElement | null = null;
@@ -194,6 +198,13 @@ class CustomerManager extends HTMLElement {
 	private profileLastNameErrorNode: HTMLElement | null = null;
 	private profileEditForm: HTMLFormElement | null = null;
 	private profileFooterEdit: HTMLElement | null = null;
+	private profileFooterArchive: HTMLElement | null = null;
+	private profileFooterRestore: HTMLElement | null = null;
+	private profileArchivedBadge: HTMLElement | null = null;
+	private archiveCustomerBtn: HTMLButtonElement | null = null;
+	private restoreCustomerBtn: HTMLButtonElement | null = null;
+	private isSavingArchiveState = false;
+	private activeProfileIsActive: 0 | 1 = 1;
 	private profileEditStatusNode: HTMLElement | null = null;
 	private profileAvatarNode: HTMLElement | null = null;
 	private profilePhoneNode: HTMLElement | null = null;
@@ -333,6 +344,8 @@ class CustomerManager extends HTMLElement {
 
 		this.professionalSelect = this.querySelector<HTMLSelectElement>('[data-professional-filter]');
 		this.searchInput = this.querySelector<HTMLInputElement>('[data-customers-search]');
+		this.archivedToggleBtn = this.querySelector<HTMLButtonElement>('[data-toggle-archived]');
+		this.leadNode = this.querySelector<HTMLElement>('[data-customers-lead]');
 		this.proFilterButton = this.querySelector<HTMLButtonElement>('[data-open-pro-filter]');
 		this.proFilterBadge = this.querySelector<HTMLElement>('[data-pro-filter-badge]');
 		this.proFilterSheet = this.querySelector<HTMLDialogElement>('[data-pro-filter-sheet]');
@@ -399,6 +412,17 @@ class CustomerManager extends HTMLElement {
 		);
 		this.profileEditForm = this.querySelector<HTMLFormElement>('[data-customer-profile-edit-form]');
 		this.profileFooterEdit = this.querySelector<HTMLElement>('[data-customer-profile-footer-edit]');
+		this.profileFooterArchive = this.querySelector<HTMLElement>(
+			'[data-customer-profile-footer-archive]'
+		);
+		this.profileFooterRestore = this.querySelector<HTMLElement>(
+			'[data-customer-profile-footer-restore]'
+		);
+		this.profileArchivedBadge = this.querySelector<HTMLElement>(
+			'[data-customer-profile-archived-badge]'
+		);
+		this.archiveCustomerBtn = this.querySelector<HTMLButtonElement>('[data-archive-customer]');
+		this.restoreCustomerBtn = this.querySelector<HTMLButtonElement>('[data-restore-customer]');
 		this.profileEditStatusNode = this.querySelector<HTMLElement>('[data-customer-profile-edit-status]');
 		this.profileAvatarNode = this.querySelector<HTMLElement>('[data-customer-profile-avatar]');
 		this.profilePhoneNode = this.querySelector<HTMLElement>('[data-customer-profile-phone]');
@@ -813,6 +837,10 @@ class CustomerManager extends HTMLElement {
 		return this.canEditCustomerProfile();
 	}
 
+	private canArchiveCustomer() {
+		return this.canEditCustomerProfile();
+	}
+
 	private createFieldErrorNode(
 		field: 'first_name' | 'last_name' | 'phone_number' | 'document_number' | 'email'
 	) {
@@ -1008,6 +1036,10 @@ class CustomerManager extends HTMLElement {
 			const createdId = Number(data.data.id_customer || 0);
 			this.closeCreateCustomerModal();
 			this.page = 1;
+			if (this.showArchived) {
+				this.showArchived = false;
+				this.syncArchivedFilterUi();
+			}
 			await this.loadCustomers({ silent: true });
 			if (createdId > 0) void this.openCustomerProfile(createdId);
 		} catch {
@@ -1291,6 +1323,18 @@ class CustomerManager extends HTMLElement {
 			void this.handleSaveProfileEdit();
 			return;
 		}
+		if (target.closest('[data-toggle-archived]')) {
+			this.toggleArchivedFilter();
+			return;
+		}
+		if (target.closest('[data-archive-customer]')) {
+			void this.archiveActiveCustomer();
+			return;
+		}
+		if (target.closest('[data-restore-customer]')) {
+			void this.restoreActiveCustomer();
+			return;
+		}
 		if (target.closest('[data-customer-odontogram-tour-help]')) {
 			event.preventDefault();
 			showOdontogramTour();
@@ -1367,6 +1411,7 @@ class CustomerManager extends HTMLElement {
 		if (this.profileLoadingNode) {
 			this.profileLoadingNode.classList.toggle('hidden', !value);
 		}
+		this.syncArchiveActionsUi();
 	}
 
 	private clearProfileError() {
@@ -1460,12 +1505,20 @@ class CustomerManager extends HTMLElement {
 		const hasProFilter = this.canFilterByProfessional() && this.selectedProfessionalId > 0;
 
 		if (this.emptyTitleNode) {
-			this.emptyTitleNode.textContent = hasSearch
-				? 'No se encontraron clientes'
-				: 'No hay clientes para mostrar';
+			this.emptyTitleNode.textContent = this.showArchived
+				? hasSearch
+					? 'No se encontraron clientes archivados'
+					: 'No hay clientes archivados'
+				: hasSearch
+					? 'No se encontraron clientes'
+					: 'No hay clientes para mostrar';
 		}
 		if (this.emptyCopyNode) {
-			if (hasSearch) {
+			if (this.showArchived) {
+				this.emptyCopyNode.textContent = hasSearch
+					? 'Probá con otro nombre, teléfono o CI.'
+					: 'Los clientes que archives aparecerán aquí. Podés restaurarlos cuando quieras.';
+			} else if (hasSearch) {
 				this.emptyCopyNode.textContent = 'Probá con otro nombre, teléfono o CI.';
 			} else if (hasProFilter) {
 				this.emptyCopyNode.textContent =
@@ -1478,7 +1531,38 @@ class CustomerManager extends HTMLElement {
 			}
 		}
 		if (this.emptyIconNode) {
-			this.emptyIconNode.textContent = hasSearch ? 'search_off' : 'group_off';
+			this.emptyIconNode.textContent = this.showArchived
+				? 'inventory_2'
+				: hasSearch
+					? 'search_off'
+					: 'group_off';
+		}
+	}
+
+	private toggleArchivedFilter() {
+		this.showArchived = !this.showArchived;
+		this.page = 1;
+		this.syncArchivedFilterUi();
+		void this.loadCustomers();
+	}
+
+	private syncArchivedFilterUi() {
+		if (this.archivedToggleBtn) {
+			this.archivedToggleBtn.setAttribute('aria-pressed', this.showArchived ? 'true' : 'false');
+			this.archivedToggleBtn.setAttribute(
+				'aria-label',
+				this.showArchived ? 'Ocultar archivados' : 'Ver archivados'
+			);
+			this.archivedToggleBtn.title = this.showArchived ? 'Ocultar archivados' : 'Ver archivados';
+		}
+		if (this.leadNode) {
+			this.leadNode.textContent = this.showArchived
+				? 'Clientes archivados. Restauralos para que vuelvan al listado del día a día.'
+				: this.roleId === ROLES.PROFESIONAL
+					? 'Clientes registrados en tu agenda.'
+					: this.canFilterByProfessional()
+						? 'Buscá por nombre, teléfono o CI y filtrá por profesional.'
+						: 'Clientes registrados en el consultorio.';
 		}
 	}
 
@@ -2104,6 +2188,24 @@ class CustomerManager extends HTMLElement {
 			!this.isEditingProfile &&
 			this.canEditCustomerProfile();
 		this.profileEditToggleBtn.hidden = !show;
+		this.syncArchiveActionsUi();
+	}
+
+	private syncArchiveActionsUi() {
+		const showActions =
+			this.activeProfileTab === 'summary' &&
+			!this.isEditingProfile &&
+			this.canArchiveCustomer() &&
+			this.activeProfileCustomerId > 0 &&
+			!this.isProfileLoading;
+		const isArchived = this.activeProfileIsActive === 0;
+		this.profileFooterArchive?.classList.toggle('hidden', !showActions || isArchived);
+		this.profileFooterRestore?.classList.toggle('hidden', !showActions || !isArchived);
+		if (this.profilePanel) {
+			if (showActions) this.profilePanel.setAttribute('data-archive-actions', '1');
+			else this.profilePanel.removeAttribute('data-archive-actions');
+		}
+		this.profileArchivedBadge?.classList.toggle('hidden', !isArchived);
 	}
 
 	private hasOdontogramEntitlement() {
@@ -3885,6 +3987,7 @@ class CustomerManager extends HTMLElement {
 		if (this.profileFooterEdit) {
 			this.profileFooterEdit.classList.toggle('hidden', !editing);
 		}
+		this.syncArchiveActionsUi();
 		if (this.profileEditStatusNode) {
 			this.profileEditStatusNode.textContent = editing ? 'Editando datos del cliente' : '';
 		}
@@ -4150,6 +4253,95 @@ class CustomerManager extends HTMLElement {
 		}
 	}
 
+	private setArchiveActionLoading(loading: boolean) {
+		this.isSavingArchiveState = loading;
+		if (this.archiveCustomerBtn) {
+			this.archiveCustomerBtn.disabled = loading;
+			this.archiveCustomerBtn.textContent = loading ? 'Archivando…' : 'Archivar cliente';
+		}
+		if (this.restoreCustomerBtn) {
+			this.restoreCustomerBtn.disabled = loading;
+			this.restoreCustomerBtn.textContent = loading ? 'Restaurando…' : 'Restaurar cliente';
+		}
+	}
+
+	private async archiveActiveCustomer() {
+		const customerId = this.activeProfileCustomerId;
+		if (customerId <= 0 || this.isSavingArchiveState || !this.canArchiveCustomer()) return;
+		if (this.activeProfileIsActive === 0) return;
+
+		const confirmed = window.BookmateAlert?.confirm
+			? await window.BookmateAlert.confirm({
+					type: 'error',
+					title: 'Archivar cliente',
+					message:
+						'El cliente dejará de aparecer en el listado y las búsquedas del día a día. El historial, las citas y las señas se conservan. ¿Querés archivarlo?',
+					confirmText: 'Archivar',
+					cancelText: 'Cancelar',
+				})
+			: window.confirm(
+					'El cliente dejará de aparecer en el listado del día a día. El historial se conserva. ¿Querés archivarlo?'
+				);
+		if (!confirmed) return;
+
+		this.setArchiveActionLoading(true);
+		this.clearProfileError();
+		try {
+			const response = await fetch(`/api/customers/${customerId}/archive`, {
+				method: 'POST',
+				headers: { Accept: 'application/json' },
+			});
+			const data = await this.parseJson<{ is_active?: 0 | 1 }>(response);
+			if (!response.ok || data.status !== 'success') {
+				throw new Error(this.getBackendMessage(data, 'No fue posible archivar el cliente.'));
+			}
+			this.activeProfileIsActive = 0;
+			this.syncArchiveActionsUi();
+			if (!this.showArchived) {
+				this.closeProfileModal();
+			}
+			await this.loadCustomers({ silent: true });
+		} catch (error) {
+			this.showProfileError(
+				error instanceof Error ? error.message : 'No fue posible archivar el cliente.'
+			);
+		} finally {
+			this.setArchiveActionLoading(false);
+		}
+	}
+
+	private async restoreActiveCustomer() {
+		const customerId = this.activeProfileCustomerId;
+		if (customerId <= 0 || this.isSavingArchiveState || !this.canArchiveCustomer()) return;
+
+		this.setArchiveActionLoading(true);
+		this.clearProfileError();
+		try {
+			const response = await fetch(`/api/customers/${customerId}/restore`, {
+				method: 'POST',
+				headers: { Accept: 'application/json' },
+			});
+			const data = await this.parseJson<{ is_active?: 0 | 1 }>(response);
+			if (!response.ok || data.status !== 'success') {
+				throw new Error(this.getBackendMessage(data, 'No fue posible restaurar el cliente.'));
+			}
+			this.activeProfileIsActive = 1;
+			this.syncArchiveActionsUi();
+			if (this.showArchived) {
+				this.showArchived = false;
+				this.page = 1;
+				this.syncArchivedFilterUi();
+			}
+			await this.loadCustomers({ silent: true });
+		} catch (error) {
+			this.showProfileError(
+				error instanceof Error ? error.message : 'No fue posible restaurar el cliente.'
+			);
+		} finally {
+			this.setArchiveActionLoading(false);
+		}
+	}
+
 	private applyProfileContact(customer: {
 		id_customer: number;
 		full_name: string;
@@ -4159,6 +4351,7 @@ class CustomerManager extends HTMLElement {
 		document_number?: string | null;
 		email?: string | null;
 		created_at?: string;
+		is_active?: 0 | 1;
 	}) {
 		const split = splitCustomerFullName(customer.full_name || '');
 		this.activeProfileFirstName = String(customer.first_name || '').trim() || split.first_name;
@@ -4169,6 +4362,9 @@ class CustomerManager extends HTMLElement {
 		this.activeProfilePhoneE164 = String(customer.phone_number || '').trim();
 		this.activeProfileDocument = String(customer.document_number || '').trim();
 		this.activeProfileEmail = String(customer.email || '').trim();
+		if (customer.is_active === 0 || customer.is_active === 1) {
+			this.activeProfileIsActive = customer.is_active;
+		}
 
 		const displayName =
 			this.activeProfileFullName || `Cliente #${customer.id_customer}`;
@@ -4215,6 +4411,7 @@ class CustomerManager extends HTMLElement {
 		const stats = profile.stats;
 
 		this.renderProfileScope();
+		this.activeProfileIsActive = profile.is_active === 0 ? 0 : 1;
 		this.applyProfileContact(profile);
 		this.syncProfileHeaderChrome();
 
@@ -4288,8 +4485,10 @@ class CustomerManager extends HTMLElement {
 		if (!this.profileModal) return;
 
 		this.activeProfileCustomerId = customerId;
+		this.activeProfileIsActive = 1;
 		this.exitProfileEditMode();
 		if (this.profileEditToggleBtn) this.profileEditToggleBtn.hidden = true;
+		this.syncArchiveActionsUi();
 		this.resetOdontogramState();
 		this.openProfileModalShell();
 		this.clearProfileError();
@@ -4565,6 +4764,12 @@ class CustomerManager extends HTMLElement {
 			subtitle.textContent = this.getCustomerCardSubtitle(customer);
 
 			nameBlock.append(name, subtitle);
+			if (customer.is_active === 0) {
+				const badge = document.createElement('span');
+				badge.className = 'customer-card-archived-badge';
+				badge.textContent = 'Archivado';
+				nameBlock.append(badge);
+			}
 			body.append(nameBlock);
 			identity.append(avatar, body);
 
@@ -4639,6 +4844,7 @@ class CustomerManager extends HTMLElement {
 			}
 
 			this.renderProfessionalOptions();
+			this.syncArchivedFilterUi();
 			await this.loadCustomers();
 		} catch (error) {
 			this.showError(
@@ -4666,6 +4872,9 @@ class CustomerManager extends HTMLElement {
 			}
 			if (this.searchQuery) {
 				query.set('search', this.searchQuery);
+			}
+			if (this.showArchived) {
+				query.set('archived', '1');
 			}
 
 			const response = await fetch(`/api/customers?${query.toString()}`, {
