@@ -1,6 +1,8 @@
 import type { APIRoute } from 'astro';
 
-import { ROLES } from '../../../config/roles';
+import { CAPABILITIES } from '../../../config/capabilities';
+import { hasCapability } from '../../../lib/permissions';
+
 import {
 	bufferToBase64,
 	optimizeProfileImage,
@@ -22,8 +24,8 @@ const requireToken = (token: string | undefined) => {
 	return token;
 };
 
-const requireAdminRole = (roleId: number | undefined) => {
-	if (Number(roleId || 0) !== ROLES.ADMIN) {
+const requireAdminRole = (locals: App.Locals) => {
+	if (!hasCapability(locals, CAPABILITIES.WORKSPACE_MANAGE)) {
 		throw new WorkspaceSettingsApiError(
 			'Solo administradores pueden gestionar la galería.',
 			403
@@ -52,7 +54,7 @@ const toErrorResponse = (error: unknown, fallbackMessage: string) => {
 export const POST: APIRoute = async ({ request, locals }) => {
 	try {
 		const token = requireToken(locals.token);
-		requireAdminRole(locals.roleId);
+		requireAdminRole(locals);
 
 		const form = await request.formData();
 		const file = form.get('file');
@@ -99,7 +101,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 export const PUT: APIRoute = async ({ request, locals }) => {
 	try {
 		const token = requireToken(locals.token);
-		requireAdminRole(locals.roleId);
+		requireAdminRole(locals);
 		const body = (await request.json()) as { ids?: unknown };
 		const ids = Array.isArray(body?.ids)
 			? body.ids.map((id) => Number(id)).filter((id) => Number.isInteger(id) && id > 0)
@@ -125,7 +127,7 @@ export const PUT: APIRoute = async ({ request, locals }) => {
 export const DELETE: APIRoute = async ({ locals, url }) => {
 	try {
 		const token = requireToken(locals.token);
-		requireAdminRole(locals.roleId);
+		requireAdminRole(locals);
 		const idParam = url.searchParams.get('id') || '';
 		const galleryId = Number(idParam);
 		if (!Number.isInteger(galleryId) || galleryId <= 0) {

@@ -1,6 +1,8 @@
 import type { APIRoute } from 'astro';
 
-import { ROLES } from '../../../../config/roles';
+import { CAPABILITIES } from '../../../../config/capabilities';
+import { hasCapability } from '../../../../lib/permissions';
+
 import { deleteCardWithOrds, SubscriptionApiError } from '../../../../lib/subscription';
 
 const toErrorResponse = (error: unknown, fallbackMessage: string) => {
@@ -15,7 +17,7 @@ const toErrorResponse = (error: unknown, fallbackMessage: string) => {
 export const DELETE: APIRoute = async ({ params, locals }) => {
 	try {
 		if (!locals.token) throw new SubscriptionApiError('No hay sesion valida.', 401);
-		if (Number(locals.roleId || 0) !== ROLES.ADMIN) {
+		if (!hasCapability(locals, CAPABILITIES.PLAN_MANAGE)) {
 			throw new SubscriptionApiError('Solo el administrador puede gestionar la facturación del plan.', 403);
 		}
 		const cardId = Number(params.id);

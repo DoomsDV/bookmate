@@ -32,6 +32,9 @@ const flashType: FlashType = validFlashTypes.includes(flashTypeRaw as FlashType)
     : 'info';
 const hasSession = Boolean(Astro.locals.token ?? '');
 const isAdmin = Number(Astro.locals.roleId ?? 0) === ROLES.ADMIN;
+const sessionCapabilities = Array.isArray(Astro.locals.capabilities)
+	? Astro.locals.capabilities
+	: [];
 
 interface Props {
     pageTitle?: string;
@@ -380,6 +383,14 @@ const themeColor = initialTheme === 'dark' ? '#0e0e10' : '#f9fafb';
         <slot />
         {hasSession && (
             <>
+                <script is:inline define:vars={{ sessionCapabilities }}>
+                    window.HaselPermissions = {
+                        codes: Array.isArray(sessionCapabilities) ? sessionCapabilities : [],
+                        has: function (code) {
+                            return this.codes.indexOf(String(code || '')) !== -1;
+                        },
+                    };
+                </script>
                 <SessionGuard />
                 <SubscriptionBanner isAdmin={isAdmin} />
                 <FcmManager />

@@ -1,5 +1,7 @@
 import type { APIRoute } from 'astro';
 
+import { CAPABILITIES } from '../../../config/capabilities';
+import { requireCapability } from '../../../lib/permissions';
 import {
 	ProfessionalsApiError,
 	assertProfessionalSelfAdminDelete,
@@ -9,6 +11,15 @@ import {
 	updateProfessionalWithUserWithOrds,
 	type UpdateProfessionalWithUserPayload,
 } from '../../../lib/professionals';
+
+const requireManage = (locals: App.Locals) => {
+	requireCapability(
+		locals,
+		CAPABILITIES.PROFESSIONALS_MANAGE,
+		(message, status) => new ProfessionalsApiError(message, status),
+		'No tienes permisos para gestionar personal.'
+	);
+};
 import {
 	parseRequestBody,
 	requireToken as requireApiToken,
@@ -159,6 +170,7 @@ export const GET: APIRoute = async ({ params, locals }) => {
 export const PUT: APIRoute = async ({ request, params, locals }) => {
 	try {
 		const token = requireToken(locals.token);
+		requireManage(locals);
 		const professionalId = parseProfessionalId(params.id);
 
 		if (!professionalId) {
@@ -214,6 +226,7 @@ export const PUT: APIRoute = async ({ request, params, locals }) => {
 export const DELETE: APIRoute = async ({ params, locals }) => {
 	try {
 		const token = requireToken(locals.token);
+		requireManage(locals);
 		const professionalId = parseProfessionalId(params.id);
 
 		if (!professionalId) {

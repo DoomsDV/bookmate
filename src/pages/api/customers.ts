@@ -1,6 +1,8 @@
 import type { APIRoute } from 'astro';
 
+import { CAPABILITIES } from '../../config/capabilities';
 import { ROLES } from '../../config/roles';
+import { requireCapability } from '../../lib/permissions';
 import { validateCustomerContactInput } from '../../lib/customer-contact';
 import {
 	createCustomerWithOrds,
@@ -99,10 +101,12 @@ const parseCreateBody = (request: Request) =>
 export const POST: APIRoute = async ({ locals, request }) => {
 	try {
 		const token = requireToken(locals.token);
-		const roleId = Number(locals.roleId ?? 0);
-		if (roleId !== ROLES.ADMIN && roleId !== ROLES.RECEPCIONISTA) {
-			throw new CustomersApiError('No tienes permisos para crear clientes.', 403);
-		}
+		requireCapability(
+			locals,
+			CAPABILITIES.CUSTOMERS_CREATE,
+			(message, status) => new CustomersApiError(message, status),
+			'No tienes permisos para crear clientes.'
+		);
 
 		const body = await parseCreateBody(request);
 		const validated = validateCustomerContactInput(body);

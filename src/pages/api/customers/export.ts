@@ -1,6 +1,8 @@
 import type { APIRoute } from 'astro';
 
+import { CAPABILITIES } from '../../../config/capabilities';
 import { ROLES } from '../../../config/roles';
+import { requireCapability } from '../../../lib/permissions';
 import { CustomersApiError, listCustomersWithOrds } from '../../../lib/customers';
 import {
 	ORG_ACCESS_INACTIVE_CODE,
@@ -41,6 +43,12 @@ const getCurrentProfessionalId = async (token: string) => {
 export const GET: APIRoute = async ({ locals }) => {
 	try {
 		const token = requireToken(locals.token);
+		requireCapability(
+			locals,
+			CAPABILITIES.CUSTOMERS_EXPORT,
+			(message, status) => new CustomersApiError(message, status),
+			'No tienes permisos para exportar clientes.'
+		);
 		const claims = parseTokenClaims(token);
 		const roleId = Number(locals.roleId ?? claims.role_id ?? 0);
 

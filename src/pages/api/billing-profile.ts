@@ -1,6 +1,8 @@
 import type { APIRoute } from 'astro';
 
-import { ROLES } from '../../config/roles';
+import { CAPABILITIES } from '../../config/capabilities';
+import { hasCapability } from '../../lib/permissions';
+
 import {
 	BillingProfileApiError,
 	getBillingProfileWithOrds,
@@ -16,8 +18,8 @@ const requireToken = (token: string | undefined) => {
 	return token;
 };
 
-const requireAdminRole = (roleId: number | undefined) => {
-	if (Number(roleId || 0) !== ROLES.ADMIN) {
+const requireAdminRole = (locals: App.Locals) => {
+	if (!hasCapability(locals, CAPABILITIES.PLAN_MANAGE)) {
 		throw new BillingProfileApiError('Solo administradores pueden gestionar facturación.', 403);
 	}
 };
@@ -62,7 +64,7 @@ const parseSavePayload = (source: any): BillingProfilePayload => {
 export const GET: APIRoute = async ({ locals }) => {
 	try {
 		const token = requireToken(locals.token);
-		requireAdminRole(locals.roleId);
+		requireAdminRole(locals);
 		const data = await getBillingProfileWithOrds(token);
 		return Response.json({ status: 'success', data }, { status: 200 });
 	} catch (error) {
@@ -73,7 +75,7 @@ export const GET: APIRoute = async ({ locals }) => {
 export const PUT: APIRoute = async ({ request, locals }) => {
 	try {
 		const token = requireToken(locals.token);
-		requireAdminRole(locals.roleId);
+		requireAdminRole(locals);
 		const body = await parseBody(request);
 		const payload = parseSavePayload(body);
 		const saved = await saveBillingProfileWithOrds(token, payload);

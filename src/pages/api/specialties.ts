@@ -1,5 +1,7 @@
 import type { APIRoute } from 'astro';
 
+import { CAPABILITIES } from '../../config/capabilities';
+import { requireCapability } from '../../lib/permissions';
 import {
 	SpecialtiesApiError,
 	SpecialtiesClient,
@@ -11,6 +13,15 @@ import {
 	toErrorResponse as toApiErrorResponse,
 	toPositiveInt,
 } from '../../utils/api-helpers';
+
+const requireManage = (locals: App.Locals) => {
+	requireCapability(
+		locals,
+		CAPABILITIES.SPECIALTIES_MANAGE,
+		(message, status) => new SpecialtiesApiError(message, status),
+		'No tienes permisos para gestionar especialidades.'
+	);
+};
 
 const createSpecialtiesError = (message: string, status = 400) =>
 	new SpecialtiesApiError(message, status);
@@ -80,6 +91,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 		if (!token) {
 			throw new SpecialtiesApiError('No hay sesion valida para crear especialidades.', 401);
 		}
+		requireManage(locals);
 
 		const body = await parseBody(request);
 		const name = String(body?.name || '').trim();

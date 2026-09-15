@@ -1,6 +1,8 @@
 import type { APIRoute } from 'astro';
 
-import { ROLES } from '../../../config/roles';
+import { CAPABILITIES } from '../../../config/capabilities';
+import { hasCapability } from '../../../lib/permissions';
+
 import { isReservedOrgSlug } from '../../../lib/reserved-org-slugs';
 import {
 	checkProfileSlugAvailableWithOrds,
@@ -13,7 +15,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
 		if (!token) {
 			throw new WorkspaceSettingsApiError('No hay sesión válida.', 401);
 		}
-		if (Number(locals.roleId || 0) !== ROLES.ADMIN) {
+		if (!hasCapability(locals, CAPABILITIES.WORKSPACE_MANAGE)) {
 			throw new WorkspaceSettingsApiError(
 				'Solo administradores pueden validar el enlace del negocio.',
 				403

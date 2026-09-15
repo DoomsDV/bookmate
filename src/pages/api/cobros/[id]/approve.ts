@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 
-import { ROLES } from '../../../../config/roles';
+import { CAPABILITIES } from '../../../../config/capabilities';
+import { requireCapability } from '../../../../lib/permissions';
 import { approveCobroWithOrds, CobrosApiError } from '../../../../lib/cobros';
 
 const requireToken = (token: string | undefined) => {
@@ -8,17 +9,19 @@ const requireToken = (token: string | undefined) => {
 	return token;
 };
 
-const requireStaff = (roleId: number | undefined) => {
-	const role = Number(roleId || 0);
-	if (role !== ROLES.ADMIN && role !== ROLES.RECEPCIONISTA) {
-		throw new CobrosApiError('No autorizado.', 403);
-	}
+const requireStaff = (locals: App.Locals) => {
+	requireCapability(
+		locals,
+		CAPABILITIES.COBROS_MANAGE,
+		(message, status) => new CobrosApiError(message, status),
+		'No autorizado.'
+	);
 };
 
 export const POST: APIRoute = async ({ locals, params }) => {
 	try {
 		const token = requireToken(locals.token);
-		requireStaff(locals.roleId);
+		requireStaff(locals);
 		const id = Number(params.id || 0);
 		if (!Number.isInteger(id) || id <= 0) {
 			throw new CobrosApiError('ID de cobro invalido.', 400);

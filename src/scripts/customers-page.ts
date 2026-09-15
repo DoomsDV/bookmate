@@ -802,6 +802,9 @@ class CustomerManager extends HTMLElement {
 	}
 
 	private canFilterByProfessional() {
+		if (window.HaselPermissions?.has) {
+			return window.HaselPermissions.has('customers.create');
+		}
 		return this.roleId === ROLES.ADMIN || this.roleId === ROLES.RECEPCIONISTA;
 	}
 

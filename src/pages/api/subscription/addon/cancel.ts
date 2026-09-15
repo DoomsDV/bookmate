@@ -1,6 +1,8 @@
 import type { APIRoute } from 'astro';
 
-import { ROLES } from '../../../../config/roles';
+import { CAPABILITIES } from '../../../../config/capabilities';
+import { hasCapability } from '../../../../lib/permissions';
+
 import { cancelStorageAddonWithOrds, SubscriptionApiError } from '../../../../lib/subscription';
 
 const requireToken = (token: string | undefined) => {
@@ -10,8 +12,8 @@ const requireToken = (token: string | undefined) => {
 	return token;
 };
 
-const requireAdminRole = (roleId: number | undefined) => {
-	if (Number(roleId || 0) !== ROLES.ADMIN) {
+const requireAdminRole = (locals: App.Locals) => {
+	if (!hasCapability(locals, CAPABILITIES.PLAN_MANAGE)) {
 		throw new SubscriptionApiError('Solo el administrador puede cancelar almacenamiento.', 403);
 	}
 };
@@ -33,7 +35,7 @@ const toErrorResponse = (error: unknown, fallbackMessage: string) => {
 export const POST: APIRoute = async ({ request, locals }) => {
 	try {
 		const token = requireToken(locals.token);
-		requireAdminRole(locals.roleId);
+		requireAdminRole(locals);
 		const body = await request.json().catch(() => ({}));
 		const addonCode = String((body as { addon_code?: string })?.addon_code ?? '')
 			.trim()

@@ -15,6 +15,7 @@ declare namespace App {
         userId?: number;
         organizationName?: string;
         organizationLogoUrl?: string;
+        capabilities?: string[];
     }
 }
 
@@ -44,6 +45,10 @@ interface Window {
     };
     BookmateFlash?: {
         show: (detail: BookmateFlashDetail) => void;
+    };
+    HaselPermissions?: {
+        codes: string[];
+        has: (code: string) => boolean;
     };
     HaselSubscription?: {
         features: string[];
@@ -87,6 +92,9 @@ interface ImportMetaEnv {
     readonly ORDS_PROFILE_ME_URL?: string;
     readonly ORDS_PROFILE_PUBLIC_SLUG_SUGGEST_URL?: string;
     readonly ORDS_WORKSPACE_URL?: string;
+    readonly ORDS_PERMISSIONS_ME_URL?: string;
+    readonly ORDS_PERMISSIONS_MATRIX_URL?: string;
+    readonly ORDS_PERMISSIONS_RESET_URL?: string;
     readonly ORDS_DEPARTMENTS_URL?: string;
     readonly ORDS_ROLES_URL?: string;
     readonly ORDS_SPECIALTIES_URL?: string;

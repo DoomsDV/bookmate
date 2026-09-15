@@ -1,0 +1,258 @@
+---
+---
+
+<permissions-matrix class="permissions-matrix grid gap-4">
+	<section class="settings-card grid gap-4">
+		<div class="grid gap-1">
+			<h3 class="settings-card__title">Permisos por rol</h3>
+			<p class="text-[0.88rem] leading-6 text-(--on-surface-variant)">
+				Las 3 roles base no se pueden borrar. Los cambios aplican a toda la organización y
+				se reflejan en el menú y las APIs después de recargar.
+			</p>
+		</div>
+
+		<div data-permissions-feedback class="hidden rounded-xl px-4 py-3 text-[0.88rem] font-semibold"></div>
+
+		<div data-permissions-loading class="text-[0.88rem] font-semibold text-(--on-surface-variant)">
+			Cargando matriz…
+		</div>
+
+		<div data-permissions-grid class="hidden overflow-x-auto"></div>
+
+		<div class="flex flex-wrap items-center gap-3">
+			<button
+				type="button"
+				data-permissions-save
+				class="inline-flex items-center justify-center rounded-full bg-(--primary) px-4 py-2.5 text-[0.88rem] font-bold text-(--on-primary) disabled:opacity-50"
+				disabled
+			>
+				Guardar permisos
+			</button>
+			<button
+				type="button"
+				data-permissions-reset
+				class="inline-flex items-center justify-center rounded-full border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.88rem] font-bold text-(--on-surface) disabled:opacity-50"
+				disabled
+			>
+				Restaurar defaults
+			</button>
+		</div>
+	</section>
+</permissions-matrix>
+
+<script>
+	import type { PermissionCatalogItem, PermissionMatrix } from '../lib/permissions';
+
+	class PermissionsMatrix extends HTMLElement {
+		private matrix: PermissionMatrix | null = null;
+		private dirty = new Map<string, boolean>();
+
+		connectedCallback() {
+			this.querySelector('[data-permissions-save]')?.addEventListener('click', () => {
+				void this.save();
+			});
+			this.querySelector('[data-permissions-reset]')?.addEventListener('click', () => {
+				void this.reset();
+			});
+			void this.load();
+		}
+
+		private setBusy(busy: boolean) {
+			this.querySelectorAll<HTMLButtonElement>('[data-permissions-save], [data-permissions-reset]').forEach(
+				(btn) => {
+					btn.disabled = busy;
+				}
+			);
+		}
+
+		private showFeedback(message: string, type: 'success' | 'error') {
+			const el = this.querySelector<HTMLElement>('[data-permissions-feedback]');
+			if (!el) return;
+			el.textContent = message;
+			el.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-800', 'bg-rose-50', 'text-rose-800');
+			el.classList.add(type === 'success' ? 'bg-emerald-50' : 'bg-rose-50');
+			el.classList.add(type === 'success' ? 'text-emerald-800' : 'text-rose-800');
+		}
+
+		private grantKey(roleId: number, code: string) {
+			return `${roleId}:${code}`;
+		}
+
+		private isGranted(roleId: number, code: string) {
+			const dirty = this.dirty.get(this.grantKey(roleId, code));
+			if (typeof dirty === 'boolean') return dirty;
+			return this.matrix?.grants[String(roleId)]?.[code]?.granted === true;
+		}
+
+		private async load() {
+			const loading = this.querySelector<HTMLElement>('[data-permissions-loading]');
+			const grid = this.querySelector<HTMLElement>('[data-permissions-grid]');
+			try {
+				const response = await fetch('/api/permissions/matrix', { headers: { Accept: 'application/json' } });
+				const body = await response.json();
+				if (!response.ok || body.status === 'error') {
+					throw new Error(body.message || 'No fue posible cargar la matriz.');
+				}
+				this.matrix = body.data as PermissionMatrix;
+				this.dirty.clear();
+				this.render();
+				if (loading) loading.classList.add('hidden');
+				if (grid) grid.classList.remove('hidden');
+				this.setBusy(false);
+			} catch (error) {
+				if (loading) {
+					loading.textContent =
+						error instanceof Error ? error.message : 'No fue posible cargar la matriz.';
+				}
+			}
+		}
+
+		private groupedCatalog() {
+			const groups = new Map<string, PermissionCatalogItem[]>();
+			for (const item of this.matrix?.catalog || []) {
+				const list = groups.get(item.group_code) || [];
+				list.push(item);
+				groups.set(item.group_code, list);
+			}
+			return [...groups.entries()];
+		}
+
+		private render() {
+			const grid = this.querySelector<HTMLElement>('[data-permissions-grid]');
+			if (!grid || !this.matrix) return;
+			const roles = this.matrix.roles;
+			const rows = this.groupedCatalog()
+				.map(([groupCode, items]) => {
+					const groupLabel = items[0]?.group_label || groupCode;
+					const body = items
+						.map((item) => {
+							const cells = roles
+								.map((role) => {
+									const grant = this.matrix?.grants[String(role.role_id)]?.[item.code];
+									const locked = grant?.locked === true;
+									const checked = this.isGranted(role.role_id, item.code);
+									const entitlementNote =
+										item.requires_entitlement && item.entitlement_active === false
+											? '<div class="text-[0.68rem] font-semibold text-amber-700">Requiere complemento</div>'
+											: '';
+									return `<td class="px-3 py-2 text-center align-top">
+										<label class="inline-flex flex-col items-center gap-1">
+											<input type="checkbox" ${checked ? 'checked' : ''} ${locked ? 'disabled' : ''}
+												data-role-id="${role.role_id}" data-code="${item.code}" />
+											${entitlementNote}
+										</label>
+									</td>`;
+								})
+								.join('');
+							const kind =
+								item.kind === 'MENU' ? 'Menú' : item.kind === 'ADDON' ? 'Complemento' : 'Acción';
+							return `<tr class="border-t border-(--shell-border)">
+								<td class="px-3 py-2 align-top">
+									<div class="font-bold text-(--on-surface)">${item.label}</div>
+									<div class="text-[0.75rem] text-(--on-surface-variant)">${item.code} · ${kind}</div>
+									<div class="text-[0.78rem] text-(--on-surface-variant)">${item.description || ''}</div>
+								</td>
+								${cells}
+							</tr>`;
+						})
+						.join('');
+					return `<tbody>
+						<tr class="bg-(--surface)/60">
+							<th colspan="${roles.length + 1}" class="px-3 py-2 text-left text-[0.78rem] font-bold uppercase tracking-wide text-(--on-surface-variant)">${groupLabel}</th>
+						</tr>
+						${body}
+					</tbody>`;
+				})
+				.join('');
+
+			const headers = roles
+				.map((role) => `<th class="px-3 py-2 text-center text-[0.82rem] font-bold">${role.name}</th>`)
+				.join('');
+
+			grid.innerHTML = `<table class="min-w-[720px] w-full border-collapse text-left text-[0.88rem]">
+				<thead>
+					<tr>
+						<th class="px-3 py-2">Acceso</th>
+						${headers}
+					</tr>
+				</thead>
+				${rows}
+			</table>`;
+
+			grid.querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-code]').forEach((input) => {
+				input.addEventListener('change', () => {
+					const roleId = Number(input.dataset.roleId || 0);
+					const code = String(input.dataset.code || '');
+					this.dirty.set(this.grantKey(roleId, code), input.checked);
+				});
+			});
+		}
+
+		private collectGrants() {
+			if (!this.matrix) return [];
+			const grants: { role_id: number; code: string; granted: boolean }[] = [];
+			for (const role of this.matrix.roles) {
+				for (const item of this.matrix.catalog) {
+					grants.push({
+						role_id: role.role_id,
+						code: item.code,
+						granted: this.isGranted(role.role_id, item.code),
+					});
+				}
+			}
+			return grants;
+		}
+
+		private async save() {
+			this.setBusy(true);
+			try {
+				const response = await fetch('/api/permissions/matrix', {
+					method: 'PUT',
+					headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+					body: JSON.stringify({ grants: this.collectGrants() }),
+				});
+				const body = await response.json();
+				if (!response.ok || body.status === 'error') {
+					throw new Error(body.message || 'No fue posible guardar.');
+				}
+				this.showFeedback('Permisos guardados. Recargá para aplicar menú y APIs.', 'success');
+				await this.load();
+			} catch (error) {
+				this.showFeedback(error instanceof Error ? error.message : 'No fue posible guardar.', 'error');
+				this.setBusy(false);
+			}
+		}
+
+		private async reset() {
+			const confirmed = window.BookmateAlert
+				? await window.BookmateAlert.confirm({
+						title: 'Restaurar defaults',
+						message: 'Se vuelven los accesos a la matriz original de Hasel para esta organización.',
+						confirmText: 'Restaurar',
+						cancelText: 'Cancelar',
+					})
+				: window.confirm('¿Restaurar los permisos por defecto?');
+			if (!confirmed) return;
+			this.setBusy(true);
+			try {
+				const response = await fetch('/api/permissions/matrix', {
+					method: 'POST',
+					headers: { Accept: 'application/json' },
+				});
+				const body = await response.json();
+				if (!response.ok || body.status === 'error') {
+					throw new Error(body.message || 'No fue posible restaurar.');
+				}
+				this.showFeedback('Defaults restaurados. Recargá para aplicar menú y APIs.', 'success');
+				await this.load();
+			} catch (error) {
+				this.showFeedback(error instanceof Error ? error.message : 'No fue posible restaurar.', 'error');
+				this.setBusy(false);
+			}
+		}
+	}
+
+	if (!customElements.get('permissions-matrix')) {
+		customElements.define('permissions-matrix', PermissionsMatrix);
+	}
+</script>

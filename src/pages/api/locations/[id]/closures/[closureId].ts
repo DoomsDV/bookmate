@@ -1,9 +1,11 @@
 import type { APIRoute } from 'astro';
 
+import { CAPABILITIES } from '../../../../../config/capabilities';
 import {
 	LocationClosuresApiError,
 	deleteLocationClosure,
 } from '../../../../../lib/location-closures';
+import { requireCapability } from '../../../../../lib/permissions';
 
 const parseId = (value: string | undefined) => {
 	const parsed = Number(value);
@@ -28,6 +30,12 @@ const toErrorResponse = (error: unknown, fallback: string) => {
 
 export const DELETE: APIRoute = async ({ params, url, locals }) => {
 	try {
+		requireCapability(
+			locals,
+			CAPABILITIES.LOCATIONS_MANAGE,
+			(message, status) => new LocationClosuresApiError(message, status),
+			'No tienes permisos para eliminar cierres de sucursal.'
+		);
 		const token = requireToken(locals.token);
 		const locationId = parseId(params.id);
 		const closureId = parseId(params.closureId);

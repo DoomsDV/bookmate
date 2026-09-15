@@ -1,5 +1,7 @@
 import type { APIRoute } from 'astro';
 
+import { CAPABILITIES } from '../../../../config/capabilities';
+import { requireCapability } from '../../../../lib/permissions';
 import {
 	ProfessionalsApiError,
 	suggestProfessionalSlugWithOrds,
@@ -29,6 +31,12 @@ const toErrorResponse = (error: unknown, fallbackMessage: string) =>
 export const GET: APIRoute = async ({ request, locals }) => {
 	try {
 		const token = requireToken(locals.token);
+		requireCapability(
+			locals,
+			CAPABILITIES.PROFESSIONALS_MANAGE,
+			(message, status) => new ProfessionalsApiError(message, status),
+			'No tienes permisos para gestionar personal.'
+		);
 		const url = new URL(request.url);
 		const fullName = String(url.searchParams.get('name') || '').trim();
 

@@ -38,6 +38,7 @@ const currentOrgMemberId = Number(Astro.locals.userId ?? 0);
 
 const activePath = normalizePath(currentPath);
 const currentRoleId = Number(Astro.locals.roleId ?? 0);
+const currentCapabilities = Astro.locals.capabilities;
 
 const isItemActive = (item: NavItem) => {
 	if (typeof item.active === "boolean") return item.active;
@@ -88,10 +89,10 @@ const teamItems: NavItem[] = [
 ];
 
 const visiblePrimaryItems = primaryItems.filter((item) =>
-	canAccessPath(item.href, currentRoleId),
+	canAccessPath(item.href, currentRoleId, currentCapabilities),
 );
 const visibleTeamItems = teamItems.filter((item) =>
-	canAccessPath(item.href, currentRoleId),
+	canAccessPath(item.href, currentRoleId, currentCapabilities),
 );
 /** Ya visibles en MobileBottomNav: no repetir en el sheet «Más». */
 const mobileSheetExcludedPaths = new Set([
