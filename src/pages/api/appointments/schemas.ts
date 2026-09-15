@@ -167,6 +167,42 @@ const appointmentBulkSchema = z.object({
 	appointments: z.array(appointmentBulkRowSchema).min(1, 'No hay citas para guardar.').max(60),
 });
 
+const seriesRecurrenceSchema = z
+	.object({
+		frequency: z.literal('WEEKLY'),
+		count: z.coerce.number().int().min(2).max(52).optional(),
+		until: z
+			.string()
+			.trim()
+			.regex(/^\d{4}-\d{2}-\d{2}$/, 'until debe ser YYYY-MM-DD.')
+			.optional(),
+	})
+	.refine((value) => value.count !== undefined || Boolean(value.until), {
+		message: 'Indica count o until para la serie semanal.',
+	});
+
+const appointmentSeriesSchema = appointmentCreateSchema.and(
+	z.object({
+		recurrence: seriesRecurrenceSchema,
+		skip_conflicts: z.boolean().optional(),
+	})
+);
+
+export const parseCreateAppointmentSeriesPayload = (source: unknown) => {
+	const parsed = appointmentSeriesSchema.safeParse(source);
+	if (!parsed.success) {
+		throw toValidationError(parsed.error);
+	}
+	const { recurrence, skip_conflicts, ...appointment } = parsed.data;
+	return {
+		...appointment,
+		customer_name: appointment.customer_name || '',
+		customer_phone: appointment.customer_phone || '',
+		recurrence,
+		...(skip_conflicts !== undefined ? { skip_conflicts } : {}),
+	};
+};
+
 export const parseBulkAppointmentsPayload = (source: unknown): AppointmentCreatePayload[] => {
 	const parsed = appointmentBulkSchema.safeParse(source);
 	if (!parsed.success) {

@@ -21,6 +21,16 @@ import {
 	type SessionNotes,
 } from '../../lib/session-notes';
 import {
+	addWeeks,
+	buildWeeklyOccurrences,
+	formatSeriesConflictDate,
+	formatSeriesDateShort,
+	formatSeriesPreview,
+	SERIES_MAX_COUNT,
+	SERIES_MIN_COUNT,
+	toDateInputValue,
+} from '../../lib/appointment-series';
+import {
 	getScheduleMisalignedConfirmMessage,
 	getScheduleMisalignedConfirmTitle,
 	SCHEDULE_MISALIGNED_CONFIRM_ACTION,
@@ -50,6 +60,8 @@ import type {
 	AppointmentAttachment,
 	AppointmentDetail,
 	AppointmentFormPayload,
+	AppointmentSeriesConflict,
+	AppointmentSeriesCreatePayload,
 	CustomerOption,
 	Option,
 	ProfessionalOption,
@@ -247,6 +259,15 @@ class AppointmentModal extends HTMLElement {
 	clearCustomerButton: HTMLButtonElement | null = null;
 	startInput: HTMLInputElement | null = null;
 	endInput: HTMLInputElement | null = null;
+	recurrenceWrap: HTMLElement | null = null;
+	recurrenceEnabledInput: HTMLInputElement | null = null;
+	recurrenceFields: HTMLElement | null = null;
+	recurrenceCountInput: HTMLInputElement | null = null;
+	recurrenceUntilInput: HTMLInputElement | null = null;
+	recurrencePreview: HTMLElement | null = null;
+	recurrenceDates: HTMLElement | null = null;
+	seriesNote: HTMLElement | null = null;
+	seriesNoteText: HTMLElement | null = null;
 	statusInput: HTMLSelectElement | null = null;
 	paymentStatusInput: HTMLInputElement | null = null;
 	modalStatusWrap: HTMLElement | null = null;
@@ -351,6 +372,19 @@ class AppointmentModal extends HTMLElement {
 			this.form?.querySelector<HTMLButtonElement>('[data-clear-customer]') ?? null;
 		this.startInput = this.form?.querySelector<HTMLInputElement>('[name="start_time"]') ?? null;
 		this.endInput = this.form?.querySelector<HTMLInputElement>('[name="end_time"]') ?? null;
+		this.recurrenceWrap = this.form?.querySelector<HTMLElement>('[data-appointment-recurrence]') ?? null;
+		this.recurrenceEnabledInput =
+			this.form?.querySelector<HTMLInputElement>('[data-recurrence-enabled]') ?? null;
+		this.recurrenceFields = this.form?.querySelector<HTMLElement>('[data-recurrence-fields]') ?? null;
+		this.recurrenceCountInput =
+			this.form?.querySelector<HTMLInputElement>('[data-recurrence-count]') ?? null;
+		this.recurrenceUntilInput =
+			this.form?.querySelector<HTMLInputElement>('[data-recurrence-until]') ?? null;
+		this.recurrencePreview = this.form?.querySelector<HTMLElement>('[data-recurrence-preview]') ?? null;
+		this.recurrenceDates = this.form?.querySelector<HTMLElement>('[data-recurrence-dates]') ?? null;
+		this.seriesNote = this.form?.querySelector<HTMLElement>('[data-appointment-series-note]') ?? null;
+		this.seriesNoteText =
+			this.form?.querySelector<HTMLElement>('[data-appointment-series-note-text]') ?? null;
 		this.statusInput = this.form?.querySelector<HTMLSelectElement>('[data-modal-status]') ?? null;
 		this.paymentStatusInput =
 			this.form?.querySelector<HTMLInputElement>('[data-modal-payment-status]') ?? null;
@@ -546,6 +580,12 @@ class AppointmentModal extends HTMLElement {
 		requiredNodes.modalProfessional.addEventListener('change', this.handleProfessionalChange, { signal });
 		requiredNodes.startInput.addEventListener('change', this.handleStartTimeChange, { signal });
 		requiredNodes.endInput.addEventListener('change', this.handleEndTimeChange, { signal });
+		this.recurrenceEnabledInput?.addEventListener('change', this.handleRecurrenceChange, { signal });
+		this.recurrenceCountInput?.addEventListener('input', this.handleRecurrenceChange, { signal });
+		this.recurrenceUntilInput?.addEventListener('change', this.handleRecurrenceChange, { signal });
+		for (const mode of this.form?.querySelectorAll<HTMLInputElement>('[data-recurrence-mode]') ?? []) {
+			mode.addEventListener('change', this.handleRecurrenceChange, { signal });
+		}
 		bindDatetimeFace(requiredNodes.startInput, signal);
 		bindDatetimeFace(requiredNodes.endInput, signal);
 
@@ -1038,6 +1078,8 @@ class AppointmentModal extends HTMLElement {
 		this.hideScheduleMisalignedBlock();
 		this.hideHistorySection();
 		this.clearImmutableReadOnlyMode();
+		this.resetRecurrenceForm();
+		this.hideSeriesNote();
 	}
 
 	hideAttendanceBlock() {
@@ -1182,7 +1224,9 @@ class AppointmentModal extends HTMLElement {
 	private syncSubmitLabel() {
 		if (!this.submitLabel || this.isSubmitting) return;
 		if (this.mode === 'create') {
-			this.submitLabel.textContent = 'Crear reserva';
+			const count = this.getRecurrenceOccurrences()?.length ?? 0;
+			this.submitLabel.textContent =
+				this.isRecurrenceEnabled() && count > 1 ? `Crear ${count} citas` : 'Crear reserva';
 			return;
 		}
 		if (this.isImmutableReadOnly) return;
@@ -2247,6 +2291,8 @@ class AppointmentModal extends HTMLElement {
 			this.modalDescription.textContent = 'Actualiza los datos de la reserva seleccionada.';
 		}
 		if (this.submitIcon) this.submitIcon.textContent = 'save';
+		this.setRecurrenceVisible(false);
+		this.resetRecurrenceForm();
 		this.activeTab = 'details';
 		this.syncSubmitLabel();
 		this.syncDeleteButtonVisibility();
@@ -2255,6 +2301,9 @@ class AppointmentModal extends HTMLElement {
 		this.modalStatusWrap?.classList.remove('hidden');
 		this.hideAttendanceBlock();
 		this.hideScheduleMisalignedBlock();
+		this.resetRecurrenceForm();
+		this.setRecurrenceVisible(true);
+		this.hideSeriesNote();
 	}
 
 	fillFormByAppointment(appointment: AppointmentDetail) {
@@ -2311,6 +2360,7 @@ class AppointmentModal extends HTMLElement {
 		void this.loadCustomersForCurrentProfessional(true);
 		this.showAttendanceBlock(appointment);
 		this.showScheduleMisalignedBlock(appointment);
+		this.showSeriesNote(appointment);
 
 		const status = String(appointment.status || '').trim().toUpperCase();
 		if (status === 'CANCELADO' || status === 'COMPLETADO') {
@@ -2619,7 +2669,137 @@ class AppointmentModal extends HTMLElement {
 	handleStartTimeChange = () => {
 		this.syncDateBounds();
 		this.setFieldError('start_time', '');
+		this.syncRecurrencePreview();
 	};
+
+	handleRecurrenceChange = () => {
+		this.syncRecurrenceFields();
+		this.syncRecurrencePreview();
+		this.syncSubmitLabel();
+	};
+
+	private isRecurrenceEnabled() {
+		return this.mode === 'create' && Boolean(this.recurrenceEnabledInput?.checked);
+	}
+
+	private getRecurrenceMode(): 'count' | 'until' {
+		const selected = this.form?.querySelector<HTMLInputElement>(
+			'[data-recurrence-mode]:checked'
+		);
+		return selected?.value === 'until' ? 'until' : 'count';
+	}
+
+	private resetRecurrenceForm() {
+		if (this.recurrenceEnabledInput) this.recurrenceEnabledInput.checked = false;
+		if (this.recurrenceCountInput) this.recurrenceCountInput.value = '4';
+		if (this.recurrenceUntilInput) this.recurrenceUntilInput.value = '';
+		const countMode = this.form?.querySelector<HTMLInputElement>(
+			'[data-recurrence-mode][value="count"]'
+		);
+		if (countMode) countMode.checked = true;
+		this.syncRecurrenceFields();
+		this.syncRecurrencePreview();
+	}
+
+	private setRecurrenceVisible(visible: boolean) {
+		if (!this.recurrenceWrap) return;
+		this.recurrenceWrap.classList.toggle('is-edit-hidden', !visible);
+		this.recurrenceWrap.toggleAttribute('hidden', !visible);
+	}
+
+	private hideSeriesNote() {
+		this.seriesNote?.classList.add('hidden');
+		this.seriesNote?.setAttribute('hidden', '');
+	}
+
+	private showSeriesNote(appointment: AppointmentDetail) {
+		const seriesId = Number(appointment.series_id || 0);
+		if (!this.seriesNote || !Number.isInteger(seriesId) || seriesId <= 0) {
+			this.hideSeriesNote();
+			return;
+		}
+		if (this.seriesNoteText) {
+			this.seriesNoteText.textContent = 'Esta cita forma parte de una serie semanal.';
+		}
+		this.seriesNote.classList.remove('hidden');
+		this.seriesNote.removeAttribute('hidden');
+	}
+
+	private syncRecurrenceFields() {
+		const enabled = this.isRecurrenceEnabled();
+		this.recurrenceFields?.classList.toggle('hidden', !enabled);
+		this.recurrenceFields?.toggleAttribute('hidden', !enabled);
+		const mode = this.getRecurrenceMode();
+		if (this.recurrenceCountInput) this.recurrenceCountInput.disabled = !enabled || mode !== 'count';
+		if (this.recurrenceUntilInput) this.recurrenceUntilInput.disabled = !enabled || mode !== 'until';
+	}
+
+	private getRecurrenceOccurrences() {
+		if (!this.isRecurrenceEnabled() || !this.startInput) return null;
+		const startDate = parseLocalDateTime(normalizeDateTimeInput(this.startInput.value).trim());
+		if (!startDate) return [];
+		const mode = this.getRecurrenceMode();
+		if (mode === 'until') {
+			const until = String(this.recurrenceUntilInput?.value || '').trim();
+			if (!until) return [];
+			return buildWeeklyOccurrences(startDate, { until });
+		}
+		const count = Number(this.recurrenceCountInput?.value || 0);
+		if (!Number.isInteger(count) || count < SERIES_MIN_COUNT || count > SERIES_MAX_COUNT) {
+			return [];
+		}
+		return buildWeeklyOccurrences(startDate, { count });
+	}
+
+	private syncRecurrencePreview() {
+		if (!this.recurrencePreview || !this.recurrenceDates) return;
+		if (!this.isRecurrenceEnabled()) {
+			this.recurrencePreview.textContent = '';
+			this.recurrenceDates.textContent = '';
+			return;
+		}
+		const startDate = parseLocalDateTime(
+			normalizeDateTimeInput(this.startInput?.value || '').trim()
+		);
+		if (!startDate) {
+			this.recurrencePreview.textContent = 'Elegí primero la fecha y hora de inicio.';
+			this.recurrenceDates.textContent = '';
+			return;
+		}
+		const occurrences = this.getRecurrenceOccurrences() ?? [];
+		this.recurrencePreview.textContent = formatSeriesPreview(startDate, occurrences);
+		if (occurrences.length > 1) {
+			const shown = occurrences.slice(0, 6).map((date) => formatSeriesDateShort(date));
+			const extra = occurrences.length > 6 ? ` +${occurrences.length - 6} más` : '';
+			this.recurrenceDates.textContent = shown.join(' · ') + extra;
+		} else {
+			this.recurrenceDates.textContent = '';
+		}
+		if (this.recurrenceUntilInput && !this.recurrenceUntilInput.value && occurrences.length === 0) {
+			const hint = addWeeks(startDate, 3);
+			this.recurrenceUntilInput.min = toDateInputValue(startDate);
+			if (this.getRecurrenceMode() === 'until') {
+				this.recurrenceUntilInput.value = toDateInputValue(hint);
+			}
+		} else if (this.recurrenceUntilInput && startDate) {
+			this.recurrenceUntilInput.min = toDateInputValue(startDate);
+		}
+	}
+
+	private buildSeriesRecurrence() {
+		const occurrences = this.getRecurrenceOccurrences();
+		if (!occurrences || occurrences.length < SERIES_MIN_COUNT) return null;
+		if (this.getRecurrenceMode() === 'until') {
+			return {
+				frequency: 'WEEKLY' as const,
+				until: String(this.recurrenceUntilInput?.value || '').trim(),
+			};
+		}
+		return {
+			frequency: 'WEEKLY' as const,
+			count: occurrences.length,
+		};
+	}
 
 	handleEndTimeChange = () => {
 		this.syncDateBounds();
@@ -2772,10 +2952,14 @@ class AppointmentModal extends HTMLElement {
 	> {
 		const isEdit = this.mode === 'edit';
 		const title = isEdit ? 'Guardar cambios' : 'Crear reserva';
+		const seriesCount = !isEdit ? this.getRecurrenceOccurrences()?.length ?? 0 : 0;
+		const isSeries = !isEdit && this.isRecurrenceEnabled() && seriesCount > 1;
 		const lead = isEdit
 			? '¿Confirmás guardar los cambios de esta reserva?'
-			: '¿Confirmás crear esta reserva?';
-		const confirmText = isEdit ? 'Guardar' : 'Crear reserva';
+			: isSeries
+				? `¿Confirmás crear ${seriesCount} citas semanales?`
+				: '¿Confirmás crear esta reserva?';
+		const confirmText = isEdit ? 'Guardar' : isSeries ? `Crear ${seriesCount} citas` : 'Crear reserva';
 		const messageHtml = `
 			<p class="app-alert-notify-lead">${lead}</p>
 			<label class="app-alert-notify-row">
@@ -2841,41 +3025,119 @@ class AppointmentModal extends HTMLElement {
 		return window.confirm(`${title}\n\n${message}`);
 	}
 
+	private buildCreateBody(body: AppointmentFormPayload) {
+		return {
+			id_customer: body.id_customer,
+			loc_id_location: body.loc_id_location,
+			pro_id_professional: body.pro_id_professional,
+			ser_id_service: body.ser_id_service,
+			customer_name: body.customer_name,
+			customer_phone: body.customer_phone,
+			start_time: body.start_time,
+			end_time: body.end_time,
+			payment_status: (body as { payment_status?: string }).payment_status as
+				| 'NONE'
+				| 'PENDING'
+				| 'PAID'
+				| 'PAID_TRANSFER'
+				| 'PAID_CASH'
+				| 'EXEMPT'
+				| undefined,
+			acknowledge_schedule_misalignment: body.acknowledge_schedule_misalignment,
+			notify_customer: body.notify_customer,
+		};
+	}
+
 	private async persistAppointment(payload: AppointmentFormPayload) {
-		const run = async (body: AppointmentFormPayload) => {
+		const recurrence = this.mode === 'create' ? this.buildSeriesRecurrence() : null;
+		if (this.mode === 'create' && this.isRecurrenceEnabled() && !recurrence) {
+			this.showFormError('La serie semanal requiere al menos 2 citas. Revisá el recuento o la fecha de fin.');
+			return null;
+		}
+
+		const run = async (body: AppointmentFormPayload, skipConflicts = false) => {
 			if (this.mode === 'edit' && this.editingAppointmentId > 0) {
 				return this.client!.updateAppointment(this.editingAppointmentId, body);
 			}
-			return this.client!.createAppointment({
-				id_customer: body.id_customer,
-				loc_id_location: body.loc_id_location,
-				pro_id_professional: body.pro_id_professional,
-				ser_id_service: body.ser_id_service,
-				customer_name: body.customer_name,
-				customer_phone: body.customer_phone,
-				start_time: body.start_time,
-				end_time: body.end_time,
-				payment_status: (body as { payment_status?: string }).payment_status as
-					| 'NONE'
-					| 'PENDING'
-					| 'PAID'
-					| 'PAID_TRANSFER'
-					| 'PAID_CASH'
-					| 'EXEMPT'
-					| undefined,
-				acknowledge_schedule_misalignment: body.acknowledge_schedule_misalignment,
-				notify_customer: body.notify_customer,
-			});
+			const createBody = this.buildCreateBody(body);
+			if (recurrence) {
+				const seriesPayload: AppointmentSeriesCreatePayload = {
+					...createBody,
+					recurrence,
+					...(skipConflicts ? { skip_conflicts: true } : {}),
+				};
+				return this.client!.createAppointmentSeries(seriesPayload);
+			}
+			return this.client!.createAppointment(createBody);
 		};
 
 		try {
 			return await run(payload);
 		} catch (error) {
+			if (this.isSeriesOverlapConflict(error)) {
+				const skip = await this.confirmSeriesConflicts(error);
+				if (!skip) return null;
+				return run(payload, true);
+			}
 			if (!isScheduleMisalignedConflictError(error)) throw error;
 			const confirmed = await this.confirmScheduleMisalignment(error);
 			if (!confirmed) return null;
-			return run({ ...payload, acknowledge_schedule_misalignment: true });
+			try {
+				return await run({ ...payload, acknowledge_schedule_misalignment: true });
+			} catch (retryError) {
+				if (!this.isSeriesOverlapConflict(retryError)) throw retryError;
+				const skip = await this.confirmSeriesConflicts(retryError);
+				if (!skip) return null;
+				return run({ ...payload, acknowledge_schedule_misalignment: true }, true);
+			}
 		}
+	}
+
+	private isSeriesOverlapConflict(error: unknown) {
+		if (!(error instanceof ApiClientError)) return false;
+		if (error.code === 'SERIES_CONFLICT') return true;
+		return error.conflicts.some((item) => item.reason === 'OVERLAP');
+	}
+
+	private async confirmSeriesConflicts(error: unknown): Promise<boolean> {
+		const conflicts =
+			error instanceof ApiClientError
+				? error.conflicts
+				: ([] as AppointmentSeriesConflict[]);
+		const lines = conflicts
+			.slice(0, 8)
+			.map((item) => `• ${formatSeriesConflictDate(item.start_time)}`)
+			.join('\n');
+		const extra = conflicts.length > 8 ? `\n• +${conflicts.length - 8} más` : '';
+		const freeCount = Math.max(0, (this.getRecurrenceOccurrences()?.length ?? 0) - conflicts.length);
+		const title = 'Conflictos de agenda en la serie';
+		const message =
+			(error instanceof ApiClientError ? error.message : 'Hay fechas ocupadas en la serie.') +
+			(lines ? `\n\n${lines}${extra}` : '') +
+			(freeCount > 0
+				? `\n\nPodés crear solo las ${freeCount} fecha(s) libres.`
+				: '\n\nNo quedan fechas libres para crear.');
+
+		if (freeCount <= 0) {
+			if (window.BookmateAlert?.alert) {
+				await window.BookmateAlert.alert({ type: 'warning', title, message });
+			} else {
+				window.alert(`${title}\n\n${message}`);
+			}
+			return false;
+		}
+
+		if (window.BookmateAlert?.confirm) {
+			return window.BookmateAlert.confirm({
+				type: 'warning',
+				title,
+				message,
+				confirmText: `Crear ${freeCount} fecha(s) libres`,
+				cancelText: 'Volver',
+			});
+		}
+
+		return window.confirm(`${title}\n\n${message}\n\n¿Crear solo las fechas libres?`);
 	}
 
 	handleDelete = async () => {

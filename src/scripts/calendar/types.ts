@@ -74,6 +74,7 @@ export type AppointmentDetail = {
 	receipt_uploaded?: boolean;
 	receipt_pending_review?: boolean;
 	ocr_status?: string | null;
+	series_id?: number | null;
 };
 
 export type AppointmentFormPayload = {
@@ -89,6 +90,30 @@ export type AppointmentFormPayload = {
 	session_notes?: SessionNotes | string;
 	acknowledge_schedule_misalignment?: boolean;
 	notify_customer?: boolean;
+};
+
+export type AppointmentSeriesRecurrence = {
+	frequency: 'WEEKLY';
+	count?: number;
+	until?: string;
+};
+
+export type AppointmentSeriesCreatePayload = Omit<AppointmentFormPayload, 'status'> & {
+	recurrence: AppointmentSeriesRecurrence;
+	skip_conflicts?: boolean;
+};
+
+export type AppointmentSeriesConflict = {
+	start_time: string;
+	reason: string;
+	message?: string;
+};
+
+export type AppointmentSeriesCreateResult = {
+	id_series: number;
+	created: number;
+	skipped: number;
+	message: string;
 };
 
 export type AppointmentCreatePayload = Omit<AppointmentFormPayload, 'status'>;
