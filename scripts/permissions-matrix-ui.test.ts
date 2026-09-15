@@ -112,3 +112,23 @@ test('PermissionsPanel no interpola keys ni kind en el copy visible', () => {
 	assert.ok(src.includes('data-permissions-search'), 'tiene barra de búsqueda');
 	assert.ok(src.includes('permissions-section'), 'tiene títulos de sección diferenciados');
 });
+
+test('PermissionsPanel usa copy de negocio y Guardar como Negocio (HAS-48, HAS-49)', () => {
+	const src = readFileSync(new URL('../src/components/PermissionsPanel.astro', import.meta.url), 'utf8');
+	assert.equal(src.includes('roles base'), false);
+	assert.equal(src.includes('APIs'), false);
+	assert.ok(
+		src.includes('vienen de fábrica y no se pueden borrar'),
+		'explica roles predefinidos sin jerga'
+	);
+	assert.ok(src.includes('vale para todo el negocio'), 'habla de negocio, no de organización/APIs');
+	assert.ok(src.includes('el menú se actualiza'), 'dice cuándo se ve el cambio');
+
+	const saveIdx = src.indexOf('data-permissions-save');
+	assert.ok(saveIdx > 0, 'sigue el botón de guardar');
+	const saveBlock = src.slice(saveIdx, src.indexOf('</button>', saveIdx));
+	assert.ok(saveBlock.includes('modal-action-primary'), 'mismo estilo que Guardar negocio');
+	assert.ok(saveBlock.includes('>save<'), 'ícono Material save');
+	assert.ok(saveBlock.includes('Guardar permisos'));
+	assert.ok(src.includes("fetch('/api/permissions/matrix'"), 'no cambia el endpoint de guardar');
+});
