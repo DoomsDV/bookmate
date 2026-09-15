@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 
-import { ROLES } from '../../../../config/roles';
+import { CAPABILITIES } from '../../../../config/capabilities';
+import { requireCapability } from '../../../../lib/permissions';
 import {
 	CobrosApiError,
 	getStaffRefundProofMetaWithOrds,
@@ -13,11 +14,13 @@ const requireToken = (token: string | undefined) => {
 	return token;
 };
 
-const requireStaff = (roleId: number | undefined) => {
-	const role = Number(roleId || 0);
-	if (role !== ROLES.ADMIN && role !== ROLES.RECEPCIONISTA) {
-		throw new CobrosApiError('No autorizado.', 403);
-	}
+const requireStaff = (locals: App.Locals) => {
+	requireCapability(
+		locals,
+		CAPABILITIES.COBROS_MANAGE,
+		(message, status) => new CobrosApiError(message, status),
+		'No autorizado.'
+	);
 };
 
 const parseId = (value: string | undefined) => {
@@ -31,7 +34,7 @@ const parseId = (value: string | undefined) => {
 export const GET: APIRoute = async ({ locals, params }) => {
 	try {
 		const token = requireToken(locals.token);
-		requireStaff(locals.roleId);
+		requireStaff(locals);
 		const meta = await getStaffRefundProofMetaWithOrds(token, parseId(params.id));
 		return proxyRefundProof(meta.url, meta.mime_type);
 	} catch (error) {
@@ -46,7 +49,7 @@ export const GET: APIRoute = async ({ locals, params }) => {
 export const POST: APIRoute = async ({ locals, params, request }) => {
 	try {
 		const token = requireToken(locals.token);
-		requireStaff(locals.roleId);
+		requireStaff(locals);
 		const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
 		const result = await uploadRefundProofWithOrds(
 			token,

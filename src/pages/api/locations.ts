@@ -6,6 +6,8 @@ import {
 	listLocations,
 	type CreateLocationPayload,
 } from '../../lib/locations';
+import { CAPABILITIES } from '../../config/capabilities';
+import { requireCapability } from '../../lib/permissions';
 import {
 	requireToken as requireApiToken,
 	toErrorResponse as toApiErrorResponse,
@@ -82,6 +84,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
 		if (!token) {
 			throw new LocationsApiError('No hay sesion valida para crear sucursales.', 401);
 		}
+		requireCapability(
+			locals,
+			CAPABILITIES.LOCATIONS_MANAGE,
+			(message, status) => new LocationsApiError(message, status),
+			'No tienes permisos para crear sucursales.'
+		);
 
 		const body = await parseBody(request);
 		const name = String(body?.name || '').trim();

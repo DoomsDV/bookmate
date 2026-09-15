@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 
-import { ROLES } from '../../../config/roles';
+import { CAPABILITIES } from '../../../config/capabilities';
+import { requireCapability } from '../../../lib/permissions';
 import {
 	activateAddonWithOrds,
 	AddonApiError,
@@ -15,10 +16,22 @@ const requireToken = (token: string | undefined) => {
 	return token;
 };
 
-const requireAdminRole = (roleId: number | undefined) => {
-	if (Number(roleId || 0) !== ROLES.ADMIN) {
-		throw new AddonApiError('Solo el administrador puede gestionar complementos.', 403);
-	}
+const requireAddonsView = (locals: App.Locals) => {
+	requireCapability(
+		locals,
+		CAPABILITIES.ADDONS_VIEW,
+		(message, status) => new AddonApiError(message, status),
+		'Solo el administrador puede ver complementos.'
+	);
+};
+
+const requireAddonsManage = (locals: App.Locals) => {
+	requireCapability(
+		locals,
+		CAPABILITIES.ADDONS_MANAGE,
+		(message, status) => new AddonApiError(message, status),
+		'Solo el administrador puede gestionar complementos.'
+	);
 };
 
 const toErrorResponse = (error: unknown, fallbackMessage: string) => {
@@ -38,7 +51,7 @@ const toErrorResponse = (error: unknown, fallbackMessage: string) => {
 export const GET: APIRoute = async ({ locals }) => {
 	try {
 		const token = requireToken(locals.token);
-		requireAdminRole(locals.roleId);
+		requireAddonsView(locals);
 		const catalog = await listAddonsWithOrds(token);
 		return Response.json({ status: 'success', data: catalog }, { status: 200 });
 	} catch (error) {
@@ -49,7 +62,7 @@ export const GET: APIRoute = async ({ locals }) => {
 export const POST: APIRoute = async ({ request, locals }) => {
 	try {
 		const token = requireToken(locals.token);
-		requireAdminRole(locals.roleId);
+		requireAddonsManage(locals);
 		const body = await request.json().catch(() => ({}));
 		const addonCode = String((body as { addon_code?: string })?.addon_code ?? '')
 			.trim()

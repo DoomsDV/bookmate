@@ -1,7 +1,8 @@
 import type { APIRoute } from 'astro';
 import { z } from 'zod';
 
-import { ROLES } from '../../../../../config/roles';
+import { CAPABILITIES } from '../../../../../config/capabilities';
+import { hasCapability } from '../../../../../lib/permissions';
 import {
 	SchedulesApiError,
 	ScheduleExceptionConflictError,
@@ -43,8 +44,8 @@ const formatDateKey = (date: Date) => {
 
 const isPastDateKey = (dateKey: string) => dateKey < formatDateKey(new Date());
 
-const assertCanManageSchedules = (roleId: number) => {
-	if (roleId !== ROLES.ADMIN && roleId !== ROLES.RECEPCIONISTA) {
+const assertCanManageSchedules = (locals: App.Locals) => {
+	if (!hasCapability(locals, CAPABILITIES.SCHEDULES_MANAGE)) {
 		throw new SchedulesApiError('No tienes permisos para gestionar excepciones.', 403);
 	}
 };
@@ -159,7 +160,7 @@ export const PUT: APIRoute = async ({ request, params, locals }) => {
 	try {
 		const token = requireToken(locals.token);
 		const roleId = Number(locals.roleId ?? 0);
-		assertCanManageSchedules(roleId);
+		assertCanManageSchedules(locals);
 
 		const professionalId = parseProfessionalId(params.id);
 		const exceptionDate = String(params.date || '').trim();
@@ -221,7 +222,7 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
 	try {
 		const token = requireToken(locals.token);
 		const roleId = Number(locals.roleId ?? 0);
-		assertCanManageSchedules(roleId);
+		assertCanManageSchedules(locals);
 
 		const professionalId = parseProfessionalId(params.id);
 		const exceptionDate = String(params.date || '').trim();

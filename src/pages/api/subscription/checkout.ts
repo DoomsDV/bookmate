@@ -1,6 +1,8 @@
 import type { APIRoute } from 'astro';
 
-import { ROLES } from '../../../config/roles';
+import { CAPABILITIES } from '../../../config/capabilities';
+import { hasCapability } from '../../../lib/permissions';
+
 import {
 	createSubscriptionCheckoutWithOrds,
 	readIdempotencyKeyHeader,
@@ -15,8 +17,8 @@ const requireToken = (token: string | undefined) => {
 	return token;
 };
 
-const requireAdminRole = (roleId: number | undefined) => {
-	if (Number(roleId || 0) !== ROLES.ADMIN) {
+const requireAdminRole = (locals: App.Locals) => {
+	if (!hasCapability(locals, CAPABILITIES.PLAN_MANAGE)) {
 		throw new SubscriptionApiError('Solo el administrador puede gestionar la facturación del plan.', 403);
 	}
 };
@@ -58,7 +60,7 @@ const parsePayload = (source: any): CheckoutPayload => {
 export const POST: APIRoute = async ({ request, locals }) => {
 	try {
 		const token = requireToken(locals.token);
-		requireAdminRole(locals.roleId);
+		requireAdminRole(locals);
 		const body = await request.json().catch(() => ({}));
 		const payload = parsePayload(body);
 		const idempotencyKey = readIdempotencyKeyHeader(request);

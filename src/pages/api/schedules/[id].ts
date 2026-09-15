@@ -1,7 +1,8 @@
 import type { APIRoute } from 'astro';
 import { z } from 'zod';
 
-import { ROLES } from '../../../config/roles';
+import { CAPABILITIES } from '../../../config/capabilities';
+import { hasCapability } from '../../../lib/permissions';
 import {
 	SchedulesApiError,
 	ScheduleTemplateConflictError,
@@ -9,7 +10,6 @@ import {
 	type ScheduleUpdatePayload,
 	updateProfessionalScheduleWithOrds,
 } from '../../../lib/schedules';
-import { parseTokenClaims } from '../../../lib/token-claims';
 import {
 	parseRequestBody,
 	requireToken as requireApiToken,
@@ -146,13 +146,12 @@ export const GET: APIRoute = async ({ params, locals }) => {
 export const PUT: APIRoute = async ({ request, params, locals }) => {
 	try {
 		const token = requireToken(locals.token);
-		const claims = parseTokenClaims(token);
 		const professionalId = parseProfessionalId(params.id);
 
 		if (!professionalId) {
 			throw new SchedulesApiError('ID de profesional invalido.', 400);
 		}
-		if (claims.role_id !== ROLES.ADMIN && claims.role_id !== ROLES.RECEPCIONISTA) {
+		if (!hasCapability(locals, CAPABILITIES.SCHEDULES_MANAGE)) {
 			throw new SchedulesApiError('No tienes permisos para modificar horarios.', 403);
 		}
 

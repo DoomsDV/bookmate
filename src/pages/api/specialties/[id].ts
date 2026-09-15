@@ -1,10 +1,21 @@
 import type { APIRoute } from 'astro';
 
+import { CAPABILITIES } from '../../../config/capabilities';
+import { requireCapability } from '../../../lib/permissions';
 import {
 	SpecialtiesApiError,
 	SpecialtiesClient,
 	type CreateSpecialtyPayload,
 } from '../../../lib/specialties';
+
+const requireManage = (locals: App.Locals) => {
+	requireCapability(
+		locals,
+		CAPABILITIES.SPECIALTIES_MANAGE,
+		(message, status) => new SpecialtiesApiError(message, status),
+		'No tienes permisos para gestionar especialidades.'
+	);
+};
 
 const parseSpecialtyId = (value: string | undefined) => {
 	const parsed = Number(value);
@@ -93,6 +104,7 @@ export const GET: APIRoute = async ({ params, locals }) => {
 export const PUT: APIRoute = async ({ request, params, locals }) => {
 	try {
 		const token = requireToken(locals.token);
+		requireManage(locals);
 		const specialtyId = parseSpecialtyId(params.id);
 
 		if (!specialtyId) {
@@ -119,6 +131,7 @@ export const PUT: APIRoute = async ({ request, params, locals }) => {
 export const DELETE: APIRoute = async ({ params, locals }) => {
 	try {
 		const token = requireToken(locals.token);
+		requireManage(locals);
 		const specialtyId = parseSpecialtyId(params.id);
 
 		if (!specialtyId) {

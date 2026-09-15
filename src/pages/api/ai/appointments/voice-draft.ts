@@ -1,6 +1,8 @@
 import type { APIRoute } from 'astro';
 
+import { CAPABILITIES } from '../../../../config/capabilities';
 import { AppointmentAiError, processVoiceAppointmentDraft } from '../../../../lib/appointment-ai';
+import { requireCapability } from '../../../../lib/permissions';
 
 const toErrorResponse = (error: unknown, fallbackMessage: string) => {
 	const appointmentError =
@@ -24,6 +26,12 @@ export const POST: APIRoute = async ({ locals, request }) => {
 		if (!token) {
 			throw new AppointmentAiError('No hay sesión válida para procesar la cita por voz.', 401);
 		}
+		requireCapability(
+			locals,
+			CAPABILITIES.CALENDAR_MANAGE,
+			(message, status) => new AppointmentAiError(message, status),
+			'No tienes permisos para crear citas.'
+		);
 
 		const formData = await request.formData();
 		const audioEntry = formData.get('audio');

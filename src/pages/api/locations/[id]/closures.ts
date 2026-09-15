@@ -1,11 +1,13 @@
 import type { APIRoute } from 'astro';
 
+import { CAPABILITIES } from '../../../../config/capabilities';
 import {
 	LocationClosuresApiError,
 	createLocationClosure,
 	listLocationClosures,
 	type CreateLocationClosurePayload,
 } from '../../../../lib/location-closures';
+import { requireCapability } from '../../../../lib/permissions';
 
 const parseLocationId = (value: string | undefined) => {
 	const parsed = Number(value);
@@ -84,6 +86,12 @@ export const GET: APIRoute = async ({ params, url, locals }) => {
 
 export const POST: APIRoute = async ({ request, params, locals }) => {
 	try {
+		requireCapability(
+			locals,
+			CAPABILITIES.LOCATIONS_MANAGE,
+			(message, status) => new LocationClosuresApiError(message, status),
+			'No tienes permisos para crear cierres de sucursal.'
+		);
 		const token = requireToken(locals.token);
 		const locationId = parseLocationId(params.id);
 		if (!locationId) throw new LocationClosuresApiError('ID de sucursal inválido.', 400);

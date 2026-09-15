@@ -1,3 +1,5 @@
+import { canAccessPathWithCapabilities } from './capabilities';
+
 export const ROLES = {
 	ADMIN: 1,
 	RECEPCIONISTA: 3,
@@ -90,8 +92,8 @@ export const getAllowedRolesForPath = (pathname: string): readonly RoleId[] | nu
 	return null;
 };
 
-export const canAccessPath = (pathname: string, roleId: number) => {
-	const allowedRoles = getAllowedRolesForPath(pathname);
-	if (!allowedRoles) return true;
-	return allowedRoles.some((item) => item === roleId);
-};
+export const canAccessPath = (
+	pathname: string,
+	roleId: number,
+	capabilities?: readonly string[]
+) => canAccessPathWithCapabilities(pathname, capabilities, roleId);

@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 
-import { ROLES } from '../../../config/roles';
+import { CAPABILITIES } from '../../../config/capabilities';
+import { requireCapability } from '../../../lib/permissions';
 import {
 	CobrosApiError,
 	listCobrosWithOrds,
@@ -13,11 +14,13 @@ const requireToken = (token: string | undefined) => {
 	return token;
 };
 
-const requireStaff = (roleId: number | undefined) => {
-	const role = Number(roleId || 0);
-	if (role !== ROLES.ADMIN && role !== ROLES.RECEPCIONISTA) {
-		throw new CobrosApiError('No autorizado para ver cobros.', 403);
-	}
+const requireStaff = (locals: App.Locals) => {
+	requireCapability(
+		locals,
+		CAPABILITIES.COBROS_VIEW,
+		(message, status) => new CobrosApiError(message, status),
+		'No autorizado para ver cobros.'
+	);
 };
 
 const toError = (error: unknown, fallback: string) => {
@@ -31,7 +34,7 @@ const toError = (error: unknown, fallback: string) => {
 export const GET: APIRoute = async ({ locals, url }) => {
 	try {
 		const token = requireToken(locals.token);
-		requireStaff(locals.roleId);
+		requireStaff(locals);
 
 		const status = String(url.searchParams.get('status') || 'all').trim() as CobrosStatusFilter;
 		const datePreset = String(

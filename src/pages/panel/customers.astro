@@ -6,8 +6,10 @@ import FileViewer from '../../components/FileViewer.astro';
 import FlashMessage from '../../components/FlashMessage.astro';
 import SideNav from '../../components/SideNav.astro';
 import TopBar from '../../components/TopBar.astro';
+import { CAPABILITIES } from '../../config/capabilities';
 import { ROLES } from '../../config/roles';
 import Layout from '../../layouts/Layout.astro';
+import { hasCapability } from '../../lib/permissions';
 import { panelPageTitle } from '../../lib/panel-page-title';
 import '../../styles/global.css';
 import '../../styles/cuerpo-workspace.css';
@@ -23,7 +25,7 @@ const organizationLogoUrl = String(
 const isProfessional = roleId === ROLES.PROFESIONAL;
 const canFilterByProfessional =
 	roleId === ROLES.ADMIN || roleId === ROLES.RECEPCIONISTA;
-const canCreateCustomer = canFilterByProfessional;
+const canCreateCustomer = hasCapability(Astro.locals, CAPABILITIES.CUSTOMERS_CREATE);
 const initialLoadError = token ? '' : 'No hay sesion valida para consultar clientes.';
 ---
 

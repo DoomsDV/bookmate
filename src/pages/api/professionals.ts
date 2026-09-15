@@ -1,5 +1,7 @@
 import type { APIRoute } from 'astro';
 
+import { CAPABILITIES } from '../../config/capabilities';
+import { requireCapability } from '../../lib/permissions';
 import {
 	ProfessionalsApiError,
 	createProfessionalWithUserWithOrds,
@@ -110,6 +112,12 @@ export const GET: APIRoute = async ({ request, locals }) => {
 export const POST: APIRoute = async ({ request, locals }) => {
 	try {
 		const token = requireToken(locals.token);
+		requireCapability(
+			locals,
+			CAPABILITIES.PROFESSIONALS_MANAGE,
+			(message, status) => new ProfessionalsApiError(message, status),
+			'No tienes permisos para gestionar personal.'
+		);
 		const body = await parseBody(request);
 
 		const roleId = toIntOr(body?.rol_id_role, 0);

@@ -1,9 +1,11 @@
 import type { APIRoute } from 'astro';
 
+import { CAPABILITIES } from '../../../../../config/capabilities';
 import {
 	AppointmentsApiError,
 	deleteAppointmentAttachmentWithOrds,
 } from '../../../../../lib/appointments';
+import { requireCapability } from '../../../../../lib/permissions';
 import {
 	requireToken as requireApiToken,
 	toErrorResponse as toApiErrorResponse,
@@ -25,6 +27,12 @@ const toErrorResponse = (error: unknown, fallbackMessage: string) =>
 export const DELETE: APIRoute = async ({ params, locals }) => {
 	try {
 		const token = requireToken(locals.token);
+		requireCapability(
+			locals,
+			CAPABILITIES.CALENDAR_MANAGE,
+			(message, status) => new AppointmentsApiError(message, status),
+			'No tienes permisos para modificar citas.'
+		);
 		const appointmentId = toPositiveInt(params.id, 0);
 		const attachmentId = toPositiveInt(params.attId, 0);
 		if (!appointmentId) {

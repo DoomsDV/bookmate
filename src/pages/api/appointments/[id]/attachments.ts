@@ -1,10 +1,12 @@
 import type { APIRoute } from 'astro';
 
+import { CAPABILITIES } from '../../../../config/capabilities';
 import { APPOINTMENT_ATTACHMENT_MAX_BYTES } from '../../../../lib/appointment-attachment';
 import {
 	AppointmentsApiError,
 	uploadAppointmentAttachmentWithOrds,
 } from '../../../../lib/appointments';
+import { requireCapability } from '../../../../lib/permissions';
 import {
 	requireToken as requireApiToken,
 	toErrorResponse as toApiErrorResponse,
@@ -42,6 +44,12 @@ const assertContentLengthWithinLimit = (request: Request) => {
 export const POST: APIRoute = async ({ request, params, locals }) => {
 	try {
 		const token = requireToken(locals.token);
+		requireCapability(
+			locals,
+			CAPABILITIES.CALENDAR_MANAGE,
+			(message, status) => new AppointmentsApiError(message, status),
+			'No tienes permisos para modificar citas.'
+		);
 		assertContentLengthWithinLimit(request);
 		const appointmentId = toPositiveInt(params.id, 0);
 		if (!appointmentId) {

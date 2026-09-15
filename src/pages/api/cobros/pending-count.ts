@@ -1,24 +1,27 @@
 import type { APIRoute } from 'astro';
 
-import { ROLES } from '../../../config/roles';
+import { CAPABILITIES } from '../../../config/capabilities';
 import { CobrosApiError, getCobrosPendingCountWithOrds } from '../../../lib/cobros';
+import { requireCapability } from '../../../lib/permissions';
 
 const requireToken = (token: string | undefined) => {
 	if (!token) throw new CobrosApiError('No hay sesion valida.', 401);
 	return token;
 };
 
-const requireStaff = (roleId: number | undefined) => {
-	const role = Number(roleId || 0);
-	if (role !== ROLES.ADMIN && role !== ROLES.RECEPCIONISTA) {
-		throw new CobrosApiError('No autorizado.', 403);
-	}
+const requireStaff = (locals: App.Locals) => {
+	requireCapability(
+		locals,
+		CAPABILITIES.COBROS_VIEW,
+		(message, status) => new CobrosApiError(message, status),
+		'No autorizado.'
+	);
 };
 
 export const GET: APIRoute = async ({ locals }) => {
 	try {
 		const token = requireToken(locals.token);
-		requireStaff(locals.roleId);
+		requireStaff(locals);
 		const pendingCount = await getCobrosPendingCountWithOrds(token);
 
 		return Response.json({

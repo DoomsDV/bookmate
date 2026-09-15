@@ -1,7 +1,8 @@
 import type { APIRoute } from 'astro';
 
-import { ROLES } from '../../../config/roles';
+import { CAPABILITIES } from '../../../config/capabilities';
 import { AddonApiError, cancelAddonWithOrds } from '../../../lib/addons';
+import { requireCapability } from '../../../lib/permissions';
 
 const requireToken = (token: string | undefined) => {
 	if (!token) {
@@ -10,10 +11,13 @@ const requireToken = (token: string | undefined) => {
 	return token;
 };
 
-const requireAdminRole = (roleId: number | undefined) => {
-	if (Number(roleId || 0) !== ROLES.ADMIN) {
-		throw new AddonApiError('Solo el administrador puede cancelar complementos.', 403);
-	}
+const requireAddonsManage = (locals: App.Locals) => {
+	requireCapability(
+		locals,
+		CAPABILITIES.ADDONS_MANAGE,
+		(message, status) => new AddonApiError(message, status),
+		'Solo el administrador puede cancelar complementos.'
+	);
 };
 
 const toErrorResponse = (error: unknown, fallbackMessage: string) => {
@@ -33,7 +37,7 @@ const toErrorResponse = (error: unknown, fallbackMessage: string) => {
 export const POST: APIRoute = async ({ request, locals }) => {
 	try {
 		const token = requireToken(locals.token);
-		requireAdminRole(locals.roleId);
+		requireAddonsManage(locals);
 		const body = await request.json().catch(() => ({}));
 		const addonCode = String((body as { addon_code?: string })?.addon_code ?? '')
 			.trim()

@@ -1,6 +1,8 @@
 import type { APIRoute } from 'astro';
 
-import { ROLES } from '../../config/roles';
+import { CAPABILITIES } from '../../config/capabilities';
+import { hasCapability } from '../../lib/permissions';
+
 import {
 	getPaymentSettingsWithOrds,
 	PaymentSettingsApiError,
@@ -16,8 +18,8 @@ const requireToken = (token: string | undefined) => {
 	return token;
 };
 
-const requireAdminRole = (roleId: number | undefined) => {
-	if (Number(roleId || 0) !== ROLES.ADMIN) {
+const requireAdminRole = (locals: App.Locals) => {
+	if (!hasCapability(locals, CAPABILITIES.WORKSPACE_MANAGE)) {
 		throw new PaymentSettingsApiError('Solo administradores pueden gestionar cobros.', 403);
 	}
 };
@@ -78,7 +80,7 @@ const parseSavePayload = (source: any): PaymentSettingsPayload => {
 export const GET: APIRoute = async ({ locals }) => {
 	try {
 		const token = requireToken(locals.token);
-		requireAdminRole(locals.roleId);
+		requireAdminRole(locals);
 		const data = await getPaymentSettingsWithOrds(token);
 		return Response.json({ status: 'success', data }, { status: 200 });
 	} catch (error) {
@@ -89,7 +91,7 @@ export const GET: APIRoute = async ({ locals }) => {
 export const PUT: APIRoute = async ({ request, locals }) => {
 	try {
 		const token = requireToken(locals.token);
-		requireAdminRole(locals.roleId);
+		requireAdminRole(locals);
 		const body = await parseBody(request);
 		const payload = parseSavePayload(body);
 		const saved = await savePaymentSettingsWithOrds(token, payload);

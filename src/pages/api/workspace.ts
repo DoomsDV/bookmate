@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 
-import { ROLES } from '../../config/roles';
+import { CAPABILITIES } from '../../config/capabilities';
+import { requireCapability } from '../../lib/permissions';
 import { setOrganizationCacheCookies } from '../../lib/auth';
 import {
 	bufferToBase64,
@@ -23,13 +24,13 @@ const requireToken = (token: string | undefined) => {
 	return token;
 };
 
-const requireAdminRole = (roleId: number | undefined) => {
-	if (Number(roleId || 0) !== ROLES.ADMIN) {
-		throw new WorkspaceSettingsApiError(
-			'Solo administradores pueden gestionar la configuración del negocio.',
-			403
-		);
-	}
+const requireWorkspaceManage = (locals: App.Locals) => {
+	requireCapability(
+		locals,
+		CAPABILITIES.WORKSPACE_MANAGE,
+		(message, status) => new WorkspaceSettingsApiError(message, status),
+		'Solo administradores pueden gestionar la configuración del negocio.'
+	);
 };
 
 const toErrorResponse = (error: unknown, fallbackMessage: string) => {
@@ -207,7 +208,7 @@ const parseUpdatePayload = (source: any): UpdateWorkspacePayload => {
 export const GET: APIRoute = async ({ cookies, locals, url }) => {
 	try {
 		const token = requireToken(locals.token);
-		requireAdminRole(locals.roleId);
+		requireWorkspaceManage(locals);
 		const workspace = await getWorkspaceSettingsWithOrds(token);
 		setOrganizationCacheCookies(cookies, url, workspace);
 
@@ -226,7 +227,7 @@ export const GET: APIRoute = async ({ cookies, locals, url }) => {
 export const PUT: APIRoute = async ({ cookies, request, locals, url }) => {
 	try {
 		const token = requireToken(locals.token);
-		requireAdminRole(locals.roleId);
+		requireWorkspaceManage(locals);
 		const body = await parseBody(request);
 		const payload = parseUpdatePayload(body);
 

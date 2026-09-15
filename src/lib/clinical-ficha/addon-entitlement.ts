@@ -1,9 +1,12 @@
+import { CAPABILITIES } from '../../config/capabilities';
 import { ADDON_FEATURES, type AddonFeature } from '../../config/feature-flags';
 
-const CLINICAL_FEATURE_CODES = new Set<string>([
-	ADDON_FEATURES.ODONTOGRAM_3D,
-	ADDON_FEATURES.BODY_MAP,
-]);
+const hasRoleCapability = (code: string): boolean => {
+	const perms = window.HaselPermissions;
+	if (!perms) return true;
+	if (typeof perms.has === 'function') return perms.has(code);
+	return Array.isArray(perms.codes) && perms.codes.includes(code);
+};
 
 const readEligibleAddonFeatures = (): string[] => {
 	const sub = window.HaselSubscription;
@@ -39,12 +42,16 @@ export const canOpenClinicalModule = (featureCode: AddonFeature | string): boole
 	isAddonActive(featureCode);
 
 export const canShowClinicalTab = (): boolean =>
-	[...CLINICAL_FEATURE_CODES].some((code) => canOpenClinicalModule(code));
+	(hasRoleCapability(CAPABILITIES.ADDONS_ODONTOGRAM) &&
+		canOpenClinicalModule(ADDON_FEATURES.ODONTOGRAM_3D)) ||
+	(hasRoleCapability(CAPABILITIES.ADDONS_BODY_MAP) && canOpenClinicalModule(ADDON_FEATURES.BODY_MAP));
 
 export const canShowOdontogramCard = (): boolean =>
+	hasRoleCapability(CAPABILITIES.ADDONS_ODONTOGRAM) &&
 	canOpenClinicalModule(ADDON_FEATURES.ODONTOGRAM_3D);
 
-export const canShowBodyMapCard = (): boolean => canOpenClinicalModule(ADDON_FEATURES.BODY_MAP);
+export const canShowBodyMapCard = (): boolean =>
+	hasRoleCapability(CAPABILITIES.ADDONS_BODY_MAP) && canOpenClinicalModule(ADDON_FEATURES.BODY_MAP);
 
 /** Cita/reserva dental: org con rubro DENTAL (sin especialidad por servicio aún). */
 export const isOrgDentalSpecialty = (): boolean => {
@@ -55,4 +62,6 @@ export const isOrgDentalSpecialty = (): boolean => {
 };
 
 export const canShowOdontogramInAppointment = (): boolean =>
-	canOpenClinicalModule(ADDON_FEATURES.ODONTOGRAM_3D) && isOrgDentalSpecialty();
+	hasRoleCapability(CAPABILITIES.ADDONS_ODONTOGRAM) &&
+	canOpenClinicalModule(ADDON_FEATURES.ODONTOGRAM_3D) &&
+	isOrgDentalSpecialty();

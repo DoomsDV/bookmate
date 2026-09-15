@@ -1,10 +1,12 @@
 import type { APIRoute } from 'astro';
 
+import { CAPABILITIES } from '../../../config/capabilities';
 import {
 	LocationsApiError,
 	LocationsClient,
 	type CreateLocationPayload,
 } from '../../../lib/locations';
+import { requireCapability } from '../../../lib/permissions';
 
 const parseLocationId = (value: string | undefined) => {
 	const parsed = Number(value);
@@ -115,6 +117,12 @@ export const GET: APIRoute = async ({ params, locals }) => {
 
 export const PUT: APIRoute = async ({ request, params, locals }) => {
 	try {
+		requireCapability(
+			locals,
+			CAPABILITIES.LOCATIONS_MANAGE,
+			(message, status) => new LocationsApiError(message, status),
+			'No tienes permisos para editar sucursales.'
+		);
 		const token = requireToken(locals.token);
 		const locationId = parseLocationId(params.id);
 
@@ -141,6 +149,12 @@ export const PUT: APIRoute = async ({ request, params, locals }) => {
 
 export const DELETE: APIRoute = async ({ params, locals }) => {
 	try {
+		requireCapability(
+			locals,
+			CAPABILITIES.LOCATIONS_MANAGE,
+			(message, status) => new LocationsApiError(message, status),
+			'No tienes permisos para eliminar sucursales.'
+		);
 		const token = requireToken(locals.token);
 		const locationId = parseLocationId(params.id);
 

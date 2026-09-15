@@ -1,6 +1,8 @@
 import type { APIRoute } from 'astro';
 
+import { CAPABILITIES } from '../../../config/capabilities';
 import { ROLES } from '../../../config/roles';
+import { requireCapability } from '../../../lib/permissions';
 import { validateCustomerContactInput } from '../../../lib/customer-contact';
 import {
 	CustomersApiError,
@@ -106,10 +108,12 @@ export const PUT: APIRoute = async ({ locals, params, request }) => {
 			throw new CustomersApiError('ID de cliente invalido.', 400);
 		}
 
-		const roleId = Number(locals.roleId ?? 0);
-		if (roleId !== ROLES.ADMIN && roleId !== ROLES.RECEPCIONISTA) {
-			throw new CustomersApiError('No tienes permisos para editar clientes.', 403);
-		}
+		requireCapability(
+			locals,
+			CAPABILITIES.CUSTOMERS_EDIT,
+			(message, status) => new CustomersApiError(message, status),
+			'No tienes permisos para editar clientes.'
+		);
 
 		const body = await parseUpdateBody(request);
 		const validated = validateCustomerContactInput(body);

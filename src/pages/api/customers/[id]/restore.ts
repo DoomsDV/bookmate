@@ -1,7 +1,8 @@
 import type { APIRoute } from 'astro';
 
-import { ROLES } from '../../../../config/roles';
+import { CAPABILITIES } from '../../../../config/capabilities';
 import { CustomersApiError, restoreCustomerWithOrds } from '../../../../lib/customers';
+import { requireCapability } from '../../../../lib/permissions';
 import {
 	requireToken as requireApiToken,
 	toErrorResponse as toApiErrorResponse,
@@ -33,10 +34,12 @@ export const POST: APIRoute = async ({ locals, params }) => {
 			throw new CustomersApiError('ID de cliente invalido.', 400);
 		}
 
-		const roleId = Number(locals.roleId ?? 0);
-		if (roleId !== ROLES.ADMIN && roleId !== ROLES.RECEPCIONISTA) {
-			throw new CustomersApiError('No tienes permisos para restaurar clientes.', 403);
-		}
+		requireCapability(
+			locals,
+			CAPABILITIES.CUSTOMERS_EDIT,
+			(message, status) => new CustomersApiError(message, status),
+			'No tienes permisos para restaurar clientes.'
+		);
 
 		const restored = await restoreCustomerWithOrds(token, customerId);
 		return Response.json(

@@ -14,6 +14,7 @@ const normalizePath = (path: string) => {
 
 const activePath = normalizePath(currentPath);
 const currentRoleId = Number(Astro.locals.roleId ?? 0);
+const currentCapabilities = Astro.locals.capabilities;
 
 type BottomItem = {
 	label: string;
@@ -37,7 +38,9 @@ const candidates: BottomItem[] = [
 	},
 ];
 
-const navItems = candidates.filter((item) => !item.href || canAccessPath(item.href, currentRoleId));
+const navItems = candidates.filter(
+	(item) => !item.href || canAccessPath(item.href, currentRoleId, currentCapabilities),
+);
 const moreItem: BottomItem = { label: 'Más', icon: 'menu', action: 'more' };
 const items = [...navItems.slice(0, 4), moreItem].slice(0, 5);
 

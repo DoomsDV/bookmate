@@ -3,6 +3,12 @@ import { defineMiddleware } from 'astro:middleware';
 import { isSubscriptionBillingUiEnabled } from './config/feature-flags';
 import { canAccessPath, isKnownRoleId } from './config/roles';
 import {
+	clearCachedPermissions,
+	readCachedPermissions,
+	setCachedPermissions,
+} from './lib/permission-cache';
+import { getMyPermissionsWithOrds, safeFallbackPermissions } from './lib/permissions';
+import {
 	clearSessionCookies,
 	getPendingSelectionAuthToken,
 	isInvitationAcceptRedirect,
@@ -163,7 +169,28 @@ export const onRequest = defineMiddleware(async (context, next) => {
 		return redirect('/panel/dashboard');
 	}
 
-	if (!canAccessPath(url.pathname, claims.role_id)) {
+	const isApiRequest = url.pathname.startsWith('/api/');
+	// Cookie firmada: solo cache de UI. Las APIs siempre revalidan contra ORDS.
+	const cachedCapabilities = isApiRequest ? null : readCachedPermissions(cookies, claims);
+	let capabilities = cachedCapabilities;
+
+	if (!capabilities) {
+		try {
+			const loaded = await getMyPermissionsWithOrds(accessToken, claims.role_id);
+			if (loaded.source === 'ords') {
+				capabilities = loaded.capabilities;
+				setCachedPermissions(cookies, claims, capabilities);
+			} else {
+				capabilities = [...safeFallbackPermissions(claims.role_id).capabilities];
+				clearCachedPermissions(cookies);
+			}
+		} catch {
+			capabilities = [...safeFallbackPermissions(claims.role_id).capabilities];
+			clearCachedPermissions(cookies);
+		}
+	}
+
+	if (!canAccessPath(url.pathname, claims.role_id, capabilities)) {
 		if (url.pathname.startsWith('/api/')) {
 			return Response.json(
 				{
@@ -185,6 +212,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 	} catch (error) {
 		if (error instanceof PanelAccessError) {
 			clearPanelValidationCache(cookies);
+			clearCachedPermissions(cookies);
 
 			const orgInactive = isOrgAccessInactiveResponse({
 				status: error.status,
@@ -314,5 +342,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
 	context.locals.userId = claims.user_id;
 	context.locals.organizationName = organizationName;
 	context.locals.organizationLogoUrl = organizationLogoUrl;
+	context.locals.capabilities = capabilities ?? [];
 	return next();
 });

@@ -1,6 +1,9 @@
 ﻿---
+import { CAPABILITIES } from '../config/capabilities';
 import { FEATURE_FLAGS, isSubscriptionBillingUiEnabled } from '../config/feature-flags';
 import { ROLES } from '../config/roles';
+import { hasCapability } from '../lib/permissions';
+import PermissionsPanel from './PermissionsPanel.astro';
 import SettingsHelpInfo from './SettingsHelpInfo.astro';
 
 import {
@@ -19,9 +22,12 @@ const { roleId = 0, organizationSlug = '', variant = 'modal' } = Astro.props;
 const isPage = variant === 'page';
 const RootTag = isPage ? 'div' : 'dialog';
 const isAdmin = Number(roleId) === ROLES.ADMIN;
-const canEditAppearance = isAdmin;
-const showPaymentsTab = isAdmin && FEATURE_FLAGS.PAYMENTS_SETTINGS;
-const showPlanTab = isAdmin && isSubscriptionBillingUiEnabled();
+const canManageWorkspace = hasCapability(Astro.locals, CAPABILITIES.WORKSPACE_MANAGE);
+const canManagePermissions = hasCapability(Astro.locals, CAPABILITIES.PERMISSIONS_MANAGE);
+const canManagePlan = hasCapability(Astro.locals, CAPABILITIES.PLAN_MANAGE);
+const canEditAppearance = canManageWorkspace;
+const showPaymentsTab = canManageWorkspace && FEATURE_FLAGS.PAYMENTS_SETTINGS;
+const showPlanTab = canManagePlan && isSubscriptionBillingUiEnabled();
 const rawPublicProfileDomain = String(
 	import.meta.env.PUBLIC_BOOKMATE_PUBLIC_DOMAIN ?? Astro.url.origin
 ).trim();
@@ -121,7 +127,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 					) : null
 				}
 				{
-					isAdmin ? (
+					canManageWorkspace ? (
 						<>
 							<button type="button" data-settings-tab-trigger data-settings-tab="workspace" class="settings-tab">
 								<span class="material-symbols-rounded">storefront</span>Negocio
@@ -136,14 +142,21 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 							<button type="button" data-settings-tab-trigger data-settings-tab="system" class="settings-tab">
 								<span class="material-symbols-rounded">settings_applications</span>Sistema
 							</button>
-							{
-								showPlanTab ? (
-									<button type="button" data-settings-tab-trigger data-settings-tab="plan" class="settings-tab">
-										<span class="material-symbols-rounded">workspace_premium</span>Plan
-									</button>
-								) : null
-							}
 						</>
+					) : null
+				}
+				{
+					canManagePermissions ? (
+						<button type="button" data-settings-tab-trigger data-settings-tab="permissions" class="settings-tab">
+							<span class="material-symbols-rounded">admin_panel_settings</span>Permisos
+						</button>
+					) : null
+				}
+				{
+					showPlanTab ? (
+						<button type="button" data-settings-tab-trigger data-settings-tab="plan" class="settings-tab">
+							<span class="material-symbols-rounded">workspace_premium</span>Plan
+						</button>
 					) : null
 				}
 				<button type="button" data-settings-tab-trigger data-settings-tab="legal" class="settings-tab">
@@ -1012,9 +1025,20 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 
 							</form>
 						</section>
+					</>
+				) : null
+			}
 
-						{
-							showPlanTab ? (
+			{
+				canManagePermissions ? (
+					<section data-settings-panel="permissions" class="settings-panel hidden gap-4">
+						<PermissionsPanel />
+					</section>
+				) : null
+			}
+
+			{
+				showPlanTab ? (
 						<section data-settings-panel="plan" class="settings-panel hidden gap-4">
 							<div class="settings-card__intro">
 								<h3 class="settings-card__title">Plan y suscripción</h3>
@@ -1100,9 +1124,6 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 								</a>
 							</div>
 						</section>
-							) : null
-						}
-					</>
 				) : null
 			}
 

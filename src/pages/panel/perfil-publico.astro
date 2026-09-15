@@ -4,15 +4,15 @@ import PublicProfileEditorIsland from '../../components/PublicProfileEditorIslan
 import PublicProfileEditorSkeleton from '../../components/PublicProfileEditorSkeleton.astro';
 import SideNav from '../../components/SideNav.astro';
 import TopBar from '../../components/TopBar.astro';
-import { ROLES } from '../../config/roles';
+import { CAPABILITIES } from '../../config/capabilities';
 import Layout from '../../layouts/Layout.astro';
+import { hasCapability } from '../../lib/permissions';
 import { panelPageTitle } from '../../lib/panel-page-title';
 import '../../styles/global.css';
 import '../../styles/public-org-hub.css';
 import '../../styles/public-profile-editor.css';
 
-const roleId = Number(Astro.locals.roleId ?? 0);
-if (roleId !== ROLES.ADMIN) {
+if (!hasCapability(Astro.locals, CAPABILITIES.PUBLIC_PROFILE_MANAGE)) {
 	return Astro.redirect('/panel/dashboard');
 }
 ---
