@@ -154,12 +154,12 @@ ensure_sqlcl() {
 }
 
 sanitize_sqlcl_output() {
-  # Never echo CONNECT / password lines if SQLcl repeats them.
-  grep -viE 'password|-pw[[:space:]]|connect[[:space:]]' || true
+  # Drop credential-bearing CONNECT lines; keep IO/ORA errors.
+  grep -viE '^[[:space:]]*CONNECT[[:space:]]|[[:space:]]-password[[:space:]]|^[[:space:]]*-password[[:space:]]' || true
 }
 
 oracle_smoke_test() {
-  local sql_bin user_q pass_q url_q cloud_q connect_line output rc
+  local sql_bin user_q pass_q url_q cloud_q connect_line output rc out_file
   sql_bin="$(find_sqlcl)"
 
   user_q="$(sqlcl_double_quote "$ORACLE_USER")"
@@ -183,29 +183,29 @@ oracle_smoke_test() {
   fi
 
   echo "[install] running Oracle smoke test: SELECT USER FROM dual;"
+  out_file="$(mktemp)"
+  chmod 600 "$out_file"
   set +e
-  output="$(
-    {
-      if command -v timeout >/dev/null 2>&1; then
-        timeout 60s "$sql_bin" -S /nolog
-      else
-        "$sql_bin" -S /nolog
-      fi
-    } <<EOF 2>&1
+  # Redirect to a file (not a pipe): SQLcl may not flush errors on a pipe.
+  if command -v timeout >/dev/null 2>&1; then
+    timeout 60s "$sql_bin" /nolog
+  else
+    "$sql_bin" /nolog
+  fi >"$out_file" 2>&1 <<EOF
 WHENEVER SQLERROR EXIT FAILURE
 WHENEVER OSERROR EXIT FAILURE
 SET DEFINE OFF
 SET VERIFY OFF
 SET ECHO OFF
-SET FEEDBACK OFF
 SET HEADING OFF
 SET PAGESIZE 0
 ${connect_line}
 SELECT USER FROM dual;
 EXIT SUCCESS
 EOF
-  )"
   rc=$?
+  output="$(cat "$out_file")"
+  rm -f "$out_file"
   set -e
 
   if [[ $rc -ne 0 ]]; then
@@ -231,8 +231,8 @@ maybe_oracle_smoke_test() {
   [[ -n "${ORACLE_CONNECT_STRING:-}" ]] || missing+=(ORACLE_CONNECT_STRING)
 
   if ((${#missing[@]} > 0)); then
-    echo "[install] Oracle smoke test skipped (secrets not set). Missing: ${missing[*]}" >&2
-    echo "[install] Set ORACLE_USER, ORACLE_PASSWORD, and ORACLE_CONNECT_STRING to enable. Wallet/TNS_ADMIN is optional via env (never hardcoded)." >&2
+    echo "[install] Oracle smoke test skipped (secrets not set). Missing: ${missing[*]}"
+    echo "[install] Set ORACLE_USER, ORACLE_PASSWORD, and ORACLE_CONNECT_STRING to enable. Wallet/TNS_ADMIN is optional via env (never hardcoded)."
     return 0
   fi
 
