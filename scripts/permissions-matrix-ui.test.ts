@@ -2,10 +2,13 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
+import { CAPABILITIES, CAPABILITY_CATALOG } from '../src/config/capabilities.ts';
 import {
 	filterPermissionsMatrix,
 	matchingRoleIds,
 	normalizeSearchText,
+	overlayCatalogItemCopy,
+	overlayPermissionMatrix,
 	permissionRowMatches,
 	permissionVisibleCopy,
 } from '../src/lib/permissions-matrix-ui.ts';
@@ -131,4 +134,61 @@ test('PermissionsPanel usa copy de negocio y Guardar como Negocio (HAS-48, HAS-4
 	assert.ok(saveBlock.includes('>save<'), 'ícono Material save');
 	assert.ok(saveBlock.includes('Guardar permisos'));
 	assert.ok(src.includes("fetch('/api/permissions/matrix'"), 'no cambia el endpoint de guardar');
+	assert.ok(src.includes('overlayPermissionMatrix'), 'el copy visible no depende del jerga de ORDS');
+	assert.ok(src.includes('class="modal-action-primary"'), 'HAS-49: Guardar sigue como Negocio');
+});
+
+const VISIBLE_JARGON = /\b(crud|addons?|checkout|apis?|jwt|ords|payload|entitlement|branding)\b/i;
+const MODULE_ACTION_KEY = /\b[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*\b/;
+
+test('el catálogo visible no usa jerga interna (HAS-48)', () => {
+	for (const item of CAPABILITY_CATALOG) {
+		const visible = [item.label, item.description, item.groupLabel].join(' · ');
+		assert.equal(VISIBLE_JARGON.test(visible), false, `${item.code}: ${visible}`);
+		assert.equal(MODULE_ACTION_KEY.test(visible), false, `${item.code}: key técnica en copy`);
+		assert.ok(item.label.trim(), `${item.code} tiene label humano`);
+		assert.ok(item.description.trim(), `${item.code} tiene descripción de negocio`);
+	}
+
+	assert.equal(CAPABILITIES.ADDONS_VIEW, 'addons.view');
+	assert.equal(CAPABILITIES.LOCATIONS_MANAGE, 'locations.manage');
+	assert.equal(CAPABILITIES.PLAN_MANAGE, 'plan.manage');
+	assert.ok(
+		CAPABILITY_CATALOG.some((item) => item.code === 'locations.manage' && item.description.includes('sucursales'))
+	);
+	assert.ok(
+		CAPABILITY_CATALOG.some((item) => item.code === 'addons.manage' && item.description.includes('complementos'))
+	);
+	assert.ok(
+		CAPABILITY_CATALOG.some((item) => item.code === 'plan.manage' && item.description.includes('plan'))
+	);
+});
+
+test('la UI pisa descripciones de ORDS con el catálogo de negocio', () => {
+	const fromOrds = overlayCatalogItemCopy({
+		code: 'locations.manage',
+		label: 'locations.manage',
+		description: 'CRUD de sucursales y addons. Checkout de la organización.',
+		group_code: 'addons',
+		group_label: 'addons',
+	});
+	assert.equal(fromOrds.code, 'locations.manage');
+	assert.equal(fromOrds.group_code, 'addons');
+	assert.equal(VISIBLE_JARGON.test(fromOrds.description), false);
+	assert.equal(fromOrds.label.includes('.'), false);
+	assert.equal(fromOrds.group_label, 'Sucursales');
+
+	const matrix = overlayPermissionMatrix({
+		catalog: [
+			{
+				code: 'plan.manage',
+				label: 'plan.manage',
+				description: 'Checkout y APIs de facturación.',
+				group_code: 'plan',
+				group_label: 'Plan',
+			},
+		],
+	});
+	assert.equal(VISIBLE_JARGON.test(matrix.catalog[0].description), false);
+	assert.equal(matrix.catalog[0].code, 'plan.manage');
 });

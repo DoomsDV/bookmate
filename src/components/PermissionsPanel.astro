@@ -90,6 +90,7 @@
 	import {
 		escapeHtml,
 		filterPermissionsMatrix,
+		overlayPermissionMatrix,
 		permissionVisibleCopy,
 	} from '../lib/permissions-matrix-ui';
 	import { initPanelSearchClear } from '../scripts/panel-search-clear';
@@ -156,7 +157,7 @@
 				if (!response.ok || body.status === 'error') {
 					throw new Error(body.message || 'No fue posible cargar la matriz.');
 				}
-				this.matrix = body.data as PermissionMatrix;
+				this.matrix = overlayPermissionMatrix(body.data as PermissionMatrix);
 				this.dirty.clear();
 				this.render();
 				this.applyFilter();
