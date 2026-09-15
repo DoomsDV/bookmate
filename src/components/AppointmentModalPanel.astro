@@ -400,30 +400,57 @@ const { showVoiceButton = false }: Props = Astro.props;
 						</label>
 						<div class="appointment-recurrence__fields" data-recurrence-fields inert>
 							<div class="appointment-recurrence__modes">
-								<label class="appointment-recurrence__mode">
-									<input type="radio" name="recurrence_mode" value="count" data-recurrence-mode checked />
-									<span>Número de citas</span>
-								</label>
-								<input
-									type="number"
-									name="recurrence_count"
-									min="2"
-									max="52"
-									value="4"
-									inputmode="numeric"
-									class="appointment-recurrence__count"
-									data-recurrence-count
-								/>
-								<label class="appointment-recurrence__mode">
-									<input type="radio" name="recurrence_mode" value="until" data-recurrence-mode />
-									<span>Hasta el</span>
-								</label>
-								<input
-									type="date"
-									name="recurrence_until"
-									class="appointment-recurrence__until"
-									data-recurrence-until
-								/>
+								<div class="appointment-recurrence__row">
+									<label class="appointment-recurrence__mode">
+										<input type="radio" name="recurrence_mode" value="count" data-recurrence-mode checked />
+										<span>Número de citas</span>
+									</label>
+									<input
+										type="number"
+										name="recurrence_count"
+										min="2"
+										max="52"
+										value="4"
+										inputmode="numeric"
+										class="appointment-recurrence__count"
+										data-recurrence-count
+									/>
+								</div>
+								<div class="appointment-recurrence__row">
+									<label class="appointment-recurrence__mode">
+										<input type="radio" name="recurrence_mode" value="until" data-recurrence-mode />
+										<span>Hasta el</span>
+									</label>
+									<span class="appointment-recurrence-date" data-recurrence-until-wrap>
+										<input
+											type="text"
+											inputmode="numeric"
+											autocomplete="off"
+											placeholder="dd/mm/aaaa"
+											maxlength="10"
+											spellcheck="false"
+											class="appointment-recurrence-date__text"
+											data-recurrence-until-display
+											aria-label="Fecha de fin de la serie"
+										/>
+										<button
+											type="button"
+											class="appointment-recurrence-date__picker"
+											data-recurrence-until-picker
+											aria-label="Abrir calendario"
+										>
+											<span class="material-symbols-rounded" aria-hidden="true">calendar_month</span>
+										</button>
+										<input
+											type="date"
+											name="recurrence_until"
+											class="appointment-recurrence-date__native"
+											data-recurrence-until
+											tabindex="-1"
+											aria-hidden="true"
+										/>
+									</span>
+								</div>
 							</div>
 							<p class="appointment-recurrence__preview" data-recurrence-preview></p>
 							<p class="appointment-recurrence__dates" data-recurrence-dates></p>

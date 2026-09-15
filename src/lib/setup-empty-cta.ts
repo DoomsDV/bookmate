@@ -16,6 +16,7 @@ export const SETUP_PATHS = {
 export type SetupStepId =
 	| 'create_service'
 	| 'create_professional'
+	| 'complete_professional_hub'
 	| 'assign_services'
 	| 'create_location';
 
@@ -35,6 +36,13 @@ export type SetupInventory = {
 	locationCount?: number;
 };
 
+export type PublicProfileSetupInventory = Omit<SetupInventory, 'professionalCount'> & {
+	/** Personal del panel. `null` = todavía no se pudo contar; no asumir cero. */
+	professionalCount: number | null;
+	/** Profesionales que el hub público lista (foto + bio). */
+	hubListedProfessionalCount: number;
+};
+
 export const SCREEN_EMPTY = {
 	services: {
 		title: 'Todavía no hay servicios',
@@ -46,6 +54,13 @@ export const SCREEN_EMPTY = {
 		title: 'Todavía no hay personal',
 		copy: 'Agregá a quien atiende para abrir turnos.',
 		ctaLabel: 'Agregá tu primer profesional →',
+		icon: 'badge',
+	},
+	professionalsNotOnHub: {
+		title: 'El personal no aparece en tu página',
+		copy: 'Ya tenés profesionales, pero sin foto y bio no se muestran en el hub público.',
+		ctaLabel: 'Completar en Personal →',
+		href: SETUP_PATHS.professionals,
 		icon: 'badge',
 	},
 	schedulesNoProfessionals: {
@@ -81,6 +96,14 @@ const STEPS: Record<SetupStepId, SetupStep> = {
 		href: SETUP_PATHS.professionals,
 		icon: 'badge',
 	},
+	complete_professional_hub: {
+		id: 'complete_professional_hub',
+		title: SCREEN_EMPTY.professionalsNotOnHub.title,
+		copy: SCREEN_EMPTY.professionalsNotOnHub.copy,
+		ctaLabel: SCREEN_EMPTY.professionalsNotOnHub.ctaLabel,
+		href: SETUP_PATHS.professionals,
+		icon: 'badge',
+	},
 	assign_services: {
 		id: 'assign_services',
 		title: 'Falta asignar servicios',
@@ -113,6 +136,28 @@ export const resolveBookableNextStep = (inventory: SetupInventory): SetupStep | 
 		return STEPS.create_location;
 	}
 	return null;
+};
+
+/**
+ * Perfil público: el inventario del hub (foto+bio) no es el personal del panel.
+ * Solo el empty “crear el primero” si realmente no hay profesionales.
+ */
+export const resolvePublicProfileNextStep = (
+	inventory: PublicProfileSetupInventory
+): SetupStep | null => {
+	if (inventory.serviceCount <= 0) return STEPS.create_service;
+	if (inventory.professionalCount === null) {
+		return resolveBookableNextStep({
+			...inventory,
+			professionalCount: Math.max(inventory.hubListedProfessionalCount, 1),
+		});
+	}
+	if (inventory.professionalCount <= 0) return STEPS.create_professional;
+	if (inventory.hubListedProfessionalCount <= 0) return STEPS.complete_professional_hub;
+	return resolveBookableNextStep({
+		...inventory,
+		professionalCount: inventory.professionalCount,
+	});
 };
 
 export const renderSetupEmptyCta = (options: { label: string; href?: string; attrs?: string }) => {
