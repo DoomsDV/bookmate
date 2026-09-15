@@ -1,9 +1,11 @@
 import type { APIRoute } from 'astro';
 
+import { CAPABILITIES } from '../../config/capabilities';
 import {
 	AppointmentsApiError,
 	createAppointmentWithOrds,
 } from '../../lib/appointments';
+import { requireCapability } from '../../lib/permissions';
 import { parseCreateAppointmentPayload } from './appointments/schemas';
 import {
 	parseRequestBody,
@@ -38,6 +40,12 @@ const parseBody = (request: Request) =>
 export const POST: APIRoute = async ({ request, locals }) => {
 	try {
 		const token = requireToken(locals.token);
+		requireCapability(
+			locals,
+			CAPABILITIES.CALENDAR_MANAGE,
+			(message, status) => new AppointmentsApiError(message, status),
+			'No tienes permisos para crear citas.'
+		);
 		const body = await parseBody(request);
 		const payload = parseCreateAppointmentPayload(body);
 		const created = await createAppointmentWithOrds(token, payload);

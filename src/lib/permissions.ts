@@ -1,7 +1,7 @@
 import {
 	CAPABILITIES,
+	SAFE_FALLBACK_CAPABILITIES,
 	canAccessPathWithCapabilities,
-	defaultCapabilitiesForRole,
 	isCapabilityGranted,
 	type CapabilityCode,
 } from '../config/capabilities';
@@ -42,7 +42,7 @@ export type EffectivePermissions = {
 	roleName: string;
 	capabilities: string[];
 	entitlements: Record<string, boolean>;
-	source: 'ords' | 'default';
+	source: 'ords' | 'unavailable';
 };
 
 export type PermissionGrant = {
@@ -102,20 +102,21 @@ const readJson = async (response: Response) => {
 const toPermissionsError = (body: Record<string, unknown>, status: number, fallback: string) =>
 	new PermissionsApiError(String(body.message || fallback), status, body);
 
-export const fallbackPermissionsForRole = (roleId: number): EffectivePermissions => ({
+export const safeFallbackPermissions = (roleId: number): EffectivePermissions => ({
 	roleId,
 	roleName: '',
-	capabilities: [...defaultCapabilitiesForRole(roleId)],
+	capabilities: [...SAFE_FALLBACK_CAPABILITIES],
 	entitlements: {},
-	source: 'default',
+	source: 'unavailable',
 });
 
 export const getMyPermissionsWithOrds = async (
 	token: string,
-	roleId: number
+	roleId: number,
+	fetchImpl: typeof fetch = fetch
 ): Promise<EffectivePermissions> => {
 	try {
-		const response = await fetch(PERMISSIONS_ME_URL, { headers: authHeaders(token) });
+		const response = await fetchImpl(PERMISSIONS_ME_URL, { headers: authHeaders(token) });
 		const body = await readJson(response);
 		if (!response.ok || body.status === 'error') {
 			throw toPermissionsError(body, response.status, 'No fue posible obtener los permisos.');
@@ -124,22 +125,21 @@ export const getMyPermissionsWithOrds = async (
 		const capabilities = Array.isArray(data.capabilities)
 			? data.capabilities.map((item) => String(item || '').trim()).filter(Boolean)
 			: [];
-		const entitlements =
-			data.entitlements && typeof data.entitlements === 'object' && !Array.isArray(data.entitlements)
-				? (data.entitlements as Record<string, boolean>)
-				: {};
 		return {
 			roleId: Number(data.role_id || roleId),
 			roleName: String(data.role_name || ''),
 			capabilities,
-			entitlements,
+			entitlements:
+				data.entitlements && typeof data.entitlements === 'object' && !Array.isArray(data.entitlements)
+					? (data.entitlements as Record<string, boolean>)
+					: {},
 			source: 'ords',
 		};
 	} catch (error) {
 		if (error instanceof PermissionsApiError && error.status >= 400 && error.status < 500) {
 			throw error;
 		}
-		return fallbackPermissionsForRole(roleId);
+		return safeFallbackPermissions(roleId);
 	}
 };
 

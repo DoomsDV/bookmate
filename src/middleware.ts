@@ -7,7 +7,7 @@ import {
 	readCachedPermissions,
 	setCachedPermissions,
 } from './lib/permission-cache';
-import { fallbackPermissionsForRole, getMyPermissionsWithOrds } from './lib/permissions';
+import { getMyPermissionsWithOrds, safeFallbackPermissions } from './lib/permissions';
 import {
 	clearSessionCookies,
 	getPendingSelectionAuthToken,
@@ -170,16 +170,23 @@ export const onRequest = defineMiddleware(async (context, next) => {
 	}
 
 	const isApiRequest = url.pathname.startsWith('/api/');
-	const cachedCapabilities = isApiRequest ? readCachedPermissions(cookies, claims) : null;
+	// Cookie firmada: solo cache de UI. Las APIs siempre revalidan contra ORDS.
+	const cachedCapabilities = isApiRequest ? null : readCachedPermissions(cookies, claims);
 	let capabilities = cachedCapabilities;
 
 	if (!capabilities) {
 		try {
 			const loaded = await getMyPermissionsWithOrds(accessToken, claims.role_id);
-			capabilities = loaded.capabilities;
-			setCachedPermissions(cookies, claims, capabilities);
+			if (loaded.source === 'ords') {
+				capabilities = loaded.capabilities;
+				setCachedPermissions(cookies, claims, capabilities);
+			} else {
+				capabilities = [...safeFallbackPermissions(claims.role_id).capabilities];
+				clearCachedPermissions(cookies);
+			}
 		} catch {
-			capabilities = [...fallbackPermissionsForRole(claims.role_id).capabilities];
+			capabilities = [...safeFallbackPermissions(claims.role_id).capabilities];
+			clearCachedPermissions(cookies);
 		}
 	}
 

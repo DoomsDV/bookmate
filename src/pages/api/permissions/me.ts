@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 
-import { fallbackPermissionsForRole, getMyPermissionsWithOrds } from '../../../lib/permissions';
+import { getMyPermissionsWithOrds, safeFallbackPermissions } from '../../../lib/permissions';
 
 export const GET: APIRoute = async ({ locals }) => {
 	const token = locals.token;
@@ -17,7 +17,7 @@ export const GET: APIRoute = async ({ locals }) => {
 		const permissions = await getMyPermissionsWithOrds(token, roleId);
 		return Response.json({ status: 'success', data: permissions }, { status: 200 });
 	} catch {
-		const fallback = fallbackPermissionsForRole(roleId);
+		const fallback = safeFallbackPermissions(roleId);
 		return Response.json({ status: 'success', data: fallback }, { status: 200 });
 	}
 };

@@ -453,19 +453,17 @@ export const defaultCapabilitiesForRole = (roleId: number): readonly CapabilityC
 	return [];
 };
 
+export const SAFE_FALLBACK_CAPABILITIES: readonly CapabilityCode[] = [
+	CAPABILITIES.DASHBOARD_VIEW,
+	CAPABILITIES.AJUSTES_VIEW,
+];
+
+/** Solo confía en la lista explícita. Sin array (o fetch fallido) no hay grant de rol. */
 export const isCapabilityGranted = (
 	capabilities: readonly string[] | undefined,
 	code: string,
-	roleId?: number
-) => {
-	if (Array.isArray(capabilities)) {
-		return capabilities.includes(code);
-	}
-	if (typeof roleId === 'number') {
-		return defaultCapabilitiesForRole(roleId).includes(code as CapabilityCode);
-	}
-	return false;
-};
+	_roleId?: number
+) => Array.isArray(capabilities) && capabilities.includes(code);
 
 export const getRequiredCapabilityForPath = (pathname: string): CapabilityCode | null => {
 	const normalizedPath = normalizePath(pathname);

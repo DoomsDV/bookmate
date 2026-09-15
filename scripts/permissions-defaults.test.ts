@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
 	CAPABILITIES,
+	SAFE_FALLBACK_CAPABILITIES,
 	canAccessPathWithCapabilities,
 	defaultCapabilitiesForRole,
 	isCapabilityGranted,
@@ -58,4 +59,30 @@ test('Apagar locations.view oculta Sucursales para recepción', () => {
 	const tightened = reception.filter((code) => code !== CAPABILITIES.LOCATIONS_VIEW);
 	assert.equal(canAccessPathWithCapabilities('/panel/locations', tightened, ROLES.RECEPCIONISTA), false);
 	assert.equal(canAccessPathWithCapabilities('/api/locations', tightened, ROLES.RECEPCIONISTA), false);
+});
+
+test('Fail-closed: sin lista de capabilities no se otorgan defaults de rol', () => {
+	assert.equal(isCapabilityGranted(undefined, CAPABILITIES.CUSTOMERS_CREATE, ROLES.ADMIN), false);
+	assert.equal(isCapabilityGranted(undefined, CAPABILITIES.LOCATIONS_MANAGE, ROLES.ADMIN), false);
+	assert.equal(isCapabilityGranted(undefined, CAPABILITIES.CALENDAR_MANAGE, ROLES.RECEPCIONISTA), false);
+	assert.equal(canAccessPathWithCapabilities('/panel/locations', undefined, ROLES.ADMIN), false);
+});
+
+test('Fail-closed: fallback seguro no incluye manage/create', () => {
+	assert.ok(SAFE_FALLBACK_CAPABILITIES.includes(CAPABILITIES.DASHBOARD_VIEW));
+	assert.equal(SAFE_FALLBACK_CAPABILITIES.includes(CAPABILITIES.CALENDAR_MANAGE), false);
+	assert.equal(SAFE_FALLBACK_CAPABILITIES.includes(CAPABILITIES.CUSTOMERS_CREATE), false);
+	assert.equal(SAFE_FALLBACK_CAPABILITIES.includes(CAPABILITIES.PERMISSIONS_MANAGE), false);
+	assert.equal(
+		canAccessPathWithCapabilities('/api/appointments', SAFE_FALLBACK_CAPABILITIES, ROLES.ADMIN),
+		false
+	);
+});
+
+test('calendar.view no alcanza para mutar citas (403)', () => {
+	assert.equal(isCapabilityGranted([CAPABILITIES.CALENDAR_VIEW], CAPABILITIES.CALENDAR_MANAGE), false);
+	assert.ok(canAccessPathWithCapabilities('/api/appointments', [CAPABILITIES.CALENDAR_VIEW], ROLES.PROFESIONAL));
+	const locals = { capabilities: [CAPABILITIES.CALENDAR_VIEW] };
+	const denied = !isCapabilityGranted(locals.capabilities, CAPABILITIES.CALENDAR_MANAGE);
+	assert.equal(denied, true);
 });

@@ -1,7 +1,9 @@
 /** BFF: recibe la imagen y la reenvía a ORDS /ai/appointments/image-draft. */
 import type { APIRoute } from 'astro';
 
+import { CAPABILITIES } from '../../../../config/capabilities';
 import { AgendaScanError, processAgendaImageDraft } from '../../../../lib/appointment-agenda-ai';
+import { requireCapability } from '../../../../lib/permissions';
 
 const toErrorResponse = (error: unknown, fallbackMessage: string) => {
 	const scanError =
@@ -23,6 +25,12 @@ export const POST: APIRoute = async ({ locals, request }) => {
 		if (!token) {
 			throw new AgendaScanError('No hay sesión válida para escanear la agenda.', 401);
 		}
+		requireCapability(
+			locals,
+			CAPABILITIES.CALENDAR_MANAGE,
+			(message, status) => new AgendaScanError(message, status),
+			'No tienes permisos para crear citas.'
+		);
 
 		const formData = await request.formData();
 		const imageEntry = formData.get('image');

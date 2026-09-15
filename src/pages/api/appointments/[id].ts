@@ -1,11 +1,22 @@
 import type { APIRoute } from 'astro';
 
+import { CAPABILITIES } from '../../../config/capabilities';
 import {
 	AppointmentsApiError,
 	deleteAppointmentWithOrds,
 	getAppointmentByIdWithOrds,
 	updateAppointmentWithOrds,
 } from '../../../lib/appointments';
+import { requireCapability } from '../../../lib/permissions';
+
+const requireCalendarManage = (locals: App.Locals) => {
+	requireCapability(
+		locals,
+		CAPABILITIES.CALENDAR_MANAGE,
+		(message, status) => new AppointmentsApiError(message, status),
+		'No tienes permisos para modificar citas.'
+	);
+};
 import { parseUpdateAppointmentPayload } from './schemas';
 import {
 	parseRequestBody,
@@ -65,6 +76,7 @@ export const GET: APIRoute = async ({ params, locals }) => {
 export const PUT: APIRoute = async ({ request, params, locals }) => {
 	try {
 		const token = requireToken(locals.token);
+		requireCalendarManage(locals);
 		const appointmentId = parseAppointmentId(params.id);
 		if (!appointmentId) {
 			throw new AppointmentsApiError('ID de cita invalido.', 400);
@@ -89,6 +101,7 @@ export const PUT: APIRoute = async ({ request, params, locals }) => {
 export const DELETE: APIRoute = async ({ params, locals }) => {
 	try {
 		const token = requireToken(locals.token);
+		requireCalendarManage(locals);
 		const appointmentId = parseAppointmentId(params.id);
 		if (!appointmentId) {
 			throw new AppointmentsApiError('ID de cita invalido.', 400);
