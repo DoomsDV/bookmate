@@ -368,15 +368,14 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 															{pro.specialty || '\u00a0'}
 														</p>
 													</div>
-													<p
-														className={`hub-pro-card__rating${rating.hasRating ? '' : ' hub-pro-card__rating--empty'}`}
-														aria-label={rating.aria}
-													>
-														<span className="material-symbols-rounded" aria-hidden="true">
-															star
-														</span>
-														<span>{rating.label}</span>
-													</p>
+													{rating.hasRating ? (
+														<p className="hub-pro-card__rating" aria-label={rating.aria}>
+															<span className="material-symbols-rounded" aria-hidden="true">
+																star
+															</span>
+															<span>{rating.label}</span>
+														</p>
+													) : null}
 												</div>
 												<span className="hub-pro-card__btn hub-pro-card__btn--book">
 													Reservar

@@ -594,16 +594,12 @@ const serializedProfessionals = professionals.length
 																		{specialty || '\u00a0'}
 																	</p>
 																</div>
-																<p
-																	class:list={[
-																		'hub-pro-card__rating',
-																		!rating.hasRating && 'hub-pro-card__rating--empty',
-																	]}
-																	aria-label={rating.aria}
-																>
-																	<span class="material-symbols-rounded" aria-hidden="true">star</span>
-																	<span>{rating.label}</span>
-																</p>
+																{rating.hasRating ? (
+																	<p class="hub-pro-card__rating" aria-label={rating.aria}>
+																		<span class="material-symbols-rounded" aria-hidden="true">star</span>
+																		<span>{rating.label}</span>
+																	</p>
+																) : null}
 															</div>
 															<span class="hub-pro-card__btn hub-pro-card__btn--book">
 																Reservar

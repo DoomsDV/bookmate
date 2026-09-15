@@ -14,6 +14,7 @@ const SYSTEM_SLOT_SELECTOR = '[data-settings-tour-system-slot]';
 const SYSTEM_SLOT_PREVIEW_SELECTOR = '[data-settings-tour-system-slot-preview]';
 const SYSTEM_REMINDER_SELECTOR = '[data-settings-tour-system-reminder]';
 const SYSTEM_ALERT_SELECTOR = '[data-settings-tour-system-alert]';
+const SYSTEM_SURVEY_SELECTOR = '[data-settings-tour-system-survey-auto]';
 const SYSTEM_PUSH_SELECTOR = '[data-settings-tour-system-push]';
 const SYSTEM_NOTIFY_ALL_SELECTOR = '[data-settings-tour-system-notify-all]';
 
@@ -239,6 +240,19 @@ function buildSystemTourSteps(): DriveStep[] {
 		});
 	}
 
+	if (document.querySelector(SYSTEM_SURVEY_SELECTOR)) {
+		steps.push({
+			element: SYSTEM_SURVEY_SELECTOR,
+			popover: {
+				title: 'Encuesta de satisfacción',
+				description:
+					'Activá el envío automático para que el cliente reciba la encuesta por WhatsApp. Las estrellas del perfil público salen de esas respuestas.',
+				side: 'bottom',
+				align: 'start',
+			},
+		});
+	}
+
 	if (document.querySelector(SYSTEM_PUSH_SELECTOR)) {
 		steps.push({
 			element: SYSTEM_PUSH_SELECTOR,
@@ -331,7 +345,7 @@ export function hasSettingsModalTourForTab(tab: string): boolean {
  * Guía contextual del modal de ajustes.
  * En Pagos: cobro de señas → políticas → datos SIPAP.
  * En Mi perfil: enlace personal (si está disponible).
- * En Sistema: slots, recordatorios, alertas y notificaciones.
+ * En Sistema: slots, recordatorios, alertas, encuesta y notificaciones.
  */
 export function showSettingsModalTour(context: SettingsModalTourContext = {}) {
 	const tab = context.getActiveTab?.() ?? 'profile';

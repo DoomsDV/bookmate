@@ -24,5 +24,9 @@ export const formatPublicProfessionalRating = (
 			aria: `${label} de 5`,
 		};
 	}
-	return { hasRating: false, label: '-', aria: 'Sin reseñas todavía' };
+	return {
+		hasRating: false,
+		label: '-',
+		aria: 'Todavía no hay calificaciones de la encuesta',
+	};
 };
