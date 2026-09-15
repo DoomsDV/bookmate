@@ -7,6 +7,9 @@ import type {
 	AppointmentCreatePayload,
 	AppointmentDetail,
 	AppointmentFormPayload,
+	AppointmentSeriesConflict,
+	AppointmentSeriesCreatePayload,
+	AppointmentSeriesCreateResult,
 	CalendarMetaResponse,
 	CustomerOption,
 } from './types';
@@ -25,6 +28,10 @@ type ApiFailure = {
 	errors?: unknown;
 	code?: string;
 	schedule_misaligned_reason?: string;
+	conflicts?: AppointmentSeriesConflict[];
+	id_series?: number;
+	created?: number;
+	skipped?: number;
 };
 
 type GoogleCalendarEventsPayload = {
@@ -58,6 +65,7 @@ const ensureSuccess = (response: Response, data: ApiSuccess | ApiFailure, fallba
 		{
 			code: String(failure?.code || '').trim() || undefined,
 			scheduleMisalignedReason: String(failure?.schedule_misaligned_reason || '').trim() || null,
+			conflicts: Array.isArray(failure?.conflicts) ? failure.conflicts : [],
 		}
 	);
 };
@@ -183,6 +191,32 @@ export class AppointmentsClient {
 			message:
 				(typeof data.message === 'string' && data.message.trim()) || 'Cita agendada correctamente.',
 		};
+	}
+
+	async createAppointmentSeries(payload: AppointmentSeriesCreatePayload) {
+		const response = await fetch('/api/appointments/series', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Accept: 'application/json',
+			},
+			body: JSON.stringify(payload),
+		});
+		const data = await parseJsonResponse(response);
+		ensureSuccess(response, data, 'No fue posible crear la serie de citas.');
+		const source = data as ApiSuccess & {
+			id_series?: number;
+			created?: number;
+			skipped?: number;
+		};
+		return {
+			id_series: Number(source.id_series) || 0,
+			created: Number(source.created) || 0,
+			skipped: Number(source.skipped) || 0,
+			message:
+				(typeof data.message === 'string' && data.message.trim()) ||
+				'Serie semanal creada correctamente.',
+		} satisfies AppointmentSeriesCreateResult;
 	}
 
 	async updateAppointment(appointmentId: number, payload: AppointmentFormPayload) {

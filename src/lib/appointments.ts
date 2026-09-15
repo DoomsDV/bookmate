@@ -46,6 +46,7 @@ export interface AppointmentCalendarEventExtendedProps {
 	schedule_misaligned?: boolean;
 	schedule_misaligned_reason?: ScheduleMisalignedReason | null;
 	schedule_exception_approved?: boolean;
+	series_id?: number | null;
 }
 
 export interface AppointmentCalendarEvent {
@@ -108,6 +109,7 @@ export interface AppointmentDetail {
 	receipt_uploaded?: boolean;
 	receipt_pending_review?: boolean;
 	ocr_status?: string | null;
+	series_id?: number | null;
 }
 
 export interface AppointmentCalendarFilters {
@@ -131,6 +133,37 @@ export interface AppointmentCreatePayload {
 	notify_customer?: boolean;
 }
 
+export interface AppointmentSeriesRecurrence {
+	frequency: 'WEEKLY';
+	count?: number;
+	until?: string;
+}
+
+export interface AppointmentSeriesCreatePayload extends AppointmentCreatePayload {
+	recurrence: AppointmentSeriesRecurrence;
+	skip_conflicts?: boolean;
+}
+
+export interface AppointmentSeriesConflict {
+	start_time: string;
+	reason: string;
+	message?: string;
+}
+
+export interface AppointmentSeriesCreatedRow {
+	id_appointment: number;
+	start_time: string;
+}
+
+export interface AppointmentSeriesCreateResult {
+	id_series: number;
+	created: number;
+	skipped: number;
+	appointments: AppointmentSeriesCreatedRow[];
+	skipped_conflicts?: AppointmentSeriesConflict[];
+	message: string;
+}
+
 export interface AppointmentUpdatePayload extends AppointmentCreatePayload {
 	status: 'PENDIENTE' | 'CONFIRMADO' | 'COMPLETADO' | 'CANCELADO';
 	// Fase 4: notas de la sesion, se guardan al pasar a COMPLETADO (solo Premium).
@@ -142,6 +175,11 @@ interface AppointmentSuccessResponse {
 	message?: string;
 	data?: unknown;
 	id_appointment?: number;
+	id_series?: number;
+	created?: number;
+	skipped?: number;
+	appointments?: unknown;
+	skipped_conflicts?: unknown;
 }
 
 interface AppointmentFailureResponse {
@@ -151,6 +189,12 @@ interface AppointmentFailureResponse {
 	errors?: unknown;
 	code?: string;
 	schedule_misaligned_reason?: string;
+	conflicts?: unknown;
+	id_series?: number;
+	created?: number;
+	skipped?: number;
+	appointments?: unknown;
+	skipped_conflicts?: unknown;
 }
 
 export class AppointmentsApiError extends Error {
@@ -159,13 +203,18 @@ export class AppointmentsApiError extends Error {
 	fieldErrors: AppointmentFieldError[];
 	code?: string;
 	scheduleMisalignedReason?: string | null;
+	conflicts: AppointmentSeriesConflict[];
 
 	constructor(
 		message: string,
 		status = 400,
 		details?: unknown,
 		fieldErrors: AppointmentFieldError[] = [],
-		options?: { code?: string; scheduleMisalignedReason?: string | null }
+		options?: {
+			code?: string;
+			scheduleMisalignedReason?: string | null;
+			conflicts?: AppointmentSeriesConflict[];
+		}
 	) {
 		super(message);
 		this.name = 'AppointmentsApiError';
@@ -174,6 +223,7 @@ export class AppointmentsApiError extends Error {
 		this.fieldErrors = fieldErrors;
 		this.code = options?.code;
 		this.scheduleMisalignedReason = options?.scheduleMisalignedReason ?? null;
+		this.conflicts = options?.conflicts ?? [];
 	}
 }
 
@@ -241,13 +291,39 @@ const toApiError = (
 					...(scheduleMisalignedReason ? { schedule_misaligned_reason: scheduleMisalignedReason } : {}),
 				};
 
+	const conflicts = parseSeriesConflicts(
+		failureData.conflicts ??
+			(details && typeof details === 'object' ? (details as Record<string, unknown>).conflicts : undefined)
+	);
+	if (conflicts.length > 0) {
+		(details as Record<string, unknown>).conflicts = conflicts;
+	}
+
 	return new AppointmentsApiError(
 		(typeof failureData.message === 'string' && failureData.message.trim()) || fallbackMessage,
 		response.status || 400,
 		Object.keys(details).length > 0 ? details : failureData.details,
 		parseFieldErrors(failureData.errors),
-		{ code, scheduleMisalignedReason }
+		{ code, scheduleMisalignedReason, conflicts }
 	);
+};
+
+const parseSeriesConflicts = (value: unknown): AppointmentSeriesConflict[] => {
+	if (!Array.isArray(value)) return [];
+	return value.flatMap((item) => {
+		if (!item || typeof item !== 'object') return [];
+		const source = item as Record<string, unknown>;
+		const startTime = String(source.start_time || '').trim();
+		const reason = String(source.reason || '').trim();
+		if (!startTime) return [];
+		return [
+			{
+				start_time: startTime,
+				reason: reason || 'OVERLAP',
+				...(source.message ? { message: String(source.message) } : {}),
+			},
+		];
+	});
 };
 
 const normalizeExtendedProps = (value: unknown, resourceId: number) => {
@@ -264,6 +340,7 @@ const normalizeExtendedProps = (value: unknown, resourceId: number) => {
 			schedule_misaligned: false,
 			schedule_misaligned_reason: null,
 			schedule_exception_approved: false,
+			series_id: null,
 		};
 	}
 
@@ -294,6 +371,7 @@ const normalizeExtendedProps = (value: unknown, resourceId: number) => {
 		schedule_misaligned: scheduleMisaligned,
 		schedule_misaligned_reason: scheduleMisalignedReason,
 		schedule_exception_approved: isScheduleMisalignedFlag(source.schedule_exception_approved),
+		series_id: toNumber(source.series_id ?? source.srs_id_series, 0) || null,
 	};
 };
 
@@ -461,6 +539,7 @@ const normalizeAppointmentDetail = (value: unknown): AppointmentDetail | null =>
 		receipt_pending_review:
 			source.receipt_pending_review === true || source.receipt_pending_review === 1,
 		ocr_status: String(source.ocr_status || '').trim() || null,
+		series_id: toNumber(source.series_id ?? source.srs_id_series, 0) || null,
 	};
 
 	applyScheduleMisalignedFields(detail, source, status, startTime);
@@ -647,6 +726,52 @@ export const createAppointmentsBulkWithOrds = async (
 		created: toNumber(bulkData.created, 0),
 		failed: toNumber(bulkData.failed, 0),
 		results,
+	};
+};
+
+export const createAppointmentSeriesWithOrds = async (
+	token: string,
+	payload: AppointmentSeriesCreatePayload
+): Promise<AppointmentSeriesCreateResult> => {
+	ensureToken(token);
+
+	const response = await fetch(`${APPOINTMENTS_URL}/series`, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+		},
+		body: JSON.stringify(payload),
+	});
+
+	const { data } = await parseJsonResponse(response);
+	if (!response.ok || !isSuccessResponse(data)) {
+		throw toApiError(response, data, 'No fue posible crear la serie de citas.');
+	}
+
+	const source = data as AppointmentSuccessResponse & Partial<AppointmentSeriesCreateResult>;
+	const appointments = Array.isArray(source.appointments)
+		? source.appointments.flatMap((row) => {
+				if (!row || typeof row !== 'object') return [];
+				const item = row as Partial<AppointmentSeriesCreatedRow>;
+				const id = toNumber(item.id_appointment, 0);
+				const startTime = String(item.start_time || '').trim();
+				if (id <= 0 || !startTime) return [];
+				return [{ id_appointment: id, start_time: startTime }];
+			})
+		: [];
+
+	return {
+		id_series: toNumber(source.id_series, 0),
+		created: toNumber(source.created, appointments.length),
+		skipped: toNumber(source.skipped, 0),
+		appointments,
+		skipped_conflicts: parseSeriesConflicts(source.skipped_conflicts),
+		message:
+			typeof source.message === 'string' && source.message.trim()
+				? source.message
+				: `Se crearon ${appointments.length} citas de la serie semanal.`,
 	};
 };
 

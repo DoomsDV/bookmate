@@ -1,4 +1,5 @@
 ---
+import { SCREEN_EMPTY } from '../lib/setup-empty-cta';
 import type { Service } from '../lib/services';
 
 interface Props {
@@ -25,14 +26,15 @@ const emptyTitle = hasFilters
 	? 'No se encontraron servicios'
 	: isProfessional
 		? 'No tenés servicios asignados'
-		: 'No hay servicios registrados';
+		: SCREEN_EMPTY.services.title;
 const emptyCopy = hasSearch
 	? 'Probá con otro nombre.'
 	: hasStatusFilter
 		? 'No hay servicios con ese estado.'
 		: isProfessional
 			? 'Cuando el administrador te asigne servicios, aparecerán aquí.'
-			: 'Aun no has agregado ningun servicio a esta organizacion. Comienza creando tu primera prestacion.';
+			: SCREEN_EMPTY.services.copy;
+const showEmptyCta = showCreateAction && !hasFilters && !isProfessional;
 
 const currencyFormatter = new Intl.NumberFormat('es-PY', {
 	style: 'currency',
@@ -228,6 +230,16 @@ const toDurationLabel = (value?: number | null) => {
 				<p class="mt-1.5 max-w-sm text-[0.95rem] leading-relaxed text-(--on-surface-variant)">
 					{emptyCopy}
 				</p>
+				{showEmptyCta ? (
+					<button
+						type="button"
+						class="panel-empty-cta"
+						data-open-service-modal
+						data-requires-write
+					>
+						{SCREEN_EMPTY.services.ctaLabel}
+					</button>
+				) : null}
 			</div>
 		) : (
 			<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3 xl:grid-cols-4" data-services-grid>

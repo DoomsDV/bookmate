@@ -14,6 +14,11 @@ import {
 import { ROLES } from '../config/roles';
 import type { ScheduleExceptionType } from '../lib/schedules';
 import {
+	renderSetupEmptyCta,
+	renderSetupEmptyState,
+	SCREEN_EMPTY,
+} from '../lib/setup-empty-cta';
+import {
 	buildExceptionSummaryMap,
 	EXCEPTION_NOTE_HELP_TEXT,
 	formatDateKey,
@@ -757,11 +762,53 @@ class ScheduleManager extends HTMLElement {
 		this.plannerNode.appendChild(messageNode);
 	}
 
+	private canLinkToTeamSetup(): boolean {
+		return this.roleId !== ROLES.PROFESIONAL;
+	}
+
+	private renderSetupEmpty(kind: 'no_professionals' | 'no_locations'): void {
+		if (!this.plannerNode) return;
+		this.dayNodes.clear();
+		this.clearNode(this.plannerNode);
+
+		const copy =
+			kind === 'no_professionals'
+				? SCREEN_EMPTY.schedulesNoProfessionals
+				: SCREEN_EMPTY.schedulesNoLocations;
+		const canLink =
+			kind === 'no_professionals' ? this.canLinkToTeamSetup() : this.roleId === ROLES.ADMIN || this.roleId === ROLES.RECEPCIONISTA;
+		const ctaHtml = canLink
+			? renderSetupEmptyCta({ label: copy.ctaLabel, href: copy.href })
+			: '';
+
+		this.plannerNode.innerHTML = renderSetupEmptyState({
+			icon: copy.icon,
+			title: copy.title,
+			copy: copy.copy,
+			ctaHtml,
+			rootClass: 'panel-setup-empty schedule-setup-empty',
+			rootAttrs: 'data-schedule-setup-empty',
+		});
+	}
+
 	private renderPlanner(): void {
 		if (!this.plannerNode) return;
 
+		if (this.professionals.length === 0) {
+			this.renderSetupEmpty('no_professionals');
+			return;
+		}
+
+		if (this.locations.length === 0) {
+			this.renderSetupEmpty('no_locations');
+			return;
+		}
+
 		if (this.selectedProfessionalId <= 0) {
-			this.renderPlannerMessage('Selecciona un profesional para configurar sus horarios.', 'info');
+			this.renderPlannerMessage(
+				'Selecciona un profesional. Este horario es el que abre turnos online; el de la página pública solo se muestra.',
+				'info'
+			);
 			return;
 		}
 
@@ -2388,7 +2435,20 @@ class ScheduleManager extends HTMLElement {
 				this.selectedProfessionalId = 0;
 				this.renderProfessionalOptions();
 				this.renderPlanner();
-				this.showError('No hay profesionales disponibles para configurar horarios.');
+				return;
+			}
+
+			if (this.locations.length === 0) {
+				if (this.roleId === ROLES.PROFESIONAL) {
+					this.selectedProfessionalId =
+						this.currentProfessionalId > 0
+							? this.currentProfessionalId
+							: Number(this.professionals[0]?.id_professional || 0);
+				} else {
+					this.selectedProfessionalId = Number(this.professionals[0]?.id_professional || 0);
+				}
+				this.renderProfessionalOptions();
+				this.renderPlanner();
 				return;
 			}
 

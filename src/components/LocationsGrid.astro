@@ -11,6 +11,7 @@ import AppPagination from './AppPagination.astro';
 interface Props {
 	locations: Location[];
 	showCreateAction?: boolean;
+	searchQuery?: string;
 	isActiveFilter?: number | null;
 	currentPage?: number;
 	totalPages?: number;
@@ -20,12 +21,21 @@ interface Props {
 const {
 	locations = [],
 	showCreateAction = false,
+	searchQuery = '',
 	isActiveFilter = null,
 	currentPage = 1,
 	totalPages = 1,
 	totalRecords = 0,
 } = Astro.props;
+const hasSearch = Boolean(searchQuery);
 const hasStatusFilter = isActiveFilter === 0 || isActiveFilter === 1;
+const hasFilters = hasSearch || hasStatusFilter;
+const emptyTitle = hasFilters ? 'No se encontraron sucursales' : 'No hay sucursales registradas';
+const emptyCopy = hasSearch
+	? 'Probá con otro nombre, dirección o ciudad.'
+	: hasStatusFilter
+		? 'No hay sucursales con ese estado.'
+		: 'Aún no has agregado ninguna sucursal a esta organización. Comienza creando tu primer local.';
 
 const stadiaKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 const mapTheme = resolveMapThemeFromStorage(Astro.cookies.get('bookmate-theme')?.value);
@@ -153,6 +163,35 @@ const eagerMapPreloadUrls = locations
 	)}
 
 	<div class="flex max-w-xl items-center gap-2">
+		<div class="relative min-w-0 flex-1" data-panel-search>
+			<span
+				class="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-(--on-surface-variant)"
+				aria-hidden="true"
+			>
+				<span class="material-symbols-rounded text-[1.2rem]">search</span>
+			</span>
+			<input
+				type="text"
+				inputmode="search"
+				enterkeyhint="search"
+				data-locations-search
+				placeholder="Buscar por nombre, dirección o ciudad"
+				aria-label="Buscar por nombre, dirección o ciudad"
+				autocomplete="off"
+				value={searchQuery}
+				class="w-full rounded-2xl border border-(--shell-border) bg-(--surface-bright) py-2.5 pl-11 pr-11 text-[0.95rem] font-semibold text-(--on-surface) outline-none transition placeholder:font-medium placeholder:text-(--on-surface-variant)/70 hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
+			/>
+			<button
+				type="button"
+				class="panel-search-clear"
+				data-panel-search-clear
+				hidden={String(searchQuery || '').length === 0}
+				aria-label="Limpiar búsqueda"
+			>
+				<span class="material-symbols-rounded" aria-hidden="true">close</span>
+			</button>
+		</div>
+
 		<button
 			type="button"
 			class:list={[
@@ -235,15 +274,13 @@ const eagerMapPreloadUrls = locations
 	{locations.length === 0 ? (
 		<div class="locations-empty-state" data-locations-empty>
 			<div class="locations-empty-icon">
-				<span class="material-symbols-rounded text-[2rem]">{hasStatusFilter ? 'search_off' : 'domain'}</span>
+				<span class="material-symbols-rounded text-[2rem]">{hasFilters ? 'search_off' : 'domain'}</span>
 			</div>
 			<h3 class="text-[1.1rem] font-bold text-(--on-surface)">
-				{hasStatusFilter ? 'No se encontraron sucursales' : 'No hay sucursales registradas'}
+				{emptyTitle}
 			</h3>
 			<p class="mt-1.5 max-w-sm text-[0.95rem] leading-relaxed text-(--on-surface-variant)">
-				{hasStatusFilter
-					? 'No hay sucursales con ese estado.'
-					: 'Aún no has agregado ninguna sucursal a esta organización. Comienza creando tu primer local.'}
+				{emptyCopy}
 			</p>
 		</div>
 	) : (
@@ -304,6 +341,12 @@ const eagerMapPreloadUrls = locations
 							<p class="locations-card__address line-clamp-1">
 								{location.address || 'Dirección no disponible'}
 							</p>
+							{location.phone ? (
+								<p class="locations-card__phone line-clamp-1">
+									<span class="material-symbols-rounded" aria-hidden="true">call</span>
+									{location.phone}
+								</p>
+							) : null}
 							<div class="locations-card__route">
 								<span class="locations-card__pin" aria-hidden="true">
 									<span class="material-symbols-rounded">location_on</span>
@@ -634,12 +677,25 @@ const eagerMapPreloadUrls = locations
 		line-height: 1.2;
 	}
 
-	location-manager .locations-card__address {
+	location-manager .locations-card__address,
+	location-manager .locations-card__phone {
 		margin: 0;
 		font-size: 0.78rem;
 		font-weight: 550;
 		line-height: 1.35;
 		color: var(--on-surface-variant);
+	}
+
+	location-manager .locations-card__phone {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		min-width: 0;
+	}
+
+	location-manager .locations-card__phone .material-symbols-rounded {
+		font-size: 0.95rem;
+		line-height: 1;
 	}
 
 	location-manager .locations-card__route {
@@ -947,6 +1003,8 @@ const eagerMapPreloadUrls = locations
 
 <script>
 	import { initLocationsListControls } from '../scripts/locations-list-controls';
+	import { initPanelSearchClear } from '../scripts/panel-search-clear';
 
 	initLocationsListControls();
+	initPanelSearchClear();
 </script>

@@ -24,6 +24,7 @@ const parseBody = async (request: Request) => {
 	return {
 		name: formData.get('name'),
 		address: formData.get('address'),
+		phone: formData.get('phone'),
 		cit_id_city: formData.get('cit_id_city'),
 		dep_id_department: formData.get('dep_id_department'),
 		latitude: formData.get('latitude'),
@@ -48,9 +49,12 @@ const parseUpdatePayload = (body: any): CreateLocationPayload => {
 	const latitude = toOptionalNumber(body?.latitude);
 	const longitude = toOptionalNumber(body?.longitude);
 
+	const phone = String(body?.phone || '').trim();
+
 	const payload: CreateLocationPayload = {
 		name,
 		address,
+		phone: phone || null,
 		cit_id_city: Number.isFinite(cityId) ? cityId : 0,
 		dep_id_department: Number.isFinite(departmentId) ? departmentId : 0,
 	};

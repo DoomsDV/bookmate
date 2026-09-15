@@ -2,6 +2,7 @@ export type PublicBookingLocationRecord = {
 	id_location: number;
 	name: string;
 	address: string;
+	phone?: string;
 	latitude?: number;
 	longitude?: number;
 };
@@ -20,6 +21,7 @@ const normalizeLocationRecord = (value: unknown): PublicBookingLocationRecord | 
 
 	const name = String(source.name || '').trim();
 	const address = String(source.address || '').trim();
+	const phone = String(source.phone || '').trim();
 	const latitude = Number(source.latitude);
 	const longitude = Number(source.longitude);
 
@@ -27,6 +29,7 @@ const normalizeLocationRecord = (value: unknown): PublicBookingLocationRecord | 
 		id_location: idLocation,
 		name: name || address || `Sucursal #${idLocation}`,
 		address,
+		phone: phone || undefined,
 		latitude: Number.isFinite(latitude) ? latitude : undefined,
 		longitude: Number.isFinite(longitude) ? longitude : undefined,
 	};
@@ -72,6 +75,22 @@ export const getLocationBranchTitle = (location: {
 };
 
 /** Dirección bajo el nombre (vacío si no hay o es igual al nombre). */
+export const getLocationPhone = (location: { phone?: string | null }) =>
+	String(location.phone || '').trim();
+
+export const buildLocationTelHref = (phone?: string | null): string | null => {
+	const raw = String(phone || '').trim();
+	if (!raw) return null;
+
+	const compact = raw.replace(/[^\d+]/g, '');
+	const digits = compact.replace(/\D/g, '');
+	if (digits.length < 6) return null;
+	if (compact.startsWith('+')) return `tel:+${digits}`;
+	if (/^09\d{8}$/.test(digits)) return `tel:+595${digits.slice(1)}`;
+	if (/^5959\d{8}$/.test(digits)) return `tel:+${digits}`;
+	return `tel:${digits}`;
+};
+
 export const getLocationAddressLine = (location: {
 	name?: string | null;
 	address?: string | null;

@@ -20,6 +20,7 @@ import {
 	isDisputeStaffUploadOpen,
 	normalizeDisputeStatus,
 } from '../lib/refund-dispute-status';
+import { bindCobrosTourHelp, maybeShowCobrosTour } from '../lib/cobros-tour';
 
 type CobrosManagerElement = HTMLElement & {
 	__cobrosBound?: boolean;
@@ -1106,6 +1107,10 @@ export const initCobrosPage = () => {
 			if (focusAppointmentId || pendingFocusItem) {
 				applyPendingCobrosFocus();
 			}
+			if (!root.dataset.cobrosTourQueued) {
+				root.dataset.cobrosTourQueued = '1';
+				maybeShowCobrosTour();
+			}
 		}
 	};
 
@@ -1598,6 +1603,7 @@ export const initCobrosPage = () => {
 	syncSortUi();
 	updatePeriodFilterUi();
 	applyFeatureGate();
+	bindCobrosTourHelp(root);
 	void load();
 
 	onSubscriptionRefresh = () => {

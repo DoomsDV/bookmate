@@ -149,6 +149,29 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 					</label>
 				</div>
 
+				<label
+					class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
+				>
+					<span class="inline-flex items-center gap-1">
+						Teléfono
+						<span class="text-(--on-surface-variant) font-medium">(Opcional)</span>
+					</span>
+					<input
+						type="tel"
+						name="phone"
+						maxlength="40"
+						autocomplete="tel"
+						class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+						placeholder="Ej: 0981 123 456"
+					/>
+					<span class="text-[0.82rem] font-medium text-(--on-surface-variant)">
+						Visible en el hub público para que los clientes llamen a esta sucursal.
+					</span>
+					<span
+						class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
+						data-field-error="phone"></span>
+				</label>
+
 				<div class="grid gap-5 sm:grid-cols-2">
 					<label
 						class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
@@ -641,6 +664,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 	type LocationSubmitPayload = {
 		name: string;
 		address: string;
+		phone?: string | null;
 		cit_id_city: number;
 		dep_id_department: number;
 		is_active: 0 | 1;
@@ -709,6 +733,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 		private formEls!: {
 			name: HTMLInputElement | null;
 			address: HTMLInputElement | null;
+			phone: HTMLInputElement | null;
 			department: HTMLSelectElement | null;
 			city: HTMLSelectElement | null;
 			latitude: HTMLInputElement | null;
@@ -779,6 +804,10 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 				address:
 					this.els.form?.querySelector<HTMLInputElement>(
 						'[name="address"]',
+					) ?? null,
+				phone:
+					this.els.form?.querySelector<HTMLInputElement>(
+						'[name="phone"]',
 					) ?? null,
 				department:
 					this.els.form?.querySelector<HTMLSelectElement>(
@@ -1581,6 +1610,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 		private resetFormValues = () => {
 			if (this.formEls.name) this.formEls.name.value = "";
 			if (this.formEls.address) this.formEls.address.value = "";
+			if (this.formEls.phone) this.formEls.phone.value = "";
 			if (this.formEls.department) {
 				this.formEls.department.disabled = false;
 			}
@@ -1778,6 +1808,8 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 					this.formEls.name.value = String(loc?.name || "");
 				if (this.formEls.address)
 					this.formEls.address.value = String(loc?.address || "");
+				if (this.formEls.phone)
+					this.formEls.phone.value = String(loc?.phone || "");
 				if (this.formEls.status)
 					this.formEls.status.value = String(
 						loc?.is_active === 0 ? 0 : 1,
@@ -1884,6 +1916,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 			const rawData = Object.fromEntries(new FormData(this.els.form).entries());
 			const name = String(rawData.name || "").trim();
 			const address = String(rawData.address || "").trim();
+			const phone = String(rawData.phone || "").trim();
 			const cityRaw = String(rawData.cit_id_city || "").trim();
 			const departmentRaw = String(rawData.dep_id_department || "").trim();
 			const latitudeRaw = String(rawData.latitude || "").trim();
@@ -1912,6 +1945,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 			const payload: LocationSubmitPayload = {
 				name,
 				address,
+				phone: phone || null,
 				cit_id_city: cityId,
 				dep_id_department: departmentId,
 				is_active: isActiveRaw === "0" ? 0 : 1,
@@ -2080,6 +2114,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 	@media (max-width: 639px) {
 		dialog[data-location-modal] [data-location-form] :is(
 			input[type='text'],
+			input[type='tel'],
 			select
 		) {
 			min-height: 2.85rem;

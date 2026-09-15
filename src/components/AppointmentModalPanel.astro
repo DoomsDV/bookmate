@@ -382,6 +382,57 @@ const { showVoiceButton = false }: Props = Astro.props;
 							<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="end_time"></span>
 						</label>
 					</div>
+
+					<div
+						class="appointment-recurrence"
+						data-appointment-recurrence
+					>
+						<label class="appointment-recurrence__toggle">
+							<input
+								type="checkbox"
+								class="appointment-recurrence__checkbox"
+								data-recurrence-enabled
+							/>
+							<span class="appointment-recurrence__copy">
+								<span class="appointment-recurrence__title">Repetir cada semana</span>
+								<span class="appointment-recurrence__hint">Crea una serie (clínica / tratamiento)</span>
+							</span>
+						</label>
+						<div class="appointment-recurrence__fields hidden" data-recurrence-fields hidden>
+							<div class="appointment-recurrence__modes">
+								<label class="appointment-recurrence__mode">
+									<input type="radio" name="recurrence_mode" value="count" data-recurrence-mode checked />
+									<span>Número de citas</span>
+								</label>
+								<input
+									type="number"
+									name="recurrence_count"
+									min="2"
+									max="52"
+									value="4"
+									inputmode="numeric"
+									class="appointment-recurrence__count"
+									data-recurrence-count
+								/>
+								<label class="appointment-recurrence__mode">
+									<input type="radio" name="recurrence_mode" value="until" data-recurrence-mode />
+									<span>Hasta el</span>
+								</label>
+								<input
+									type="date"
+									name="recurrence_until"
+									class="appointment-recurrence__until"
+									data-recurrence-until
+								/>
+							</div>
+							<p class="appointment-recurrence__preview" data-recurrence-preview></p>
+							<p class="appointment-recurrence__dates" data-recurrence-dates></p>
+						</div>
+					</div>
+					<p class="appointment-series-note hidden" data-appointment-series-note hidden>
+						<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true">event_repeat</span>
+						<span data-appointment-series-note-text>Esta cita forma parte de una serie semanal.</span>
+					</p>
 				</div>
 
 				<div

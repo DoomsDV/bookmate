@@ -1,6 +1,7 @@
 import { resolveOrdsPublicApiUrl } from './env-urls';
 import { PublicBookingApiError } from './public-booking-error';
 import { normalizePublicBookingLocations } from './public-booking-locations';
+import { normalizeProfessionalShortBio } from './professional-hub-profile';
 import { normalizePublicProfessionalRating } from './public-professional-rating';
 import type { PublicReservationNoRefundReason } from './public-reservation-refund';
 import { isReceiptRejected } from './public-receipt-reconcile';
@@ -118,6 +119,7 @@ export interface PublicBookingLocation {
 	id_location: number;
 	name: string;
 	address: string;
+	phone?: string;
 	latitude?: number;
 	longitude?: number;
 }
@@ -131,6 +133,7 @@ export interface PublicBookingProfile {
 	full_name: string;
 	specialty: string;
 	image_url: string;
+	short_bio: string;
 	rating_avg: number | null;
 	rating_count: number;
 	services: PublicBookingService[];
@@ -591,10 +594,13 @@ const normalizePublicLocationDetail = (value: unknown): PublicBookingLocation | 
 	const latitude = Number(source.latitude);
 	const longitude = Number(source.longitude);
 
+	const phone = String(source.phone || '').trim();
+
 	return {
 		id_location: idLocation,
 		name: String(source.name || '').trim() || `Sucursal #${idLocation}`,
 		address: String(source.address || '').trim(),
+		phone: phone || undefined,
 		latitude: Number.isFinite(latitude) ? latitude : undefined,
 		longitude: Number.isFinite(longitude) ? longitude : undefined,
 	};
@@ -629,6 +635,7 @@ const normalizeProfile = (value: unknown): PublicBookingProfile | null => {
 		full_name: fullName,
 		specialty: String(source.specialty || '').trim() || 'Sin especialidad',
 		image_url: String(source.image_url || '').trim(),
+		short_bio: normalizeProfessionalShortBio(source.short_bio),
 		...normalizePublicProfessionalRating(source.rating_avg, source.rating_count),
 		services,
 		locations,

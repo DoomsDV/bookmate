@@ -9,7 +9,10 @@ import {
 } from '../lib/business-hours';
 import type { PublicOrgHub } from '../lib/public-org-hub';
 import { getPublicProfileSpecialtyLabel } from '../lib/public-profile-labels';
-import type { WorkspaceSettingsData } from '../lib/workspace-settings-shared';
+import {
+	STOREFRONT_HOURS_OWNER_HINT,
+	type WorkspaceSettingsData,
+} from '../lib/workspace-settings-shared';
 import { formatParaguayMobilePhoneInput } from '../lib/paraguay-phone';
 import {
 	buildOrgHubUrl,
@@ -66,6 +69,7 @@ const previewProfessionals = (hub?.professionals || []).map((pro) => ({
 	fullName: String(pro.full_name || '').trim(),
 	specialty: getPublicProfileSpecialtyLabel(pro.specialty),
 	imageUrl: String(pro.image_url || '').trim(),
+	shortBio: String(pro.short_bio || '').trim(),
 	initials: personInitials(pro.full_name),
 	ratingAvg: pro.rating_avg,
 	ratingCount: pro.rating_count,
@@ -185,6 +189,19 @@ const previewInitial = {
 						</a>
 					</div>
 				</header>
+
+				<aside class="ppe-next-step" data-ppe-next-step hidden>
+					<div class="ppe-next-step__icon" aria-hidden="true">
+						<span class="material-symbols-rounded" data-ppe-next-step-icon>design_services</span>
+					</div>
+					<div class="ppe-next-step__text">
+						<p class="ppe-next-step__title" data-ppe-next-step-title></p>
+						<p class="ppe-next-step__copy" data-ppe-next-step-copy></p>
+					</div>
+					<a class="panel-empty-cta ppe-next-step__cta" data-ppe-next-step-cta href="/panel/services">
+						Creá tu primer servicio →
+					</a>
+				</aside>
 
 				<form class="ppe-form-col" id="ppe-form" data-ppe-form>
 					<section
@@ -511,7 +528,9 @@ const previewInitial = {
 							<div class="ppe-hours-head">
 								<p class="ppe-hours-kicker">
 									<span>Página</span>
-									Horario que se muestra a tus clientes. No cambia las reservas.
+									{STOREFRONT_HOURS_OWNER_HINT}
+									{' '}
+									<a href="/panel/schedules" class="ppe-hours-kicker__link">Abrir Horarios</a>
 								</p>
 								<button type="button" class="ppe-hours-copy" data-ppe-hours-copy-weekdays>
 									<span class="material-symbols-rounded" aria-hidden="true">content_copy</span>

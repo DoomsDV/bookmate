@@ -55,6 +55,7 @@ const parseBody = (request: Request) =>
 		image_base64: formData.get('image_base64'),
 		image_name: formData.get('image_name'),
 		image_mime: formData.get('image_mime'),
+		short_bio: formData.get('short_bio'),
 		services: formData.getAll('services'),
 	}));
 
@@ -155,6 +156,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
 		if (specialtyRaw !== '' && specialtyId > 0) {
 			payload.spe_id_specialty = specialtyId;
+		}
+
+		if (Object.prototype.hasOwnProperty.call(body ?? {}, 'short_bio')) {
+			payload.short_bio = String(body?.short_bio ?? '').trim();
 		}
 
 		const imageBase64 = String(body?.image_base64 ?? '').trim();

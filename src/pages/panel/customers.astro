@@ -62,7 +62,10 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 													data-customers-summary
 												>(0)</span>
 											</h1>
-											<p class="m-0 hidden text-[0.88rem] leading-snug text-(--on-surface-variant) sm:block">
+											<p
+												class="m-0 hidden text-[0.88rem] leading-snug text-(--on-surface-variant) sm:block"
+												data-customers-lead
+											>
 												{
 													isProfessional
 														? 'Clientes registrados en tu agenda.'
@@ -154,6 +157,18 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 													</div>
 												) : null
 											}
+
+											<button
+												type="button"
+												class="customers-archived-toggle"
+												data-toggle-archived
+												aria-pressed="false"
+												aria-label="Ver archivados"
+												title="Ver archivados"
+											>
+												<span class="material-symbols-rounded text-[1.25rem]" aria-hidden="true">inventory_2</span>
+												<span class="customers-archived-toggle__label">Archivados</span>
+											</button>
 
 											<a
 												href="/api/customers/export"
@@ -602,6 +617,13 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 										<p class="customer-profile-identity__since">
 											Cliente desde
 											<span data-customer-profile-registered>—</span>
+										</p>
+										<p
+											class="customer-profile-archived-badge hidden"
+											data-customer-profile-archived-badge
+										>
+											<span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
+											Archivado
 										</p>
 										<p
 											class="customer-profile-scope hidden"
@@ -1303,6 +1325,26 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 						Guardar cambios
 					</button>
 				</div>
+				<div class="customer-profile-modal-footer__archive hidden" data-customer-profile-footer-archive>
+					<button
+						type="button"
+						class="modal-action-secondary"
+						data-archive-customer
+						data-requires-write
+					>
+						Archivar cliente
+					</button>
+				</div>
+				<div class="customer-profile-modal-footer__restore hidden" data-customer-profile-footer-restore>
+					<button
+						type="button"
+						class="modal-action-primary"
+						data-restore-customer
+						data-requires-write
+					>
+						Restaurar cliente
+					</button>
+				</div>
 			</div>
 
 			<div
@@ -1774,11 +1816,97 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		}
 	}
 
+	.customers-archived-toggle {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.4rem;
+		min-height: 2.75rem;
+		padding: 0 0.85rem;
+		border-radius: 1rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		color: var(--on-surface-variant);
+		box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+		font-size: 0.86rem;
+		font-weight: 700;
+		letter-spacing: -0.01em;
+		transition:
+			border-color 140ms ease,
+			color 140ms ease,
+			background-color 140ms ease,
+			box-shadow 140ms ease;
+	}
+
+	.customers-archived-toggle:hover {
+		border-color: var(--on-surface-variant);
+		color: var(--on-surface);
+	}
+
+	.customers-archived-toggle:focus {
+		outline: none;
+		border-color: var(--primary);
+		box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 10%, transparent);
+	}
+
+	.customers-archived-toggle[aria-pressed='true'] {
+		border-color: color-mix(in srgb, var(--primary) 45%, var(--shell-border));
+		background: color-mix(in srgb, var(--primary) 12%, var(--surface-bright));
+		color: var(--primary);
+	}
+
+	.customers-archived-toggle__label {
+		display: none;
+	}
+
+	@media (min-width: 640px) {
+		.customers-archived-toggle__label {
+			display: inline;
+		}
+	}
+
+	.customer-card-archived-badge {
+		display: inline-flex;
+		align-items: center;
+		margin-top: 0.2rem;
+		padding: 0.12rem 0.45rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface) 8%, transparent);
+		color: var(--on-surface-variant);
+		font-size: 0.68rem;
+		font-weight: 800;
+		letter-spacing: 0.02em;
+		text-transform: uppercase;
+	}
+
+	.customer-profile-archived-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		margin: 0.35rem 0 0;
+		padding: 0.18rem 0.55rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface) 8%, transparent);
+		color: var(--on-surface-variant);
+		font-size: 0.74rem;
+		font-weight: 800;
+		letter-spacing: 0.01em;
+	}
+
+	.customer-profile-archived-badge.hidden {
+		display: none;
+	}
+
+	.customer-profile-archived-badge .material-symbols-rounded {
+		font-size: 0.95rem;
+	}
+
 	.customer-profile-modal-footer {
 		display: none;
 	}
 
-	.customer-profile-modal__panel[data-editing-profile='1'] .customer-profile-modal-footer {
+	.customer-profile-modal__panel[data-editing-profile='1'] .customer-profile-modal-footer,
+	.customer-profile-modal__panel[data-archive-actions='1'] .customer-profile-modal-footer {
 		display: flex;
 		align-items: center;
 		justify-content: flex-end;
@@ -1812,8 +1940,34 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		}
 	}
 
-	.customer-profile-modal-footer__edit:not(.hidden) {
+	.customer-profile-modal-footer__edit:not(.hidden),
+	.customer-profile-modal-footer__archive:not(.hidden),
+	.customer-profile-modal-footer__restore:not(.hidden) {
 		display: flex;
+		width: 100%;
+		align-items: stretch;
+		justify-content: flex-end;
+		gap: 0.65rem;
+	}
+
+	.customer-profile-modal-footer__archive .modal-action-secondary,
+	.customer-profile-modal-footer__restore .modal-action-primary {
+		flex: 1 1 0;
+		width: auto;
+		min-width: 0;
+	}
+
+	@media (min-width: 640px) {
+		.customer-profile-modal-footer__archive,
+		.customer-profile-modal-footer__restore {
+			width: auto;
+			margin-left: auto;
+		}
+
+		.customer-profile-modal-footer__archive .modal-action-secondary,
+		.customer-profile-modal-footer__restore .modal-action-primary {
+			flex: 0 0 auto;
+		}
 	}
 
 	@media (max-width: 767px) {

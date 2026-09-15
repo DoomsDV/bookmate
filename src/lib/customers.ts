@@ -16,6 +16,7 @@ export interface Customer {
 	email: string | null;
 	phone_number: string;
 	created_at: string;
+	is_active: 0 | 1;
 	appointment_count: number;
 	last_appointment_at: string | null;
 }
@@ -100,6 +101,7 @@ export interface CustomerProfile {
 	email: string | null;
 	phone_number: string;
 	created_at: string;
+	is_active: 0 | 1;
 	stats: CustomerProfileStats;
 }
 
@@ -183,6 +185,7 @@ const normalizeCustomer = (value: unknown): Customer | null => {
 		...normalizeCustomerContactFields(source),
 		phone_number: String(source.phone_number || '').trim(),
 		created_at: String(source.created_at || '').trim(),
+		is_active: toNumber(source.is_active, 1) === 0 ? 0 : 1,
 		appointment_count: Math.max(0, Math.floor(toNumber(source.appointment_count, 0))),
 		last_appointment_at: lastAppointmentAt,
 	};
@@ -271,7 +274,7 @@ const ensureToken = (token: string) => {
 
 export const listCustomersWithOrds = async (
 	token: string,
-	options: { page?: number; limit?: number; pro_id?: number; search?: string } = {}
+	options: { page?: number; limit?: number; pro_id?: number; search?: string; archived?: boolean } = {}
 ): Promise<CustomersListResult> => {
 	ensureToken(token);
 
@@ -283,6 +286,7 @@ export const listCustomersWithOrds = async (
 	const customersUrl = new URL(CUSTOMERS_URL);
 	customersUrl.searchParams.set('page', String(page));
 	customersUrl.searchParams.set('limit', String(limit));
+	customersUrl.searchParams.set('archived', options.archived ? '1' : '0');
 
 	if (Number.isInteger(options.pro_id) && Number(options.pro_id) > 0) {
 		customersUrl.searchParams.set('pro_id', String(options.pro_id));
@@ -491,6 +495,7 @@ const normalizeCustomerProfile = (value: unknown): CustomerProfile | null => {
 		...normalizeCustomerContactFields(source),
 		phone_number: String(source.phone_number || '').trim(),
 		created_at: String(source.created_at || '').trim(),
+		is_active: toNumber(source.is_active, 1) === 0 ? 0 : 1,
 		stats: normalizeCustomerProfileStats(source.stats),
 	};
 };
@@ -675,3 +680,84 @@ export const updateCustomerProfileWithOrds = async (
 
 	return parseCustomerContactResponse(response, 'No fue posible actualizar el cliente.');
 };
+
+export interface CustomerActiveStateResult extends CustomerContactUpdateResult {
+	is_active: 0 | 1;
+}
+
+const parseCustomerActiveStateResponse = async (
+	response: Response,
+	fallbackMessage: string
+): Promise<CustomerActiveStateResult> => {
+	let data: CustomersSuccessResponse | CustomersFailureResponse | null = null;
+
+	try {
+		data = await response.json();
+	} catch {
+		throw new CustomersApiError(
+			'No fue posible interpretar la respuesta del servidor de clientes.',
+			502
+		);
+	}
+
+	if (
+		!response.ok ||
+		!data ||
+		typeof data !== 'object' ||
+		data.status !== 'success' ||
+		!('data' in data) ||
+		!data.data ||
+		typeof data.data !== 'object'
+	) {
+		const failureData = (data ?? {}) as CustomersFailureResponse;
+		throw new CustomersApiError(
+			(typeof failureData.message === 'string' && failureData.message.trim()) ||
+				fallbackMessage,
+			response.status || 400,
+			failureData.details,
+			parseFieldErrors(failureData.errors)
+		);
+	}
+
+	const source = data.data as unknown as Record<string, unknown>;
+	return {
+		id_customer: toNumber(source.id_customer, 0),
+		full_name: String(source.full_name || '').trim(),
+		...normalizeCustomerContactFields(source),
+		phone_number: String(source.phone_number || '').trim(),
+		is_active: toNumber(source.is_active, 1) === 0 ? 0 : 1,
+	};
+};
+
+const postCustomerActiveState = async (
+	token: string,
+	customerId: number,
+	action: 'archive' | 'restore'
+): Promise<CustomerActiveStateResult> => {
+	ensureToken(token);
+
+	if (!Number.isInteger(customerId) || customerId <= 0) {
+		throw new CustomersApiError('ID de cliente invalido.', 400);
+	}
+
+	const response = await fetch(`${CUSTOMERS_URL.replace(/\/+$/, '')}/${customerId}/${action}`, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			Accept: 'application/json',
+		},
+	});
+
+	return parseCustomerActiveStateResponse(
+		response,
+		action === 'archive'
+			? 'No fue posible archivar el cliente.'
+			: 'No fue posible restaurar el cliente.'
+	);
+};
+
+export const archiveCustomerWithOrds = async (token: string, customerId: number) =>
+	postCustomerActiveState(token, customerId, 'archive');
+
+export const restoreCustomerWithOrds = async (token: string, customerId: number) =>
+	postCustomerActiveState(token, customerId, 'restore');
