@@ -1263,12 +1263,17 @@ class CustomerManager extends HTMLElement {
 				this.importFile = null;
 				this.page = 1;
 				await this.loadCustomers({ silent: true });
+				const errorPart =
+					data.data.error_rows === 1
+						? '1 fila quedó con error.'
+						: data.data.error_rows > 1
+							? `${data.data.error_rows} filas quedaron con error.`
+							: '';
 				showFlashMessage({
 					type: 'success',
-					message:
-						data.data.error_rows > 0
-							? `Se importaron ${data.data.imported} clientes. ${data.data.error_rows} filas quedaron con error.`
-							: `Se importaron ${data.data.imported} clientes.`,
+					message: errorPart
+						? `Se importaron ${data.data.imported} clientes. ${errorPart}`
+						: `Se importaron ${data.data.imported} clientes.`,
 				});
 			} else {
 				this.setImportCustomersError('No se importó ningún cliente. Revisá los errores por fila.');
