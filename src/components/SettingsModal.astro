@@ -594,7 +594,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 													data-payments-enable-help
 													class="text-[0.85rem] font-medium leading-snug text-(--on-surface-variant)"
 												>
-													Al activarlo, configurá la política de cancelación y tus datos SIPAP.
+													Al activarlo, cargá tu alias SIPAP y la política de reembolso. El cliente transfiere y Hasel lee el comprobante en Cobros.
 												</span>
 											</div>
 											<label class="settings-switch shrink-0" data-payments-deposits-switch-label>
@@ -612,6 +612,53 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 										</div>
 
 										<div data-payments-details class="grid gap-6 hidden">
+											<div data-payments-tour-sipap class="grid gap-4">
+												<div class="grid gap-1">
+													<p class="flex items-center gap-1 text-[0.95rem] font-bold text-(--on-surface)">
+														<span class="min-w-0">Datos para recibir la transferencia (SIPAP)</span>
+														<SettingsHelpInfo text="Completá banco, titular, documento y alias. El cliente transfiere a esa cuenta y usa el código HASEL en el asunto." />
+													</p>
+												</div>
+												<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+													<span>Banco / Financiera <span class="text-rose-500">*</span></span>
+													<select
+														name="bank_id"
+														data-payments-bank-select
+														class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+													>
+														<option value="">Elegí tu banco</option>
+													</select>
+												</label>
+												<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+													<span>Titular de la cuenta <span class="text-rose-500">*</span></span>
+													<input
+														name="account_holder"
+														autocomplete="name"
+														class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+														placeholder="Nombre del titular"
+													/>
+												</label>
+												<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+													<span>Documento (C.I. o RUC) <span class="text-rose-500">*</span></span>
+													<input
+														name="document_id"
+														autocomplete="off"
+														class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+														placeholder="Ej. 1234567 o 80012345-6"
+													/>
+												</label>
+												<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+													<span>Alias SIPAP <span class="text-rose-500">*</span></span>
+													<input
+														name="bank_alias"
+														autocomplete="off"
+														spellcheck="false"
+														class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+														placeholder="Celular, CI, RUC o email"
+													/>
+												</label>
+											</div>
+
 											<div data-payments-tour-policy class="grid gap-3">
 												<p class="text-[0.95rem] font-bold text-(--on-surface)">
 													Política de cancelación <span class="text-rose-500">*</span>
@@ -656,51 +703,47 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 												</label>
 											</div>
 
-											<div data-payments-tour-sipap class="grid gap-4">
+											<div data-payments-tour-receipt class="grid gap-3">
 												<div class="grid gap-1">
-													<p class="flex items-center gap-1 text-[0.95rem] font-bold text-(--on-surface)">
-														<span class="min-w-0">Datos para recibir la transferencia (SIPAP)</span>
-														<SettingsHelpInfo text="Completá banco, titular, documento y alias para activar el cobro." />
+													<p class="text-[0.95rem] font-bold text-(--on-surface)">
+														Cómo se ve un cobro
+													</p>
+													<p class="text-[0.85rem] font-medium leading-snug text-(--on-surface-variant)">
+														El cliente transfiere a tu alias, pone el código HASEL y sube el comprobante. Hasel lee monto y código; vos lo confirmás en Cobros.
 													</p>
 												</div>
-												<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-													<span>Banco / Financiera <span class="text-rose-500">*</span></span>
-													<select
-														name="bank_id"
-														data-payments-bank-select
-														class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-													>
-														<option value="">Elegí tu banco</option>
-													</select>
-												</label>
-												<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-													<span>Titular de la cuenta <span class="text-rose-500">*</span></span>
-													<input
-														name="account_holder"
-														autocomplete="name"
-														class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-														placeholder="Nombre del titular"
-													/>
-												</label>
-												<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-													<span>Documento (C.I. o RUC) <span class="text-rose-500">*</span></span>
-													<input
-														name="document_id"
-														autocomplete="off"
-														class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-														placeholder="Ej. 1234567 o 80012345-6"
-													/>
-												</label>
-												<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-													<span>Alias bancario <span class="text-rose-500">*</span></span>
-													<input
-														name="bank_alias"
-														autocomplete="off"
-														spellcheck="false"
-														class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-														placeholder="Ej. juan.perez.123"
-													/>
-												</label>
+												<div class="settings-cobro-preview" aria-hidden="true">
+													<div class="settings-cobro-preview__head">
+														<div class="settings-cobro-preview__who">
+															<p class="settings-cobro-preview__name">Ana López</p>
+															<p class="settings-cobro-preview__service">Consulta general</p>
+														</div>
+														<span class="settings-cobro-preview__chip">Pendiente de revisión</span>
+													</div>
+													<p class="settings-cobro-preview__amount">Gs. 50.000</p>
+													<div class="settings-cobro-preview__ocr">
+														<div class="settings-cobro-preview__ocr-row">
+															<span>Código Hasel</span>
+															<strong>HASEL-1A2B</strong>
+														</div>
+														<div class="settings-cobro-preview__ocr-row">
+															<span>Monto leído</span>
+															<strong>Gs. 50.000 · coinciden</strong>
+														</div>
+														<div class="settings-cobro-preview__ocr-row">
+															<span>Comprobante</span>
+															<strong>comprobante.jpg</strong>
+														</div>
+													</div>
+													<p class="settings-cobro-preview__cta">Validar comprobante</p>
+												</div>
+												<a
+													href="/panel/cobros"
+													class="settings-cobro-preview__link font-semibold text-(--primary) underline underline-offset-2 hover:opacity-90"
+													data-payments-cobros-link
+												>
+													Ir a Cobros
+												</a>
 											</div>
 										</div>
 
@@ -1272,6 +1315,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 	} from '../lib/workspace-settings-shared';
 	import {
 		hasSettingsModalTourForTab,
+		maybeShowPaymentsSettingsTour,
 		revealPaymentsDetailsForTour,
 		showSettingsModalTour,
 	} from '../lib/settings-modal-tour';
@@ -1837,9 +1881,8 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 			return active?.dataset.settingsTab || 'profile';
 		}
 
-		private handleSettingsModalTourHelp = () => {
-			if (!this.isHostOpen()) return;
-			showSettingsModalTour({
+		private paymentsTourContext() {
+			return {
 				getActiveTab: () => this.getActiveTabId(),
 				activateProfileTab: () => this.setActiveTab('profile'),
 				activatePaymentsTab: () => this.setActiveTab('payments'),
@@ -1851,8 +1894,23 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 						this.syncPaymentsDetailsVisibility();
 					};
 				},
-			});
+			};
+		}
+
+		private handleSettingsModalTourHelp = () => {
+			if (!this.isHostOpen()) return;
+			showSettingsModalTour(this.paymentsTourContext());
 		};
+
+		private queuePaymentsSenasTour() {
+			if (!this.isHostOpen()) return;
+			if (this.getActiveTabId() !== 'payments') return;
+			window.setTimeout(() => {
+				if (!this.isHostOpen()) return;
+				if (this.getActiveTabId() !== 'payments') return;
+				maybeShowPaymentsSettingsTour(this.paymentsTourContext());
+			}, 480);
+		}
 
 		private resetModalScroll() {
 			const content = this.querySelector<HTMLElement>('[data-settings-content]');
@@ -2551,7 +2609,10 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 			if (tabId === 'profile' || tabId === 'system') this.syncPushNotificationToggle();
 			if (tabId === 'preferences') this.syncPanelThemeSelect();
 			if (tabId === 'plan') void this.loadSubscription();
-			if (tabId === 'payments') void this.loadPayments();
+			if (tabId === 'payments') {
+				if (this.paymentsLoaded) this.queuePaymentsSenasTour();
+				else void this.loadPayments();
+			}
 			if (tabId === 'security') void this.loadSessions();
 			else this.setPasswordFormOpen(false);
 			this.syncTourHelpVisibility(tabId);
@@ -3654,8 +3715,10 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 			const allows =
 				data?.plan_allows_deposits === true || Number(data?.plan_allows_deposits) === 1;
 			planHint?.classList.toggle('hidden', Boolean(allows));
+			form.dataset.paymentsPlanAllows = allows ? '1' : '0';
 
 			this.syncPaymentsDetailsVisibility();
+			this.syncTourHelpVisibility('payments');
 		}
 
 		private async loadPayments() {
@@ -3674,6 +3737,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 				this.fillPayments(res.data || {});
 				this.paymentsLoaded = true;
 				this.setPaymentsPanelState({ loading: false, ready: true });
+				if (this.getActiveTabId() === 'payments') this.queuePaymentsSenasTour();
 			} catch (error) {
 				this.setPaymentsPanelState({ loading: false, ready: true });
 				this.showFeedback(
@@ -5787,5 +5851,113 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 		font-size: 0.88rem;
 		font-weight: 500;
 		color: var(--on-surface-variant);
+	}
+
+	.settings-cobro-preview {
+		display: grid;
+		gap: 0.7rem;
+		width: 100%;
+		padding: 1rem 1.05rem 0.95rem;
+		border-radius: 1.2rem;
+		background: var(--sidebar-surface);
+		pointer-events: none;
+	}
+
+	.settings-cobro-preview__head {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 0.75rem;
+	}
+
+	.settings-cobro-preview__who {
+		min-width: 0;
+		display: grid;
+		gap: 0.15rem;
+	}
+
+	.settings-cobro-preview__name {
+		margin: 0;
+		font-size: 1.02rem;
+		font-weight: 760;
+		letter-spacing: -0.03em;
+		line-height: 1.2;
+		color: var(--on-surface);
+	}
+
+	.settings-cobro-preview__service {
+		margin: 0;
+		font-size: 0.78rem;
+		font-weight: 550;
+		color: var(--on-surface-variant);
+	}
+
+	.settings-cobro-preview__chip {
+		display: inline-flex;
+		align-items: center;
+		flex-shrink: 0;
+		border-radius: 999px;
+		padding: 0.2rem 0.65rem;
+		background: #fef3c7;
+		color: #92400e;
+		font-size: 0.72rem;
+		font-weight: 800;
+	}
+
+	.settings-cobro-preview__amount {
+		margin: 0;
+		font-size: 1.55rem;
+		font-weight: 800;
+		letter-spacing: -0.04em;
+		line-height: 1;
+		font-variant-numeric: tabular-nums lining-nums;
+		color: var(--on-surface);
+	}
+
+	.settings-cobro-preview__ocr {
+		display: grid;
+		gap: 0.4rem;
+		padding-top: 0.15rem;
+	}
+
+	.settings-cobro-preview__ocr-row {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 0.75rem;
+		font-size: 0.8rem;
+	}
+
+	.settings-cobro-preview__ocr-row span {
+		color: var(--on-surface-variant);
+		font-weight: 550;
+	}
+
+	.settings-cobro-preview__ocr-row strong {
+		color: var(--on-surface);
+		font-weight: 750;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.settings-cobro-preview__cta {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 2.55rem;
+		margin: 0.1rem 0 0;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--primary) 12%, transparent);
+		color: var(--primary);
+		font-size: 0.86rem;
+		font-weight: 750;
+	}
+
+	.settings-cobro-preview__link {
+		justify-self: start;
+	}
+
+	html[data-theme='dark'] .settings-cobro-preview__chip {
+		background: color-mix(in srgb, #f59e0b 18%, transparent);
+		color: #fbbf24;
 	}
 </style>
