@@ -2403,6 +2403,72 @@ html[data-theme='dark'] .app-pagination__ellipsis {
 	box-shadow: none !important;
 }
 
+.panel-setup-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	border-radius: 1.35rem;
+	border: none;
+	background: var(--sidebar-surface);
+	box-shadow: none;
+	padding: 2.5rem 1.25rem;
+	text-align: center;
+	min-height: 16rem;
+}
+
+.panel-setup-empty__icon {
+	margin-bottom: 1rem;
+	display: flex;
+	height: 4rem;
+	width: 4rem;
+	align-items: center;
+	justify-content: center;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--surface-container) 88%, var(--surface-bright) 12%);
+	color: var(--on-surface-variant);
+}
+
+.panel-empty-cta {
+	margin-top: 1.25rem;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.3rem;
+	border-radius: 999px;
+	border: 1px solid color-mix(in srgb, var(--primary) 72%, #123e7a 28%);
+	background: var(--primary);
+	padding: 0.72rem 1.15rem;
+	font-size: 0.92rem;
+	font-weight: 780;
+	color: #f8fbff;
+	text-decoration: none;
+	transition: filter 140ms ease, border-color 140ms ease;
+}
+
+.panel-empty-cta:hover {
+	filter: brightness(1.04);
+	color: #f8fbff;
+}
+
+.panel-empty-cta:focus-visible {
+	outline: 2px solid color-mix(in srgb, var(--primary) 42%, white 58%);
+	outline-offset: 3px;
+}
+
+html[data-theme='dark'] .panel-setup-empty {
+	background: #121214;
+}
+
+html[data-theme='dark'] .panel-setup-empty__icon {
+	background: rgba(255, 255, 255, 0.05);
+}
+
+html[data-theme='dark'] .panel-empty-cta {
+	border-color: color-mix(in srgb, var(--primary) 58%, #0e0e10 42%);
+	background: color-mix(in srgb, var(--primary) 78%, #0e0e10 22%);
+}
+
 /* Cards del panel: estilo unificado (clientes, especialidades, personal, servicios, sucursales) */
 :is(.customer-card, .specialties-card, .professionals-card, .services-card, .locations-card) {
 	display: flex;

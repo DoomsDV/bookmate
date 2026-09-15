@@ -2,6 +2,7 @@
 import { parseParaguayMobilePhone } from '../lib/paraguay-phone';
 import { getProfessionalDisplayName, isProfessionalAccountActive, type Professional } from '../lib/professionals';
 import { formatPublicProfessionalRating } from '../lib/public-professional-rating';
+import { SCREEN_EMPTY } from '../lib/setup-empty-cta';
 
 interface Props {
 	professionals: Professional[];
@@ -21,6 +22,7 @@ const {
 const hasSearch = Boolean(searchQuery);
 const hasStatusFilter = isActiveFilter === 0 || isActiveFilter === 1;
 const hasFilters = hasSearch || hasStatusFilter;
+const showEmptyCta = showCreateAction && !hasFilters;
 
 const PROFESSIONAL_ICON = 'badge';
 
@@ -215,15 +217,25 @@ const cardItems = professionals.map((professional) => ({
 				<span class="material-symbols-rounded text-[2rem]">{hasFilters ? 'search_off' : 'badge'}</span>
 			</div>
 			<h3 class="text-[1.1rem] font-bold text-(--on-surface)">
-				{hasFilters ? 'No se encontraron profesionales' : 'No hay profesionales registrados'}
+				{hasFilters ? 'No se encontraron profesionales' : SCREEN_EMPTY.professionals.title}
 			</h3>
 			<p class="mt-1.5 max-w-sm text-[0.95rem] leading-relaxed text-(--on-surface-variant)">
 				{hasSearch
 					? 'Probá con otro nombre, email o teléfono.'
 					: hasStatusFilter
 						? 'No hay profesionales con ese estado.'
-						: 'Aún no has agregado a ningún profesional a esta organización. Comienza creando tu primer registro de personal.'}
+						: SCREEN_EMPTY.professionals.copy}
 			</p>
+			{showEmptyCta ? (
+				<button
+					type="button"
+					class="panel-empty-cta"
+					data-open-professional-modal
+					data-requires-write
+				>
+					{SCREEN_EMPTY.professionals.ctaLabel}
+				</button>
+			) : null}
 		</div>
 	) : (
 		<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 xl:grid-cols-3" data-professionals-grid>

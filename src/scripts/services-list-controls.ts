@@ -4,6 +4,7 @@ import {
 	toggleFilterPopoverSheet,
 } from '../lib/panel-filter-popover';
 import { updateAppPaginationDom } from '../lib/pagination';
+import { renderSetupEmptyCta, SCREEN_EMPTY } from '../lib/setup-empty-cta';
 
 type ServiceItem = {
 	id_service: number;
@@ -183,15 +184,22 @@ const updateEmptyOrGrid = (
 			? 'No se encontraron servicios'
 			: assignedOnly
 				? 'No tenés servicios asignados'
-				: 'No hay servicios registrados';
+				: SCREEN_EMPTY.services.title;
 		const copy = hasSearch
 			? 'Probá con otro nombre.'
 			: hasStatusFilter
 				? 'No hay servicios con ese estado.'
 				: assignedOnly
 					? 'Cuando el administrador te asigne servicios, aparecerán aquí.'
-					: 'Aun no has agregado ningun servicio a esta organizacion. Comienza creando tu primera prestacion.';
-		const icon = hasFilters ? 'search_off' : 'inbox';
+					: SCREEN_EMPTY.services.copy;
+		const icon = hasFilters ? 'search_off' : SCREEN_EMPTY.services.icon;
+		const ctaHtml =
+			!hasFilters && !assignedOnly && canManageServices()
+				? renderSetupEmptyCta({
+						label: SCREEN_EMPTY.services.ctaLabel,
+						attrs: 'data-open-service-modal data-requires-write',
+					})
+				: '';
 
 		results.innerHTML = `
 			<div class="services-empty-state" data-services-empty>
@@ -200,6 +208,7 @@ const updateEmptyOrGrid = (
 				</div>
 				<h3 class="text-[1.1rem] font-bold text-(--on-surface)">${title}</h3>
 				<p class="mt-1.5 max-w-sm text-[0.95rem] leading-relaxed text-(--on-surface-variant)">${copy}</p>
+				${ctaHtml}
 			</div>
 		`;
 		return;

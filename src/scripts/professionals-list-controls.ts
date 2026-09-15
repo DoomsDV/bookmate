@@ -6,6 +6,7 @@ import {
 import { parseParaguayMobilePhone } from '../lib/paraguay-phone';
 import { updateAppPaginationDom } from '../lib/pagination';
 import { formatPublicProfessionalRating } from '../lib/public-professional-rating';
+import { renderSetupEmptyCta, SCREEN_EMPTY } from '../lib/setup-empty-cta';
 
 type ProfessionalItem = {
 	id_professional: number;
@@ -202,13 +203,19 @@ const updateEmptyOrGrid = (
 	const hasFilters = hasSearch || hasStatusFilter;
 
 	if (professionals.length === 0) {
+		const ctaHtml = !hasFilters
+			? renderSetupEmptyCta({
+					label: SCREEN_EMPTY.professionals.ctaLabel,
+					attrs: 'data-open-professional-modal data-requires-write',
+				})
+			: '';
 		results.innerHTML = `
 			<div class="professionals-empty-state" data-professionals-empty>
 				<div class="professionals-empty-icon">
-					<span class="material-symbols-rounded text-[2rem]">${hasFilters ? 'search_off' : 'badge'}</span>
+					<span class="material-symbols-rounded text-[2rem]">${hasFilters ? 'search_off' : SCREEN_EMPTY.professionals.icon}</span>
 				</div>
 				<h3 class="text-[1.1rem] font-bold text-(--on-surface)">
-					${hasFilters ? 'No se encontraron profesionales' : 'No hay profesionales registrados'}
+					${hasFilters ? 'No se encontraron profesionales' : SCREEN_EMPTY.professionals.title}
 				</h3>
 				<p class="mt-1.5 max-w-sm text-[0.95rem] leading-relaxed text-(--on-surface-variant)">
 					${
@@ -216,9 +223,10 @@ const updateEmptyOrGrid = (
 							? 'Probá con otro nombre, email o teléfono.'
 							: hasStatusFilter
 								? 'No hay profesionales con ese estado.'
-								: 'Aún no has agregado a ningún profesional a esta organización. Comienza creando tu primer registro de personal.'
+								: SCREEN_EMPTY.professionals.copy
 					}
 				</p>
+				${ctaHtml}
 			</div>
 		`;
 		return;
