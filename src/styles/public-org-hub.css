@@ -2393,6 +2393,50 @@ html[data-theme='dark'] .hub-pro-card__btn:not(.hub-pro-card__btn--book) {
 	text-align: center;
 }
 
+.hub-empty--setup {
+	display: grid;
+	gap: 0.45rem;
+	justify-items: center;
+}
+
+.hub-empty__title {
+	margin: 0;
+	font-size: 0.98rem;
+	font-weight: 750;
+	color: var(--on-surface, #0f172a);
+}
+
+.hub-empty__copy {
+	margin: 0;
+	max-width: 22rem;
+	line-height: 1.45;
+}
+
+.hub-empty__cta {
+	margin-top: 0.55rem;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.3rem;
+	border-radius: 999px;
+	border: 1px solid color-mix(in srgb, var(--primary) 72%, #123e7a 28%);
+	background: var(--primary);
+	padding: 0.55rem 0.95rem;
+	font-size: 0.86rem;
+	font-weight: 750;
+	color: #f8fbff;
+	text-decoration: none;
+}
+
+.hub-empty__cta .material-symbols-rounded {
+	font-size: 1.1rem;
+}
+
+.hub-empty__cta:hover {
+	filter: brightness(1.04);
+	color: #f8fbff;
+}
+
 .hub-aside {
 	display: grid;
 	gap: 1rem;

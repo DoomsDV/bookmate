@@ -142,6 +142,51 @@ export const resolveBookableNextStep = (inventory: SetupInventory): SetupStep | 
  * Perfil público: el inventario del hub (foto+bio) no es el personal del panel.
  * Solo el empty “crear el primero” si realmente no hay profesionales.
  */
+export type HubTeamEmptyAudience = 'public' | 'owner';
+
+export type HubTeamEmptyState = {
+	kind: 'none_published' | 'no_staff' | 'staff_incomplete';
+	title: string;
+	copy: string;
+	ctaLabel?: string;
+	href?: string;
+};
+
+/**
+ * Empty del tab Equipo. Público: no usa el copy de turnos online.
+ * Owner: patrón HAS-34 (CTA a Personal si hay staff incompleto; no empty falso).
+ */
+export const resolveHubTeamEmpty = (params: {
+	hubListedCount: number;
+	staffCount?: number | null;
+	audience: HubTeamEmptyAudience;
+}): HubTeamEmptyState | null => {
+	if (params.hubListedCount > 0) return null;
+	if (params.audience === 'public') {
+		return {
+			kind: 'none_published',
+			title: 'Todavía no hay equipo publicado.',
+			copy: '',
+		};
+	}
+	if (params.staffCount === 0) {
+		return {
+			kind: 'no_staff',
+			title: SCREEN_EMPTY.professionals.title,
+			copy: SCREEN_EMPTY.professionals.copy,
+			ctaLabel: SCREEN_EMPTY.professionals.ctaLabel,
+			href: SETUP_PATHS.professionals,
+		};
+	}
+	return {
+		kind: 'staff_incomplete',
+		title: SCREEN_EMPTY.professionalsNotOnHub.title,
+		copy: SCREEN_EMPTY.professionalsNotOnHub.copy,
+		ctaLabel: SCREEN_EMPTY.professionalsNotOnHub.ctaLabel,
+		href: SETUP_PATHS.professionals,
+	};
+};
+
 export const resolvePublicProfileNextStep = (
 	inventory: PublicProfileSetupInventory
 ): SetupStep | null => {

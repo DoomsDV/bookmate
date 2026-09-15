@@ -13,7 +13,10 @@ import {
 	getPublicOrgHubWithOrds,
 	type PublicOrgHub,
 } from '../../lib/public-org-hub';
-import { HUB_NO_ONLINE_SLOTS_MESSAGE } from '../../lib/workspace-settings-shared';
+import {
+	HUB_NO_ONLINE_SLOTS_MESSAGE,
+	HUB_NO_TEAM_MESSAGE,
+} from '../../lib/workspace-settings-shared';
 import {
 	appendPublicBookingFromHubParam,
 	buildOrgHubPath,
@@ -629,7 +632,7 @@ const serializedProfessionals = professionals.length
 								</>
 							) : (
 								<p class="hub-empty" role="status">
-									{HUB_NO_ONLINE_SLOTS_MESSAGE}
+									{HUB_NO_TEAM_MESSAGE}
 								</p>
 							)}
 							<p class="hub-empty" data-hub-team-empty-filter hidden>

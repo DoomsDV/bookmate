@@ -32,6 +32,8 @@ export type PublicProfilePreviewState = {
 	profileSlug: string;
 	locationLabel: string;
 	teamCount: number;
+	/** Personal del panel. `null` = todavía no se pudo contar (HAS-34). */
+	staffCount: number | null;
 	professionals: PublicProfilePreviewProfessional[];
 	locations: PublicProfilePreviewLocation[];
 	/** Filas de horario comercial para Overview; vacío = ocultar bloque. */

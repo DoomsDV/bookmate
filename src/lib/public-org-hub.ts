@@ -4,7 +4,7 @@ import { resolveOrdsPublicApiUrl } from './env-urls';
 import { PublicBookingApiError } from './public-booking-error';
 import { normalizePublicBookingLocations } from './public-booking-locations';
 import {
-	isHubListedProfessional,
+	isHubListedProfessionalPayload,
 	normalizeProfessionalShortBio,
 } from './professional-hub-profile';
 import { normalizePublicProfessionalRating } from './public-professional-rating';
@@ -123,12 +123,18 @@ const normalizeProfessional = (
 			? `/${encodeURIComponent(organizationSlug)}/p/${encodeURIComponent(profileSlug)}`
 			: '';
 
+	const imageUrl = String(source.image_url || source.profile_image_url || '').trim();
+	const shortBio = normalizeProfessionalShortBio(source.short_bio ?? source.shortBio);
+	if (!isHubListedProfessionalPayload(source)) {
+		return null;
+	}
+
 	return {
 		id_professional: id,
 		full_name: fullName,
 		specialty: String(source.specialty || '').trim() || 'Sin especialidad',
-		image_url: String(source.image_url || '').trim(),
-		short_bio: normalizeProfessionalShortBio(source.short_bio),
+		image_url: imageUrl,
+		short_bio: shortBio,
 		profile_slug: profileSlug,
 		booking_path: bookingPath || fallbackPath,
 		location_ids: normalizeLocationIds(source.location_ids),
@@ -137,7 +143,7 @@ const normalizeProfessional = (
 	};
 };
 
-const normalizeOrgHub = (value: unknown): PublicOrgHub | null => {
+export const normalizePublicOrgHub = (value: unknown): PublicOrgHub | null => {
 	if (!value || typeof value !== 'object') return null;
 	const source = value as Record<string, unknown>;
 	const organizationSlug = String(source.organization_slug || '').trim();
@@ -152,12 +158,6 @@ const normalizeOrgHub = (value: unknown): PublicOrgHub | null => {
 		? source.professionals
 				.map((item) => normalizeProfessional(item, organizationSlug))
 				.filter((item): item is PublicOrgHubProfessional => item !== null)
-				.filter((item) =>
-					isHubListedProfessional({
-						imageUrl: item.image_url,
-						shortBio: item.short_bio,
-					})
-				)
 		: [];
 
 	const serviceCategories = Array.isArray(source.service_categories)
@@ -227,7 +227,7 @@ export const getPublicOrgHubWithOrds = async (orgSlug: string): Promise<PublicOr
 	});
 
 	const data = await parseApiResponse(response, 'No fue posible cargar el perfil del negocio.');
-	const hub = normalizeOrgHub(data.data);
+	const hub = normalizePublicOrgHub(data.data);
 	if (!hub) {
 		throw new PublicBookingApiError('No fue posible interpretar el perfil del negocio.', 502);
 	}
