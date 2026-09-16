@@ -1532,7 +1532,7 @@ export const initializePublicBookingPage = () => {
 			servicesGrid.classList.remove('is-service-stack');
 			const emptyState = document.createElement('p');
 			emptyState.className =
-				'rounded-2xl bg-[var(--surface-container-high)] px-5 py-4 text-base font-medium text-[var(--on-surface-variant)]';
+				'public-services-empty rounded-2xl bg-[var(--surface-container-high)] px-5 py-4 text-base font-medium text-[var(--on-surface-variant)]';
 			emptyState.textContent = 'Este profesional no tiene servicios disponibles actualmente.';
 			servicesGrid.appendChild(emptyState);
 			return;
