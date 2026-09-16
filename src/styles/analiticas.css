@@ -750,6 +750,15 @@ html[data-theme='dark'] .dashboard-week-chart {
 		font-size: 1.75rem;
 	}
 
+	.analiticas-filters-sheet {
+		flex-wrap: nowrap;
+	}
+
+	.analiticas-filters-sheet .analiticas-filters__group {
+		min-width: 11rem;
+		width: 12.5rem;
+	}
+
 	.analiticas-grid--paint {
 		grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.95fr);
 		align-items: stretch;
@@ -757,6 +766,12 @@ html[data-theme='dark'] .dashboard-week-chart {
 
 	.analiticas-card--status {
 		height: 100%;
+		grid-template-rows: auto 1fr;
+	}
+
+	.analiticas-card--status .analiticas-bars {
+		align-content: space-evenly;
+		min-height: 8.5rem;
 	}
 
 	.analiticas-grid--split {
