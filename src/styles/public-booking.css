@@ -1216,6 +1216,18 @@ html:has(.sipap-deposit-panel:not(.hidden)) body,
 	text-align: left;
 }
 
+/* Empty state: el grid de servicios es 2 columnas + text-align left para las cards.
+   Sin esto, el aviso queda en la celda izquierda y rompe el eje del wizard. */
+.public-services-grid > .public-services-empty {
+	grid-column: 1 / -1;
+	justify-self: center;
+	margin-inline: auto;
+	width: max-content;
+	max-width: 100%;
+	box-sizing: border-box;
+	text-align: center;
+}
+
 /* Aire debajo del título/subtítulo para que el calendario respire */
 .public-booking-panel[data-step-panel='3'] > div:first-child {
 	margin-bottom: 1.15rem;
