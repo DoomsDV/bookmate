@@ -106,8 +106,8 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 											tabindex="-1"
 										></select>
 
-										<div class="flex max-w-xl items-center gap-2">
-											<div class="relative min-w-0 flex-1" data-panel-search>
+										<div class="flex flex-col gap-2 sm:max-w-xl sm:flex-row sm:items-center">
+											<div class="relative min-w-0 w-full sm:flex-1" data-panel-search>
 												<span
 													class="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-(--on-surface-variant)"
 													aria-hidden="true"
@@ -135,66 +135,68 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 												</button>
 											</div>
 
-											{
-												canFilterByProfessional ? (
-													<div class="customers-pro-filter relative shrink-0">
+											<div class="flex shrink-0 items-center gap-2">
+												{
+													canFilterByProfessional ? (
+														<div class="customers-pro-filter relative shrink-0">
+															<button
+																type="button"
+																class="customers-pro-filter-btn relative flex size-11 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) text-(--on-surface-variant) shadow-sm transition hover:border-(--on-surface-variant) hover:text-(--on-surface) focus:border-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10"
+																data-open-pro-filter
+																aria-label="Filtrar por profesional"
+																aria-haspopup="dialog"
+																aria-controls="customers-pro-filter-sheet"
+																aria-expanded="false"
+																aria-pressed="false"
+															>
+																<span class="material-symbols-rounded text-[1.25rem]" aria-hidden="true">tune</span>
+																<span
+																	class="customers-pro-filter-badge hidden"
+																	data-pro-filter-badge
+																	aria-hidden="true"
+																></span>
+															</button>
+														</div>
+													) : null
+												}
+
+												{
+													canImportCustomers ? (
 														<button
 															type="button"
-															class="customers-pro-filter-btn relative flex size-11 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) text-(--on-surface-variant) shadow-sm transition hover:border-(--on-surface-variant) hover:text-(--on-surface) focus:border-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10"
-															data-open-pro-filter
-															aria-label="Filtrar por profesional"
-															aria-haspopup="dialog"
-															aria-controls="customers-pro-filter-sheet"
-															aria-expanded="false"
-															aria-pressed="false"
+															class="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) text-(--on-surface-variant) shadow-sm transition hover:border-(--on-surface-variant) hover:text-(--on-surface) focus:border-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10"
+															data-open-import-customers
+															data-requires-write
+															aria-label="Importar CSV"
+															title="Importar CSV"
 														>
-															<span class="material-symbols-rounded text-[1.25rem]" aria-hidden="true">tune</span>
-															<span
-																class="customers-pro-filter-badge hidden"
-																data-pro-filter-badge
-																aria-hidden="true"
-															></span>
+															<span class="material-symbols-rounded text-[1.25rem]" aria-hidden="true">upload</span>
 														</button>
-													</div>
-												) : null
-											}
+													) : null
+												}
 
-											{
-												canImportCustomers ? (
-													<button
-														type="button"
-														class="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) text-(--on-surface-variant) shadow-sm transition hover:border-(--on-surface-variant) hover:text-(--on-surface) focus:border-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10"
-														data-open-import-customers
-														data-requires-write
-														aria-label="Importar CSV"
-														title="Importar CSV"
-													>
-														<span class="material-symbols-rounded text-[1.25rem]" aria-hidden="true">upload</span>
-													</button>
-												) : null
-											}
+												<button
+													type="button"
+													class="customers-archived-toggle"
+													data-toggle-archived
+													aria-pressed="false"
+													aria-label="Ver archivados"
+													title="Ver archivados"
+												>
+													<span class="material-symbols-rounded text-[1.25rem]" aria-hidden="true">inventory_2</span>
+													<span class="customers-archived-toggle__label">Archivados</span>
+												</button>
 
-											<button
-												type="button"
-												class="customers-archived-toggle"
-												data-toggle-archived
-												aria-pressed="false"
-												aria-label="Ver archivados"
-												title="Ver archivados"
-											>
-												<span class="material-symbols-rounded text-[1.25rem]" aria-hidden="true">inventory_2</span>
-												<span class="customers-archived-toggle__label">Archivados</span>
-											</button>
-
-											<a
-												href="/api/customers/export"
-												class="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) text-(--on-surface-variant) no-underline shadow-sm transition hover:border-(--on-surface-variant) hover:text-(--on-surface) focus:border-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10"
-												download
-												aria-label="Exportar CSV"
-												title="Exportar CSV"
-											>
-												<span class="material-symbols-rounded text-[1.25rem]" aria-hidden="true">download</span>
-											</a>
+												<a
+													href="/api/customers/export"
+													class="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) text-(--on-surface-variant) no-underline shadow-sm transition hover:border-(--on-surface-variant) hover:text-(--on-surface) focus:border-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10"
+													download
+													aria-label="Exportar CSV"
+													title="Exportar CSV"
+												>
+													<span class="material-symbols-rounded text-[1.25rem]" aria-hidden="true">download</span>
+												</a>
+											</div>
 										</div>
 
 										<div
