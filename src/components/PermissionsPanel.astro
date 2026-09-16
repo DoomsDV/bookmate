@@ -2,13 +2,16 @@
 ---
 
 <permissions-matrix class="permissions-matrix grid gap-4">
-	<section class="settings-card grid gap-4">
-		<div class="grid gap-1">
+	<section class="settings-card permissions-card grid gap-4">
+		<div class="permissions-intro grid gap-1">
 			<h3 class="settings-card__title">Permisos por rol</h3>
-			<p class="text-[0.88rem] leading-6 text-(--on-surface-variant)">
+			<p class="permissions-intro__full text-[0.88rem] leading-6 text-(--on-surface-variant)">
 				Admin, Profesional y Recepcionista vienen de fábrica y no se pueden borrar. Lo que
 				marques acá vale para todo el negocio; el menú se actualiza al guardar o al volver a
 				entrar.
+			</p>
+			<p class="permissions-intro__short">
+				Qué puede cada rol. Vale para todo el negocio.
 			</p>
 		</div>
 
@@ -19,12 +22,9 @@
 		</div>
 
 		<div data-permissions-toolbar class="hidden grid gap-2">
-			<div class="relative min-w-0 max-w-xl" data-panel-search>
-				<span
-					class="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-(--on-surface-variant)"
-					aria-hidden="true"
-				>
-					<span class="material-symbols-rounded text-[1.2rem]">search</span>
+			<div class="permissions-search relative min-w-0 max-w-xl" data-panel-search>
+				<span class="permissions-search__icon" aria-hidden="true">
+					<span class="material-symbols-rounded">search</span>
 				</span>
 				<input
 					type="text"
@@ -34,7 +34,7 @@
 					placeholder="Buscar accesos o roles"
 					aria-label="Buscar accesos por nombre o descripción"
 					autocomplete="off"
-					class="w-full rounded-2xl border border-(--shell-border) bg-(--surface-bright) py-2.5 pl-11 pr-11 text-[0.95rem] font-semibold text-(--on-surface) outline-none transition placeholder:font-medium placeholder:text-(--on-surface-variant)/70 hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
+					class="permissions-search__input w-full rounded-2xl border border-(--shell-border) bg-(--surface-bright) py-2.5 text-[0.95rem] font-semibold text-(--on-surface) outline-none transition placeholder:font-medium placeholder:text-(--on-surface-variant)/70 hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
 				/>
 				<button
 					type="button"
@@ -63,7 +63,7 @@
 
 		<div data-permissions-grid class="permissions-table-wrap hidden overflow-x-auto"></div>
 
-		<div class="flex flex-wrap items-center gap-3">
+		<div class="permissions-actions" data-permissions-actions>
 			<button
 				type="button"
 				data-permissions-save
@@ -91,6 +91,7 @@
 		escapeHtml,
 		filterPermissionsMatrix,
 		overlayPermissionMatrix,
+		permissionRoleHeader,
 		permissionVisibleCopy,
 	} from '../lib/permissions-matrix-ui';
 	import { initPanelSearchClear } from '../scripts/panel-search-clear';
@@ -236,10 +237,13 @@
 				.join('');
 
 			const headers = roles
-				.map(
-					(role) =>
-						`<th class="permissions-role" data-role-col="${role.role_id}" scope="col">${escapeHtml(role.name)}</th>`
-				)
+				.map((role) => {
+					const header = permissionRoleHeader(role.name);
+					return `<th class="permissions-role" data-role-col="${role.role_id}" scope="col" title="${escapeHtml(header.full)}">
+						<span class="permissions-role__full">${escapeHtml(header.full)}</span>
+						<span class="permissions-role__short">${escapeHtml(header.short)}</span>
+					</th>`;
+				})
 				.join('');
 
 			grid.innerHTML = `<table class="permissions-table">
@@ -373,6 +377,50 @@
 </script>
 
 <style is:global>
+	.permissions-matrix .permissions-intro__short {
+		display: none;
+		margin: 0;
+		font-size: 0.82rem;
+		font-weight: 500;
+		line-height: 1.4;
+		color: var(--on-surface-variant);
+	}
+
+	.permissions-matrix .permissions-search__icon {
+		position: absolute;
+		inset-block: 0;
+		left: 0;
+		z-index: 1;
+		display: grid;
+		width: 2.75rem;
+		place-items: center;
+		pointer-events: none;
+		color: var(--on-surface-variant);
+	}
+
+	.permissions-matrix .permissions-search__icon .material-symbols-rounded {
+		font-size: 1.2rem;
+		line-height: 1;
+		font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 20;
+	}
+
+	.permissions-matrix .permissions-search__input {
+		padding-inline: 2.75rem;
+	}
+
+	.permissions-matrix .permissions-actions {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 0.75rem;
+		width: 100%;
+	}
+
+	.permissions-matrix .permissions-role__short {
+		display: none;
+	}
+
 	.permissions-matrix .permissions-table-wrap {
 		border: 1px solid var(--shell-border);
 		border-radius: 1rem;
@@ -421,6 +469,8 @@
 	.permissions-matrix .permissions-role {
 		text-align: center;
 		min-width: 6.5rem;
+		overflow: visible;
+		text-overflow: unset;
 	}
 
 	.permissions-matrix .permissions-section th {
@@ -521,24 +571,82 @@
 	}
 
 	@media (max-width: 640px) {
+		.permissions-matrix .permissions-intro__full {
+			display: none;
+		}
+
+		.permissions-matrix .permissions-intro__short {
+			display: block;
+		}
+
+		.permissions-matrix .permissions-row__desc {
+			display: none;
+		}
+
+		.permissions-matrix .permissions-card {
+			gap: 0.85rem;
+		}
+
+		.permissions-matrix .permissions-table-wrap {
+			width: 100%;
+			margin-inline: 0;
+			border: 0;
+			border-radius: 0;
+			background: transparent;
+		}
+
 		.permissions-matrix .permissions-table {
-			min-width: 30rem;
+			min-width: 0;
+			width: 100%;
+			table-layout: fixed;
 		}
 
 		.permissions-matrix .permissions-access-head,
 		.permissions-matrix .permissions-row__access {
-			min-width: 11.5rem;
+			min-width: 0;
+			max-width: none;
+			width: 46%;
+			padding: 0.55rem 0.55rem 0.55rem 0.7rem;
+		}
+
+		.permissions-matrix .permissions-row__label {
+			font-size: 0.82rem;
 		}
 
 		.permissions-matrix .permissions-role {
-			min-width: 5.6rem;
-			padding-inline: 0.45rem;
-			font-size: 0.7rem;
+			min-width: 0;
+			width: 18%;
+			padding: 0.55rem 0.2rem;
+			font-size: 0.68rem;
+			letter-spacing: 0.01em;
+			white-space: normal;
+			line-height: 1.15;
+			overflow-wrap: anywhere;
 		}
 
-		.permissions-matrix .permissions-section th,
-		.permissions-matrix .permissions-row__access {
-			padding-left: 1.1rem;
+		.permissions-matrix .permissions-role__full {
+			display: none;
+		}
+
+		.permissions-matrix .permissions-role__short {
+			display: inline;
+		}
+
+		.permissions-matrix .permissions-section th {
+			padding: 0.7rem 0.7rem 0.5rem;
+		}
+
+		.permissions-matrix .permissions-cell {
+			padding: 0.45rem 0.2rem;
+		}
+
+		.permissions-matrix .permissions-actions {
+			justify-content: flex-end;
+		}
+
+		.permissions-matrix .permissions-actions .modal-action-primary {
+			width: auto;
+			flex: 0 0 auto;
 		}
 	}
 </style>

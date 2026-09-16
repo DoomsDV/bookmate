@@ -20,6 +20,26 @@ export type PermissionSearchRole = {
 	name: string;
 };
 
+export type PermissionRoleHeader = {
+	full: string;
+	short: string;
+};
+
+const ROLE_HEADER_ALIASES: { match: string; full: string; short: string }[] = [
+	{ match: 'recepcionista', full: 'Recepcionista', short: 'Recep.' },
+	{ match: 'profesional', full: 'Profesional', short: 'Prof.' },
+	{ match: 'admin', full: 'Admin', short: 'Admin' },
+];
+
+/** Encabezado de rol: nombre legible + abreviatura clara (evita RECEPCIC). */
+export const permissionRoleHeader = (name: string): PermissionRoleHeader => {
+	const n = normalizeSearchText(name);
+	const alias = ROLE_HEADER_ALIASES.find((item) => n === item.match || n.startsWith(item.match));
+	if (alias) return { full: alias.full, short: alias.short };
+	const trimmed = String(name || '').trim();
+	return { full: trimmed, short: trimmed };
+};
+
 export type PermissionFilterResult = {
 	visibleCodes: Set<string> | null;
 	highlightRoleIds: number[];
