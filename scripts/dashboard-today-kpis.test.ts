@@ -48,7 +48,9 @@ test('HAS-64: Esta semana / Señas van en chips compactos, no en cards al 50%', 
 	assert.match(extrasCss, /display: flex;/);
 	assert.match(extrasCss, /flex: 0 1 auto;/);
 	assert.match(extrasCss, /max-width: 1023px/);
+	assert.match(extrasCss, /max-width: 640px/);
 	assert.match(extrasCss, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+	assert.match(extrasCss, /\.dashboard-today-metrics__icon \{\s*display: none;/);
 	assert.doesNotMatch(extrasCss, /font-size: 1\.2rem/);
 
 	assert.match(dashboard, /dashboard-today-metrics__icon/);

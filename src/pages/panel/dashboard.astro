@@ -3892,24 +3892,25 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 		.dashboard-today-metrics__item {
 			flex: none;
+			align-items: flex-start;
 			width: 100%;
 		}
 	}
 
 	@media (max-width: 640px) {
 		.dashboard-today-metrics__item {
-			padding: 0.48rem 0.6rem;
-			gap: 0.45rem;
+			padding: 0.5rem 0.65rem 0.48rem;
+			gap: 0;
 		}
 
 		.dashboard-today-metrics__icon {
-			width: 1.55rem;
-			height: 1.55rem;
-			border-radius: 0.45rem;
+			display: none;
 		}
 
-		.dashboard-today-metrics__icon .material-symbols-rounded {
-			font-size: 0.95rem;
+		.dashboard-today-metrics__stat {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 0.1rem;
 		}
 
 		.dashboard-today-metrics__value {
