@@ -1,4 +1,5 @@
 ﻿---
+import { APP_VERSION } from '../config/app-version';
 import { CAPABILITIES } from '../config/capabilities';
 import { FEATURE_FLAGS, isSubscriptionBillingUiEnabled } from '../config/feature-flags';
 import { ROLES } from '../config/roles';
@@ -38,7 +39,7 @@ const globalPublicProfilePrefix = buildGlobalPublicProfilePrefix(
 );
 const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(globalPublicProfilePrefix);
 const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
-const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0.0.1';
+const appVersion = APP_VERSION;
 ---
 
 <settings-manager

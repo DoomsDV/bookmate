@@ -3,6 +3,11 @@
 /// <reference types="vite-plugin-pwa/info" />
 /// <reference types="vite-plugin-pwa/client" />
 
+declare module '*.json' {
+	const value: { version?: string; [key: string]: unknown };
+	export default value;
+}
+
 declare module 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url' {
 	const workerUrl: string;
 	export default workerUrl;
@@ -127,6 +132,7 @@ interface ImportMetaEnv {
     readonly CRON_SECRET?: string;
     readonly PERMISSIONS_COOKIE_SECRET?: string;
 
+    readonly PUBLIC_APP_VERSION?: string;
     readonly PUBLIC_BOOKMATE_PUBLIC_DOMAIN?: string;
     readonly PUBLIC_SUBSCRIPTION_BILLING_UI?: string;
     readonly PUBLIC_BOOKMATE_PROFILE_PLACEHOLDER_IMAGE_URL?: string;
