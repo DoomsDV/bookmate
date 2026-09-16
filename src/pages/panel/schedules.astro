@@ -2137,6 +2137,130 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		text-align: center;
 	}
 
+	.schedule-exception-empty-state--compact {
+		flex: 0 0 auto;
+		min-height: 0;
+		padding: 1.15rem 1rem;
+	}
+
+	.schedule-day-detail {
+		display: grid;
+		gap: 0.85rem;
+		align-content: start;
+	}
+
+	.schedule-day-detail__status {
+		display: grid;
+		gap: 0.4rem;
+		padding: 0.95rem 1rem;
+		border-radius: 1.1rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+	}
+
+	.schedule-day-detail__status--normal {
+		border-color: color-mix(in srgb, var(--on-surface-variant) 22%, var(--shell-border));
+	}
+
+	.schedule-day-detail__status--blocked {
+		border-color: color-mix(in srgb, #ef4444 28%, var(--shell-border));
+		background: color-mix(in srgb, #ef4444 6%, var(--surface-bright));
+	}
+
+	.schedule-day-detail__status--override {
+		border-color: color-mix(in srgb, #f59e0b 32%, var(--shell-border));
+		background: color-mix(in srgb, #f59e0b 7%, var(--surface-bright));
+	}
+
+	.schedule-day-detail__title {
+		margin: 0.15rem 0 0;
+		font-size: 1rem;
+		font-weight: 800;
+		letter-spacing: -0.02em;
+		color: var(--on-surface);
+	}
+
+	.schedule-day-detail__copy,
+	.schedule-day-detail__note {
+		margin: 0;
+		font-size: 0.88rem;
+		line-height: 1.45;
+		color: var(--on-surface-variant);
+	}
+
+	.schedule-day-detail__note {
+		padding-top: 0.35rem;
+		border-top: 1px dashed var(--shell-border);
+		font-weight: 650;
+		color: var(--on-surface);
+	}
+
+	.schedule-day-detail__locations {
+		display: grid;
+		gap: 0.65rem;
+	}
+
+	.schedule-day-detail__locations-title {
+		margin: 0;
+		font-size: 0.82rem;
+		font-weight: 800;
+		letter-spacing: 0.02em;
+		text-transform: uppercase;
+		color: var(--on-surface-variant);
+	}
+
+	.schedule-day-detail__location {
+		display: grid;
+		gap: 0.35rem;
+		padding: 0.8rem 0.95rem;
+		border-radius: 1rem;
+		background: var(--sidebar-surface);
+	}
+
+	.schedule-day-detail__location-name {
+		margin: 0;
+		font-size: 0.92rem;
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+
+	.schedule-day-detail__ranges {
+		display: grid;
+		gap: 0.2rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		font-size: 0.9rem;
+		font-weight: 650;
+		font-variant-numeric: tabular-nums;
+		color: var(--on-surface-variant);
+	}
+
+	.schedule-day-detail__actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+
+	.schedule-day-detail__actions .modal-action-primary,
+	.schedule-day-detail__actions .modal-action-secondary,
+	.schedule-day-detail__actions .modal-action-danger {
+		flex: 1 1 9.5rem;
+		justify-content: center;
+	}
+
+	html[data-theme='dark'] .schedule-day-detail__status--blocked {
+		background: color-mix(in srgb, #ef4444 10%, #121214);
+	}
+
+	html[data-theme='dark'] .schedule-day-detail__status--override {
+		background: color-mix(in srgb, #f59e0b 10%, #121214);
+	}
+
+	html[data-theme='dark'] .schedule-day-detail__location {
+		background: #121214;
+	}
+
 	.schedule-exception-empty-icon {
 		margin-bottom: 0.75rem;
 		display: flex;
