@@ -42,6 +42,41 @@ test('HAS-56: Dashboard suma números extra sin reemplazar las 4 cards ni próxi
 	assert.ok(hoyIdx > 0 && extrasIdx > hoyIdx && extrasIdx < upcomingIdx);
 });
 
+test('HAS-64: Esta semana / Señas van en chips compactos, no en cards al 50%', () => {
+	const extrasCssStart = dashboard.indexOf('.dashboard-today-metrics {');
+	const extrasCss = dashboard.slice(extrasCssStart, extrasCssStart + 3600);
+	assert.match(extrasCss, /display: flex;/);
+	assert.match(extrasCss, /flex: 0 1 auto;/);
+	assert.match(extrasCss, /max-width: 1023px/);
+	assert.match(extrasCss, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+	assert.doesNotMatch(extrasCss, /font-size: 1\.2rem/);
+
+	assert.match(dashboard, /dashboard-today-metrics__icon/);
+	assert.match(dashboard, /dashboard-today-metrics__copy/);
+	assert.match(dashboard, /dashboard-today-metrics__stat/);
+	assert.match(dashboard, />date_range</);
+	assert.match(dashboard, />savings</);
+
+	const extrasBlock = dashboard.slice(
+		dashboard.indexOf('data-dashboard-today-metrics'),
+		dashboard.indexOf('data-dashboard-today-metrics') + 1800
+	);
+	assert.match(extrasBlock, /todayExtras\.weekAppointments/);
+	assert.match(extrasBlock, /weekCaption/);
+	assert.match(extrasBlock, /todayExtras\.pendingDepositsCount/);
+	assert.match(extrasBlock, /depositCaption/);
+	assert.doesNotMatch(extrasBlock, /dashboard-profit-card--simple/);
+
+	assert.match(dashboard, /DashboardAlerts/);
+	assert.match(dashboard, /DashboardQuickActions/);
+	assert.match(dashboard, /id="dashboard-upcoming-appointments"/);
+	assert.match(dashboard, /dashboard-profit-metrics-track/);
+	assert.match(dashboard, />Hoy</);
+	assert.match(dashboard, />Por confirmar</);
+	assert.match(dashboard, />Este mes</);
+	assert.match(dashboard, />Nuevos</);
+});
+
 test('HAS-56: nada de esto va a Analíticas', () => {
 	assert.doesNotMatch(analiticas, /data-dashboard-today-metrics/);
 	assert.doesNotMatch(analiticas, />Esta semana</);
