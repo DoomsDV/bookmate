@@ -8,6 +8,9 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const css = readFileSync(join(root, 'src/styles/public-booking.css'), 'utf8');
 const page = readFileSync(join(root, 'src/scripts/public-booking-page.ts'), 'utf8');
 
+const emptyGridRule =
+	css.match(/\.public-services-grid:has\(\s*>\s*\.public-services-empty\s*\)\s*\{[\s\S]*?\n\}/)?.[0] ??
+	'';
 const emptyRule =
 	css.match(/\.public-services-grid\s*>\s*\.public-services-empty\s*\{[\s\S]*?\n\}/)?.[0] ?? '';
 
@@ -18,12 +21,15 @@ test('HAS-63: empty state de servicios usa clase de centrado y no cambia el copy
 });
 
 test('HAS-63: empty state ocupa todo el grid y se centra en el eje del wizard', () => {
+	assert.match(emptyGridRule, /grid-template-columns:\s*minmax\(0,\s*1fr\)/);
+	assert.match(emptyGridRule, /justify-items:\s*center/);
 	assert.match(emptyRule, /grid-column:\s*1\s*\/\s*-1/);
 	assert.match(emptyRule, /justify-self:\s*center/);
 	assert.match(emptyRule, /margin-inline:\s*auto/);
 	assert.match(emptyRule, /text-align:\s*center/);
-	assert.match(emptyRule, /width:\s*max-content/);
+	assert.match(emptyRule, /width:\s*min\(max-content,\s*100%\)/);
 	assert.match(emptyRule, /max-width:\s*100%/);
+	assert.match(emptyRule, /min-width:\s*0/);
 });
 
 test('HAS-63: el listado con servicios sigue siendo 2 columnas en desktop', () => {
