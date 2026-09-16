@@ -9,6 +9,7 @@ import {
 	normalizeSearchText,
 	overlayCatalogItemCopy,
 	overlayPermissionMatrix,
+	permissionRoleHeader,
 	permissionRowMatches,
 	permissionVisibleCopy,
 } from '../src/lib/permissions-matrix-ui.ts';
@@ -105,6 +106,15 @@ test('query vacío muestra todo y no resalta roles', () => {
 	assert.equal(all.empty, false);
 });
 
+test('permissionRoleHeader abrevia sin truncar feo', () => {
+	assert.deepEqual(permissionRoleHeader('RECEPCIONISTA'), { full: 'Recepcionista', short: 'Recep.' });
+	assert.deepEqual(permissionRoleHeader('Recepcionista'), { full: 'Recepcionista', short: 'Recep.' });
+	assert.deepEqual(permissionRoleHeader('PROFESIONAL'), { full: 'Profesional', short: 'Prof.' });
+	assert.deepEqual(permissionRoleHeader('Admin'), { full: 'Admin', short: 'Admin' });
+	assert.deepEqual(permissionRoleHeader('Coach externo'), { full: 'Coach externo', short: 'Coach externo' });
+	assert.equal(permissionRoleHeader('RECEPCIONISTA').short.includes('RECEPCIC'), false);
+});
+
 test('PermissionsPanel no interpola keys ni kind en el copy visible', () => {
 	const src = readFileSync(new URL('../src/components/PermissionsPanel.astro', import.meta.url), 'utf8');
 	assert.equal(src.includes('${item.code} ·'), false);
@@ -136,6 +146,26 @@ test('PermissionsPanel usa copy de negocio y Guardar como Negocio (HAS-48, HAS-4
 	assert.ok(src.includes("fetch('/api/permissions/matrix'"), 'no cambia el endpoint de guardar');
 	assert.ok(src.includes('overlayPermissionMatrix'), 'el copy visible no depende del jerga de ORDS');
 	assert.ok(src.includes('class="modal-action-primary"'), 'HAS-49: Guardar sigue como Negocio');
+});
+
+test('HAS-68: footer a la derecha, copy compacto, lupa y grilla full-width', () => {
+	const src = readFileSync(new URL('../src/components/PermissionsPanel.astro', import.meta.url), 'utf8');
+	const modal = readFileSync(new URL('../src/components/SettingsModal.astro', import.meta.url), 'utf8');
+
+	assert.ok(src.includes('data-permissions-actions'), 'footer de permisos identificado');
+	assert.ok(src.includes('justify-content: flex-end'), 'botones alineados a la derecha');
+	assert.ok(src.includes('permissions-intro__short'), 'intro compacta en móvil');
+	assert.ok(src.includes('permissions-row__desc'), 'descripciones siguen en desktop');
+	assert.ok(src.includes('display: none'), 'móvil oculta copy largo');
+	assert.ok(src.includes('permissions-search__icon'), 'lupa con slot propio');
+	assert.ok(src.includes('padding-inline: 2.75rem'), 'input deja hueco para la lupa');
+	assert.ok(src.includes('permissionRoleHeader'), 'headers usan abreviatura clara');
+	assert.ok(src.includes('permissions-role__short'), 'abreviatura visible en móvil');
+	assert.ok(src.includes('table-layout: fixed'), 'grilla móvil sin min-width absurdo');
+	assert.ok(src.includes('border-radius: 0'), 'móvil aplana la card anidada');
+	assert.ok(src.includes("fetch('/api/permissions/matrix'"), 'guardar/restaurar no cambian de endpoint');
+	assert.ok(src.includes('data-permissions-reset'), 'Restaurar defaults sigue');
+	assert.match(modal, /:not\(\[data-permissions-search\]\)/, 'Ajustes no pisa el padding de la lupa');
 });
 
 const VISIBLE_JARGON = /\b(crud|addons?|checkout|apis?|jwt|ords|payload|entitlement|branding)\b/i;

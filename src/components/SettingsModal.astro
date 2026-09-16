@@ -5341,7 +5341,7 @@ const appVersion = String(import.meta.env.PUBLIC_APP_VERSION ?? '').trim() || '0
 			input:not([type]),
 			select,
 			textarea
-		) {
+		):not([data-permissions-search]) {
 			min-height: 2.85rem;
 			height: auto;
 			padding: 0.7rem 0.85rem;
