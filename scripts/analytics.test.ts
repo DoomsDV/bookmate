@@ -133,6 +133,31 @@ test('HAS-50: Dashboard ya no monta el gráfico 7/15/30', () => {
 	assert.doesNotMatch(analiticas, /Próximas citas/);
 });
 
+test('HAS-65/67: barras de estado, layout paint y filtros móvil', () => {
+	const analiticas = readFileSync(new URL('../src/pages/panel/analiticas.astro', import.meta.url), 'utf8');
+	const styles = readFileSync(new URL('../src/styles/analiticas.css', import.meta.url), 'utf8');
+	const script = readFileSync(new URL('../src/scripts/analiticas-page.ts', import.meta.url), 'utf8');
+
+	assert.match(analiticas, /data-status-bars/);
+	assert.match(analiticas, /analiticas-bar--\$\{item\.key\}/);
+	assert.match(analiticas, /analiticas-grid--paint/);
+	assert.match(analiticas, /analiticas-stack/);
+	assert.match(analiticas, /data-analytics-filters-open/);
+	assert.match(analiticas, /data-analytics-filters-sheet/);
+	assert.match(analiticas, /analiticas-payments__stat/);
+	assert.doesNotMatch(analiticas, /analiticas-status__item/);
+	assert.doesNotMatch(analiticas, /analiticas-payments__item/);
+
+	assert.match(styles, /analiticas-grid--paint/);
+	assert.match(styles, /analiticas-filters__toggle/);
+	assert.match(styles, /analiticas-filters-sheet\.is-open/);
+	assert.doesNotMatch(styles, /analiticas-status__item/);
+	assert.doesNotMatch(styles, /analiticas-payments__item/);
+
+	assert.match(script, /data-analytics-filters-open/);
+	assert.match(script, /bindAnalyticsFilterSheet/);
+});
+
 test('HAS-50: capability analytics.view está cableada al menú y BFF', () => {
 	assert.equal(CAPABILITIES.ANALYTICS_VIEW, 'analytics.view');
 	assert.ok(defaultCapabilitiesForRole(ROLES.ADMIN).includes(CAPABILITIES.ANALYTICS_VIEW));
