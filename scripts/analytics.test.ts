@@ -158,6 +158,14 @@ test('HAS-65/67: barras de estado, layout paint y filtros móvil', () => {
 	assert.match(script, /bindAnalyticsFilterSheet/);
 });
 
+test('HAS-102: desktop paint grid 50/50 alineado con split', () => {
+	const styles = readFileSync(new URL('../src/styles/analiticas.css', import.meta.url), 'utf8');
+	assert.match(styles, /@media \(min-width: 720px\)/);
+	assert.match(styles, /analiticas-grid--paint \{\s*grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1fr\);/);
+	assert.match(styles, /analiticas-grid--split \{\s*grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1fr\);/);
+	assert.doesNotMatch(styles, /1\.15fr|0\.95fr/);
+});
+
 test('HAS-50: capability analytics.view está cableada al menú y BFF', () => {
 	assert.equal(CAPABILITIES.ANALYTICS_VIEW, 'analytics.view');
 	assert.ok(defaultCapabilitiesForRole(ROLES.ADMIN).includes(CAPABILITIES.ANALYTICS_VIEW));
