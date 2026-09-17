@@ -2249,6 +2249,20 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		justify-content: center;
 	}
 
+	/* El global .modal-action-secondary { display:none } en ≤767px no aplica acá.
+	   HAS-110: Bloquear día / Usar plantilla tienen que verse y tocarse en ~390px. */
+	@media (max-width: 767px) {
+		.schedule-day-detail__actions .modal-action-secondary,
+		.schedule-day-detail__actions .modal-action-danger {
+			display: inline-flex;
+			width: auto;
+			min-width: min(100%, 9.5rem);
+			min-height: 2.85rem;
+			padding: 0.72rem 1.15rem;
+			flex: 1 1 9.5rem;
+		}
+	}
+
 	html[data-theme='dark'] .schedule-day-detail__status--blocked {
 		background: color-mix(in srgb, #ef4444 10%, #121214);
 	}

@@ -30,5 +30,10 @@ assert.match(manager, /data-exc-action="edit"/);
 assert.match(manager, /data-exc-action="block"/);
 assert.match(manager, /DAY_EXCEPTION_STATE_COPY/);
 assert.match(manager, /exceptionModalView === 'detail'/);
+assert.match(manager, /Bloquear día/);
+assert.match(
+	schedules,
+	/@media\s*\(\s*max-width:\s*767px\s*\)[\s\S]*\.schedule-day-detail__actions\s+\.modal-action-secondary[\s\S]*display:\s*inline-flex/
+);
 
 console.log('has-108-110-ui.test.ts ok');
