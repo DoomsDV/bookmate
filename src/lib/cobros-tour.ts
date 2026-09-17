@@ -49,7 +49,7 @@ export function buildCobrosTourSteps(): DriveStep[] {
 			popover: {
 				title: 'Pendientes de revisión',
 				description:
-					'En Pendientes ves los comprobantes para validar. Si el monto y el código coinciden, aprobá; si la foto no sirve, rechazá y el cliente sube otra.',
+					'El número del menú son estos pendientes: seña para validar, reembolso por enviar o disputa abierta. Si el monto y el código coinciden, aprobá; si la foto no sirve, rechazá y el cliente sube otra.',
 				side: 'bottom',
 				align: 'start',
 			},

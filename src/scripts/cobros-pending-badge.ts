@@ -1,6 +1,7 @@
 /**
  * Single-flight + TTL corto para /api/cobros/pending-count.
  * SideNav (badges) y dashboard (alerta) comparten la misma promesa para no martillar ORDS.
+ * Qué cuenta el número: ver `src/lib/cobros-pending.ts` (no cambia la fórmula ORDS).
  */
 
 const CACHE_TTL_MS = 30_000;
