@@ -86,7 +86,10 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 
 										<div class="hidden min-w-0 flex-wrap gap-2 md:flex" role="tablist" aria-label="Estado" data-cobros-tour-tabs>
 											<button type="button" data-cobros-tab="all" class="cobros-tab is-active">Todos</button>
-											<button type="button" data-cobros-tab="pending" class="cobros-tab">Pendientes</button>
+											<button type="button" data-cobros-tab="pending" class="cobros-tab">
+												Pendientes
+												<span class="cobros-tab-count hidden" data-cobros-pending-tab-count aria-hidden="true"></span>
+											</button>
 											<button type="button" data-cobros-tab="approved" class="cobros-tab">Aprobados</button>
 											<button type="button" data-cobros-tab="refunded" class="cobros-tab">Reembolsados</button>
 											<button type="button" data-cobros-tab="expired" class="cobros-tab">Vencidos</button>
@@ -193,8 +196,8 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 												<div class="cobros-empty__icon" aria-hidden="true">
 													<span class="material-symbols-rounded">payments</span>
 												</div>
-												<h2 class="cobros-empty__title">No hay cobros</h2>
-												<p class="cobros-empty__copy">
+												<h2 class="cobros-empty__title" data-cobros-empty-title>No hay cobros</h2>
+												<p class="cobros-empty__copy" data-cobros-empty-copy>
 													Cuando un cliente pague la seña por SIPAP y suba el comprobante, el cobro aparece acá para validarlo. Configurá alias y política en Ajustes → Pagos.
 												</p>
 											</div>
@@ -750,6 +753,27 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		background: var(--primary-container);
 		color: var(--primary);
 		border-color: transparent;
+	}
+	.cobros-tab-count {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 1.15rem;
+		margin-left: 0.35rem;
+		padding: 0.08rem 0.4rem;
+		border-radius: 999px;
+		background: #e11d48;
+		color: #fff;
+		font-size: 0.68rem;
+		font-weight: 800;
+		line-height: 1.2;
+	}
+	.cobros-tab-count.hidden {
+		display: none;
+	}
+	.cobros-tab.is-active .cobros-tab-count {
+		background: var(--primary);
+		color: var(--on-primary);
 	}
 	.cobros-select {
 		border-radius: 1rem;
@@ -1493,6 +1517,20 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		}
 	}
 
+	:global(.cobros-status-cell) {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+	:global(.cobros-pending-dot) {
+		display: inline-block;
+		width: 0.5rem;
+		height: 0.5rem;
+		border-radius: 999px;
+		background: #d97706;
+		box-shadow: 0 0 0 3px color-mix(in srgb, #f59e0b 28%, transparent);
+		flex-shrink: 0;
+	}
 	:global(.cobros-chip) {
 		display: inline-flex;
 		align-items: center;
@@ -2330,6 +2368,27 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 
 	.cobros-modal-footer [data-cobros-modal-status]:not(:empty) {
 		margin-top: 0.75rem;
+	}
+
+	:global(tr.cobros-row--badge-pending),
+	:global(.cobros-card--badge-pending) {
+		box-shadow: inset 3px 0 0 #d97706;
+		background: color-mix(in srgb, #f59e0b 10%, transparent);
+	}
+	:global(tr.cobros-row--badge-pending > td) {
+		background: color-mix(in srgb, #f59e0b 10%, transparent);
+	}
+	:global(html[data-theme='dark'] tr.cobros-row--badge-pending),
+	:global(html[data-theme='dark'] .cobros-card--badge-pending) {
+		box-shadow: inset 3px 0 0 #fbbf24;
+		background: color-mix(in srgb, #f59e0b 16%, transparent);
+	}
+	:global(html[data-theme='dark'] tr.cobros-row--badge-pending > td) {
+		background: color-mix(in srgb, #f59e0b 16%, transparent);
+	}
+	:global(html[data-theme='dark'] .cobros-pending-dot) {
+		background: #fbbf24;
+		box-shadow: 0 0 0 3px color-mix(in srgb, #fbbf24 28%, transparent);
 	}
 
 	/* El highlight de inbox va en la fila/card, no en main/página. */

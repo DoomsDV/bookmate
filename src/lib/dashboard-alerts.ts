@@ -1,5 +1,5 @@
 export const DASHBOARD_ALERTS_MAX = 5;
-export const COBROS_HREF = '/panel/cobros';
+export const COBROS_HREF = '/panel/cobros?status=pending';
 export const PERSONAL_HREF = '/panel/professionals';
 export const SERVICES_HREF = '/panel/services';
 export const LOCATIONS_HREF = '/panel/locations';

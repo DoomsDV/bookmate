@@ -1,5 +1,14 @@
 import type { CobroItem, CobrosDatePreset, CobrosStatusFilter } from '../lib/cobros';
+import {
+	EMPTY_DEFAULT_COPY,
+	EMPTY_DEFAULT_TITLE,
+	EMPTY_PENDING_COPY,
+	EMPTY_PENDING_TITLE,
+	isCobrosBadgePending,
+	resolveCobrosEntryStatus,
+} from '../lib/cobros-pending';
 import { parseApiDateTime } from '../lib/booking-datetime';
+import { fetchCobrosPendingCount } from './cobros-pending-badge';
 import { createIdempotencyKey } from '../lib/idempotency';
 import { bindReceiptDropzone } from '../lib/receipt-dropzone';
 import { classifyReceiptFile, fileToBase64, receiptFileSignature } from '../lib/receipt-file';
@@ -220,12 +229,12 @@ export const initCobrosPage = () => {
 	const nextPageBtn = root.querySelector<HTMLButtonElement>('[data-cobros-next]');
 
 	const PAGE_SIZE = 9;
-	const STATUS_FILTERS: CobrosStatusFilter[] = ['all', 'pending', 'approved', 'refunded', 'expired'];
 	const urlParams = new URLSearchParams(window.location.search);
 	const statusFromUrl = String(urlParams.get('status') || '').trim().toLowerCase();
-	let statusFilter: CobrosStatusFilter = STATUS_FILTERS.includes(statusFromUrl as CobrosStatusFilter)
-		? (statusFromUrl as CobrosStatusFilter)
-		: 'all';
+	let statusFilter: CobrosStatusFilter = resolveCobrosEntryStatus({
+		statusFromUrl,
+		pendingCount: 0,
+	});
 	let datePreset: CobrosDatePreset = 'all';
 	const appointmentFromUrl = Number(urlParams.get('appointment') || 0);
 	let pendingAppointmentId =
@@ -419,6 +428,20 @@ export const initCobrosPage = () => {
 	};
 
 	const statusSelect = root.querySelector<HTMLSelectElement>('[data-cobros-status-select]');
+
+	const syncPendingTabCount = (count: number | null) => {
+		const n = Number(count);
+		const safe = Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
+		const label = safe > 99 ? '99+' : String(safe);
+		root.querySelectorAll<HTMLElement>('[data-cobros-pending-tab-count]').forEach((el) => {
+			el.textContent = safe > 0 ? label : '';
+			el.classList.toggle('hidden', safe <= 0);
+		});
+		const pendingOption = statusSelect?.querySelector<HTMLOptionElement>('option[value="pending"]');
+		if (pendingOption) {
+			pendingOption.textContent = safe > 0 ? `Pendientes (${label})` : 'Pendientes';
+		}
+	};
 
 	const syncTabs = () => {
 		root.querySelectorAll<HTMLButtonElement>('[data-cobros-tab]').forEach((btn) => {
@@ -893,6 +916,16 @@ export const initCobrosPage = () => {
 
 		const empty = items.length === 0;
 		emptyEl?.classList.toggle('hidden', !empty);
+		const emptyTitleEl = emptyEl?.querySelector<HTMLElement>('[data-cobros-empty-title]');
+		const emptyCopyEl = emptyEl?.querySelector<HTMLElement>('[data-cobros-empty-copy]');
+		if (emptyTitleEl) {
+			emptyTitleEl.textContent =
+				statusFilter === 'pending' ? EMPTY_PENDING_TITLE : EMPTY_DEFAULT_TITLE;
+		}
+		if (emptyCopyEl) {
+			emptyCopyEl.textContent =
+				statusFilter === 'pending' ? EMPTY_PENDING_COPY : EMPTY_DEFAULT_COPY;
+		}
 		tableWrap?.classList.toggle('is-empty', empty);
 		cardsEl?.classList.toggle('hidden', empty);
 		resultsEl?.classList.remove('hidden');
@@ -904,15 +937,27 @@ export const initCobrosPage = () => {
 		cardsEl.replaceChildren();
 
 		for (const item of items) {
+			const badgePending = isCobrosBadgePending(item);
 			const tr = document.createElement('tr');
-			tr.className = 'border-b border-(--shell-border)/70';
+			tr.className = badgePending
+				? 'border-b border-(--shell-border)/70 cobros-row--badge-pending'
+				: 'border-b border-(--shell-border)/70';
 			tr.dataset.cobrosAppointment = String(item.id_appointment || '');
+			if (badgePending) {
+				tr.dataset.cobrosBadgePending = '';
+				tr.setAttribute('title', 'Pendiente: explica el número del menú');
+			}
 			tr.innerHTML = `
 				<td class="px-4 py-3 whitespace-nowrap">${formatDateTime(item.start_time || item.created_at)}</td>
 				<td class="px-4 py-3 font-semibold">${escapeHtml(item.customer_name || '—')}</td>
 				<td class="px-4 py-3">${escapeHtml(item.service_name || '—')}</td>
 				<td class="px-4 py-3 font-bold">${formatMoney(displayAmount(item), item.currency)}</td>
-				<td class="px-4 py-3"><span class="${statusChipClass(item)}">${statusLabel(item)}</span></td>
+				<td class="px-4 py-3">
+					<span class="cobros-status-cell">
+						${badgePending ? '<span class="cobros-pending-dot" aria-hidden="true"></span>' : ''}
+						<span class="${statusChipClass(item)}">${statusLabel(item)}</span>
+					</span>
+				</td>
 				<td class="px-4 py-3 text-right">
 					<button
 						type="button"
@@ -928,8 +973,12 @@ export const initCobrosPage = () => {
 			tableBody.appendChild(tr);
 
 			const card = document.createElement('article');
-			card.className = 'cobros-card';
+			card.className = badgePending ? 'cobros-card cobros-card--badge-pending' : 'cobros-card';
 			card.dataset.cobrosAppointment = String(item.id_appointment || '');
+			if (badgePending) {
+				card.dataset.cobrosBadgePending = '';
+				card.setAttribute('title', 'Pendiente: explica el número del menú');
+			}
 			const ctaLabel = openActionLabel(item);
 			card.innerHTML = `
 				<div class="cobros-card__inner">
@@ -938,7 +987,10 @@ export const initCobrosPage = () => {
 							<p class="cobros-card__name">${escapeHtml(item.customer_name || '—')}</p>
 							<p class="cobros-card__service">${escapeHtml(item.service_name || '—')}</p>
 						</div>
-						<span class="${statusChipClass(item)}">${statusLabel(item)}</span>
+						<span class="cobros-status-cell">
+							${badgePending ? '<span class="cobros-pending-dot" aria-hidden="true"></span>' : ''}
+							<span class="${statusChipClass(item)}">${statusLabel(item)}</span>
+						</span>
 					</header>
 					<p class="cobros-card__amount">${formatMoney(displayAmount(item), item.currency)}</p>
 					<p class="cobros-card__when">${formatDateTime(item.start_time || item.created_at)}</p>
@@ -1104,6 +1156,10 @@ export const initCobrosPage = () => {
 			if (requestId !== loadRequestId) return;
 			setLoading(false);
 			render();
+			void fetchCobrosPendingCount().then((count) => {
+				if (requestId !== loadRequestId) return;
+				syncPendingTabCount(count);
+			});
 			if (focusAppointmentId || pendingFocusItem) {
 				applyPendingCobrosFocus();
 			}
@@ -1604,7 +1660,22 @@ export const initCobrosPage = () => {
 	updatePeriodFilterUi();
 	applyFeatureGate();
 	bindCobrosTourHelp(root);
-	void load();
+
+	const boot = async () => {
+		if (!statusFromUrl) {
+			const count = await fetchCobrosPendingCount();
+			statusFilter = resolveCobrosEntryStatus({
+				statusFromUrl: '',
+				pendingCount: count,
+			});
+			syncPendingTabCount(count);
+			syncTabs();
+			updatePeriodFilterUi();
+		}
+		await load();
+	};
+
+	void boot();
 
 	onSubscriptionRefresh = () => {
 		const ok = applyFeatureGate();

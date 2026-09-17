@@ -1,3 +1,9 @@
+import {
+	isCobrosBadgePending,
+	mergeBadgePendingCobros,
+	paginateCobroItems,
+	sortCobroItems,
+} from './cobros-pending';
 import { resolveOrdsApiUrl } from './env-urls';
 
 export const COBROS_LIST_URL = resolveOrdsApiUrl(
@@ -153,7 +159,9 @@ const normalizeItem = (raw: any): CobroItem | null => {
 	};
 };
 
-export const listCobrosWithOrds = async (
+const BADGE_PENDING_FETCH_LIMIT = 100;
+
+const fetchCobrosListPage = async (
 	token: string,
 	query: CobrosListQuery = {}
 ): Promise<CobrosListResult> => {
@@ -192,6 +200,66 @@ export const listCobrosWithOrds = async (
 			pending_count: toPositiveInt(metaRaw.pending_count, 0),
 		},
 	};
+};
+
+/** Pendientes del badge: revisión + reembolso PENDING + disputa activa. */
+const listBadgePendingCobrosWithOrds = async (
+	token: string,
+	query: CobrosListQuery
+): Promise<CobrosListResult> => {
+	const shared: CobrosListQuery = {
+		date_preset: query.date_preset || 'all',
+		date_from: query.date_from,
+		date_to: query.date_to,
+		page: 1,
+		limit: BADGE_PENDING_FETCH_LIMIT,
+		sort_dir: query.sort_dir,
+		sort_by: query.sort_by,
+	};
+
+	const [reviews, refunds] = await Promise.all([
+		fetchCobrosListPage(token, { ...shared, status: 'pending' }),
+		fetchCobrosListPage(token, { ...shared, status: 'refunded' }),
+	]);
+
+	let merged = mergeBadgePendingCobros(reviews.items, refunds.items);
+	if (merged.length === 0) {
+		const all = await fetchCobrosListPage(token, {
+			...shared,
+			status: 'all',
+			date_preset: 'all',
+			date_from: undefined,
+			date_to: undefined,
+		});
+		merged = all.items.filter(isCobrosBadgePending);
+	}
+
+	const sorted = sortCobroItems(
+		merged,
+		query.sort_by === 'price' ? 'price' : 'date',
+		query.sort_dir === 'asc' ? 'asc' : 'desc'
+	);
+	const paged = paginateCobroItems(sorted, query.page || 1, query.limit || 9);
+
+	return {
+		items: paged.items,
+		meta: {
+			total: paged.total,
+			page: paged.page,
+			limit: paged.limit,
+			pending_count: reviews.meta.pending_count,
+		},
+	};
+};
+
+export const listCobrosWithOrds = async (
+	token: string,
+	query: CobrosListQuery = {}
+): Promise<CobrosListResult> => {
+	if (query.status === 'pending' && !(query.appointment_id && query.appointment_id > 0)) {
+		return listBadgePendingCobrosWithOrds(token, query);
+	}
+	return fetchCobrosListPage(token, query);
 };
 
 export const getCobrosPendingCountWithOrds = async (token: string): Promise<number> => {
