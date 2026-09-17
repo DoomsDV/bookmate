@@ -1,5 +1,6 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import vercel from '@astrojs/vercel';
@@ -39,6 +40,12 @@ const getSiteUrl = () => {
 };
 
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
+const packageVersion = String(
+	JSON.parse(readFileSync(path.join(projectRoot, 'package.json'), 'utf8')).version ?? ''
+).trim();
+if (!String(process.env.PUBLIC_APP_VERSION ?? '').trim() && packageVersion) {
+	process.env.PUBLIC_APP_VERSION = packageVersion;
+}
 
 /** Solo en `astro dev`: alias al shim jsx-dev-runtime (no en build prod). */
 const reactJsxDevRuntimeAlias = () => ({
