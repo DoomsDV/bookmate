@@ -47,6 +47,7 @@ import '../../styles/dashboard-ai-strip.css';
 const token = Astro.locals.token ?? '';
 const roleId = Number(Astro.locals.roleId ?? 0);
 const showTeamOverview = false;
+const SHOW_TODAY_METRIC_CHIPS = false;
 const PAGE_SIZE = 20;
 const rawPage = Number(Astro.url.searchParams.get('page') || '1');
 const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
@@ -451,6 +452,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 									<div
 										class="dashboard-today-metrics"
 										data-dashboard-today-metrics
+										hidden={!SHOW_TODAY_METRIC_CHIPS}
+										aria-hidden={SHOW_TODAY_METRIC_CHIPS ? undefined : 'true'}
 										aria-label="Números de hoy y esta semana"
 									>
 										<article class="dashboard-today-metrics__item">
@@ -480,35 +483,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 									</div>
 								</section>
 							)}
-
-							{dashboardAlerts.length > 0 ? <DashboardAlerts alerts={dashboardAlerts} /> : null}
-
-							{showTeamOverview && (
-								<div
-									class="dashboard-team-chip dashboard-team-chip--compact"
-									data-team-card
-								>
-									<div class="dashboard-team-chip__row">
-										<div class="dashboard-team-chip__avatars flex -space-x-2" data-team-avatar-stack aria-label="Vista previa del equipo">
-											<span class="team-avatar team-avatar--placeholder"></span>
-											<span class="team-avatar team-avatar--placeholder"></span>
-											<span class="team-avatar team-avatar--placeholder"></span>
-										</div>
-										<div class="dashboard-team-chip__copy">
-											<p class="dashboard-team-chip__label">Tu equipo</p>
-											<p class="dashboard-team-summary" data-team-summary>Equipo activo</p>
-										</div>
-									</div>
-									<p class="team-overview-state text-[0.75rem] font-medium hidden" data-team-state></p>
-								</div>
-							)}
-
-							<DashboardQuickActions
-								newAppointmentHref={newAppointmentHref}
-								newCustomerHref={newCustomerHref}
-								hubHref={dashboardHub.href}
-								hubExternal={dashboardHub.external}
-							/>
 
 							<div
 								class="dashboard-ai-strip"
@@ -559,6 +533,35 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 								</div>
 							</div>
 
+							<DashboardQuickActions
+								newAppointmentHref={newAppointmentHref}
+								newCustomerHref={newCustomerHref}
+								hubHref={dashboardHub.href}
+								hubExternal={dashboardHub.external}
+							/>
+
+							{dashboardAlerts.length > 0 ? <DashboardAlerts alerts={dashboardAlerts} /> : null}
+
+							{showTeamOverview && (
+								<div
+									class="dashboard-team-chip dashboard-team-chip--compact"
+									data-team-card
+								>
+									<div class="dashboard-team-chip__row">
+										<div class="dashboard-team-chip__avatars flex -space-x-2" data-team-avatar-stack aria-label="Vista previa del equipo">
+											<span class="team-avatar team-avatar--placeholder"></span>
+											<span class="team-avatar team-avatar--placeholder"></span>
+											<span class="team-avatar team-avatar--placeholder"></span>
+										</div>
+										<div class="dashboard-team-chip__copy">
+											<p class="dashboard-team-chip__label">Tu equipo</p>
+											<p class="dashboard-team-summary" data-team-summary>Equipo activo</p>
+										</div>
+									</div>
+									<p class="team-overview-state text-[0.75rem] font-medium hidden" data-team-state></p>
+								</div>
+							)}
+
 							{
 								loadError ? (
 									<div class="rounded-xl bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-700 dark:bg-[#3B191E] dark:text-[#FFB4AB] shadow-sm">
@@ -569,7 +572,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 							{
 								!loadError && (
-									<>
+									<section class="dashboard-upcoming" aria-label="Próximas citas">
+									<h2 class="dashboard-upcoming-title">Próximas citas</h2>
 									<div class="dashboard-floor dashboard-floor--action">
 										<div
 											id="dashboard-upcoming-appointments"
@@ -577,7 +581,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 										>
 											<div class="dashboard-upcoming-head mb-4 flex items-center justify-between gap-3">
 												<div class="min-w-0">
-													<h2 class="text-xl font-semibold text-[#1e293b] dark:text-[#E5E7EB]">Próximas citas</h2>
 													<p class="dashboard-appointments-subtitle" data-week-subtitle>Siguientes 7 días</p>
 												</div>
 												<div class="dashboard-appointments-actions">
@@ -711,7 +714,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 											}
 										</div>
 									</div>
-								</>
+									</section>
 							)
 						}
 						</section>
@@ -3922,6 +3925,10 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 	}
 
+	.dashboard-today-metrics[hidden] {
+		display: none !important;
+	}
+
 	.dashboard-profit-card {
 		--profit-accent: #426edb;
 		--profit-accent-soft: rgba(66, 110, 219, 0.12);
@@ -4655,8 +4662,28 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		color: var(--on-surface-variant);
 	}
 
+	.dashboard-upcoming {
+		display: grid;
+		gap: 0.7rem;
+		min-width: 0;
+		width: 100%;
+	}
+
+	.dashboard-upcoming-title {
+		margin: 0;
+		font-size: 1.05rem;
+		font-weight: 600;
+		letter-spacing: -0.02em;
+		line-height: 1.25;
+		color: #1e293b;
+	}
+
+	html[data-theme='dark'] .dashboard-upcoming-title {
+		color: #e5e7eb;
+	}
+
 	.dashboard-appointments-subtitle {
-		margin: 0.15rem 0 0;
+		margin: 0;
 		font-size: 0.8rem;
 		font-weight: 600;
 		color: var(--on-surface-variant);
