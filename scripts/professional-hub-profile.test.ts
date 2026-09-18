@@ -27,7 +27,7 @@ test('hasProfessionalHubPhoto y bio detectan vacíos', () => {
 	assert.equal(hasProfessionalHubBio('   \n  '), false);
 });
 
-test('isHubListedProfessional exige foto y texto', () => {
+test('isHubListedProfessional no usa foto ni bio como gate', () => {
 	assert.equal(
 		isHubListedProfessional({
 			imageUrl: 'https://cdn.example/face.jpg',
@@ -40,20 +40,12 @@ test('isHubListedProfessional exige foto y texto', () => {
 			profileImageUrl: 'https://cdn.example/face.jpg',
 			shortBio: '',
 		}),
-		false
+		true
 	);
 	assert.equal(
 		isHubListedProfessional({
 			imageUrl: '',
 			shortBio: 'Bio corta',
-		}),
-		false
-	);
-	assert.equal(
-		isHubListedProfessional({
-			imageUrl: 'https://cdn.example/face.jpg',
-			shortBio: '',
-			shortBioPresent: false,
 		}),
 		true
 	);
@@ -63,7 +55,7 @@ test('isHubListedProfessional exige foto y texto', () => {
 			shortBio: '',
 			shortBioPresent: false,
 		}),
-		false
+		true
 	);
 	assert.equal(payloadHasProfessionalShortBio({ image_url: 'x' }), false);
 	assert.equal(payloadHasProfessionalShortBio({ short_bio: '' }), true);
@@ -78,14 +70,11 @@ test('gaps y labels dejan claro qué falta', () => {
 	assert.equal(formatProfessionalHubGapsLabel(['photo', 'bio']), 'Falta foto y bio');
 	assert.equal(formatProfessionalHubGapsLabel(['photo']), 'Falta foto');
 	assert.equal(formatProfessionalHubGapsLabel(['bio']), 'Falta bio');
-	assert.equal(
-		formatProfessionalHubListingHint(['photo']),
-		'No aparece en el hub · Falta foto'
-	);
+	assert.equal(formatProfessionalHubListingHint(['photo']), 'Falta foto');
 	assert.equal(formatProfessionalHubListingHint([]), '');
 });
 
-test('payload ORDS legacy (sin short_bio) no vacía el equipo si hay foto', () => {
+test('payload sin foto o bio sigue listable en el hub', () => {
 	assert.equal(
 		isHubListedProfessionalPayload({
 			id_professional: 1,
@@ -102,7 +91,7 @@ test('payload ORDS legacy (sin short_bio) no vacía el equipo si hay foto', () =
 			image_url: '',
 			profile_slug: 'alex-villalba',
 		}),
-		false
+		true
 	);
 	assert.equal(
 		isHubListedProfessionalPayload({
@@ -112,7 +101,7 @@ test('payload ORDS legacy (sin short_bio) no vacía el equipo si hay foto', () =
 			short_bio: '',
 			profile_slug: 'sin-bio',
 		}),
-		false
+		true
 	);
 	assert.equal(
 		isHubListedProfessionalPayload({

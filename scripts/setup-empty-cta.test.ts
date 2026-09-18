@@ -73,12 +73,7 @@ const profileStaffNotOnHub = resolvePublicProfileNextStep({
 	hubListedProfessionalCount: 0,
 	locationCount: 1,
 });
-assert.equal(profileStaffNotOnHub?.id, 'complete_professional_hub');
-assert.equal(profileStaffNotOnHub?.title, SCREEN_EMPTY.professionalsNotOnHub.title);
-assert.equal(profileStaffNotOnHub?.ctaLabel, SCREEN_EMPTY.professionalsNotOnHub.ctaLabel);
-assert.equal(profileStaffNotOnHub?.href, SETUP_PATHS.professionals);
-assert.notEqual(profileStaffNotOnHub?.title, SCREEN_EMPTY.professionals.title);
-assert.notEqual(profileStaffNotOnHub?.ctaLabel, SCREEN_EMPTY.professionals.ctaLabel);
+assert.equal(profileStaffNotOnHub, null);
 
 const profileHubReady = resolvePublicProfileNextStep({
 	serviceCount: 2,

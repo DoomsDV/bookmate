@@ -39,7 +39,7 @@ export type SetupInventory = {
 export type PublicProfileSetupInventory = Omit<SetupInventory, 'professionalCount'> & {
 	/** Personal del panel. `null` = todavía no se pudo contar; no asumir cero. */
 	professionalCount: number | null;
-	/** Profesionales que el hub público lista (foto + bio). */
+	/** Profesionales que el hub público lista (activos con slug). */
 	hubListedProfessionalCount: number;
 };
 
@@ -58,7 +58,7 @@ export const SCREEN_EMPTY = {
 	},
 	professionalsNotOnHub: {
 		title: 'El personal no aparece en tu página',
-		copy: 'Ya tenés profesionales, pero sin foto y bio no se muestran en el hub público.',
+		copy: 'Revisá que estén activos en Personal. Foto y bio son opcionales.',
 		ctaLabel: 'Completar en Personal',
 		href: SETUP_PATHS.professionals,
 		icon: 'badge',
@@ -139,7 +139,7 @@ export const resolveBookableNextStep = (inventory: SetupInventory): SetupStep | 
 };
 
 /**
- * Perfil público: el inventario del hub (foto+bio) no es el personal del panel.
+ * Perfil público: el inventario del hub (activos con slug) no es el personal del panel.
  * Solo el empty “crear el primero” si realmente no hay profesionales.
  */
 export type HubTeamEmptyAudience = 'public' | 'owner';
@@ -198,7 +198,6 @@ export const resolvePublicProfileNextStep = (
 		});
 	}
 	if (inventory.professionalCount <= 0) return STEPS.create_professional;
-	if (inventory.hubListedProfessionalCount <= 0) return STEPS.complete_professional_hub;
 	return resolveBookableNextStep({
 		...inventory,
 		professionalCount: inventory.professionalCount,

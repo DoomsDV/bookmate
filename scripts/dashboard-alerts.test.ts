@@ -145,7 +145,7 @@ test('usa singular para una seña o una persona', () => {
 	const oneStaff = buildDashboardAlerts(emptyInput({ staffIncompleteCount: 1 }));
 	assert.equal(
 		oneStaff[0]?.message,
-		'1 persona del equipo no aparece en el hub: falta foto o bio.'
+		'1 persona del equipo no tiene foto o bio.'
 	);
 
 	const noStaff = buildDashboardAlerts(emptyInput({ staffTotalCount: 0, staffIncompleteCount: 0 }));

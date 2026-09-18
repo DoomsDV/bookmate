@@ -217,7 +217,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 						></textarea>
 						<span class="flex items-start justify-between gap-3 text-[0.85rem] font-medium leading-relaxed text-(--on-surface-variant)">
 							<span data-professional-hub-listing-hint>
-								1 o 2 líneas. Sin foto y bio no aparece en el hub público.
+								Opcional. 1 o 2 líneas. Sin foto se muestra un avatar con iniciales.
 							</span>
 							<span class="shrink-0 tabular-nums" data-professional-short-bio-count>0/280</span>
 						</span>
@@ -1339,8 +1339,8 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 			const hint = formatProfessionalHubListingHint(gaps);
 			if (this.formEls.hubListingHint) {
 				this.formEls.hubListingHint.textContent = hint
-					? `${hint}. Completá foto y bio (1 o 2 líneas).`
-					: 'Listo para el hub público. Esta bio se muestra en 1 o 2 líneas.';
+					? `${hint}. Sugerencia para el hub; no oculta la card.`
+					: 'Esta bio se muestra en 1 o 2 líneas. Foto y bio son opcionales.';
 			}
 		}
 
