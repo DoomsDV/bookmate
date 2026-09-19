@@ -3,10 +3,7 @@ import { parseBusinessHours } from './business-hours';
 import { resolveOrdsPublicApiUrl } from './env-urls';
 import { PublicBookingApiError } from './public-booking-error';
 import { normalizePublicBookingLocations } from './public-booking-locations';
-import {
-	isHubListedProfessionalPayload,
-	normalizeProfessionalShortBio,
-} from './professional-hub-profile';
+import { normalizeProfessionalShortBio } from './professional-hub-profile';
 import { normalizePublicProfessionalRating } from './public-professional-rating';
 
 export {
@@ -125,9 +122,6 @@ const normalizeProfessional = (
 
 	const imageUrl = String(source.image_url || source.profile_image_url || '').trim();
 	const shortBio = normalizeProfessionalShortBio(source.short_bio ?? source.shortBio);
-	if (!isHubListedProfessionalPayload(source)) {
-		return null;
-	}
 
 	return {
 		id_professional: id,

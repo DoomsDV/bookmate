@@ -3,7 +3,7 @@ import {
 	type DashboardAlertCapabilities,
 	type DashboardAlertsInput,
 } from './dashboard-alerts';
-import { isHubListedProfessional } from './professional-hub-profile';
+import { getProfessionalHubGaps } from './professional-hub-profile';
 import { isProfessionalAccountActive, listProfessionals, type Professional } from './professionals';
 import {
 	getProfessionalScheduleWithOrds,
@@ -21,10 +21,12 @@ const settledValue = <T>(result: PromiseSettledResult<T>): T | null =>
 const countHubIncomplete = (professionals: Professional[]): number =>
 	professionals.filter((professional) => {
 		if (!isProfessionalAccountActive(professional)) return false;
-		return !isHubListedProfessional({
-			profileImageUrl: professional.profile_image_url,
-			shortBio: professional.short_bio,
-		});
+		return (
+			getProfessionalHubGaps({
+				profileImageUrl: professional.profile_image_url,
+				shortBio: professional.short_bio,
+			}).length > 0
+		);
 	}).length;
 
 const resolveSchedulePresence = async (

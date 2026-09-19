@@ -35,34 +35,20 @@ export const payloadHasProfessionalShortBio = (value: unknown): boolean => {
 	);
 };
 
-export const isHubListedProfessional = (params: {
+/**
+ * HAS-112: foto y bio no son gate. El listado público lo decide ORDS
+ * (activo + slug + org publicada) y el BFF (id, nombre, slug).
+ */
+export const isHubListedProfessional = (_params?: {
 	imageUrl?: unknown;
 	profileImageUrl?: unknown;
 	shortBio?: unknown;
-	/**
-	 * `false` = payload legacy sin campo bio (ORDS hub actual no lo emite).
-	 * En ese caso no se descalifica por bio vacía: Personal ya exige foto+bio
-	 * y el listado público no debe vaciarse por un campo omitido.
-	 * Default `true` = mismo criterio que Personal (foto + bio).
-	 */
 	shortBioPresent?: boolean;
-}): boolean => {
-	if (!hasProfessionalHubPhoto(params.imageUrl ?? params.profileImageUrl)) {
-		return false;
-	}
-	if (params.shortBioPresent === false) return true;
-	return hasProfessionalHubBio(params.shortBio);
-};
+}): boolean => true;
 
-/** Misma regla que el hub público aplica a cada ítem de `professionals`. */
+/** Compat: el payload no se oculta por foto/bio vacíos. */
 export const isHubListedProfessionalPayload = (value: unknown): boolean => {
-	if (!value || typeof value !== 'object') return false;
-	const source = value as Record<string, unknown>;
-	return isHubListedProfessional({
-		imageUrl: source.image_url ?? source.profile_image_url,
-		shortBio: source.short_bio ?? source.shortBio,
-		shortBioPresent: payloadHasProfessionalShortBio(source),
-	});
+	return Boolean(value) && typeof value === 'object';
 };
 
 export const formatProfessionalHubGapsLabel = (gaps: ProfessionalHubGap[]): string => {
@@ -73,7 +59,5 @@ export const formatProfessionalHubGapsLabel = (gaps: ProfessionalHubGap[]): stri
 };
 
 export const formatProfessionalHubListingHint = (gaps: ProfessionalHubGap[]): string => {
-	const missing = formatProfessionalHubGapsLabel(gaps);
-	if (!missing) return '';
-	return `No aparece en el hub · ${missing}`;
+	return formatProfessionalHubGapsLabel(gaps);
 };

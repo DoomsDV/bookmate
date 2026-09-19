@@ -70,8 +70,8 @@ export const buildDashboardAlerts = (input: DashboardAlertsInput): DashboardAler
 				icon: 'badge',
 				message:
 					count === 1
-						? '1 persona del equipo no aparece en el hub: falta foto o bio.'
-						: `${count} personas del equipo no aparecen en el hub: falta foto o bio.`,
+						? '1 persona del equipo no tiene foto o bio.'
+						: `${count} personas del equipo no tienen foto o bio.`,
 				ctaLabel: 'Completar en Personal',
 				href: PERSONAL_HREF,
 			});
