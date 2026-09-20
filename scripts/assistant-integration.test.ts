@@ -139,6 +139,9 @@ test('la mascota y el BFF quedan desacoplados de ATC', () => {
 	assert.match(mascot, /Hola, soy Numa/);
 	assert.match(mascot, /data-assistant-clarification/);
 	assert.match(mascot, /assistant-mascot__clarification/);
+	assert.match(mascot, /syncInteractiveButtons/);
+	assert.match(mascot, /\[data-assistant-suggestion\], \[data-assistant-clarification\]/);
+	assert.match(mascot, /if \(rendered\) await rendered/);
 	assert.match(mascot, /Necesito un dato más/);
 	assert.match(mascot, /data-assistant-message-list/);
 	assert.match(mascot, /data-assistant-thinking/);

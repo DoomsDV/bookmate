@@ -751,6 +751,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			}
 			if (this.sendIcon) this.sendIcon.textContent = next ? 'close' : 'send';
 			this.updateSuggestionsVisibility();
+			this.syncInteractiveButtons();
 			if (next) this.setStatus('Consultando información permitida…');
 			else this.setStatus(this.lastUnresolvedClarification() ? 'Necesito un dato más' : 'Listo para ayudarte');
 			this.renderThinking();
@@ -930,10 +931,15 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 
 		private updateSuggestionsVisibility() {
 			this.bindChatSurface();
-			if (!this.suggestionsWrapEl) return;
-			const show = this.messages.length === 0 && !this.busy;
-			this.suggestionsWrapEl.classList.toggle('hidden', !show);
-			this.suggestionsEl?.querySelectorAll<HTMLButtonElement>('[data-assistant-suggestion]').forEach((button) => {
+			if (this.suggestionsWrapEl) {
+				const show = this.messages.length === 0 && !this.busy;
+				this.suggestionsWrapEl.classList.toggle('hidden', !show);
+			}
+			this.syncInteractiveButtons();
+		}
+
+		private syncInteractiveButtons() {
+			this.querySelectorAll<HTMLButtonElement>('[data-assistant-suggestion], [data-assistant-clarification]').forEach((button) => {
 				button.disabled = this.busy;
 			});
 		}
@@ -949,10 +955,10 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			this.persistMessages();
 			if (this.input) this.input.value = '';
 			this.resizeInput();
-			await this.renderMessages();
 			this.requestAbort?.abort();
 			this.requestAbort = new AbortController();
 			this.setBusy(true);
+			await this.renderMessages();
 
 			try {
 				const response = await fetch('/api/assistant/query', {
@@ -990,6 +996,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			let buffer = '';
 			let answer = '';
 			let completed = false;
+			let rendered: Promise<void> | null = null;
 
 			const consumeBlock = (block: string) => {
 				const lines = block.split('\n');
@@ -1023,7 +1030,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 						clarification: clarificationOptions.length ? { options: clarificationOptions } : undefined,
 					});
 					this.persistMessages();
-					void this.renderMessages();
+					rendered = this.renderMessages();
 					window.setTimeout(() => this.react());
 					completed = true;
 				}
@@ -1042,6 +1049,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			}
 			if (buffer.trim()) consumeBlock(buffer);
 			if (!completed) throw new Error('La respuesta del asistente se interrumpió. Probá nuevamente.');
+			if (rendered) await rendered;
 		}
 
 		private isSafeUrl(value: string) {
@@ -1261,6 +1269,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			if (generation !== this.renderGeneration) return;
 			list.replaceChildren(fragment);
 			this.updateSuggestionsVisibility();
+			this.syncInteractiveButtons();
 			this.scrollMessages();
 		}
 
@@ -1665,13 +1674,17 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		white-space: nowrap;
 	}
 	.assistant-mascot__clarification {
+		position: relative;
+		z-index: 1;
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0.38rem;
 		max-width: 100%;
+		pointer-events: auto;
 	}
 	.assistant-mascot__clarification-btn {
 		padding: 0.32rem 0.72rem;
+		pointer-events: auto;
 	}
 	@keyframes assistant-chip-in {
 		from { opacity: 0; transform: translateY(6px); }
