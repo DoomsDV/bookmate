@@ -1,0 +1,936 @@
+---
+interface Props {
+	userId: number;
+	organizationId: number;
+	mobilePeek?: boolean;
+}
+
+const { userId, organizationId, mobilePeek = true } = Astro.props;
+const storageKey = `hasel-assistant:${userId}:${organizationId}`;
+const panelId = `hasel-assistant-panel-${userId}-${organizationId}`;
+---
+
+<assistant-mascot
+	data-assistant-mascot
+	data-storage-key={storageKey}
+	{...(mobilePeek ? { 'data-assistant-mobile-peek': '' } : { 'data-assistant-card-wait': '' })}
+>
+	<section
+		id={panelId}
+		class="assistant-mascot__panel"
+		data-assistant-panel
+		hidden
+		aria-label="Asistente Hasel"
+	>
+		<header class="assistant-mascot__header">
+			<div class="assistant-mascot__identity">
+				<img src="/assistant/auri-reading-mobile.png" width="40" height="40" alt="" aria-hidden="true" decoding="async" />
+				<div>
+					<p>Asistente Hasel</p>
+					<span data-assistant-status>Listo para ayudarte</span>
+				</div>
+			</div>
+			<div class="assistant-mascot__header-actions">
+				<button type="button" class="assistant-mascot__icon-button" data-assistant-clear aria-label="Nueva conversación" title="Nueva conversación">
+					<span class="material-symbols-rounded" aria-hidden="true">refresh</span>
+				</button>
+				<button type="button" class="assistant-mascot__icon-button" data-assistant-close aria-label="Cerrar asistente" title="Cerrar">
+					<span class="material-symbols-rounded" aria-hidden="true">close</span>
+				</button>
+			</div>
+		</header>
+
+		<div class="assistant-mascot__messages" data-assistant-messages role="log" aria-live="polite" aria-relevant="additions text">
+			<div class="assistant-mascot__empty" data-assistant-empty>
+				<p>Hola, soy Auri.</p>
+				<span>Preguntame por tu agenda, clientes o cómo viene el negocio.</span>
+			</div>
+		</div>
+
+		<div class="assistant-mascot__error" data-assistant-error role="alert" hidden></div>
+		<form class="assistant-mascot__composer" data-assistant-form>
+			<label class="sr-only" for={`${panelId}-input`}>Escribí tu consulta para el asistente</label>
+			<textarea
+				id={`${panelId}-input`}
+				data-assistant-input
+				rows="1"
+				maxlength="4000"
+				placeholder="Escribí tu consulta…"
+			></textarea>
+			<button type="submit" class="assistant-mascot__send" data-assistant-send aria-label="Enviar consulta" title="Enviar consulta">
+				<span class="material-symbols-rounded" data-assistant-send-icon aria-hidden="true">arrow_upward</span>
+			</button>
+		</form>
+		<p class="assistant-mascot__hint">Enter para enviar · Shift + Enter para una nueva línea</p>
+	</section>
+
+	<button
+		type="button"
+		class="assistant-mascot__launcher"
+		data-assistant-launcher
+		aria-controls={panelId}
+		aria-expanded="false"
+		aria-label="Abrir Asistente Hasel"
+		title="Asistente Hasel"
+	>
+		<img
+			class="assistant-mascot__art assistant-mascot__art--desktop"
+			src="/assistant/auri-hammock-desktop.png"
+			width="1536"
+			height="1024"
+			alt=""
+			aria-hidden="true"
+			decoding="async"
+		/>
+		<span class="assistant-mascot__reading assistant-mascot__art--dashboard-mobile">
+			<img
+				data-tail-rest
+				src="/assistant/auri-reading-mobile.png"
+				width="1774"
+				height="887"
+				alt=""
+				aria-hidden="true"
+				decoding="async"
+			/>
+			<img
+				data-tail-wag
+				src="/assistant/auri-reading-mobile-tail.png"
+				width="1774"
+				height="887"
+				alt=""
+				aria-hidden="true"
+				decoding="async"
+			/>
+		</span>
+		{mobilePeek && (
+			<span class="assistant-mascot__peek" data-assistant-peek data-peek-side="right">
+				{Array.from({ length: 25 }, (_, index) => (
+					<img
+						data-peek-frame={String(index)}
+						{...(index === 4 ? { 'data-peek-rest': '' } : {})}
+						src={`/assistant/auri-peek-mobile-vertical-right-look-${String(index).padStart(2, '0')}.png`}
+						width="512"
+						height="768"
+						alt=""
+						aria-hidden="true"
+						decoding="async"
+					/>
+				))}
+			</span>
+		)}
+		<span class="sr-only">Abrir Asistente Hasel</span>
+	</button>
+</assistant-mascot>
+
+<script>
+	import { marked } from 'marked';
+
+	type Role = 'user' | 'assistant';
+	type AssistantSource = { domain?: string; operation?: string; scope?: string };
+	type ChatMessage = {
+		role: Role;
+		content: string;
+		sentAt: number;
+		sources?: AssistantSource[];
+		assumptions?: string[];
+		status?: string;
+	};
+
+	const MAX_MESSAGES = 8;
+	const MAX_HISTORY_LENGTH = 12_000;
+	const ALLOWED_TAGS = new Set(['a', 'blockquote', 'br', 'code', 'em', 'h1', 'h2', 'h3', 'h4', 'li', 'ol', 'p', 'pre', 'strong', 'ul']);
+	const ALLOWED_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:']);
+
+	class AssistantMascot extends HTMLElement {
+		private panel: HTMLElement | null = null;
+		private launcher: HTMLButtonElement | null = null;
+		private messagesEl: HTMLElement | null = null;
+		private input: HTMLTextAreaElement | null = null;
+		private form: HTMLFormElement | null = null;
+		private send: HTMLButtonElement | null = null;
+		private sendIcon: HTMLElement | null = null;
+		private statusEl: HTMLElement | null = null;
+		private errorEl: HTMLElement | null = null;
+		private abort: AbortController | null = null;
+		private requestAbort: AbortController | null = null;
+		private confirmationCard: HTMLElement | null = null;
+		private confirmationCardObserver: ResizeObserver | null = null;
+		private anchorFrame = 0;
+		private lookFrame = 0;
+		private look = 0;
+		private lookTarget = 0;
+		private peekFrames: HTMLImageElement[] = [];
+		private messages: ChatMessage[] = [];
+		private busy = false;
+		private storageKey = '';
+
+		connectedCallback() {
+			this.panel = this.querySelector('[data-assistant-panel]');
+			this.launcher = this.querySelector('[data-assistant-launcher]');
+			this.messagesEl = this.querySelector('[data-assistant-messages]');
+			this.input = this.querySelector('[data-assistant-input]');
+			this.form = this.querySelector('[data-assistant-form]');
+			this.send = this.querySelector('[data-assistant-send]');
+			this.sendIcon = this.querySelector('[data-assistant-send-icon]');
+			this.statusEl = this.querySelector('[data-assistant-status]');
+			this.errorEl = this.querySelector('[data-assistant-error]');
+			this.storageKey = String(this.dataset.storageKey || '').trim();
+			this.peekFrames = Array.from(this.querySelectorAll<HTMLImageElement>('[data-peek-frame]'))
+				.sort((a, b) => Number(a.dataset.peekFrame) - Number(b.dataset.peekFrame));
+			for (const frame of this.peekFrames) {
+				if (frame.decode) void frame.decode().catch(() => undefined);
+			}
+			this.messages = this.readStoredMessages();
+			this.renderMessages();
+
+			this.abort?.abort();
+			this.abort = new AbortController();
+			const { signal } = this.abort;
+			this.launcher?.addEventListener('click', () => this.toggle(), { signal });
+			this.querySelector('[data-assistant-close]')?.addEventListener('click', () => this.close(), { signal });
+			this.querySelector('[data-assistant-clear]')?.addEventListener('click', () => this.clearConversation(), { signal });
+			this.form?.addEventListener('submit', (event) => {
+				event.preventDefault();
+				if (this.busy) this.cancelRequest();
+				else void this.submitMessage();
+			}, { signal });
+			this.input?.addEventListener('keydown', (event) => {
+				if (event.key !== 'Enter' || event.shiftKey) return;
+				event.preventDefault();
+				if (this.busy) this.cancelRequest();
+				else void this.submitMessage();
+			}, { signal });
+			this.input?.addEventListener('input', () => this.resizeInput(), { signal });
+			document.addEventListener('keydown', this.handleDocumentKeydown, { signal });
+			document.addEventListener('pointerdown', this.handleOutsidePointer, { signal });
+			document.addEventListener('submit', this.handleLogout, { capture: true, signal });
+			window.addEventListener('resize', this.scheduleMobileAnchor, { signal });
+			document.addEventListener('scroll', this.scheduleMobileAnchor, { capture: true, passive: true, signal });
+			document.addEventListener('astro:page-load', this.scheduleMobileAnchor, { signal });
+			this.syncMobileAnchor();
+			this.scheduleMobileAnchor();
+		}
+
+		disconnectedCallback() {
+			this.requestAbort?.abort();
+			this.abort?.abort();
+			this.confirmationCardObserver?.disconnect();
+			if (this.anchorFrame) window.cancelAnimationFrame(this.anchorFrame);
+			if (this.lookFrame) window.cancelAnimationFrame(this.lookFrame);
+			this.abort = null;
+		}
+
+		private scheduleMobileAnchor = () => {
+			if (this.anchorFrame) return;
+			this.anchorFrame = window.requestAnimationFrame(() => {
+				this.anchorFrame = 0;
+				this.syncMobileAnchor();
+			});
+		};
+
+		private prefersReducedMotion() {
+			return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		}
+
+		private isMobilePeekActive() {
+			return this.hasAttribute('data-assistant-mobile-peek') && window.matchMedia('(max-width: 1023px)').matches;
+		}
+
+		private getScrollMetrics() {
+			const scroller = document.querySelector<HTMLElement>('.app-shell > :last-child');
+			if (scroller && scroller.scrollHeight > scroller.clientHeight + 4) {
+				return { y: scroller.scrollTop, max: Math.max(1, scroller.scrollHeight - scroller.clientHeight) };
+			}
+			const el = document.scrollingElement || document.documentElement;
+			return { y: el.scrollTop, max: Math.max(1, el.scrollHeight - window.innerHeight) };
+		}
+
+		private restFrameIndex() {
+			const rest = this.peekFrames.findIndex((frame) => frame.hasAttribute('data-peek-rest'));
+			return rest >= 0 ? rest : 0;
+		}
+
+		private frameIndexForLook(look: number) {
+			const rest = this.restFrameIndex();
+			const last = Math.max(rest, this.peekFrames.length - 1);
+			if (look <= 0) return rest + look * rest;
+			return rest + look * (last - rest);
+		}
+
+		private applyLookFrames() {
+			const frames = this.peekFrames;
+			if (!frames.length) return;
+			const index = Math.min(
+				frames.length - 1,
+				Math.max(0, Math.round(this.frameIndexForLook(this.look))),
+			);
+			for (let i = 0; i < frames.length; i++) {
+				const on = i === index;
+				frames[i].style.opacity = on ? '1' : '0';
+				frames[i].style.visibility = on ? 'visible' : 'hidden';
+			}
+		}
+
+		private scheduleLookTick() {
+			if (this.lookFrame) return;
+			this.lookFrame = window.requestAnimationFrame(() => {
+				this.lookFrame = 0;
+				this.look = this.lookTarget;
+				this.style.setProperty('--auri-look', this.look.toFixed(3));
+				this.applyLookFrames();
+			});
+		}
+
+		private syncPeekLook() {
+			if (!this.isMobilePeekActive() || this.prefersReducedMotion()) {
+				this.look = 0;
+				this.lookTarget = 0;
+				this.style.setProperty('--auri-look', '0');
+				this.applyLookFrames();
+				return;
+			}
+
+			const { y, max } = this.getScrollMetrics();
+			this.lookTarget = Math.min(1, y / Math.min(max, 620));
+			this.scheduleLookTick();
+		}
+
+		private syncMobileAnchor() {
+			this.syncPeekLook();
+			const isMobile = window.matchMedia('(max-width: 1023px)').matches;
+			if (isMobile && this.hasAttribute('data-assistant-mobile-peek')) {
+				this.removeAttribute('data-assistant-card-anchor');
+				this.style.removeProperty('--assistant-mobile-width');
+				this.style.removeProperty('--assistant-mobile-right');
+				this.style.removeProperty('--assistant-mobile-bottom');
+				this.style.removeProperty('--assistant-desktop-width');
+				this.style.removeProperty('--assistant-desktop-right');
+				this.style.removeProperty('--assistant-desktop-top');
+				return;
+			}
+
+			const card = document.querySelector<HTMLElement>('[data-assistant-confirmation-card]');
+			if (!card) {
+				this.confirmationCardObserver?.disconnect();
+				this.confirmationCardObserver = null;
+				this.confirmationCard = null;
+				this.style.removeProperty('--assistant-mobile-width');
+				this.style.removeProperty('--assistant-mobile-right');
+				this.style.removeProperty('--assistant-mobile-bottom');
+				if (isMobile) {
+					this.removeAttribute('data-assistant-card-anchor');
+					this.style.removeProperty('--assistant-desktop-width');
+					this.style.removeProperty('--assistant-desktop-right');
+					this.style.removeProperty('--assistant-desktop-top');
+					return;
+				}
+
+				// En las demás páginas conservamos la misma columna que ocupa «Por confirmar»
+				// en el dashboard: el segundo cuarto del canvas de contenido.
+				const topBar = document.querySelector<HTMLElement>('[data-shell-topbar]');
+				const canvas = topBar?.parentElement?.getBoundingClientRect();
+				const width = 152;
+				const center = canvas
+					? canvas.left + canvas.width * 0.375
+					: window.innerWidth * 0.45;
+				const right = Math.max(8, window.innerWidth - center - width / 2);
+				const top = Math.max(0, Math.round(topBar?.getBoundingClientRect().bottom || 0));
+				this.style.setProperty('--assistant-desktop-width', `${width}px`);
+				this.style.setProperty('--assistant-desktop-right', `${Math.round(right)}px`);
+				this.style.setProperty('--assistant-desktop-top', `${top}px`);
+				this.setAttribute('data-assistant-card-anchor', '');
+				return;
+			}
+
+			if (this.confirmationCard !== card) {
+				this.confirmationCardObserver?.disconnect();
+				this.confirmationCard = card;
+				this.confirmationCardObserver = new ResizeObserver(this.scheduleMobileAnchor);
+				this.confirmationCardObserver.observe(card);
+			}
+
+			const bounds = card.getBoundingClientRect();
+			if (isMobile) {
+				const width = Math.min(bounds.width * 0.72, 126);
+				const right = Math.max(8, window.innerWidth - bounds.right + (bounds.width - width) / 2);
+				// Auri se apoya sobre la tarjeta: solapamos el borde superior sin llegar al contenido principal.
+				const overlap = Math.min(18, Math.max(10, bounds.height * 0.16));
+				const bottom = Math.max(8, window.innerHeight - bounds.top - overlap);
+				this.style.setProperty('--assistant-mobile-width', `${Math.round(width)}px`);
+				this.style.setProperty('--assistant-mobile-right', `${Math.round(right)}px`);
+				this.style.setProperty('--assistant-mobile-bottom', `${Math.round(bottom)}px`);
+				this.style.removeProperty('--assistant-desktop-width');
+				this.style.removeProperty('--assistant-desktop-right');
+				this.style.removeProperty('--assistant-desktop-top');
+			} else {
+				const width = Math.min(bounds.width * 0.48, 152);
+				const right = Math.max(8, window.innerWidth - bounds.right + (bounds.width - width) / 2);
+				const topBar = document.querySelector<HTMLElement>('[data-shell-topbar]');
+				const top = Math.max(0, Math.round(topBar?.getBoundingClientRect().bottom || 0));
+				this.style.setProperty('--assistant-desktop-width', `${Math.round(width)}px`);
+				this.style.setProperty('--assistant-desktop-right', `${Math.round(right)}px`);
+				this.style.setProperty('--assistant-desktop-top', `${top}px`);
+				this.style.removeProperty('--assistant-mobile-width');
+				this.style.removeProperty('--assistant-mobile-right');
+				this.style.removeProperty('--assistant-mobile-bottom');
+			}
+			this.setAttribute('data-assistant-card-anchor', '');
+		}
+
+		private handleDocumentKeydown = (event: KeyboardEvent) => {
+			if (event.key !== 'Escape' || !this.isOpen()) return;
+			event.preventDefault();
+			if (this.busy) this.cancelRequest();
+			this.close();
+		};
+
+		private handleOutsidePointer = (event: PointerEvent) => {
+			if (!this.isOpen() || this.contains(event.target as Node)) return;
+			this.close();
+		};
+
+		private handleLogout = (event: Event) => {
+			const form = event.target instanceof HTMLFormElement ? event.target : null;
+			if (form?.action.endsWith('/api/auth/logout')) this.removeStoredMessages();
+		};
+
+		private isOpen() {
+			return Boolean(this.panel && !this.panel.hidden);
+		}
+
+		private toggle() {
+			if (this.isOpen()) this.close();
+			else this.open();
+		}
+
+		private open() {
+			if (!this.panel || !this.launcher) return;
+			this.panel.hidden = false;
+			this.launcher.setAttribute('aria-expanded', 'true');
+			this.clearError();
+			this.react();
+			window.requestAnimationFrame(() => this.panel?.classList.add('is-open'));
+			if (!window.matchMedia('(max-width: 639px)').matches) {
+				window.setTimeout(() => this.input?.focus({ preventScroll: true }), 120);
+			}
+		}
+
+		private close() {
+			if (!this.panel || !this.launcher || !this.isOpen()) return;
+			this.panel.classList.remove('is-open');
+			this.launcher.setAttribute('aria-expanded', 'false');
+			window.setTimeout(() => {
+				if (this.panel && !this.panel.classList.contains('is-open')) this.panel.hidden = true;
+			}, 150);
+			this.launcher.focus({ preventScroll: true });
+		}
+
+		private resizeInput() {
+			if (!this.input) return;
+			this.input.style.height = 'auto';
+			this.input.style.height = `${Math.min(this.input.scrollHeight, 116)}px`;
+		}
+
+		private setBusy(next: boolean) {
+			this.busy = next;
+			this.toggleAttribute('data-assistant-busy', next);
+			if (this.input) this.input.disabled = next;
+			if (this.send) {
+				this.send.setAttribute('aria-label', next ? 'Cancelar consulta' : 'Enviar consulta');
+				this.send.title = next ? 'Cancelar consulta' : 'Enviar consulta';
+			}
+			if (this.sendIcon) this.sendIcon.textContent = next ? 'close' : 'arrow_upward';
+			this.setStatus(next ? 'Consultando información permitida…' : 'Listo para ayudarte');
+			if (next) this.renderThinking();
+			else this.messagesEl?.querySelector('[data-assistant-thinking]')?.remove();
+		}
+
+		private setStatus(message: string) {
+			if (this.statusEl) this.statusEl.textContent = message;
+		}
+
+		private react() {
+			this.setAttribute('data-assistant-reacting', '');
+			window.setTimeout(() => this.removeAttribute('data-assistant-reacting'), 580);
+		}
+
+		private renderThinking() {
+			if (!this.messagesEl || this.messagesEl.querySelector('[data-assistant-thinking]')) return;
+			const row = document.createElement('div');
+			row.className = 'assistant-mascot__message assistant-mascot__message--assistant';
+			row.dataset.assistantThinking = 'true';
+			row.setAttribute('aria-busy', 'true');
+			row.innerHTML = `<span class="assistant-mascot__thinking"><span></span><span></span><span></span></span>`;
+			this.messagesEl.append(row);
+			this.scrollMessages();
+		}
+
+		private cancelRequest() {
+			if (!this.busy) return;
+			this.requestAbort?.abort();
+			this.setBusy(false);
+			this.setStatus('Consulta cancelada');
+		}
+
+		private clearConversation() {
+			if (this.busy) this.cancelRequest();
+			this.messages = [];
+			this.removeStoredMessages();
+			this.clearError();
+			this.renderMessages();
+			this.setStatus('Nueva conversación');
+			this.input?.focus({ preventScroll: true });
+		}
+
+		private readStoredMessages(): ChatMessage[] {
+			if (!this.storageKey) return [];
+			try {
+				const parsed = JSON.parse(sessionStorage.getItem(this.storageKey) || 'null');
+				if (!Array.isArray(parsed)) return [];
+				return this.trimMessages(parsed.flatMap((message): ChatMessage[] => {
+					if (!message || typeof message !== 'object') return [];
+					const raw = message as Record<string, unknown>;
+					const role = raw.role === 'assistant' ? 'assistant' : raw.role === 'user' ? 'user' : null;
+					const content = String(raw.content || '').trim();
+					if (!role || !content) return [];
+					return [{
+						role,
+						content,
+						sentAt: Number(raw.sentAt) || Date.now(),
+						sources: Array.isArray(raw.sources) ? raw.sources : [],
+						assumptions: Array.isArray(raw.assumptions) ? raw.assumptions.map(String) : [],
+						status: String(raw.status || ''),
+					}];
+				}));
+			} catch {
+				return [];
+			}
+		}
+
+		private trimMessages(messages: ChatMessage[]) {
+			const trimmed = messages.slice(-MAX_MESSAGES);
+			while (trimmed.length && trimmed.reduce((total, message) => total + Array.from(message.content).length, 0) > MAX_HISTORY_LENGTH) {
+				trimmed.shift();
+			}
+			return trimmed;
+		}
+
+		private persistMessages() {
+			if (!this.storageKey) return;
+			this.messages = this.trimMessages(this.messages);
+			try {
+				sessionStorage.setItem(this.storageKey, JSON.stringify(this.messages));
+			} catch {
+				/* sessionStorage puede no estar disponible en navegación privada */
+			}
+		}
+
+		private removeStoredMessages() {
+			if (!this.storageKey) return;
+			try {
+				sessionStorage.removeItem(this.storageKey);
+			} catch {
+				/* ignore */
+			}
+		}
+
+		private clearError() {
+			if (!this.errorEl) return;
+			this.errorEl.hidden = true;
+			this.errorEl.textContent = '';
+		}
+
+		private showError(message: string) {
+			if (!this.errorEl) return;
+			this.errorEl.textContent = message;
+			this.errorEl.hidden = false;
+		}
+
+		private userMessageForAgent(message: ChatMessage): { role: Role; content: string } {
+			return { role: message.role, content: message.content };
+		}
+
+		private async submitMessage() {
+			const query = this.input?.value.trim() || '';
+			if (!query || this.busy) return;
+			this.clearError();
+			const history = this.trimMessages(this.messages).map((message) => this.userMessageForAgent(message));
+			this.messages.push({ role: 'user', content: query, sentAt: Date.now() });
+			this.persistMessages();
+			this.input!.value = '';
+			this.resizeInput();
+			this.renderMessages();
+			this.requestAbort?.abort();
+			this.requestAbort = new AbortController();
+			this.setBusy(true);
+
+			try {
+				const response = await fetch('/api/assistant/query', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
+					body: JSON.stringify({ query, messages: history, locale: 'es-PY' }),
+					signal: this.requestAbort.signal,
+				});
+				if (!response.ok) throw new Error(await this.readError(response));
+				await this.consumeStream(response);
+			} catch (error) {
+				if (this.requestAbort?.signal.aborted) return;
+				this.showError(error instanceof Error ? error.message : 'No fue posible obtener una respuesta.');
+			} finally {
+				if (!this.requestAbort?.signal.aborted) this.setBusy(false);
+				this.requestAbort = null;
+				if (!window.matchMedia('(max-width: 639px)').matches && this.isOpen()) {
+					this.input?.focus({ preventScroll: true });
+				}
+			}
+		}
+
+		private async readError(response: Response) {
+			const payload = await response.json().catch(() => null) as { message?: string } | null;
+			if (response.status === 401) return 'Tu sesión venció. Volvé a iniciar sesión para continuar.';
+			if (response.status === 403) return 'El asistente no está habilitado para este usuario u organización.';
+			if (response.status === 504) return 'El asistente tardó demasiado. Probá nuevamente.';
+			return String(payload?.message || 'El asistente no está disponible en este momento.');
+		}
+
+		private async consumeStream(response: Response) {
+			if (!response.body) throw new Error('El asistente no devolvió una respuesta.');
+			const reader = response.body.getReader();
+			const decoder = new TextDecoder();
+			let buffer = '';
+			let answer = '';
+			let completed = false;
+
+			const consumeBlock = (block: string) => {
+				const lines = block.split('\n');
+				const event = lines.find((line) => line.startsWith('event:'))?.slice(6).trim() || 'message';
+				const data = lines.filter((line) => line.startsWith('data:')).map((line) => line.slice(5).trim()).join('\n');
+				if (!data) return;
+				const payload = JSON.parse(data) as Record<string, unknown>;
+				if (event === 'progress') {
+					this.setStatus(String(payload.message || 'Consultando información permitida…'));
+					return;
+				}
+				if (event === 'delta') {
+					answer += String(payload.text || '');
+					return;
+				}
+				if (event === 'error') {
+					const failure = payload.error as Record<string, unknown> | undefined;
+					throw new Error(String(failure?.message || 'El asistente no pudo completar la consulta.'));
+				}
+				if (event === 'done') {
+					const finalAnswer = String(payload.answer || answer).trim();
+					if (!finalAnswer) throw new Error('El asistente devolvió una respuesta vacía.');
+					this.messages.push({
+						role: 'assistant',
+						content: finalAnswer,
+						sentAt: Date.now(),
+						sources: Array.isArray(payload.sources) ? payload.sources as AssistantSource[] : [],
+						assumptions: Array.isArray(payload.assumptions) ? payload.assumptions.map(String) : [],
+						status: String(payload.status || 'completed'),
+					});
+					this.persistMessages();
+					this.renderMessages();
+					window.setTimeout(() => this.react());
+					completed = true;
+				}
+			};
+
+			while (true) {
+				const { done, value } = await reader.read();
+				buffer += decoder.decode(value || new Uint8Array(), { stream: !done }).replace(/\r\n/g, '\n');
+				let boundary = buffer.indexOf('\n\n');
+				while (boundary >= 0) {
+					consumeBlock(buffer.slice(0, boundary));
+					buffer = buffer.slice(boundary + 2);
+					boundary = buffer.indexOf('\n\n');
+				}
+				if (done) break;
+			}
+			if (buffer.trim()) consumeBlock(buffer);
+			if (!completed) throw new Error('La respuesta del asistente se interrumpió. Probá nuevamente.');
+		}
+
+		private isSafeUrl(value: string) {
+			try {
+				return ALLOWED_PROTOCOLS.has(new URL(value, window.location.origin).protocol);
+			} catch {
+				return false;
+			}
+		}
+
+		private sanitizeMarkdown(html: string) {
+			const template = document.createElement('template');
+			template.innerHTML = html;
+			const elements = Array.from(template.content.querySelectorAll('*'));
+			for (const element of elements) {
+				const tag = element.tagName.toLowerCase();
+				if (!ALLOWED_TAGS.has(tag)) {
+					element.replaceWith(...Array.from(element.childNodes));
+					continue;
+				}
+				const href = element.getAttribute('href') || '';
+				for (const attribute of Array.from(element.attributes)) element.removeAttribute(attribute.name);
+				if (tag === 'a' && this.isSafeUrl(href)) {
+					element.setAttribute('href', href);
+					element.setAttribute('target', '_blank');
+					element.setAttribute('rel', 'noreferrer');
+				}
+			}
+			return template.innerHTML;
+		}
+
+		private renderAssistantContent(content: string) {
+			try {
+				return this.sanitizeMarkdown(String(marked.parse(content, { async: false, gfm: true, breaks: true })));
+			} catch {
+				return content.replace(/[&<>]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[character] || character)).replace(/\n/g, '<br>');
+			}
+		}
+
+		private createMetadata(message: ChatMessage) {
+			if (message.role !== 'assistant' || (!(message.sources?.length) && !(message.assumptions?.length))) return null;
+			const details = document.createElement('details');
+			details.className = 'assistant-mascot__metadata';
+			const summary = document.createElement('summary');
+			summary.textContent = 'Detalle de la respuesta';
+			details.append(summary);
+			if (message.sources?.length) {
+				const sourceLabel = document.createElement('p');
+				sourceLabel.textContent = `Consultó: ${message.sources.map((source) => [source.domain, source.operation].filter(Boolean).join(' · ')).filter(Boolean).join(', ')}`;
+				details.append(sourceLabel);
+			}
+			if (message.assumptions?.length) {
+				const assumptions = document.createElement('p');
+				assumptions.textContent = `Supuestos: ${message.assumptions.join(' · ')}`;
+				details.append(assumptions);
+			}
+			return details;
+		}
+
+		private renderMessages() {
+			if (!this.messagesEl) return;
+			this.messagesEl.replaceChildren();
+			if (!this.messages.length) {
+				const empty = document.createElement('div');
+				empty.className = 'assistant-mascot__empty';
+				empty.innerHTML = '<p>Hola, soy Auri.</p><span>Preguntame por tu agenda, clientes o cómo viene el negocio.</span>';
+				this.messagesEl.append(empty);
+				return;
+			}
+			for (const message of this.messages) {
+				const row = document.createElement('article');
+				row.className = `assistant-mascot__message assistant-mascot__message--${message.role}`;
+				const bubble = document.createElement('div');
+				bubble.className = 'assistant-mascot__bubble';
+				if (message.role === 'assistant') bubble.innerHTML = this.renderAssistantContent(message.content);
+				else bubble.textContent = message.content;
+				row.append(bubble);
+				const metadata = this.createMetadata(message);
+				if (metadata) row.append(metadata);
+				this.messagesEl.append(row);
+			}
+			this.scrollMessages();
+		}
+
+		private scrollMessages() {
+			if (!this.messagesEl) return;
+			this.messagesEl.scrollTop = this.messagesEl.scrollHeight;
+		}
+	}
+
+	if (!customElements.get('assistant-mascot')) customElements.define('assistant-mascot', AssistantMascot);
+</script>
+
+<style is:global>
+	assistant-mascot {
+		--auri-look: 0;
+		position: fixed;
+		top: 0;
+		right: clamp(7.5rem, 12vw, 12.5rem);
+		z-index: 80;
+		display: block;
+		overflow: visible;
+	}
+
+	.assistant-mascot__launcher {
+		position: relative;
+		display: block;
+		width: clamp(12rem, 17vw, 16.5rem);
+		aspect-ratio: 3 / 2;
+		padding: 0;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		cursor: pointer;
+		line-height: 0;
+		overflow: visible;
+		transition: transform 160ms ease;
+	}
+
+	.assistant-mascot__launcher:hover { transform: translateY(2px); }
+	assistant-mascot[data-assistant-card-anchor] .assistant-mascot__launcher,
+	assistant-mascot[data-assistant-card-anchor] .assistant-mascot__launcher:hover {
+		transform: none;
+		transition: none;
+	}
+	.assistant-mascot__launcher:focus-visible,
+	.assistant-mascot__icon-button:focus-visible,
+	.assistant-mascot__send:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 58%, transparent); outline-offset: 3px; }
+	.assistant-mascot__art,
+	.assistant-mascot__peek img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: right bottom; }
+	.assistant-mascot__art--dashboard-mobile,
+	.assistant-mascot__peek { display: none; }
+	.assistant-mascot__reading {
+		position: relative;
+		width: 100%;
+		height: 100%;
+	}
+	.assistant-mascot__reading img {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		object-position: center bottom;
+		animation: none;
+		transform: none;
+	}
+	.assistant-mascot__reading [data-tail-wag] { opacity: 0; }
+	.assistant-mascot__launcher img { filter: drop-shadow(0 8px 10px rgb(24 51 112 / 0.16)); transform-origin: top center; animation: auri-hammock-sway 4.6s ease-in-out infinite; }
+	.assistant-mascot__peek {
+		position: relative;
+		width: 100%;
+		height: 100%;
+	}
+	.assistant-mascot__peek img {
+		position: absolute;
+		inset: 0;
+		opacity: 0;
+		pointer-events: none;
+		animation: none;
+		transform: none;
+		filter: drop-shadow(0 4px 6px rgb(24 51 112 / 0.16));
+	}
+	.assistant-mascot__peek [data-peek-rest] { opacity: 1; }
+	assistant-mascot[data-assistant-busy] .assistant-mascot__art { animation: auri-pulse 1.35s ease-in-out infinite; }
+	assistant-mascot[data-assistant-reacting] .assistant-mascot__art { animation: auri-react 560ms cubic-bezier(0.22, 1.45, 0.36, 1); }
+	assistant-mascot[data-assistant-card-anchor][data-assistant-busy] .assistant-mascot__art,
+	assistant-mascot[data-assistant-card-anchor][data-assistant-reacting] .assistant-mascot__art { animation: none; }
+	assistant-mascot[data-assistant-card-anchor] { top: var(--assistant-desktop-top); right: var(--assistant-desktop-right); }
+	assistant-mascot[data-assistant-card-anchor] .assistant-mascot__launcher { width: var(--assistant-desktop-width); }
+
+	.assistant-mascot__panel {
+		position: absolute;
+		right: 0;
+		top: calc(100% + 0.35rem);
+		bottom: auto;
+		display: grid;
+		grid-template-rows: auto minmax(0, 1fr) auto auto;
+		width: min(24rem, calc(100vw - 2rem));
+		height: min(34rem, calc(100vh - 9rem));
+		overflow: hidden;
+		border: 1px solid color-mix(in srgb, var(--shell-border) 82%, var(--primary) 18%);
+		border-radius: 1.5rem;
+		background: color-mix(in srgb, var(--surface-bright) 96%, var(--primary-container));
+		box-shadow: 0 28px 60px rgb(15 23 42 / 0.24);
+		opacity: 0;
+		transform: translateY(-0.75rem) scale(0.98);
+		transform-origin: top right;
+		transition: opacity 150ms ease, transform 150ms ease;
+	}
+	.assistant-mascot__panel.is-open { opacity: 1; transform: translateY(0) scale(1); }
+	.assistant-mascot__header { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.8rem 0.9rem; border-bottom: 1px solid var(--shell-border); }
+	.assistant-mascot__identity { display: flex; min-width: 0; align-items: center; gap: 0.55rem; }
+	.assistant-mascot__identity img { width: 2.4rem; height: 2.4rem; object-fit: contain; }
+	.assistant-mascot__identity p { margin: 0; color: var(--on-surface); font-size: 0.88rem; font-weight: 800; }
+	.assistant-mascot__identity span { display: block; max-width: 14rem; overflow: hidden; color: var(--on-surface-variant); font-size: 0.7rem; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+	.assistant-mascot__header-actions { display: flex; gap: 0.2rem; }
+	.assistant-mascot__icon-button { display: grid; width: 2rem; height: 2rem; place-items: center; border: 0; border-radius: 0.6rem; background: transparent; color: var(--on-surface-variant); cursor: pointer; }
+	.assistant-mascot__icon-button:hover { background: var(--primary-container); color: var(--primary); }
+	.assistant-mascot__icon-button .material-symbols-rounded { font-size: 1.05rem; }
+	.assistant-mascot__messages { min-height: 0; overflow-y: auto; padding: 0.9rem; scrollbar-gutter: stable; }
+	.assistant-mascot__empty { max-width: 15.5rem; margin: 2.5rem auto; color: var(--on-surface-variant); text-align: center; font-size: 0.84rem; line-height: 1.55; }
+	.assistant-mascot__empty p { margin: 0 0 0.3rem; color: var(--on-surface); font-size: 1rem; font-weight: 800; }
+	.assistant-mascot__message { display: grid; gap: 0.4rem; margin: 0 0 0.8rem; }
+	.assistant-mascot__message--user { justify-items: end; }
+	.assistant-mascot__bubble { max-width: 92%; padding: 0.7rem 0.8rem; border-radius: 1rem; color: var(--on-surface); background: var(--surface-container); font-size: 0.84rem; line-height: 1.5; overflow-wrap: anywhere; }
+	.assistant-mascot__message--user .assistant-mascot__bubble { border-bottom-right-radius: 0.25rem; color: var(--on-primary); background: var(--primary); }
+	.assistant-mascot__message--assistant .assistant-mascot__bubble { border-bottom-left-radius: 0.25rem; }
+	.assistant-mascot__bubble > :first-child { margin-top: 0; }
+	.assistant-mascot__bubble > :last-child { margin-bottom: 0; }
+	.assistant-mascot__bubble p,
+	.assistant-mascot__bubble ul,
+	.assistant-mascot__bubble ol,
+	.assistant-mascot__bubble blockquote,
+	.assistant-mascot__bubble pre { margin: 0.45rem 0; }
+	.assistant-mascot__bubble ul,
+	.assistant-mascot__bubble ol { padding-left: 1.15rem; }
+	.assistant-mascot__bubble a { color: inherit; font-weight: 700; text-decoration: underline; }
+	.assistant-mascot__bubble code { padding: 0.08rem 0.22rem; border-radius: 0.25rem; background: rgb(15 23 42 / 0.08); font-size: 0.78rem; }
+	.assistant-mascot__bubble pre { overflow-x: auto; padding: 0.55rem; border-radius: 0.5rem; background: rgb(15 23 42 / 0.08); }
+	.assistant-mascot__metadata { max-width: 92%; color: var(--on-surface-variant); font-size: 0.7rem; }
+	.assistant-mascot__metadata summary { cursor: pointer; }
+	.assistant-mascot__metadata p { margin: 0.35rem 0 0; line-height: 1.4; }
+	.assistant-mascot__thinking { display: inline-flex; gap: 0.25rem; align-items: center; min-width: 3.25rem; padding: 0.75rem 0.9rem; border-radius: 1rem; border-bottom-left-radius: 0.25rem; background: var(--surface-container); }
+	.assistant-mascot__thinking span { width: 0.35rem; height: 0.35rem; border-radius: 50%; background: var(--primary); animation: auri-dot 1.1s ease-in-out infinite; }
+	.assistant-mascot__thinking span:nth-child(2) { animation-delay: 140ms; }
+	.assistant-mascot__thinking span:nth-child(3) { animation-delay: 280ms; }
+	.assistant-mascot__error { margin: 0 0.8rem 0.55rem; padding: 0.55rem 0.65rem; border-radius: 0.7rem; background: color-mix(in srgb, #ef4444 12%, var(--surface-bright)); color: #b42318; font-size: 0.76rem; line-height: 1.4; }
+	.assistant-mascot__composer { display: flex; align-items: flex-end; gap: 0.45rem; margin: 0 0.8rem; padding: 0.45rem; border: 1px solid var(--shell-border); border-radius: 0.95rem; background: var(--surface-container); }
+	.assistant-mascot__composer:focus-within { border-color: color-mix(in srgb, var(--primary) 48%, var(--shell-border)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 13%, transparent); }
+	.assistant-mascot__composer textarea { flex: 1; min-width: 0; max-height: 7.25rem; padding: 0.35rem 0.25rem 0.35rem 0.45rem; border: 0; outline: 0; resize: none; color: var(--on-surface); background: transparent; font: inherit; font-size: 0.84rem; line-height: 1.42; }
+	.assistant-mascot__composer textarea::placeholder { color: var(--on-surface-variant); }
+	.assistant-mascot__send { display: grid; width: 2rem; height: 2rem; flex: 0 0 auto; place-items: center; border: 0; border-radius: 0.65rem; color: var(--on-primary); background: var(--primary); cursor: pointer; transition: transform 130ms ease, background 130ms ease; }
+	.assistant-mascot__send:hover { transform: translateY(-1px); background: color-mix(in srgb, var(--primary) 88%, #000); }
+	.assistant-mascot__send .material-symbols-rounded { font-size: 1rem; }
+	.assistant-mascot__hint { margin: 0; padding: 0.45rem 0.9rem 0.75rem; color: var(--on-surface-variant); font-size: 0.66rem; text-align: center; }
+	@keyframes auri-hammock-sway { 0%, 100% { transform: rotate(-0.7deg) translateY(0); } 50% { transform: rotate(0.7deg) translateY(2px); } }
+	@keyframes auri-pulse { 50% { filter: drop-shadow(0 0 10px color-mix(in srgb, var(--primary) 58%, transparent)); transform: scale(1.025); } }
+	@keyframes auri-react { 0%, 100% { transform: translateY(0) rotate(0) scale(1); } 42% { transform: translateY(-5px) rotate(-2deg) scale(1.04); } 72% { transform: translateY(-2px) rotate(2deg) scale(1.01); } }
+	@keyframes auri-dot { 0%, 80%, 100% { transform: scale(0.72); opacity: 0.45; } 40% { transform: scale(1); opacity: 1; } }
+	@media (max-width: 1023px) {
+		assistant-mascot { top: auto; right: max(0.6rem, env(safe-area-inset-right)); bottom: calc(var(--mobile-bottom-nav-height, 5.5rem) + 0.35rem); }
+		assistant-mascot[data-assistant-card-wait]:not([data-assistant-card-anchor]) {
+			visibility: hidden;
+			pointer-events: none;
+		}
+		.assistant-mascot__art--desktop { display: none; }
+		.assistant-mascot__art--dashboard-mobile { display: block; }
+		.assistant-mascot__launcher { width: min(13rem, 58vw); aspect-ratio: 3 / 2; }
+		.assistant-mascot__launcher img { filter: drop-shadow(0 5px 7px rgb(24 51 112 / 0.18)); animation: none; }
+		assistant-mascot[data-assistant-card-anchor] { top: auto; right: var(--assistant-mobile-right); bottom: var(--assistant-mobile-bottom); }
+		assistant-mascot[data-assistant-card-anchor] .assistant-mascot__launcher { width: var(--assistant-mobile-width); }
+		assistant-mascot[data-assistant-card-anchor] .assistant-mascot__reading [data-tail-wag] {
+			animation: auri-tail-wag 1.15s steps(1, end) infinite;
+		}
+		assistant-mascot[data-assistant-mobile-peek] {
+			top: 0.1rem;
+			right: max(-0.35rem, calc(env(safe-area-inset-right) - 0.35rem));
+			bottom: auto;
+			left: auto;
+		}
+		assistant-mascot[data-assistant-mobile-peek] .assistant-mascot__art--dashboard-mobile { display: none; }
+		assistant-mascot[data-assistant-mobile-peek] .assistant-mascot__peek { display: block; }
+		assistant-mascot[data-assistant-mobile-peek] .assistant-mascot__launcher {
+			width: 4.85rem;
+			aspect-ratio: 2 / 3;
+		}
+		assistant-mascot[data-assistant-mobile-peek] .assistant-mascot__launcher:hover { transform: none; }
+		assistant-mascot[data-assistant-mobile-peek] .assistant-mascot__peek img { animation: none; }
+		html:has(assistant-mascot[data-assistant-mobile-peek]) .topbar-actions { margin-right: 3.4rem; }
+		.assistant-mascot__panel { position: fixed; top: auto; right: max(0.75rem, env(safe-area-inset-right)); bottom: calc(var(--mobile-bottom-nav-height, 5.5rem) + 0.7rem); width: min(24rem, calc(100vw - 1.5rem)); height: min(71dvh, 38rem); border-radius: 1.25rem; transform-origin: bottom right; }
+	}
+	@keyframes auri-tail-wag { 50% { opacity: 1; } }
+	@media (prefers-reduced-motion: reduce) {
+		assistant-mascot { --auri-look: 0 !important; }
+		.assistant-mascot__launcher,
+		.assistant-mascot__launcher img,
+		.assistant-mascot__peek,
+		assistant-mascot[data-assistant-busy] .assistant-mascot__launcher,
+		assistant-mascot[data-assistant-reacting] .assistant-mascot__art,
+		.assistant-mascot__thinking span,
+		.assistant-mascot__panel { animation: none; transition: none; }
+	}
+</style>

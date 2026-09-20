@@ -75,3 +75,16 @@ Minimum required values:
 - `PUBLIC_G_MAPS_API_KEY` (legacy Google Maps key; kept for backwards compatibility, no longer used by the app)
 
 Optional endpoint-specific overrides are documented in `.env.example`.
+
+## Asistente operativo local
+
+La mascota Auri consume el asistente operativo por el endpoint interno de Bookmate;
+el navegador no se conecta directamente al servicio Go. Para habilitarla localmente:
+
+1. Activá el complemento `AI_ASSISTANT` y la capability `assistant.use` para la organización de prueba.
+2. Ejecutá `bookmate-agent` en `127.0.0.1:8080`.
+3. Configurá `BOOKMATE_AGENT_BASE_URL=http://127.0.0.1:8080` en `.env.development`.
+4. Iniciá Bookmate con `pnpm dev`.
+
+Si la variable no está configurada, la mascota queda oculta. En un ambiente desplegado,
+configurá la misma variable privada en el proveedor de Bookmate; no se requiere CORS.

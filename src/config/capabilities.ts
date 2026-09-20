@@ -25,6 +25,7 @@ export const CAPABILITIES = {
 	ADDONS_MANAGE: 'addons.manage',
 	ADDONS_ODONTOGRAM: 'addons.odontogram',
 	ADDONS_BODY_MAP: 'addons.body_map',
+	ASSISTANT_USE: 'assistant.use',
 	SPECIALTIES_VIEW: 'specialties.view',
 	SPECIALTIES_MANAGE: 'specialties.manage',
 	PROFESSIONALS_VIEW: 'professionals.view',
@@ -91,6 +92,7 @@ export const DEFAULT_ROLE_CAPABILITIES: Record<BaseRoleId, readonly CapabilityCo
 		CAPABILITIES.ADDONS_MANAGE,
 		CAPABILITIES.ADDONS_ODONTOGRAM,
 		CAPABILITIES.ADDONS_BODY_MAP,
+		CAPABILITIES.ASSISTANT_USE,
 		CAPABILITIES.SPECIALTIES_VIEW,
 		CAPABILITIES.SPECIALTIES_MANAGE,
 		CAPABILITIES.PROFESSIONALS_VIEW,
@@ -313,6 +315,16 @@ export const CAPABILITY_CATALOG: readonly CapabilityDefinition[] = [
 		requiresEntitlement: 'BODY_MAP',
 	},
 	{
+		code: CAPABILITIES.ASSISTANT_USE,
+		groupCode: 'assistant',
+		groupLabel: 'Asistente',
+		label: 'Usar asistente inteligente',
+		description: 'Consultar información operativa del negocio con el asistente de Hasel.',
+		kind: 'ADDON',
+		sortOrder: 150,
+		requiresEntitlement: 'AI_ASSISTANT',
+	},
+	{
 		code: CAPABILITIES.SPECIALTIES_VIEW,
 		groupCode: 'specialties',
 		groupLabel: 'Especialidades',
@@ -448,6 +460,7 @@ export const CAPABILITY_ROUTES: readonly CapabilityRoute[] = [
 	{ path: '/api/roles', capability: CAPABILITIES.PROFESSIONALS_VIEW, match: 'prefix' },
 	{ path: '/api/catalog', capability: CAPABILITIES.LOCATIONS_VIEW, match: 'prefix' },
 	{ path: '/api/permissions/matrix', capability: CAPABILITIES.PERMISSIONS_MANAGE, match: 'prefix' },
+	{ path: '/api/assistant', capability: CAPABILITIES.ASSISTANT_USE, match: 'prefix' },
 ];
 
 const normalizePath = (path: string) => {

@@ -125,6 +125,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 			context.locals.token = createAuthToken;
 			context.locals.roleId = 0;
 			context.locals.userId = 0;
+			context.locals.organizationId = 0;
 			context.locals.organizationName = '';
 			context.locals.organizationLogoUrl = '';
 			return next();
@@ -340,6 +341,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 	context.locals.token = accessToken;
 	context.locals.roleId = claims.role_id;
 	context.locals.userId = claims.user_id;
+	context.locals.organizationId = claims.organization_id;
 	context.locals.organizationName = organizationName;
 	context.locals.organizationLogoUrl = organizationLogoUrl;
 	context.locals.capabilities = capabilities ?? [];
