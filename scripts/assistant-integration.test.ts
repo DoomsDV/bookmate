@@ -140,6 +140,18 @@ test('la mascota y el BFF quedan desacoplados de ATC', () => {
 	assert.match(mascot, /data-assistant-clarification/);
 	assert.match(mascot, /assistant-mascot__clarification/);
 	assert.match(mascot, /Necesito un dato más/);
+	assert.match(mascot, /data-assistant-message-list/);
+	assert.match(mascot, /data-assistant-thinking/);
+	assert.match(mascot, /assistant-mascot__thinking-row/);
+	assert.match(mascot, /list\.replaceChildren/);
+	assert.match(mascot, /this\.thinkingEl\.hidden = !this\.busy/);
+	assert.match(mascot, /bindChatSurface/);
+	assert.match(mascot, /current\?\.isConnected/);
+	assert.match(mascot, /astro:after-swap/);
+	assert.match(mascot, /handleHostClick/);
+	assert.match(mascot, /await this\.renderMessages\(\)/);
+	assert.match(mascot, /@keyframes numa-dot/);
+	assert.match(mascot, /animation: numa-dot 1\.1s ease-in-out infinite both/);
 	assert.doesNotMatch(mascot, /assistant-mascot__hook/);
 	assert.doesNotMatch(mascot, /numa-tail-sway/);
 	assert.doesNotMatch(mascot, /numa-reading-bob/);
