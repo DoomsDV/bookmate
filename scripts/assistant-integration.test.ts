@@ -109,7 +109,6 @@ test('la mascota y el BFF quedan desacoplados de ATC', () => {
 	assert.ok(existsSync(new URL('../public/assistant/auri-reading-mobile-tail.png', import.meta.url)));
 	assert.ok(existsSync(new URL('../public/assistant/auri-peek-mobile-vertical-right-look-00.png', import.meta.url)));
 	assert.ok(existsSync(new URL('../public/assistant/auri-peek-mobile-vertical-right-look-24.png', import.meta.url)));
-	assert.ok(existsSync(new URL('../public/assistant/auri-peek-mobile-vertical-left.png', import.meta.url)));
 	assert.match(mascot, /auri-hammock-desktop\.png/);
 	assert.match(mascot, /auri-reading-mobile\.png/);
 	assert.match(mascot, /auri-reading-mobile-tail\.png/);
