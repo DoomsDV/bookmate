@@ -8,6 +8,23 @@ import {
 	parseAssistantQueryPayload,
 	queryAssistantAgent,
 } from '../src/lib/assistant-agent.ts';
+import { parseClarificationOptions } from '../src/lib/assistant-chat-ui.ts';
+
+test('el contrato de clarificación exige 2 a 5 opciones accionables', () => {
+	assert.deepEqual(
+		parseClarificationOptions({
+			options: [
+				{ id: '7d', label: 'Últimos 7 días', value: 'Últimos 7 días' },
+				{ id: '30d', label: 'Últimos 30 días', value: 'Últimos 30 días' },
+			],
+		}),
+		[
+			{ id: '7d', label: 'Últimos 7 días', value: 'Últimos 7 días' },
+			{ id: '30d', label: 'Últimos 30 días', value: 'Últimos 30 días' },
+		]
+	);
+	assert.deepEqual(parseClarificationOptions({ options: [{ id: 'solo', label: 'Una', value: 'Una' }] }), []);
+});
 
 test('el contrato del BFF acepta solamente query, messages y locale', () => {
 	const payload = parseAssistantQueryPayload({
@@ -114,13 +131,15 @@ test('la mascota y el BFF quedan desacoplados de ATC', () => {
 	assert.ok(existsSync(new URL('../public/assistant/numa-peek-mobile-vertical-right-look-24.png', import.meta.url)));
 	assert.match(mascot, /numa-hammock-desktop\.png/);
 	assert.match(mascot, /numa-analytics-desktop\.png/);
-	assert.match(mascot, /numa-reading-mobile\.png/);
 	assert.match(mascot, /numa-reading-mobile-body\.png/);
 	assert.match(mascot, /numa-tail-layer\.png/);
 	assert.match(mascot, /data-tail-layer/);
 	assert.match(mascot, /data-tail-body/);
 	assert.match(mascot, /numa-tail-swing/);
 	assert.match(mascot, /Hola, soy Numa/);
+	assert.match(mascot, /data-assistant-clarification/);
+	assert.match(mascot, /assistant-mascot__clarification/);
+	assert.match(mascot, /Necesito un dato más/);
 	assert.doesNotMatch(mascot, /assistant-mascot__hook/);
 	assert.doesNotMatch(mascot, /numa-tail-sway/);
 	assert.doesNotMatch(mascot, /numa-reading-bob/);

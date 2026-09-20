@@ -51,6 +51,10 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		</div>
 
 		<div class="assistant-mascot__error" data-assistant-error role="alert" hidden></div>
+		<div class="assistant-mascot__suggestions-wrap" data-assistant-suggestions-wrap>
+			<p class="assistant-mascot__suggestions-label">Podés empezar con</p>
+			<div class="assistant-mascot__suggestions" data-assistant-suggestions aria-label="Preguntas sugeridas"></div>
+		</div>
 		<form class="assistant-mascot__composer" data-assistant-form>
 			<label class="sr-only" for={`${panelId}-input`}>Escribí tu consulta para el asistente</label>
 			<textarea
@@ -61,7 +65,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 				placeholder="Escribí tu consulta…"
 			></textarea>
 			<button type="submit" class="assistant-mascot__send" data-assistant-send aria-label="Enviar consulta" title="Enviar consulta">
-				<span class="material-symbols-rounded" data-assistant-send-icon aria-hidden="true">arrow_upward</span>
+				<span class="material-symbols-rounded" data-assistant-send-icon aria-hidden="true">send</span>
 			</button>
 		</form>
 		<p class="assistant-mascot__hint">Enter para enviar · Shift + Enter para una nueva línea</p>
@@ -134,6 +138,9 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 </assistant-mascot>
 
 <script>
+	import { ASSISTANT_SUGGESTED_QUESTIONS, parseClarificationOptions } from '../lib/assistant-chat-ui';
+	import type { AssistantClarificationOption } from '../lib/assistant-chat-ui';
+
 	type MarkedParse = (
 		src: string,
 		options?: { async?: boolean; breaks?: boolean; gfm?: boolean }
@@ -157,6 +164,8 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		sources?: AssistantSource[];
 		assumptions?: string[];
 		status?: string;
+		clarification?: { options: AssistantClarificationOption[] };
+		clarificationResolved?: boolean;
 	};
 
 	const MAX_MESSAGES = 8;
@@ -181,6 +190,8 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		private sendIcon: HTMLElement | null = null;
 		private statusEl: HTMLElement | null = null;
 		private errorEl: HTMLElement | null = null;
+		private suggestionsWrapEl: HTMLElement | null = null;
+		private suggestionsEl: HTMLElement | null = null;
 		private abort: AbortController | null = null;
 		private requestAbort: AbortController | null = null;
 		private confirmationCard: HTMLElement | null = null;
@@ -215,6 +226,8 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			this.sendIcon = this.querySelector('[data-assistant-send-icon]');
 			this.statusEl = this.querySelector('[data-assistant-status]');
 			this.errorEl = this.querySelector('[data-assistant-error]');
+			this.suggestionsWrapEl = this.querySelector('[data-assistant-suggestions-wrap]');
+			this.suggestionsEl = this.querySelector('[data-assistant-suggestions]');
 			this.storageKey = String(this.dataset.storageKey || '').trim();
 			this.panelSizeKey = `${this.storageKey}:panel-size`;
 			this.resizeHandle = this.querySelector('[data-assistant-resize]');
@@ -226,6 +239,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			this.messages = this.readStoredMessages();
 			void ensureMarked();
 			void this.renderMessages();
+			this.renderSuggestions();
 			this.applyStoredPanelSize();
 
 			this.abort?.abort();
@@ -246,6 +260,14 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 				else void this.submitMessage();
 			}, { signal });
 			this.input?.addEventListener('input', () => this.resizeInput(), { signal });
+			this.suggestionsEl?.addEventListener('click', (event) => {
+				const button = (event.target as HTMLElement | null)?.closest<HTMLButtonElement>('[data-assistant-suggestion]');
+				if (button) this.handleSuggestedQuestion(button);
+			}, { signal });
+			this.messagesEl?.addEventListener('click', (event) => {
+				const button = (event.target as HTMLElement | null)?.closest<HTMLButtonElement>('[data-assistant-clarification]');
+				if (button) this.handleClarificationChoice(button);
+			}, { signal });
 			document.addEventListener('keydown', this.handleDocumentKeydown, { signal });
 			document.addEventListener('pointerdown', this.handleOutsidePointer, { signal });
 			document.addEventListener('submit', this.handleLogout, { capture: true, signal });
@@ -647,8 +669,10 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 				this.send.setAttribute('aria-label', next ? 'Cancelar consulta' : 'Enviar consulta');
 				this.send.title = next ? 'Cancelar consulta' : 'Enviar consulta';
 			}
-			if (this.sendIcon) this.sendIcon.textContent = next ? 'close' : 'arrow_upward';
-			this.setStatus(next ? 'Consultando información permitida…' : 'Listo para ayudarte');
+			if (this.sendIcon) this.sendIcon.textContent = next ? 'close' : 'send';
+			this.updateSuggestionsVisibility();
+			if (next) this.setStatus('Consultando información permitida…');
+			else this.setStatus(this.lastUnresolvedClarification() ? 'Necesito un dato más' : 'Listo para ayudarte');
 			if (next) this.renderThinking();
 			else this.messagesEl?.querySelector('[data-assistant-thinking]')?.remove();
 		}
@@ -701,6 +725,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 					const role = raw.role === 'assistant' ? 'assistant' : raw.role === 'user' ? 'user' : null;
 					const content = String(raw.content || '').trim();
 					if (!role || !content) return [];
+					const clarificationOptions = parseClarificationOptions(raw.clarification);
 					return [{
 						role,
 						content,
@@ -708,6 +733,8 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 						sources: Array.isArray(raw.sources) ? raw.sources : [],
 						assumptions: Array.isArray(raw.assumptions) ? raw.assumptions.map(String) : [],
 						status: String(raw.status || ''),
+						clarification: clarificationOptions.length ? { options: clarificationOptions } : undefined,
+						clarificationResolved: raw.clarificationResolved === true,
 					}];
 				}));
 			} catch {
@@ -758,10 +785,87 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			return { role: message.role, content: message.content };
 		}
 
-		private async submitMessage() {
-			const query = this.input?.value.trim() || '';
+		private handleSuggestedQuestion(button: HTMLButtonElement) {
+			const message = String(button.dataset.assistantSuggestion || '').trim();
+			if (!message || this.busy) return;
+			void this.submitMessage(message);
+		}
+
+		private handleClarificationChoice(button: HTMLButtonElement) {
+			const message = String(button.dataset.assistantClarification || '').trim();
+			if (!message || this.busy) return;
+			this.resolvePendingClarification();
+			this.persistMessages();
+			void this.submitMessage(message);
+		}
+
+		private lastUnresolvedClarification(): ChatMessage | null {
+			for (let index = this.messages.length - 1; index >= 0; index -= 1) {
+				const message = this.messages[index];
+				if (
+					message.role === 'assistant' &&
+					message.status === 'needs_clarification' &&
+					!message.clarificationResolved &&
+					parseClarificationOptions(message.clarification).length >= 2
+				) {
+					return message;
+				}
+			}
+			return null;
+		}
+
+		private resolvePendingClarification() {
+			const pending = this.lastUnresolvedClarification();
+			if (pending) pending.clarificationResolved = true;
+		}
+
+		private renderSuggestions() {
+			if (!this.suggestionsEl) return;
+			this.suggestionsEl.replaceChildren();
+			const fragment = document.createDocumentFragment();
+			for (const [index, suggestion] of ASSISTANT_SUGGESTED_QUESTIONS.entries()) {
+				const button = document.createElement('button');
+				button.type = 'button';
+				button.className = 'assistant-mascot__suggestion-btn';
+				button.style.setProperty('--chip-index', String(index));
+				button.dataset.assistantSuggestion = suggestion.message;
+				button.setAttribute('aria-label', suggestion.label);
+				button.title = suggestion.label;
+				button.disabled = this.busy;
+
+				const iconWrap = document.createElement('span');
+				iconWrap.className = 'assistant-mascot__suggestion-btn__icon';
+				iconWrap.setAttribute('aria-hidden', 'true');
+				const icon = document.createElement('span');
+				icon.className = 'material-symbols-rounded';
+				icon.textContent = suggestion.icon;
+				iconWrap.append(icon);
+
+				const label = document.createElement('span');
+				label.className = 'assistant-mascot__suggestion-btn__label';
+				label.textContent = suggestion.label;
+
+				button.append(iconWrap, label);
+				fragment.append(button);
+			}
+			this.suggestionsEl.append(fragment);
+			this.updateSuggestionsVisibility();
+		}
+
+		private updateSuggestionsVisibility() {
+			if (!this.suggestionsWrapEl) return;
+			const show = this.messages.length === 0 && !this.busy;
+			this.suggestionsWrapEl.classList.toggle('hidden', !show);
+			this.suggestionsEl?.querySelectorAll<HTMLButtonElement>('[data-assistant-suggestion]').forEach((button) => {
+				button.disabled = this.busy;
+			});
+		}
+
+		private async submitMessage(override?: string) {
+			const query = (override ?? this.input?.value.trim() ?? '').trim();
 			if (!query || this.busy) return;
 			this.clearError();
+			this.resolvePendingClarification();
 			const history = this.trimMessages(this.messages).map((message) => this.userMessageForAgent(message));
 			this.messages.push({ role: 'user', content: query, sentAt: Date.now() });
 			this.persistMessages();
@@ -830,6 +934,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 				if (event === 'done') {
 					const finalAnswer = String(payload.answer || answer).trim();
 					if (!finalAnswer) throw new Error('El asistente devolvió una respuesta vacía.');
+					const clarificationOptions = parseClarificationOptions(payload.clarification);
 					this.messages.push({
 						role: 'assistant',
 						content: finalAnswer,
@@ -837,6 +942,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 						sources: Array.isArray(payload.sources) ? payload.sources as AssistantSource[] : [],
 						assumptions: Array.isArray(payload.assumptions) ? payload.assumptions.map(String) : [],
 						status: String(payload.status || 'completed'),
+						clarification: clarificationOptions.length ? { options: clarificationOptions } : undefined,
 					});
 					this.persistMessages();
 					void this.renderMessages();
@@ -1022,7 +1128,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 				this.messagesEl.append(empty);
 				return;
 			}
-			for (const message of this.messages) {
+			for (const [index, message] of this.messages.entries()) {
 				const row = document.createElement('article');
 				row.className = `assistant-mascot__message assistant-mascot__message--${message.role}`;
 				const bubble = document.createElement('div');
@@ -1038,8 +1144,39 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 				row.append(bubble);
 				const metadata = this.createMetadata(message);
 				if (metadata) row.append(metadata);
+				const isLast = index === this.messages.length - 1;
+				if (
+					isLast &&
+					message.role === 'assistant' &&
+					message.status === 'needs_clarification' &&
+					!message.clarificationResolved
+				) {
+					const options = parseClarificationOptions(message.clarification);
+					if (options.length >= 2) {
+						const group = document.createElement('div');
+						group.className = 'assistant-mascot__clarification';
+						group.setAttribute('role', 'group');
+						group.setAttribute('aria-label', 'Elegí una opción');
+						for (const [chipIndex, option] of options.entries()) {
+							const button = document.createElement('button');
+							button.type = 'button';
+							button.className = 'assistant-mascot__suggestion-btn assistant-mascot__clarification-btn';
+							button.style.setProperty('--chip-index', String(chipIndex));
+							button.dataset.assistantClarification = option.value;
+							button.setAttribute('aria-label', option.label);
+							button.disabled = this.busy;
+							const label = document.createElement('span');
+							label.className = 'assistant-mascot__suggestion-btn__label';
+							label.textContent = option.label;
+							button.append(label);
+							group.append(button);
+						}
+						row.append(group);
+					}
+				}
 				this.messagesEl.append(row);
 			}
+			this.updateSuggestionsVisibility();
 			this.scrollMessages();
 		}
 
@@ -1344,6 +1481,88 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 	.assistant-mascot__thinking span:nth-child(2) { animation-delay: 140ms; }
 	.assistant-mascot__thinking span:nth-child(3) { animation-delay: 280ms; }
 	.assistant-mascot__error { margin: 0 0.8rem 0.55rem; padding: 0.55rem 0.65rem; border-radius: 0.7rem; background: color-mix(in srgb, #ef4444 12%, var(--surface-bright)); color: #b42318; font-size: 0.76rem; line-height: 1.4; }
+	.assistant-mascot__suggestions-wrap {
+		padding: 0 0.8rem 0.35rem;
+	}
+	.assistant-mascot__suggestions-wrap.hidden { display: none; }
+	.assistant-mascot__suggestions-label {
+		margin: 0 0 0.42rem;
+		padding-left: 0.05rem;
+		color: color-mix(in srgb, var(--on-surface-variant) 88%, transparent);
+		font-size: 0.66rem;
+		font-weight: 650;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+	}
+	.assistant-mascot__suggestions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.38rem;
+	}
+	.assistant-mascot__suggestion-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.34rem;
+		max-width: 100%;
+		border: 1px solid color-mix(in srgb, var(--shell-border) 88%, transparent);
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--surface-bright) 94%, var(--primary) 6%);
+		padding: 0.32rem 0.68rem 0.32rem 0.32rem;
+		color: color-mix(in srgb, var(--on-surface) 88%, var(--on-surface-variant) 12%);
+		font-size: 0.76rem;
+		font-weight: 600;
+		line-height: 1.3;
+		text-align: left;
+		cursor: pointer;
+		transition:
+			background-color 160ms ease,
+			border-color 160ms ease,
+			color 160ms ease,
+			transform 160ms ease;
+		animation: assistant-chip-in 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+		animation-delay: calc(var(--chip-index, 0) * 50ms + 30ms);
+	}
+	.assistant-mascot__suggestion-btn:hover:not(:disabled) {
+		background: color-mix(in srgb, var(--primary-container) 42%, var(--surface-bright) 58%);
+		border-color: color-mix(in srgb, var(--primary) 18%, var(--shell-border) 82%);
+		color: var(--on-surface);
+		transform: translateY(-1px);
+	}
+	.assistant-mascot__suggestion-btn:active:not(:disabled) { transform: scale(0.98); }
+	.assistant-mascot__suggestion-btn:disabled {
+		cursor: not-allowed;
+		opacity: 0.5;
+	}
+	.assistant-mascot__suggestion-btn__icon {
+		display: grid;
+		flex: 0 0 auto;
+		width: 1.35rem;
+		height: 1.35rem;
+		place-items: center;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--primary) 12%, var(--surface-bright));
+		color: var(--primary);
+	}
+	.assistant-mascot__suggestion-btn__icon .material-symbols-rounded { font-size: 0.82rem; }
+	.assistant-mascot__suggestion-btn__label {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.assistant-mascot__clarification {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.38rem;
+		max-width: 100%;
+	}
+	.assistant-mascot__clarification-btn {
+		padding: 0.32rem 0.72rem;
+	}
+	@keyframes assistant-chip-in {
+		from { opacity: 0; transform: translateY(6px); }
+		to { opacity: 1; transform: translateY(0); }
+	}
 	.assistant-mascot__composer {
 		display: flex;
 		align-items: flex-end;
@@ -1362,7 +1581,10 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 	.assistant-mascot__composer textarea::placeholder { color: var(--on-surface-variant); }
 	.assistant-mascot__send { display: grid; width: 2rem; height: 2rem; flex: 0 0 auto; place-items: center; border: 0; border-radius: 0.65rem; color: var(--on-primary); background: var(--primary); cursor: pointer; transition: transform 130ms ease, background 130ms ease; }
 	.assistant-mascot__send:hover { transform: translateY(-1px); background: color-mix(in srgb, var(--primary) 88%, #000); }
-	.assistant-mascot__send .material-symbols-rounded { font-size: 1rem; }
+	.assistant-mascot__send .material-symbols-rounded {
+		font-size: 1.05rem;
+		transform: translateX(1px);
+	}
 	.assistant-mascot__hint { margin: 0; padding: 0.45rem 0.9rem 0.75rem; color: var(--on-surface-variant); font-size: 0.66rem; text-align: center; }
 	@keyframes numa-hammock-sway { 0%, 100% { transform: rotate(-0.7deg) translateY(0); } 50% { transform: rotate(0.7deg) translateY(2px); } }
 	@keyframes numa-pulse { 50% { filter: drop-shadow(0 0 10px color-mix(in srgb, var(--primary) 58%, transparent)); transform: scale(1.025); } }
@@ -1432,6 +1654,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		.assistant-mascot__thinking span,
 		.assistant-mascot__panel,
 		.assistant-mascot__resize-handle::before,
+		.assistant-mascot__suggestion-btn,
 		assistant-mascot[data-assistant-card-wait][data-assistant-card-anchor] { animation: none; transition: none; }
 	}
 </style>
