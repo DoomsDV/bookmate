@@ -147,7 +147,7 @@ export interface ResolvedPublicProfileSlug {
 }
 
 export interface PublicCreateAppointmentPayload {
-	org_id_organization: number;
+	organization_slug: string;
 	loc_id_location: number;
 	pro_id_professional: number;
 	ser_id_service: number;
@@ -181,7 +181,7 @@ export interface PublicCreatedAppointmentData {
 }
 
 export interface PublicValidateCustomerPayload {
-	org_id_organization: number;
+	organization_slug: string;
 	customer_phone: string;
 }
 

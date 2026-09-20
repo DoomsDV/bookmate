@@ -109,6 +109,7 @@ type BookingProfile = {
 	org_id_organization: number;
 	full_name: string;
 	organization_name?: string;
+	organization_slug?: string;
 	specialty: string;
 	image_url: string;
 	services: BookingService[];
@@ -386,7 +387,9 @@ export const initializePublicBookingPage = () => {
 	}
 
 	const configuredLocationId = toPositiveInt(root.dataset.locationId, 0);
-	const organizationSlug = String(root.dataset.organizationSlug || '').trim();
+	const organizationSlug = String(
+		root.dataset.organizationSlug || profile.organization_slug || ''
+	).trim();
 	const fromOrgHub = cameFromOrgPublicPage(organizationSlug);
 	const professionalSlug = String(root.dataset.professionalSlug || '').trim();
 	let bookingLocations = mergeBookingLocations(
@@ -796,7 +799,7 @@ export const initializePublicBookingPage = () => {
 						Accept: 'application/json',
 					},
 					body: JSON.stringify({
-						org_id_organization: profile.org_id_organization,
+						organization_slug: organizationSlug,
 						customer_phone: customerPhoneE164,
 					}),
 				},
@@ -2830,7 +2833,7 @@ export const initializePublicBookingPage = () => {
 		}
 
 		return {
-			org_id_organization: profile.org_id_organization,
+			organization_slug: organizationSlug,
 			loc_id_location: selectedLocation.id_location,
 			pro_id_professional: profile.id_professional,
 			ser_id_service: selectedService.id_service,
@@ -3004,7 +3007,7 @@ export const initializePublicBookingPage = () => {
 		}
 
 		const payload = {
-			org_id_organization: profile.org_id_organization,
+			organization_slug: organizationSlug,
 			loc_id_location: selectedLocation.id_location,
 			pro_id_professional: profile.id_professional,
 			ser_id_service: selectedService.id_service,

@@ -46,7 +46,7 @@ export default function publicBooking() {
 	}
 
 	const payload = JSON.stringify({
-		org_id_organization: cfg.orgId,
+		organization_slug: cfg.orgSlug,
 		loc_id_location: cfg.locId,
 		pro_id_professional: cfg.proId,
 		ser_id_service: cfg.serId,

@@ -97,7 +97,7 @@ export const fetchAvailableDates = async (params: {
 		.filter((value) => /^\d{4}-\d{2}-\d{2}$/.test(value));
 };
 
-export const validateCustomerPhone = async (phoneE164: string, orgId: number) => {
+export const validateCustomerPhone = async (phoneE164: string, organizationSlug: string) => {
 	const { data } = await fetchJson<{ data?: { full_name?: string }; exists?: boolean }>(
 		'/api/public/validate-customer',
 		{
@@ -105,7 +105,7 @@ export const validateCustomerPhone = async (phoneE164: string, orgId: number) =>
 			headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
 			body: JSON.stringify({
 				customer_phone: phoneE164,
-				org_id_organization: orgId,
+				organization_slug: organizationSlug,
 			}),
 		},
 		'No fue posible validar el teléfono.'

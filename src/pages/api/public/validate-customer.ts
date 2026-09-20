@@ -8,18 +8,17 @@ import {
 import {
 	parseRequestBody,
 	publicBookingErrorResponse,
-	toPositiveInt,
 } from '../../../lib/public-api-handlers';
 
 const parsePayload = (source: any): PublicValidateCustomerPayload => {
 	const payload: PublicValidateCustomerPayload = {
-		org_id_organization: toPositiveInt(source?.org_id_organization),
+		organization_slug: String(source?.organization_slug || source?.org_slug || '').trim(),
 		customer_phone: String(source?.customer_phone || '').trim(),
 	};
 
-	if (!payload.org_id_organization || !payload.customer_phone) {
+	if (!payload.organization_slug || !payload.customer_phone) {
 		throw new PublicBookingApiError(
-			'org_id_organization y customer_phone son obligatorios.',
+			'organization_slug y customer_phone son obligatorios.',
 			400
 		);
 	}

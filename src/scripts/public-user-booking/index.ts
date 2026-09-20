@@ -1994,9 +1994,9 @@ export const initializePublicUserBookingPage = () => {
 	};
 
 	const runCustomerValidation = async (phoneE164: string) => {
-		const orgId =
-			selectedContext?.org_id_organization ?? selectedOrgGroup?.org_id_organization ?? 0;
-		if (!orgId) return false;
+		const orgSlug =
+			selectedContext?.organization_slug ?? selectedOrgGroup?.organization_slug ?? '';
+		if (!orgSlug) return false;
 		if (
 			validatedCustomerPhoneE164 === phoneE164 &&
 			!customerNameWrapper.classList.contains('hidden')
@@ -2008,7 +2008,7 @@ export const initializePublicUserBookingPage = () => {
 		setNameFieldError('');
 		setCustomerNameVisibility(false);
 		try {
-			const result = await validateCustomerPhone(phoneE164, orgId);
+			const result = await validateCustomerPhone(phoneE164, orgSlug);
 			validatedCustomerPhoneE164 = phoneE164;
 			setCustomerNameVisibility(true);
 
@@ -2080,7 +2080,7 @@ export const initializePublicUserBookingPage = () => {
 		}
 
 		return {
-			org_id_organization: selectedContext.org_id_organization,
+			organization_slug: selectedContext.organization_slug,
 			loc_id_location: selectedContext.id_location,
 			pro_id_professional: selectedContext.id_professional,
 			ser_id_service: selectedService.id_service,

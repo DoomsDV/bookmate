@@ -14,7 +14,7 @@ import { readIdempotencyKeyHeader } from '../../../lib/idempotency';
 
 const parsePayload = (source: any): PublicCreateAppointmentPayload => {
 	const payload: PublicCreateAppointmentPayload = {
-		org_id_organization: toPositiveInt(source?.org_id_organization),
+		organization_slug: String(source?.organization_slug || source?.org_slug || '').trim(),
 		loc_id_location: toPositiveInt(source?.loc_id_location),
 		pro_id_professional: toPositiveInt(source?.pro_id_professional),
 		ser_id_service: toPositiveInt(source?.ser_id_service),
@@ -37,13 +37,13 @@ const parsePayload = (source: any): PublicCreateAppointmentPayload => {
 	}
 
 	if (
-		!payload.org_id_organization ||
+		!payload.organization_slug ||
 		!payload.loc_id_location ||
 		!payload.pro_id_professional ||
 		!payload.ser_id_service
 	) {
 		throw new PublicBookingApiError(
-			'org_id_organization, loc_id_location, pro_id_professional y ser_id_service son obligatorios.',
+			'organization_slug, loc_id_location, pro_id_professional y ser_id_service son obligatorios.',
 			400
 		);
 	}
