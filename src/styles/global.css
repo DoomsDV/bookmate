@@ -133,6 +133,10 @@ input[type='search']::-ms-clear {
 	--content-surface: rgba(255, 255, 255, 0.86);
 	--shell-border: #f6f5f4;
 	--app-topbar-h: 4rem;
+	--z-topbar: 40;
+	--z-topbar-popover: 70;
+	--z-panel-sheet: 85;
+	--z-mascot: 95;
 	--shell-header-height: var(--app-topbar-h);
 	--hub-topbar-h: var(--app-topbar-h);
 	--landing-topbar-h: var(--app-topbar-h);
@@ -1151,7 +1155,7 @@ button {
 .shell-header-zone:not(.sidebar-account-header) {
 	position: sticky;
 	top: 0;
-	z-index: 40;
+	z-index: var(--z-topbar);
 	background-color: transparent;
 	border-bottom-color: transparent;
 	backdrop-filter: none;

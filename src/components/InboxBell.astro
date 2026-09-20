@@ -106,11 +106,16 @@
 		display: inline-flex;
 	}
 
+	.inbox-bell[open] {
+		position: relative;
+		z-index: var(--z-topbar-popover, 70);
+	}
+
 	.inbox-panel {
 		position: absolute;
 		right: 0;
 		top: calc(100% + 0.75rem);
-		z-index: 60;
+		z-index: var(--z-topbar-popover, 70);
 		display: none;
 		width: min(24.5rem, calc(100vw - 1.5rem));
 		overflow: hidden;
@@ -339,7 +344,7 @@
 		.inbox-sheet {
 			position: fixed;
 			inset: auto 0 0;
-			z-index: 80;
+			z-index: var(--z-panel-sheet, 85);
 			margin: 0;
 			width: 100vw;
 			max-width: none;

@@ -78,7 +78,7 @@ Optional endpoint-specific overrides are documented in `.env.example`.
 
 ## Asistente operativo local
 
-La mascota Auri consume el asistente operativo por el endpoint interno de Bookmate;
+La mascota Numa consume el asistente operativo por el endpoint interno de Bookmate;
 el navegador no se conecta directamente al servicio Go. Para habilitarla localmente:
 
 1. Activá el complemento `AI_ASSISTANT` y la capability `assistant.use` para la organización de prueba.

@@ -10,8 +10,8 @@ const { userId, organizationId, mobilePeek = true, desktopArt = 'hammock' } = As
 const storageKey = `hasel-assistant:${userId}:${organizationId}`;
 const panelId = `hasel-assistant-panel-${userId}-${organizationId}`;
 const desktopArtSrc = desktopArt === 'analytics'
-	? '/assistant/auri-analytics-desktop.png'
-	: '/assistant/auri-hammock-desktop.png';
+	? '/assistant/numa-analytics-desktop.png'
+	: '/assistant/numa-hammock-desktop.png';
 const isAnalyticsDesktopArt = desktopArt === 'analytics';
 ---
 
@@ -30,7 +30,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 	>
 		<header class="assistant-mascot__header">
 			<div class="assistant-mascot__identity">
-				<img src="/assistant/auri-reading-mobile.png" width="40" height="40" alt="" aria-hidden="true" decoding="async" />
+				<img src="/assistant/numa-reading-mobile.png" width="40" height="40" alt="" aria-hidden="true" decoding="async" />
 				<div>
 					<p>Asistente Hasel</p>
 					<span data-assistant-status>Listo para ayudarte</span>
@@ -48,7 +48,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 
 		<div class="assistant-mascot__messages" data-assistant-messages role="log" aria-live="polite" aria-relevant="additions text">
 			<div class="assistant-mascot__empty" data-assistant-empty>
-				<p>Hola, soy Auri.</p>
+				<p>Hola, soy Numa.</p>
 				<span>Preguntame por tu agenda, clientes o cómo viene el negocio.</span>
 			</div>
 		</div>
@@ -91,7 +91,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		<span class="assistant-mascot__reading assistant-mascot__art--dashboard-mobile">
 			<img
 				data-tail-layer
-				src="/assistant/auri-tail-layer.png"
+				src="/assistant/numa-tail-layer.png"
 				width="1200"
 				height="600"
 				alt=""
@@ -100,7 +100,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			/>
 			<img
 				data-tail-body
-				src="/assistant/auri-reading-mobile-body.png"
+				src="/assistant/numa-reading-mobile-body.png"
 				width="1200"
 				height="600"
 				alt=""
@@ -114,7 +114,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 					<img
 						data-peek-frame={String(index)}
 						{...(index === 4 ? { 'data-peek-rest': '' } : {})}
-						src={`/assistant/auri-peek-mobile-vertical-right-look-${String(index).padStart(2, '0')}.png`}
+						src={`/assistant/numa-peek-mobile-vertical-right-look-${String(index).padStart(2, '0')}.png`}
 						width="512"
 						height="768"
 						alt=""
@@ -312,7 +312,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			this.lookFrame = window.requestAnimationFrame(() => {
 				this.lookFrame = 0;
 				this.look = this.lookTarget;
-				this.style.setProperty('--auri-look', this.look.toFixed(3));
+				this.style.setProperty('--numa-look', this.look.toFixed(3));
 				this.applyLookFrames();
 			});
 		}
@@ -321,7 +321,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			if (!this.isMobilePeekActive() || this.prefersReducedMotion()) {
 				this.look = 0;
 				this.lookTarget = 0;
-				this.style.setProperty('--auri-look', '0');
+				this.style.setProperty('--numa-look', '0');
 				this.applyLookFrames();
 				return;
 			}
@@ -396,7 +396,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			if (isMobile) {
 				const width = Math.min(bounds.width * 0.72, 126);
 				const right = Math.max(8, window.innerWidth - bounds.right + (bounds.width - width) / 2);
-				// Auri se apoya sobre la tarjeta: solapamos el borde superior sin llegar al contenido principal.
+				// Numa se apoya sobre la tarjeta: solapamos el borde superior sin llegar al contenido principal.
 				const overlap = Math.min(18, Math.max(10, bounds.height * 0.16));
 				const bottom = Math.max(8, window.innerHeight - bounds.top - overlap);
 				this.style.setProperty('--assistant-mobile-width', `${Math.round(width)}px`);
@@ -764,7 +764,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			if (!this.messages.length) {
 				const empty = document.createElement('div');
 				empty.className = 'assistant-mascot__empty';
-				empty.innerHTML = '<p>Hola, soy Auri.</p><span>Preguntame por tu agenda, clientes o cómo viene el negocio.</span>';
+				empty.innerHTML = '<p>Hola, soy Numa.</p><span>Preguntame por tu agenda, clientes o cómo viene el negocio.</span>';
 				this.messagesEl.append(empty);
 				return;
 			}
@@ -794,11 +794,11 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 
 <style is:global>
 	assistant-mascot {
-		--auri-look: 0;
+		--numa-look: 0;
 		position: fixed;
 		top: 0;
 		right: clamp(7.5rem, 12vw, 12.5rem);
-		z-index: 80;
+		z-index: var(--z-mascot, 95);
 		display: block;
 		overflow: visible;
 	}
@@ -851,7 +851,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 	}
 	/* La cola va en su propia capa, debajo del cuerpo, para que el nacimiento quede oculto al girar. */
 	.assistant-mascot__reading [data-tail-layer] { transform-origin: 80.6% 72.2%; }
-	.assistant-mascot__launcher img { filter: drop-shadow(0 8px 10px rgb(24 51 112 / 0.16)); transform-origin: top center; animation: auri-hammock-sway 4.6s ease-in-out infinite; }
+	.assistant-mascot__launcher img { filter: drop-shadow(0 8px 10px rgb(24 51 112 / 0.16)); transform-origin: top center; animation: numa-hammock-sway 4.6s ease-in-out infinite; }
 	assistant-mascot[data-assistant-analytics] .assistant-mascot__art--desktop { animation: none; transform-origin: bottom center; }
 	.assistant-mascot__peek {
 		position: relative;
@@ -868,8 +868,8 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		filter: drop-shadow(0 4px 6px rgb(24 51 112 / 0.16));
 	}
 	.assistant-mascot__peek [data-peek-rest] { opacity: 1; }
-	assistant-mascot[data-assistant-busy] .assistant-mascot__art { animation: auri-pulse 1.35s ease-in-out infinite; }
-	assistant-mascot[data-assistant-reacting] .assistant-mascot__art { animation: auri-react 560ms cubic-bezier(0.22, 1.45, 0.36, 1); }
+	assistant-mascot[data-assistant-busy] .assistant-mascot__art { animation: numa-pulse 1.35s ease-in-out infinite; }
+	assistant-mascot[data-assistant-reacting] .assistant-mascot__art { animation: numa-react 560ms cubic-bezier(0.22, 1.45, 0.36, 1); }
 	assistant-mascot[data-assistant-card-anchor][data-assistant-busy] .assistant-mascot__art,
 	assistant-mascot[data-assistant-card-anchor][data-assistant-reacting] .assistant-mascot__art { animation: none; }
 	assistant-mascot[data-assistant-card-anchor] { top: var(--assistant-desktop-top); right: var(--assistant-desktop-right); }
@@ -928,7 +928,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 	.assistant-mascot__metadata summary { cursor: pointer; }
 	.assistant-mascot__metadata p { margin: 0.35rem 0 0; line-height: 1.4; }
 	.assistant-mascot__thinking { display: inline-flex; gap: 0.25rem; align-items: center; min-width: 3.25rem; padding: 0.75rem 0.9rem; border-radius: 1rem; border-bottom-left-radius: 0.25rem; background: var(--surface-container); }
-	.assistant-mascot__thinking span { width: 0.35rem; height: 0.35rem; border-radius: 50%; background: var(--primary); animation: auri-dot 1.1s ease-in-out infinite; }
+	.assistant-mascot__thinking span { width: 0.35rem; height: 0.35rem; border-radius: 50%; background: var(--primary); animation: numa-dot 1.1s ease-in-out infinite; }
 	.assistant-mascot__thinking span:nth-child(2) { animation-delay: 140ms; }
 	.assistant-mascot__thinking span:nth-child(3) { animation-delay: 280ms; }
 	.assistant-mascot__error { margin: 0 0.8rem 0.55rem; padding: 0.55rem 0.65rem; border-radius: 0.7rem; background: color-mix(in srgb, #ef4444 12%, var(--surface-bright)); color: #b42318; font-size: 0.76rem; line-height: 1.4; }
@@ -940,10 +940,10 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 	.assistant-mascot__send:hover { transform: translateY(-1px); background: color-mix(in srgb, var(--primary) 88%, #000); }
 	.assistant-mascot__send .material-symbols-rounded { font-size: 1rem; }
 	.assistant-mascot__hint { margin: 0; padding: 0.45rem 0.9rem 0.75rem; color: var(--on-surface-variant); font-size: 0.66rem; text-align: center; }
-	@keyframes auri-hammock-sway { 0%, 100% { transform: rotate(-0.7deg) translateY(0); } 50% { transform: rotate(0.7deg) translateY(2px); } }
-	@keyframes auri-pulse { 50% { filter: drop-shadow(0 0 10px color-mix(in srgb, var(--primary) 58%, transparent)); transform: scale(1.025); } }
-	@keyframes auri-react { 0%, 100% { transform: translateY(0) rotate(0) scale(1); } 42% { transform: translateY(-5px) rotate(-2deg) scale(1.04); } 72% { transform: translateY(-2px) rotate(2deg) scale(1.01); } }
-	@keyframes auri-dot { 0%, 80%, 100% { transform: scale(0.72); opacity: 0.45; } 40% { transform: scale(1); opacity: 1; } }
+	@keyframes numa-hammock-sway { 0%, 100% { transform: rotate(-0.7deg) translateY(0); } 50% { transform: rotate(0.7deg) translateY(2px); } }
+	@keyframes numa-pulse { 50% { filter: drop-shadow(0 0 10px color-mix(in srgb, var(--primary) 58%, transparent)); transform: scale(1.025); } }
+	@keyframes numa-react { 0%, 100% { transform: translateY(0) rotate(0) scale(1); } 42% { transform: translateY(-5px) rotate(-2deg) scale(1.04); } 72% { transform: translateY(-2px) rotate(2deg) scale(1.01); } }
+	@keyframes numa-dot { 0%, 80%, 100% { transform: scale(0.72); opacity: 0.45; } 40% { transform: scale(1); opacity: 1; } }
 	@media (max-width: 1023px) {
 		assistant-mascot { top: auto; right: max(0.6rem, env(safe-area-inset-right)); bottom: calc(var(--mobile-bottom-nav-height, 5.5rem) + 0.35rem); }
 		assistant-mascot[data-assistant-card-wait]:not([data-assistant-card-anchor]) {
@@ -962,7 +962,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		assistant-mascot[data-assistant-card-anchor] .assistant-mascot__reading img { filter: none; }
 		assistant-mascot[data-assistant-card-anchor] .assistant-mascot__reading [data-tail-layer] {
 			transform-origin: 80.6% 72.2%;
-			animation: auri-tail-swing 1.5s ease-in-out infinite;
+			animation: numa-tail-swing 1.5s ease-in-out infinite;
 		}
 		assistant-mascot[data-assistant-mobile-peek] {
 			top: 0.1rem;
@@ -997,12 +997,12 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 	assistant-mascot[data-assistant-analytics-compact] .assistant-mascot__launcher:hover { transform: none; }
 	assistant-mascot[data-assistant-analytics-compact] .assistant-mascot__peek img { animation: none; }
 	html:has(assistant-mascot[data-assistant-analytics-compact]) .topbar-actions { margin-right: 3.4rem; }
-	@keyframes auri-tail-swing {
+	@keyframes numa-tail-swing {
 		0%, 100% { transform: rotate(0deg); }
 		50% { transform: rotate(-8deg); }
 	}
 	@media (prefers-reduced-motion: reduce) {
-		assistant-mascot { --auri-look: 0 !important; }
+		assistant-mascot { --numa-look: 0 !important; }
 		.assistant-mascot__launcher,
 		.assistant-mascot__launcher img,
 		.assistant-mascot__peek,

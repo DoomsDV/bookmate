@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Comprime assets de Auri y genera un avatar liviano para el panel.
+ * Comprime assets de Numa y genera un avatar liviano para el panel.
  * Uso: node scripts/optimize-assistant-assets.mjs
  */
 import { readdir, stat } from 'node:fs/promises';
@@ -11,10 +11,10 @@ const ROOT = new URL('../public/assistant/', import.meta.url).pathname;
 const PNG_OPTS = { compressionLevel: 9, effort: 10, palette: false };
 
 const TARGETS = [
-	{ name: 'auri-hammock-desktop.png', maxWidth: 1024 },
-	{ name: 'auri-analytics-desktop.png', maxWidth: 1024 },
-	{ name: 'auri-reading-mobile-body.png', maxWidth: 1200 },
-	{ name: 'auri-tail-layer.png', maxWidth: 1200 },
+	{ name: 'numa-hammock-desktop.png', maxWidth: 1024 },
+	{ name: 'numa-analytics-desktop.png', maxWidth: 1024 },
+	{ name: 'numa-reading-mobile-body.png', maxWidth: 1200 },
+	{ name: 'numa-tail-layer.png', maxWidth: 1200 },
 ];
 
 async function fileSize(path) {
@@ -37,8 +37,8 @@ async function optimizePng(path, maxWidth = null) {
 }
 
 async function buildAvatar() {
-	const body = await sharp(join(ROOT, 'auri-reading-mobile-body.png')).toBuffer();
-	const tail = await sharp(join(ROOT, 'auri-tail-layer.png')).toBuffer();
+	const body = await sharp(join(ROOT, 'numa-reading-mobile-body.png')).toBuffer();
+	const tail = await sharp(join(ROOT, 'numa-tail-layer.png')).toBuffer();
 	const composed = await sharp({
 		create: { width: 1774, height: 887, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
 	})
@@ -49,7 +49,7 @@ async function buildAvatar() {
 		.png()
 		.toBuffer();
 
-	const avatarPath = join(ROOT, 'auri-reading-mobile.png');
+	const avatarPath = join(ROOT, 'numa-reading-mobile.png');
 	const before = await fileSize(avatarPath);
 	const buf = await sharp(composed)
 		.trim({ threshold: 12 })
@@ -69,7 +69,7 @@ async function main() {
 	}
 
 	const peekFiles = (await readdir(ROOT))
-		.filter((name) => name.startsWith('auri-peek-mobile-vertical-right-look-') && name.endsWith('.png'))
+		.filter((name) => name.startsWith('numa-peek-mobile-vertical-right-look-') && name.endsWith('.png'))
 		.sort();
 	for (const name of peekFiles) {
 		const { before, after } = await optimizePng(join(ROOT, name), 512);
@@ -80,7 +80,7 @@ async function main() {
 	const avatar = await buildAvatar();
 	saved += avatar.before - avatar.after;
 	console.log(
-		`auri-reading-mobile.png (avatar): ${(avatar.before / 1024).toFixed(0)}K → ${(avatar.after / 1024).toFixed(0)}K`,
+		`numa-reading-mobile.png (avatar): ${(avatar.before / 1024).toFixed(0)}K → ${(avatar.after / 1024).toFixed(0)}K`,
 	);
 	console.log(`total ahorrado: ${(saved / 1024 / 1024).toFixed(2)} MB`);
 }
