@@ -1,0 +1,91 @@
+#!/usr/bin/env node
+/**
+ * Comprime assets de Auri y genera un avatar liviano para el panel.
+ * Uso: node scripts/optimize-assistant-assets.mjs
+ */
+import { readdir, stat } from 'node:fs/promises';
+import { join } from 'node:path';
+import sharp from 'sharp';
+
+const ROOT = new URL('../public/assistant/', import.meta.url).pathname;
+const PNG_OPTS = { compressionLevel: 9, effort: 10, palette: false };
+
+const TARGETS = [
+	{ name: 'auri-hammock-desktop.png', maxWidth: 1024 },
+	{ name: 'auri-analytics-desktop.png', maxWidth: 1024 },
+	{ name: 'auri-reading-mobile-body.png', maxWidth: 1200 },
+	{ name: 'auri-tail-layer.png', maxWidth: 1200 },
+];
+
+async function fileSize(path) {
+	const { size } = await stat(path);
+	return size;
+}
+
+async function optimizePng(path, maxWidth = null) {
+	const before = await fileSize(path);
+	const meta = await sharp(path).metadata();
+	let pipeline = sharp(path);
+	if (maxWidth && meta.width && meta.width > maxWidth) {
+		pipeline = pipeline.resize(maxWidth, null, { fit: 'inside', withoutEnlargement: true });
+	}
+	const buf = await pipeline.png(PNG_OPTS).toBuffer();
+	if (buf.length < before) {
+		await sharp(buf).toFile(path);
+	}
+	return { before, after: Math.min(buf.length, before) };
+}
+
+async function buildAvatar() {
+	const body = await sharp(join(ROOT, 'auri-reading-mobile-body.png')).toBuffer();
+	const tail = await sharp(join(ROOT, 'auri-tail-layer.png')).toBuffer();
+	const composed = await sharp({
+		create: { width: 1774, height: 887, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
+	})
+		.composite([
+			{ input: tail, top: 0, left: 0 },
+			{ input: body, top: 0, left: 0 },
+		])
+		.png()
+		.toBuffer();
+
+	const avatarPath = join(ROOT, 'auri-reading-mobile.png');
+	const before = await fileSize(avatarPath);
+	const buf = await sharp(composed)
+		.trim({ threshold: 12 })
+		.resize(160, null, { fit: 'inside', withoutEnlargement: true })
+		.png(PNG_OPTS)
+		.toBuffer();
+	await sharp(buf).toFile(avatarPath);
+	return { before, after: buf.length };
+}
+
+async function main() {
+	let saved = 0;
+	for (const { name, maxWidth } of TARGETS) {
+		const { before, after } = await optimizePng(join(ROOT, name), maxWidth);
+		saved += before - after;
+		console.log(`${name}: ${(before / 1024).toFixed(0)}K → ${(after / 1024).toFixed(0)}K`);
+	}
+
+	const peekFiles = (await readdir(ROOT))
+		.filter((name) => name.startsWith('auri-peek-mobile-vertical-right-look-') && name.endsWith('.png'))
+		.sort();
+	for (const name of peekFiles) {
+		const { before, after } = await optimizePng(join(ROOT, name), 512);
+		saved += before - after;
+	}
+	console.log(`peek frames (${peekFiles.length}): optimizados`);
+
+	const avatar = await buildAvatar();
+	saved += avatar.before - avatar.after;
+	console.log(
+		`auri-reading-mobile.png (avatar): ${(avatar.before / 1024).toFixed(0)}K → ${(avatar.after / 1024).toFixed(0)}K`,
+	);
+	console.log(`total ahorrado: ${(saved / 1024 / 1024).toFixed(2)} MB`);
+}
+
+main().catch((error) => {
+	console.error(error);
+	process.exit(1);
+});
