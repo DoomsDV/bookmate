@@ -12,7 +12,16 @@ const panelId = `hasel-assistant-panel-${userId}-${organizationId}`;
 const desktopArtSrc = desktopArt === 'analytics'
 	? '/assistant/numa-analytics-desktop.png'
 	: '/assistant/numa-hammock-desktop.png';
+const desktopBusyArtFrames = [
+	'/assistant/numa-busy-desktop-attentive.png',
+	'/assistant/numa-busy-desktop-reading.png',
+	'/assistant/numa-busy-desktop-searching.png',
+	'/assistant/numa-busy-desktop-reading.png',
+];
+const desktopCompleteArtSrc = '/assistant/numa-complete-desktop.png';
 const isAnalyticsDesktopArt = desktopArt === 'analytics';
+const peekFrameCount = 30;
+const peekRestFrame = 4;
 ---
 
 <assistant-mascot
@@ -103,6 +112,10 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		<img
 			class="assistant-mascot__art assistant-mascot__art--desktop"
 			src={desktopArtSrc}
+			data-assistant-desktop-art
+			data-assistant-idle-src={desktopArtSrc}
+			data-assistant-busy-frames={desktopBusyArtFrames.join('|')}
+			data-assistant-complete-src={desktopCompleteArtSrc}
 			width="1024"
 			height="683"
 			alt=""
@@ -131,10 +144,10 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		</span>
 		{mobilePeek && (
 			<span class="assistant-mascot__peek" data-assistant-peek data-peek-side="right">
-				{Array.from({ length: 25 }, (_, index) => (
+				{Array.from({ length: peekFrameCount }, (_, index) => (
 					<img
 						data-peek-frame={String(index)}
-						{...(index === 4 ? { 'data-peek-rest': '' } : {})}
+						{...(index === peekRestFrame ? { 'data-peek-rest': '' } : {})}
 						src={`/assistant/numa-peek-mobile-vertical-right-look-${String(index).padStart(2, '0')}.png`}
 						width="512"
 						height="768"
@@ -211,6 +224,9 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		private listenerSignal: AbortSignal | null = null;
 		private resizeBoundTo: HTMLElement | null = null;
 		private requestAbort: AbortController | null = null;
+		private completionTimer = 0;
+		private busyArtTimer = 0;
+		private busyArtFrameIndex = 0;
 		private confirmationCard: HTMLElement | null = null;
 		private confirmationCardObserver: ResizeObserver | null = null;
 		private analyticsChartObserver: ResizeObserver | null = null;
@@ -220,6 +236,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		private look = 0;
 		private lookTarget = 0;
 		private peekFrames: HTMLImageElement[] = [];
+		private peekFrameIndex = -1;
 		private messages: ChatMessage[] = [];
 		private busy = false;
 		private renderGeneration = 0;
@@ -266,11 +283,14 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			this.syncMobileAnchor();
 			this.scheduleMobileAnchor();
 			this.syncSheetViewport();
+			this.preloadDesktopBusyArt();
 		}
 
 		disconnectedCallback() {
 			this.requestAbort?.abort();
 			this.abort?.abort();
+			if (this.completionTimer) window.clearTimeout(this.completionTimer);
+			this.stopDesktopBusyArt();
 			this.releasePanelScrollLock();
 			this.confirmationCardObserver?.disconnect();
 			this.analyticsChartObserver?.disconnect();
@@ -304,7 +324,9 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			this.resizeHandle = this.live(this.resizeHandle, '[data-assistant-resize]');
 			this.peekFrames = Array.from(this.querySelectorAll<HTMLImageElement>('[data-peek-frame]'))
 				.sort((a, b) => Number(a.dataset.peekFrame) - Number(b.dataset.peekFrame));
+			this.peekFrameIndex = -1;
 			for (const frame of this.peekFrames) {
+				this.watchPeekFrame(frame);
 				if (frame.decode) void frame.decode().catch(() => undefined);
 			}
 			if (!this.messageListEl && this.messagesEl) {
@@ -494,18 +516,58 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			return rest + look * (last - rest);
 		}
 
+		// Un fotograma que no cargó pintaría el placeholder de imagen rota del navegador,
+		// así que lo descartamos y mostramos el más cercano que sí esté listo.
+		private watchPeekFrame(frame: HTMLImageElement) {
+			if (frame.dataset.peekWatched !== undefined) return;
+			frame.dataset.peekWatched = '';
+			const markBroken = () => {
+				frame.dataset.peekError = '';
+				frame.style.opacity = '0';
+				if (this.peekFrames[this.peekFrameIndex] === frame) this.peekFrameIndex = -1;
+				this.applyLookFrames();
+			};
+			frame.addEventListener('error', markBroken);
+			frame.addEventListener('load', () => {
+				delete frame.dataset.peekError;
+				this.applyLookFrames();
+			});
+			if (frame.complete && !frame.naturalWidth) markBroken();
+		}
+
+		private isPeekFrameReady(frame: HTMLImageElement) {
+			return frame.dataset.peekError === undefined && frame.complete && frame.naturalWidth > 0;
+		}
+
+		private nearestReadyFrame(index: number) {
+			const frames = this.peekFrames;
+			for (let step = 0; step < frames.length; step++) {
+				const next = index + step;
+				if (next < frames.length && this.isPeekFrameReady(frames[next])) return next;
+				const prev = index - step;
+				if (prev >= 0 && this.isPeekFrameReady(frames[prev])) return prev;
+			}
+			return -1;
+		}
+
 		private applyLookFrames() {
 			const frames = this.peekFrames;
 			if (!frames.length) return;
-			const index = Math.min(
+			const target = Math.min(
 				frames.length - 1,
 				Math.max(0, Math.round(this.frameIndexForLook(this.look))),
 			);
-			for (let i = 0; i < frames.length; i++) {
-				const on = i === index;
-				frames[i].style.opacity = on ? '1' : '0';
-				frames[i].style.visibility = on ? 'visible' : 'hidden';
+			const index = this.nearestReadyFrame(target);
+			if (index < 0 || index === this.peekFrameIndex) return;
+			frames[index].style.opacity = '1';
+			if (this.peekFrameIndex >= 0 && this.peekFrameIndex !== index) {
+				frames[this.peekFrameIndex].style.opacity = '0';
+			} else if (this.peekFrameIndex < 0) {
+				for (let i = 0; i < frames.length; i++) {
+					if (i !== index) frames[i].style.opacity = '0';
+				}
 			}
+			this.peekFrameIndex = index;
 		}
 
 		private scheduleLookTick() {
@@ -714,6 +776,8 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		}
 
 		private handlePanelViewportResize = () => {
+			if (this.busy) this.startDesktopBusyArt();
+			else this.syncDesktopArt();
 			this.syncSheetViewport();
 		};
 
@@ -805,8 +869,14 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		}
 
 		private setBusy(next: boolean) {
+			if (next) this.clearDesktopCompletionArt();
 			this.busy = next;
 			this.toggleAttribute('data-assistant-busy', next);
+			if (next) this.startDesktopBusyArt();
+			else {
+				this.stopDesktopBusyArt();
+				this.syncDesktopArt();
+			}
 			if (this.input) this.input.disabled = next;
 			if (this.send) {
 				this.send.setAttribute('aria-label', next ? 'Cancelar consulta' : 'Enviar consulta');
@@ -822,6 +892,83 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 
 		private setStatus(message: string) {
 			if (this.statusEl) this.statusEl.textContent = message;
+		}
+
+		private desktopBusyFrames(art: HTMLImageElement) {
+			return String(art.dataset.assistantBusyFrames || '')
+				.split('|')
+				.map((src) => src.trim())
+				.filter(Boolean);
+		}
+
+		private preloadDesktopBusyArt() {
+			const art = this.querySelector<HTMLImageElement>('[data-assistant-desktop-art]');
+			if (!art) return;
+			for (const src of new Set(this.desktopBusyFrames(art))) {
+				const preload = new Image();
+				preload.decoding = 'async';
+				preload.src = src;
+			}
+		}
+
+		private stopDesktopBusyArt() {
+			if (this.busyArtTimer) window.clearTimeout(this.busyArtTimer);
+			this.busyArtTimer = 0;
+		}
+
+		private startDesktopBusyArt() {
+			this.stopDesktopBusyArt();
+			this.busyArtFrameIndex = 0;
+			this.syncDesktopArt();
+			if (!this.busy || this.isMobileSheetViewport() || this.prefersReducedMotion()) return;
+
+			const art = this.querySelector<HTMLImageElement>('[data-assistant-desktop-art]');
+			const frames = art ? this.desktopBusyFrames(art) : [];
+			if (frames.length < 2) return;
+			const delays = [420, 550, 620, 500];
+			const advance = () => {
+				if (!this.busy || this.isMobileSheetViewport() || this.prefersReducedMotion()) {
+					this.stopDesktopBusyArt();
+					this.syncDesktopArt();
+					return;
+				}
+				this.busyArtFrameIndex = (this.busyArtFrameIndex + 1) % frames.length;
+				this.syncDesktopArt();
+				this.busyArtTimer = window.setTimeout(advance, delays[this.busyArtFrameIndex] || 500);
+			};
+			this.busyArtTimer = window.setTimeout(advance, delays[0]);
+		}
+
+		private syncDesktopArt() {
+			const art = this.querySelector<HTMLImageElement>('[data-assistant-desktop-art]');
+			if (!art) return;
+			const idleSrc = String(art.dataset.assistantIdleSrc || '').trim();
+			const busyFrames = this.desktopBusyFrames(art);
+			const busySrc = busyFrames[this.busyArtFrameIndex] || busyFrames[0] || '';
+			const completeSrc = String(art.dataset.assistantCompleteSrc || '').trim();
+			const desktopMotion = !this.isMobileSheetViewport() && !this.prefersReducedMotion();
+			const showBusy = this.busy && desktopMotion;
+			const showComplete = this.hasAttribute('data-assistant-complete') && desktopMotion;
+			const nextSrc = showBusy ? busySrc : showComplete ? completeSrc : idleSrc;
+			if (nextSrc && art.getAttribute('src') !== nextSrc) art.setAttribute('src', nextSrc);
+		}
+
+		private clearDesktopCompletionArt() {
+			if (this.completionTimer) window.clearTimeout(this.completionTimer);
+			this.completionTimer = 0;
+			this.removeAttribute('data-assistant-complete');
+		}
+
+		private showDesktopCompletionArt() {
+			if (this.isMobileSheetViewport() || this.prefersReducedMotion()) return;
+			this.clearDesktopCompletionArt();
+			this.setAttribute('data-assistant-complete', '');
+			this.syncDesktopArt();
+			this.completionTimer = window.setTimeout(() => {
+				this.completionTimer = 0;
+				this.removeAttribute('data-assistant-complete');
+				this.syncDesktopArt();
+			}, 1500);
 		}
 
 		private react() {
@@ -1022,6 +1169,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			this.requestAbort = new AbortController();
 			this.setBusy(true);
 			await this.renderMessages();
+			let delivered = false;
 
 			try {
 				const response = await fetch('/api/assistant/query', {
@@ -1032,11 +1180,15 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 				});
 				if (!response.ok) throw new Error(await this.readError(response));
 				await this.consumeStream(response);
+				delivered = true;
 			} catch (error) {
 				if (this.requestAbort?.signal.aborted) return;
 				this.showError(error instanceof Error ? error.message : 'No fue posible obtener una respuesta.');
 			} finally {
-				if (!this.requestAbort?.signal.aborted) this.setBusy(false);
+				if (!this.requestAbort?.signal.aborted) {
+					this.setBusy(false);
+					if (delivered) this.showDesktopCompletionArt();
+				}
 				this.requestAbort = null;
 				if (!window.matchMedia('(max-width: 639px)').matches && this.isOpen()) {
 					this.input?.focus({ preventScroll: true });
@@ -1376,6 +1528,8 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		border: 0;
 		border-radius: 0;
 		background: transparent;
+		appearance: none;
+		-webkit-appearance: none;
 		cursor: pointer;
 		line-height: 0;
 		overflow: visible;
@@ -1392,7 +1546,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 	.assistant-mascot__icon-button:focus-visible,
 	.assistant-mascot__send:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 58%, transparent); outline-offset: 3px; }
 	.assistant-mascot__art,
-	.assistant-mascot__peek img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: right bottom; }
+	.assistant-mascot__peek img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: right bottom; image-rendering: auto; }
 	.assistant-mascot__art--dashboard-mobile,
 	.assistant-mascot__peek { display: none; }
 	.assistant-mascot__reading {
@@ -1415,12 +1569,13 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 	}
 	/* La cola va en su propia capa, debajo del cuerpo, para que el nacimiento quede oculto al girar. */
 	.assistant-mascot__reading [data-tail-layer] { transform-origin: 80.6% 72.2%; }
-	.assistant-mascot__launcher img { filter: drop-shadow(0 8px 10px rgb(24 51 112 / 0.16)); transform-origin: top center; animation: numa-hammock-sway 4.6s ease-in-out infinite; }
+	.assistant-mascot__launcher img { filter: drop-shadow(0 8px 10px rgb(24 51 112 / 0.16)); transform-origin: 50% 0%; animation: numa-hammock-sway 4.6s ease-in-out infinite; }
 	assistant-mascot[data-assistant-analytics] .assistant-mascot__art--desktop { animation: none; transform-origin: bottom center; }
 	.assistant-mascot__peek {
 		position: relative;
 		width: 100%;
 		height: 100%;
+		filter: drop-shadow(0 4px 6px rgb(24 51 112 / 0.16));
 	}
 	.assistant-mascot__peek img {
 		position: absolute;
@@ -1429,10 +1584,14 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		pointer-events: none;
 		animation: none;
 		transform: none;
-		filter: drop-shadow(0 4px 6px rgb(24 51 112 / 0.16));
+		filter: none;
 	}
 	.assistant-mascot__peek [data-peek-rest] { opacity: 1; }
+	.assistant-mascot__peek img[data-peek-error] { display: none; }
 	assistant-mascot[data-assistant-busy] .assistant-mascot__art { animation: numa-pulse 1.35s ease-in-out infinite; }
+	@media (min-width: 1024px) {
+		assistant-mascot[data-assistant-busy] .assistant-mascot__art--desktop { animation: none; }
+	}
 	assistant-mascot[data-assistant-reacting] .assistant-mascot__art { animation: numa-react 560ms cubic-bezier(0.22, 1.45, 0.36, 1); }
 	assistant-mascot[data-assistant-card-anchor][data-assistant-busy] .assistant-mascot__art,
 	assistant-mascot[data-assistant-card-anchor][data-assistant-reacting] .assistant-mascot__art { animation: none; }
@@ -1546,7 +1705,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		border-bottom-right-radius: 0.3rem;
 		color: #f8fbff;
 		background: var(--primary);
-		box-shadow: 0 8px 20px color-mix(in srgb, var(--primary) 18%, transparent);
+		box-shadow: none;
 		font-family: var(--font-body, "Plus Jakarta Sans", sans-serif);
 		font-size: 0.875rem;
 		font-weight: 500;
@@ -1560,7 +1719,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		max-width: 100%;
 		border-bottom-left-radius: 0.3rem;
 		background: var(--surface-container);
-		box-shadow: 0 1px 2px color-mix(in srgb, var(--on-surface) 5%, transparent);
+		box-shadow: none;
 	}
 	.assistant-mascot__bubble__body { white-space: normal; }
 	.assistant-mascot__bubble__body > :first-child { margin-top: 0; }
@@ -1781,7 +1940,10 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		transform: translateX(1px);
 	}
 	.assistant-mascot__hint { margin: 0; padding: 0.45rem 0.9rem 0.75rem; color: var(--on-surface-variant); font-size: 0.66rem; text-align: center; }
-	@keyframes numa-hammock-sway { 0%, 100% { transform: rotate(-0.7deg) translateY(0); } 50% { transform: rotate(0.7deg) translateY(2px); } }
+	@keyframes numa-hammock-sway {
+		0%, 100% { transform: skewX(-1.15deg); }
+		50% { transform: skewX(1.15deg); }
+	}
 	@keyframes numa-pulse { 50% { filter: drop-shadow(0 0 10px color-mix(in srgb, var(--primary) 58%, transparent)); transform: scale(1.025); } }
 	@keyframes numa-react { 0%, 100% { transform: translateY(0) rotate(0) scale(1); } 42% { transform: translateY(-5px) rotate(-2deg) scale(1.04); } 72% { transform: translateY(-2px) rotate(2deg) scale(1.01); } }
 	@keyframes numa-dot {
@@ -1817,7 +1979,13 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			aspect-ratio: 2 / 3;
 		}
 		assistant-mascot[data-assistant-mobile-peek] .assistant-mascot__launcher:hover { transform: none; }
-		assistant-mascot[data-assistant-mobile-peek] .assistant-mascot__peek img { animation: none; }
+		assistant-mascot[data-assistant-mobile-peek] .assistant-mascot__peek {
+			filter: drop-shadow(0 5px 7px rgb(24 51 112 / 0.18));
+		}
+		assistant-mascot[data-assistant-mobile-peek] .assistant-mascot__peek img {
+			animation: none;
+			filter: none;
+		}
 		html:has(assistant-mascot[data-assistant-mobile-peek]) .topbar-actions { margin-right: 3.4rem; }
 		.assistant-mascot__backdrop {
 			display: block;
@@ -1872,6 +2040,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			transform: translateY(0);
 		}
 		.assistant-mascot__resize-handle { display: none; }
+		.assistant-mascot__hint { display: none; }
 		.assistant-mascot__header { padding: 0.45rem 0.95rem 0.75rem; }
 		.assistant-mascot__messages { overscroll-behavior: contain; }
 		assistant-mascot[data-assistant-open] .assistant-mascot__launcher {
@@ -1897,7 +2066,13 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		aspect-ratio: 2 / 3;
 	}
 	assistant-mascot[data-assistant-analytics-compact] .assistant-mascot__launcher:hover { transform: none; }
-	assistant-mascot[data-assistant-analytics-compact] .assistant-mascot__peek img { animation: none; }
+	assistant-mascot[data-assistant-analytics-compact] .assistant-mascot__peek {
+		filter: drop-shadow(0 5px 7px rgb(24 51 112 / 0.18));
+	}
+	assistant-mascot[data-assistant-analytics-compact] .assistant-mascot__peek img {
+		animation: none;
+		filter: none;
+	}
 	html:has(assistant-mascot[data-assistant-analytics-compact]) .topbar-actions { margin-right: 3.4rem; }
 	@keyframes numa-tail-swing {
 		0%, 100% { transform: rotate(0deg); }
