@@ -137,6 +137,15 @@ test('la mascota y el BFF quedan desacoplados de ATC', () => {
 	assert.match(mascot, /data-tail-body/);
 	assert.match(mascot, /numa-tail-swing/);
 	assert.match(mascot, /Hola, soy Numa/);
+	assert.match(mascot, /data-assistant-clear[^>]*>[\s\S]*?chat_add_on/);
+	assert.match(mascot, /data-assistant-backdrop/);
+	assert.match(mascot, /assistant-mascot__sheet-handle/);
+	assert.match(mascot, /lockPanelScroll/);
+	assert.match(mascot, /inset: auto 0 0/);
+	assert.match(mascot, /grid-template-rows: auto auto minmax\(0, 1fr\) auto auto auto auto/);
+	assert.match(mascot, /data-assistant-open/);
+	assert.doesNotMatch(mascot, /assistant-mascot__panel \{ position: fixed; top: auto; right:/);
+	assert.doesNotMatch(mascot, /data-assistant-clear[^>]*>[\s\S]*?>refresh</);
 	assert.match(mascot, /data-assistant-clarification/);
 	assert.match(mascot, /assistant-mascot__clarification/);
 	assert.match(mascot, /syncInteractiveButtons/);

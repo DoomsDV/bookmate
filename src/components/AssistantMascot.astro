@@ -21,6 +21,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 	{...(mobilePeek ? { 'data-assistant-mobile-peek': '' } : { 'data-assistant-card-wait': '' })}
 	{...(isAnalyticsDesktopArt ? { 'data-assistant-analytics': '' } : {})}
 >
+	<button type="button" class="assistant-mascot__backdrop" data-assistant-backdrop hidden aria-label="Cerrar asistente"></button>
 	<section
 		id={panelId}
 		class="assistant-mascot__panel"
@@ -28,6 +29,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		hidden
 		aria-label="Asistente Hasel"
 	>
+		<div class="assistant-mascot__sheet-handle" data-assistant-sheet-handle aria-hidden="true"><span></span></div>
 		<header class="assistant-mascot__header">
 			<div class="assistant-mascot__identity">
 				<p>Asistente Hasel</p>
@@ -35,7 +37,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			</div>
 			<div class="assistant-mascot__header-actions">
 				<button type="button" class="assistant-mascot__icon-button" data-assistant-clear aria-label="Nueva conversación" title="Nueva conversación">
-					<span class="material-symbols-rounded" aria-hidden="true">refresh</span>
+					<span class="material-symbols-rounded" aria-hidden="true">chat_add_on</span>
 				</button>
 				<button type="button" class="assistant-mascot__icon-button" data-assistant-close aria-label="Cerrar asistente" title="Cerrar">
 					<span class="material-symbols-rounded" aria-hidden="true">close</span>
@@ -150,6 +152,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 <script>
 	import { ASSISTANT_SUGGESTED_QUESTIONS, parseClarificationOptions } from '../lib/assistant-chat-ui';
 	import type { AssistantClarificationOption } from '../lib/assistant-chat-ui';
+	import { lockPanelScroll } from '../lib/panel-scroll-lock';
 
 	type MarkedParse = (
 		src: string,
@@ -223,6 +226,8 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		private storageKey = '';
 		private panelSizeKey = '';
 		private resizeHandle: HTMLElement | null = null;
+		private backdrop: HTMLElement | null = null;
+		private unlockCanvasScroll: (() => void) | null = null;
 		private resizeState: {
 			pointerId: number;
 			startX: number;
@@ -260,11 +265,13 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			document.addEventListener('scroll', this.scheduleMobileAnchor, { capture: true, passive: true, signal });
 			this.syncMobileAnchor();
 			this.scheduleMobileAnchor();
+			this.syncSheetViewport();
 		}
 
 		disconnectedCallback() {
 			this.requestAbort?.abort();
 			this.abort?.abort();
+			this.releasePanelScrollLock();
 			this.confirmationCardObserver?.disconnect();
 			this.analyticsChartObserver?.disconnect();
 			if (this.anchorFrame) window.cancelAnimationFrame(this.anchorFrame);
@@ -281,6 +288,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 
 		private bindChatSurface() {
 			this.panel = this.live(this.panel, '[data-assistant-panel]');
+			this.backdrop = this.live(this.backdrop, '[data-assistant-backdrop]');
 			this.launcher = this.live(this.launcher, '[data-assistant-launcher]');
 			this.messagesEl = this.live(this.messagesEl, '[data-assistant-messages]');
 			this.messageListEl = this.live(this.messageListEl, '[data-assistant-message-list]');
@@ -314,6 +322,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			void this.renderMessages();
 			this.renderSuggestions();
 			this.scheduleMobileAnchor();
+			this.syncSheetViewport();
 		};
 
 		private bindResizeHandle(signal: AbortSignal) {
@@ -332,6 +341,10 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			if (!target) return;
 			if (target.closest('[data-assistant-launcher]')) {
 				this.toggle();
+				return;
+			}
+			if (target.closest('[data-assistant-backdrop]')) {
+				this.close();
 				return;
 			}
 			if (target.closest('[data-assistant-close]')) {
@@ -407,6 +420,50 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			const isCompact = chart.getBoundingClientRect().width <= ANALYTICS_COMPACT_CHART_MAX_WIDTH;
 			this.toggleAttribute('data-assistant-analytics-compact', isCompact);
 			return isCompact;
+		}
+
+		private isMobileSheetViewport() {
+			return window.matchMedia('(max-width: 1023.98px)').matches;
+		}
+
+		private acquirePanelScrollLock() {
+			if (!this.isMobileSheetViewport() || this.unlockCanvasScroll) return;
+			this.unlockCanvasScroll = lockPanelScroll();
+		}
+
+		private releasePanelScrollLock() {
+			this.unlockCanvasScroll?.();
+			this.unlockCanvasScroll = null;
+		}
+
+		private syncSheetViewport() {
+			if (!this.panel) return;
+			if (this.isMobileSheetViewport()) {
+				this.panel.style.removeProperty('width');
+				this.panel.style.removeProperty('height');
+				if (this.isOpen()) {
+					this.acquirePanelScrollLock();
+					this.showBackdrop();
+				}
+				return;
+			}
+			this.hideBackdrop(true);
+			this.releasePanelScrollLock();
+			if (this.panel.dataset.resized !== 'true') return;
+			const stored = this.readStoredPanelSize();
+			if (stored) this.applyPanelSize(stored.width, stored.height);
+		}
+
+		private showBackdrop() {
+			if (!this.backdrop || !this.isMobileSheetViewport()) return;
+			this.backdrop.hidden = false;
+			window.requestAnimationFrame(() => this.backdrop?.classList.add('is-open'));
+		}
+
+		private hideBackdrop(immediate = false) {
+			if (!this.backdrop) return;
+			this.backdrop.classList.remove('is-open');
+			if (immediate) this.backdrop.hidden = true;
 		}
 
 		private isMobilePeekActive() {
@@ -611,7 +668,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		}
 
 		private applyPanelSize(width: number, height: number) {
-			if (!this.panel) return;
+			if (!this.panel || this.isMobileSheetViewport()) return;
 			this.panel.style.width = `${width}px`;
 			this.panel.style.height = `${height}px`;
 			this.panel.dataset.resized = 'true';
@@ -642,6 +699,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		}
 
 		private applyStoredPanelSize() {
+			if (this.isMobileSheetViewport()) return;
 			const stored = this.readStoredPanelSize();
 			if (!stored) return;
 			this.applyPanelSize(stored.width, stored.height);
@@ -656,15 +714,11 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		}
 
 		private handlePanelViewportResize = () => {
-			if (!this.panel || this.panel.dataset.resized !== 'true') return;
-			const rect = this.panel.getBoundingClientRect();
-			const { width, height } = this.clampPanelSize(rect.width);
-			this.applyPanelSize(width, height);
-			this.persistPanelSize();
+			this.syncSheetViewport();
 		};
 
 		private handleResizePointerDown = (event: PointerEvent) => {
-			if (!this.panel || !this.resizeHandle || event.button !== 0) return;
+			if (!this.panel || !this.resizeHandle || event.button !== 0 || this.isMobileSheetViewport()) return;
 			event.preventDefault();
 			event.stopPropagation();
 			const rect = this.panel.getBoundingClientRect();
@@ -717,10 +771,13 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			if (!this.panel || !this.launcher) return;
 			this.panel.hidden = false;
 			this.launcher.setAttribute('aria-expanded', 'true');
+			this.toggleAttribute('data-assistant-open', true);
 			this.clearError();
 			this.react();
+			this.acquirePanelScrollLock();
+			this.showBackdrop();
 			window.requestAnimationFrame(() => this.panel?.classList.add('is-open'));
-			if (!window.matchMedia('(max-width: 639px)').matches) {
+			if (!this.isMobileSheetViewport()) {
 				window.setTimeout(() => this.input?.focus({ preventScroll: true }), 120);
 			}
 		}
@@ -729,8 +786,14 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			if (!this.panel || !this.launcher || !this.isOpen()) return;
 			this.panel.classList.remove('is-open');
 			this.launcher.setAttribute('aria-expanded', 'false');
+			this.removeAttribute('data-assistant-open');
+			this.hideBackdrop();
+			this.input?.blur();
 			window.setTimeout(() => {
-				if (this.panel && !this.panel.classList.contains('is-open')) this.panel.hidden = true;
+				if (this.panel?.classList.contains('is-open')) return;
+				if (this.panel) this.panel.hidden = true;
+				this.hideBackdrop(true);
+				this.releasePanelScrollLock();
 			}, 150);
 			this.launcher.focus({ preventScroll: true });
 		}
@@ -788,7 +851,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			this.clearError();
 			void this.renderMessages();
 			this.setStatus('Nueva conversación');
-			this.input?.focus({ preventScroll: true });
+			if (!this.isMobileSheetViewport()) this.input?.focus({ preventScroll: true });
 		}
 
 		private readStoredMessages(): ChatMessage[] {
@@ -1398,6 +1461,8 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		transition: opacity 150ms ease, transform 150ms ease;
 	}
 	.assistant-mascot__panel.is-open { opacity: 1; transform: translateY(0) scale(1); }
+	.assistant-mascot__backdrop { display: none; }
+	.assistant-mascot__sheet-handle { display: none; }
 	.assistant-mascot__resize-handle {
 		position: absolute;
 		grid-row: 1 / -1;
@@ -1754,7 +1819,69 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		assistant-mascot[data-assistant-mobile-peek] .assistant-mascot__launcher:hover { transform: none; }
 		assistant-mascot[data-assistant-mobile-peek] .assistant-mascot__peek img { animation: none; }
 		html:has(assistant-mascot[data-assistant-mobile-peek]) .topbar-actions { margin-right: 3.4rem; }
-		.assistant-mascot__panel { position: fixed; top: auto; right: max(0.75rem, env(safe-area-inset-right)); bottom: calc(var(--mobile-bottom-nav-height, 5.5rem) + 0.7rem); width: min(24rem, calc(100vw - 1.5rem)); height: min(71dvh, 38rem); border-radius: 1.25rem; transform-origin: bottom right; }
+		.assistant-mascot__backdrop {
+			display: block;
+			position: fixed;
+			inset: 0;
+			z-index: 1;
+			border: 0;
+			padding: 0;
+			margin: 0;
+			background: var(--modal-backdrop-scrim);
+			opacity: 0;
+			pointer-events: none;
+			transition: opacity var(--modal-open-duration, 150ms) var(--modal-easing, ease);
+		}
+		.assistant-mascot__backdrop.is-open {
+			opacity: 1;
+			pointer-events: auto;
+		}
+		.assistant-mascot__sheet-handle {
+			display: flex;
+			justify-content: center;
+			flex-shrink: 0;
+			padding: 0.55rem 0 0.05rem;
+		}
+		.assistant-mascot__sheet-handle span {
+			display: block;
+			width: 2.35rem;
+			height: 0.28rem;
+			border-radius: 999px;
+			background: color-mix(in srgb, var(--on-surface-variant) 42%, transparent);
+		}
+		.assistant-mascot__panel {
+			position: fixed;
+			inset: auto 0 0;
+			z-index: 2;
+			width: 100%;
+			max-width: none;
+			min-width: 0;
+			height: 90svh;
+			max-height: 90svh;
+			min-height: 0;
+			border-radius: 1.5rem 1.5rem 0 0;
+			border-bottom: 0;
+			box-shadow: var(--modal-shadow-sheet);
+			opacity: 1;
+			transform: translateY(100%);
+			transform-origin: bottom center;
+			padding-bottom: env(safe-area-inset-bottom, 0px);
+			grid-template-rows: auto auto minmax(0, 1fr) auto auto auto auto;
+		}
+		.assistant-mascot__panel.is-open {
+			transform: translateY(0);
+		}
+		.assistant-mascot__resize-handle { display: none; }
+		.assistant-mascot__header { padding: 0.45rem 0.95rem 0.75rem; }
+		.assistant-mascot__messages { overscroll-behavior: contain; }
+		assistant-mascot[data-assistant-open] .assistant-mascot__launcher {
+			opacity: 0;
+			pointer-events: none;
+		}
+		assistant-mascot[data-assistant-open] .assistant-mascot__launcher img {
+			visibility: hidden !important;
+			opacity: 0 !important;
+		}
 	}
 	assistant-mascot[data-assistant-analytics-compact] {
 		top: 0.1rem;
@@ -1786,6 +1913,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		assistant-mascot[data-assistant-card-anchor] .assistant-mascot__reading [data-tail-layer],
 		.assistant-mascot__thinking span,
 		.assistant-mascot__panel,
+		.assistant-mascot__backdrop,
 		.assistant-mascot__resize-handle::before,
 		.assistant-mascot__suggestion-btn,
 		assistant-mascot[data-assistant-card-wait][data-assistant-card-anchor] { animation: none; transition: none; }
