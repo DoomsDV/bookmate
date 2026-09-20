@@ -30,11 +30,8 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 	>
 		<header class="assistant-mascot__header">
 			<div class="assistant-mascot__identity">
-				<img src="/assistant/numa-reading-mobile.png" width="40" height="40" alt="" aria-hidden="true" decoding="async" />
-				<div>
-					<p>Asistente Hasel</p>
-					<span data-assistant-status>Listo para ayudarte</span>
-				</div>
+				<p>Asistente Hasel</p>
+				<span data-assistant-status>Listo para ayudarte</span>
 			</div>
 			<div class="assistant-mascot__header-actions">
 				<button type="button" class="assistant-mascot__icon-button" data-assistant-clear aria-label="Nueva conversación" title="Nueva conversación">
@@ -68,6 +65,14 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			</button>
 		</form>
 		<p class="assistant-mascot__hint">Enter para enviar · Shift + Enter para una nueva línea</p>
+		<div
+			class="assistant-mascot__resize-handle"
+			data-assistant-resize
+			role="separator"
+			aria-orientation="horizontal"
+			aria-label="Redimensionar asistente"
+			title="Arrastrá para cambiar el tamaño"
+		></div>
 	</section>
 
 	<button
@@ -129,7 +134,19 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 </assistant-mascot>
 
 <script>
-	import { marked } from 'marked';
+	type MarkedParse = (
+		src: string,
+		options?: { async?: boolean; breaks?: boolean; gfm?: boolean }
+	) => string | Promise<string>;
+
+	let markedParse: MarkedParse | null = null;
+
+	async function ensureMarked(): Promise<MarkedParse> {
+		if (markedParse) return markedParse;
+		const mod = await import('marked');
+		markedParse = mod.marked.parse.bind(mod.marked) as MarkedParse;
+		return markedParse;
+	}
 
 	type Role = 'user' | 'assistant';
 	type AssistantSource = { domain?: string; operation?: string; scope?: string };
@@ -145,6 +162,12 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 	const MAX_MESSAGES = 8;
 	const MAX_HISTORY_LENGTH = 12_000;
 	const ANALYTICS_COMPACT_CHART_MAX_WIDTH = 960;
+	const PANEL_DEFAULT_WIDTH = 384;
+	const PANEL_DEFAULT_HEIGHT = 544;
+	const PANEL_ASPECT_RATIO = PANEL_DEFAULT_WIDTH / PANEL_DEFAULT_HEIGHT;
+	const PANEL_MIN_WIDTH = 288;
+	const PANEL_MAX_WIDTH = 560;
+	const PANEL_MAX_HEIGHT = 680;
 	const ALLOWED_TAGS = new Set(['a', 'blockquote', 'br', 'code', 'em', 'h1', 'h2', 'h3', 'h4', 'li', 'ol', 'p', 'pre', 'strong', 'ul']);
 	const ALLOWED_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:']);
 
@@ -172,6 +195,15 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		private messages: ChatMessage[] = [];
 		private busy = false;
 		private storageKey = '';
+		private panelSizeKey = '';
+		private resizeHandle: HTMLElement | null = null;
+		private resizeState: {
+			pointerId: number;
+			startX: number;
+			startY: number;
+			startWidth: number;
+			startHeight: number;
+		} | null = null;
 
 		connectedCallback() {
 			this.panel = this.querySelector('[data-assistant-panel]');
@@ -184,13 +216,17 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			this.statusEl = this.querySelector('[data-assistant-status]');
 			this.errorEl = this.querySelector('[data-assistant-error]');
 			this.storageKey = String(this.dataset.storageKey || '').trim();
+			this.panelSizeKey = `${this.storageKey}:panel-size`;
+			this.resizeHandle = this.querySelector('[data-assistant-resize]');
 			this.peekFrames = Array.from(this.querySelectorAll<HTMLImageElement>('[data-peek-frame]'))
 				.sort((a, b) => Number(a.dataset.peekFrame) - Number(b.dataset.peekFrame));
 			for (const frame of this.peekFrames) {
 				if (frame.decode) void frame.decode().catch(() => undefined);
 			}
 			this.messages = this.readStoredMessages();
-			this.renderMessages();
+			void ensureMarked();
+			void this.renderMessages();
+			this.applyStoredPanelSize();
 
 			this.abort?.abort();
 			this.abort = new AbortController();
@@ -213,7 +249,13 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			document.addEventListener('keydown', this.handleDocumentKeydown, { signal });
 			document.addEventListener('pointerdown', this.handleOutsidePointer, { signal });
 			document.addEventListener('submit', this.handleLogout, { capture: true, signal });
+			this.resizeHandle?.addEventListener('pointerdown', this.handleResizePointerDown, { signal });
+			this.resizeHandle?.addEventListener('pointermove', this.handleResizePointerMove, { signal });
+			this.resizeHandle?.addEventListener('pointerup', this.finishResize, { signal });
+			this.resizeHandle?.addEventListener('pointercancel', this.finishResize, { signal });
+			this.resizeHandle?.addEventListener('dblclick', () => this.resetPanelSize(), { signal });
 			window.addEventListener('resize', this.scheduleMobileAnchor, { signal });
+			window.addEventListener('resize', this.handlePanelViewportResize, { signal });
 			document.addEventListener('scroll', this.scheduleMobileAnchor, { capture: true, passive: true, signal });
 			document.addEventListener('astro:page-load', this.scheduleMobileAnchor, { signal });
 			this.syncMobileAnchor();
@@ -393,6 +435,11 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			}
 
 			const bounds = anchor.getBoundingClientRect();
+			if (bounds.width <= 0 || bounds.height <= 0) {
+				this.removeAttribute('data-assistant-card-anchor');
+				return;
+			}
+
 			if (isMobile) {
 				const width = Math.min(bounds.width * 0.72, 126);
 				const right = Math.max(8, window.innerWidth - bounds.right + (bounds.width - width) / 2);
@@ -434,8 +481,120 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		};
 
 		private handleOutsidePointer = (event: PointerEvent) => {
-			if (!this.isOpen() || this.contains(event.target as Node)) return;
+			if (this.resizeState || !this.isOpen() || this.contains(event.target as Node)) return;
 			this.close();
+		};
+
+		private getPanelSizeLimits() {
+			const horizontalInset = window.matchMedia('(max-width: 639px)').matches ? 24 : 32;
+			const verticalInset = window.matchMedia('(max-width: 639px)').matches ? 120 : 100;
+			return {
+				maxWidth: Math.min(PANEL_MAX_WIDTH, window.innerWidth - horizontalInset),
+				maxHeight: Math.min(PANEL_MAX_HEIGHT, window.innerHeight - verticalInset),
+			};
+		}
+
+		private clampPanelSize(width: number) {
+			const { maxWidth, maxHeight } = this.getPanelSizeLimits();
+			let nextWidth = Math.max(PANEL_MIN_WIDTH, Math.min(width, maxWidth));
+			let nextHeight = nextWidth / PANEL_ASPECT_RATIO;
+			if (nextHeight > maxHeight) {
+				nextHeight = maxHeight;
+				nextWidth = nextHeight * PANEL_ASPECT_RATIO;
+			}
+			return {
+				width: Math.round(nextWidth),
+				height: Math.round(nextHeight),
+			};
+		}
+
+		private applyPanelSize(width: number, height: number) {
+			if (!this.panel) return;
+			this.panel.style.width = `${width}px`;
+			this.panel.style.height = `${height}px`;
+			this.panel.dataset.resized = 'true';
+		}
+
+		private readStoredPanelSize() {
+			if (!this.panelSizeKey) return null;
+			try {
+				const raw = window.localStorage.getItem(this.panelSizeKey);
+				if (!raw) return null;
+				const payload = JSON.parse(raw) as { width?: number; height?: number };
+				const width = Number(payload.width);
+				const height = Number(payload.height);
+				if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return null;
+				return this.clampPanelSize(width);
+			} catch {
+				return null;
+			}
+		}
+
+		private persistPanelSize() {
+			if (!this.panel || !this.panelSizeKey || this.panel.dataset.resized !== 'true') return;
+			const rect = this.panel.getBoundingClientRect();
+			window.localStorage.setItem(
+				this.panelSizeKey,
+				JSON.stringify({ width: Math.round(rect.width), height: Math.round(rect.height) })
+			);
+		}
+
+		private applyStoredPanelSize() {
+			const stored = this.readStoredPanelSize();
+			if (!stored) return;
+			this.applyPanelSize(stored.width, stored.height);
+		}
+
+		private resetPanelSize() {
+			if (!this.panel) return;
+			this.panel.style.removeProperty('width');
+			this.panel.style.removeProperty('height');
+			delete this.panel.dataset.resized;
+			if (this.panelSizeKey) window.localStorage.removeItem(this.panelSizeKey);
+		}
+
+		private handlePanelViewportResize = () => {
+			if (!this.panel || this.panel.dataset.resized !== 'true') return;
+			const rect = this.panel.getBoundingClientRect();
+			const { width, height } = this.clampPanelSize(rect.width);
+			this.applyPanelSize(width, height);
+			this.persistPanelSize();
+		};
+
+		private handleResizePointerDown = (event: PointerEvent) => {
+			if (!this.panel || !this.resizeHandle || event.button !== 0) return;
+			event.preventDefault();
+			event.stopPropagation();
+			const rect = this.panel.getBoundingClientRect();
+			this.resizeState = {
+				pointerId: event.pointerId,
+				startX: event.clientX,
+				startY: event.clientY,
+				startWidth: rect.width,
+				startHeight: rect.height,
+			};
+			this.resizeHandle.setPointerCapture(event.pointerId);
+			this.setAttribute('data-assistant-resizing', '');
+		};
+
+		private handleResizePointerMove = (event: PointerEvent) => {
+			if (!this.panel || !this.resizeState || event.pointerId !== this.resizeState.pointerId) return;
+			const deltaX = this.resizeState.startX - event.clientX;
+			const deltaY = event.clientY - this.resizeState.startY;
+			const scale = Math.max(
+				(this.resizeState.startWidth + deltaX) / this.resizeState.startWidth,
+				(this.resizeState.startHeight + deltaY) / this.resizeState.startHeight
+			);
+			const { width, height } = this.clampPanelSize(this.resizeState.startWidth * scale);
+			this.applyPanelSize(width, height);
+		};
+
+		private finishResize = (event: PointerEvent) => {
+			if (!this.resizeState || event.pointerId !== this.resizeState.pointerId) return;
+			this.resizeHandle?.releasePointerCapture(event.pointerId);
+			this.resizeState = null;
+			this.removeAttribute('data-assistant-resizing');
+			this.persistPanelSize();
 		};
 
 		private handleLogout = (event: Event) => {
@@ -526,7 +685,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			this.messages = [];
 			this.removeStoredMessages();
 			this.clearError();
-			this.renderMessages();
+			void this.renderMessages();
 			this.setStatus('Nueva conversación');
 			this.input?.focus({ preventScroll: true });
 		}
@@ -608,7 +767,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			this.persistMessages();
 			this.input!.value = '';
 			this.resizeInput();
-			this.renderMessages();
+			void this.renderMessages();
 			this.requestAbort?.abort();
 			this.requestAbort = new AbortController();
 			this.setBusy(true);
@@ -680,7 +839,7 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 						status: String(payload.status || 'completed'),
 					});
 					this.persistMessages();
-					this.renderMessages();
+					void this.renderMessages();
 					window.setTimeout(() => this.react());
 					completed = true;
 				}
@@ -709,10 +868,110 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			}
 		}
 
+		private isMarkdownListItem(line: string) {
+			return /^([-*+]|\d+[.)])\s+/.test(line);
+		}
+
+		private lineEndsWithColon(line: string) {
+			return line.length >= 3 && /:(?:\*\*)?\s*$/.test(line);
+		}
+
+		private isMarkdownSectionLead(line: string) {
+			return (
+				/^#{1,6}\s/.test(line) ||
+				/^\*\*[^*]{1,80}:\*\*\s*$/.test(line) ||
+				/^\*\*[^*]{1,80}\*\*:\s*$/.test(line)
+			);
+		}
+
+		private promoteColonBlocksToLists(text: string) {
+			const lines = text.split('\n');
+			const out: string[] = [];
+			let i = 0;
+
+			while (i < lines.length) {
+				const line = lines[i];
+				const trimmed = line.trim();
+				if (this.lineEndsWithColon(trimmed)) {
+					let j = i + 1;
+					if (j < lines.length && !lines[j].trim()) j += 1;
+
+					const items: string[] = [];
+					while (j < lines.length) {
+						const item = lines[j].trim();
+						if (!item) break;
+						if (this.isMarkdownListItem(item) || this.isMarkdownSectionLead(item)) break;
+						if (item.length > 180) break;
+						items.push(item.replace(/^[•▪◦–—]\s+/, ''));
+						j += 1;
+					}
+
+					if (items.length >= 2) {
+						out.push(line);
+						for (const item of items) out.push(`- ${item}`);
+						i = j;
+						continue;
+					}
+				}
+
+				out.push(line);
+				i += 1;
+			}
+
+			return out.join('\n');
+		}
+
+		private repairMarkdown(text: string) {
+			const fixLine = (line: string) => {
+				let fixed = line.replace(/\*{3,}/g, '**');
+				const markers = fixed.match(/\*\*/g);
+				if (markers && markers.length % 2 === 1) fixed += '**';
+				fixed = fixed.replace(/\*\*([^*\n]*?)\*\*/g, (_, inner: string) => {
+					const trimmed = inner.trim();
+					return trimmed ? `**${trimmed}**` : '**';
+				});
+				return fixed;
+			};
+			return text.split('\n').map(fixLine).join('\n');
+		}
+
+		private stripInternalPhrases(text: string) {
+			return text
+				.replace(/\s*la consulta no (?:permite|puede)[^.!?\n]*[.!?]?/gi, '')
+				.replace(/\s*no (?:puedo|podemos|puede|es posible) filtrar[^.!?\n]*[.!?]?/gi, '')
+				.replace(/\s*esta consulta no[^.!?\n]*[.!?]?/gi, '')
+				.replace(/\s*el sistema no (?:permite|puede)[^.!?\n]*[.!?]?/gi, '')
+				.trim();
+		}
+
+		private normalizeAssistantMarkdown(content: string) {
+			let text = this.stripInternalPhrases(String(content || '').trim());
+			if (!text) return '';
+
+			if (/\d+[.)]\s+/.test(text) && !/^\s*\d+[.)]\s+/m.test(text.split('\n').slice(1).join('\n'))) {
+				text = text.replace(/(?:^|[ \t]+)(\d+)[.)]\s+/g, '\n$1. ');
+			}
+
+			if (/(?:^|\s)-\s+\S/.test(text) && !/^\s*[-*]\s+/m.test(text)) {
+				text = text.replace(/(?:^|[ \t]+)[-*]\s+/g, '\n- ');
+			}
+
+			text = this.promoteColonBlocksToLists(text);
+			text = this.repairMarkdown(text);
+
+			return text
+				.replace(/\n{3,}/g, '\n\n')
+				.replace(/(^#{1,6}[^\n]+)\n{2,}/gm, '$1\n')
+				.replace(/([^\n])\n{2,}(?=[-*+] |\d+\. )/g, '$1\n')
+				.trim();
+		}
+
 		private sanitizeMarkdown(html: string) {
 			const template = document.createElement('template');
 			template.innerHTML = html;
-			const elements = Array.from(template.content.querySelectorAll('*'));
+			const walker = document.createTreeWalker(template.content, NodeFilter.SHOW_ELEMENT);
+			const elements: Element[] = [];
+			while (walker.nextNode()) elements.push(walker.currentNode as Element);
 			for (const element of elements) {
 				const tag = element.tagName.toLowerCase();
 				if (!ALLOWED_TAGS.has(tag)) {
@@ -730,35 +989,30 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 			return template.innerHTML;
 		}
 
-		private renderAssistantContent(content: string) {
+		private escapePlain(content: string) {
+			return content
+				.replace(/&/g, '&amp;')
+				.replace(/</g, '&lt;')
+				.replace(/>/g, '&gt;')
+				.replace(/\n/g, '<br>');
+		}
+
+		private async renderMarkdown(content: string) {
+			const normalized = this.normalizeAssistantMarkdown(content);
 			try {
-				return this.sanitizeMarkdown(String(marked.parse(content, { async: false, gfm: true, breaks: true })));
+				const parse = await ensureMarked();
+				const html = parse(normalized, { async: false, gfm: true, breaks: false });
+				return this.sanitizeMarkdown(typeof html === 'string' ? html : String(html));
 			} catch {
-				return content.replace(/[&<>]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[character] || character)).replace(/\n/g, '<br>');
+				return this.escapePlain(normalized);
 			}
 		}
 
-		private createMetadata(message: ChatMessage) {
-			if (message.role !== 'assistant' || (!(message.sources?.length) && !(message.assumptions?.length))) return null;
-			const details = document.createElement('details');
-			details.className = 'assistant-mascot__metadata';
-			const summary = document.createElement('summary');
-			summary.textContent = 'Detalle de la respuesta';
-			details.append(summary);
-			if (message.sources?.length) {
-				const sourceLabel = document.createElement('p');
-				sourceLabel.textContent = `Consultó: ${message.sources.map((source) => [source.domain, source.operation].filter(Boolean).join(' · ')).filter(Boolean).join(', ')}`;
-				details.append(sourceLabel);
-			}
-			if (message.assumptions?.length) {
-				const assumptions = document.createElement('p');
-				assumptions.textContent = `Supuestos: ${message.assumptions.join(' · ')}`;
-				details.append(assumptions);
-			}
-			return details;
+		private createMetadata(_message: ChatMessage) {
+			return null;
 		}
 
-		private renderMessages() {
+		private async renderMessages() {
 			if (!this.messagesEl) return;
 			this.messagesEl.replaceChildren();
 			if (!this.messages.length) {
@@ -773,8 +1027,14 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 				row.className = `assistant-mascot__message assistant-mascot__message--${message.role}`;
 				const bubble = document.createElement('div');
 				bubble.className = 'assistant-mascot__bubble';
-				if (message.role === 'assistant') bubble.innerHTML = this.renderAssistantContent(message.content);
-				else bubble.textContent = message.content;
+				if (message.role === 'assistant') {
+					const body = document.createElement('div');
+					body.className = 'assistant-mascot__bubble__body';
+					body.innerHTML = await this.renderMarkdown(message.content);
+					bubble.append(body);
+				} else {
+					bubble.textContent = message.content;
+				}
 				row.append(bubble);
 				const metadata = this.createMetadata(message);
 				if (metadata) row.append(metadata);
@@ -801,6 +1061,17 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		z-index: var(--z-mascot, 95);
 		display: block;
 		overflow: visible;
+	}
+	assistant-mascot[data-assistant-card-wait]:not([data-assistant-card-anchor]) {
+		visibility: hidden;
+		opacity: 0;
+		pointer-events: none;
+	}
+	assistant-mascot[data-assistant-card-wait][data-assistant-card-anchor] {
+		visibility: visible;
+		opacity: 1;
+		pointer-events: auto;
+		transition: opacity 140ms ease;
 	}
 
 	.assistant-mascot__launcher {
@@ -884,56 +1155,209 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		grid-template-rows: auto minmax(0, 1fr) auto auto;
 		width: min(24rem, calc(100vw - 2rem));
 		height: min(34rem, calc(100vh - 9rem));
+		min-width: 18rem;
+		min-height: calc(18rem * 34 / 24);
 		overflow: hidden;
-		border: 1px solid color-mix(in srgb, var(--shell-border) 82%, var(--primary) 18%);
-		border-radius: 1.5rem;
-		background: color-mix(in srgb, var(--surface-bright) 96%, var(--primary-container));
-		box-shadow: 0 28px 60px rgb(15 23 42 / 0.24);
+		border: 1px solid var(--shell-border);
+		border-radius: 1.25rem;
+		background: var(--surface-bright);
+		box-shadow: 0 10px 28px rgb(15 23 42 / 0.1);
 		opacity: 0;
 		transform: translateY(-0.75rem) scale(0.98);
 		transform-origin: top right;
 		transition: opacity 150ms ease, transform 150ms ease;
 	}
 	.assistant-mascot__panel.is-open { opacity: 1; transform: translateY(0) scale(1); }
-	.assistant-mascot__header { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.8rem 0.9rem; border-bottom: 1px solid var(--shell-border); }
-	.assistant-mascot__identity { display: flex; min-width: 0; align-items: center; gap: 0.55rem; }
-	.assistant-mascot__identity img { width: 2.4rem; height: 2.4rem; object-fit: contain; }
-	.assistant-mascot__identity p { margin: 0; color: var(--on-surface); font-size: 0.88rem; font-weight: 800; }
+	.assistant-mascot__resize-handle {
+		position: absolute;
+		left: 0;
+		bottom: 0;
+		z-index: 2;
+		width: 1.35rem;
+		height: 1.35rem;
+		border-bottom-left-radius: 1.25rem;
+		cursor: nesw-resize;
+		touch-action: none;
+	}
+	.assistant-mascot__resize-handle::before {
+		content: '';
+		position: absolute;
+		left: 0.42rem;
+		bottom: 0.42rem;
+		width: 0.55rem;
+		height: 0.55rem;
+		border-left: 2px solid color-mix(in srgb, var(--on-surface-variant) 42%, transparent);
+		border-bottom: 2px solid color-mix(in srgb, var(--on-surface-variant) 42%, transparent);
+		opacity: 0.9;
+		transition: opacity 120ms ease;
+	}
+	.assistant-mascot__resize-handle:hover::before,
+	.assistant-mascot__resize-handle:focus-visible::before {
+		border-color: color-mix(in srgb, var(--primary) 55%, transparent);
+		opacity: 1;
+	}
+	.assistant-mascot__resize-handle:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--primary) 58%, transparent);
+		outline-offset: -2px;
+	}
+	assistant-mascot[data-assistant-resizing] .assistant-mascot__panel { transition: none; }
+	assistant-mascot[data-assistant-resizing] .assistant-mascot__resize-handle::before {
+		border-color: color-mix(in srgb, var(--primary) 65%, transparent);
+	}
+	.assistant-mascot__header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		padding: 0.75rem 0.85rem;
+		border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 88%, transparent);
+		background: var(--surface-bright);
+	}
+	.assistant-mascot__identity { display: grid; min-width: 0; gap: 0.1rem; }
+	.assistant-mascot__identity p { margin: 0; color: var(--on-surface); font-size: 0.92rem; font-weight: 800; line-height: 1.2; }
 	.assistant-mascot__identity span { display: block; max-width: 14rem; overflow: hidden; color: var(--on-surface-variant); font-size: 0.7rem; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
 	.assistant-mascot__header-actions { display: flex; gap: 0.2rem; }
 	.assistant-mascot__icon-button { display: grid; width: 2rem; height: 2rem; place-items: center; border: 0; border-radius: 0.6rem; background: transparent; color: var(--on-surface-variant); cursor: pointer; }
 	.assistant-mascot__icon-button:hover { background: var(--primary-container); color: var(--primary); }
 	.assistant-mascot__icon-button .material-symbols-rounded { font-size: 1.05rem; }
-	.assistant-mascot__messages { min-height: 0; overflow-y: auto; padding: 0.9rem; scrollbar-gutter: stable; }
+	.assistant-mascot__messages {
+		min-height: 0;
+		overflow-y: auto;
+		padding: 0.85rem 0.9rem;
+		scrollbar-gutter: stable;
+		background: var(--surface-bright);
+	}
 	.assistant-mascot__empty { max-width: 15.5rem; margin: 2.5rem auto; color: var(--on-surface-variant); text-align: center; font-size: 0.84rem; line-height: 1.55; }
 	.assistant-mascot__empty p { margin: 0 0 0.3rem; color: var(--on-surface); font-size: 1rem; font-weight: 800; }
-	.assistant-mascot__message { display: grid; gap: 0.4rem; margin: 0 0 0.8rem; }
+	.assistant-mascot__message { display: grid; gap: 0.35rem; margin: 0 0 0.85rem; }
 	.assistant-mascot__message--user { justify-items: end; }
-	.assistant-mascot__bubble { max-width: 92%; padding: 0.7rem 0.8rem; border-radius: 1rem; color: var(--on-surface); background: var(--surface-container); font-size: 0.84rem; line-height: 1.5; overflow-wrap: anywhere; }
-	.assistant-mascot__message--user .assistant-mascot__bubble { border-bottom-right-radius: 0.25rem; color: var(--on-primary); background: var(--primary); }
-	.assistant-mascot__message--assistant .assistant-mascot__bubble { border-bottom-left-radius: 0.25rem; }
-	.assistant-mascot__bubble > :first-child { margin-top: 0; }
-	.assistant-mascot__bubble > :last-child { margin-bottom: 0; }
-	.assistant-mascot__bubble p,
-	.assistant-mascot__bubble ul,
-	.assistant-mascot__bubble ol,
-	.assistant-mascot__bubble blockquote,
-	.assistant-mascot__bubble pre { margin: 0.45rem 0; }
-	.assistant-mascot__bubble ul,
-	.assistant-mascot__bubble ol { padding-left: 1.15rem; }
-	.assistant-mascot__bubble a { color: inherit; font-weight: 700; text-decoration: underline; }
-	.assistant-mascot__bubble code { padding: 0.08rem 0.22rem; border-radius: 0.25rem; background: rgb(15 23 42 / 0.08); font-size: 0.78rem; }
-	.assistant-mascot__bubble pre { overflow-x: auto; padding: 0.55rem; border-radius: 0.5rem; background: rgb(15 23 42 / 0.08); }
-	.assistant-mascot__metadata { max-width: 92%; color: var(--on-surface-variant); font-size: 0.7rem; }
-	.assistant-mascot__metadata summary { cursor: pointer; }
-	.assistant-mascot__metadata p { margin: 0.35rem 0 0; line-height: 1.4; }
+	.assistant-mascot__message--assistant { justify-items: start; }
+	.assistant-mascot__bubble {
+		max-width: 92%;
+		padding: 0.62rem 0.72rem;
+		border-radius: 1rem;
+		color: var(--on-surface);
+		background: var(--surface-container);
+		font-size: 0.84rem;
+		line-height: 1.45;
+		overflow-wrap: anywhere;
+	}
+	.assistant-mascot__message--user .assistant-mascot__bubble {
+		border-bottom-right-radius: 0.3rem;
+		color: #f8fbff;
+		background: var(--primary);
+		box-shadow: 0 8px 20px color-mix(in srgb, var(--primary) 18%, transparent);
+		font-family: var(--font-body, "Plus Jakarta Sans", sans-serif);
+		font-size: 0.875rem;
+		font-weight: 500;
+		line-height: 1.4;
+		letter-spacing: 0.01em;
+		white-space: pre-wrap;
+		-webkit-font-smoothing: antialiased;
+		text-rendering: optimizeLegibility;
+	}
+	.assistant-mascot__message--assistant .assistant-mascot__bubble {
+		max-width: 100%;
+		border-bottom-left-radius: 0.3rem;
+		background: var(--surface-container);
+		box-shadow: 0 1px 2px color-mix(in srgb, var(--on-surface) 5%, transparent);
+	}
+	.assistant-mascot__bubble__body { white-space: normal; }
+	.assistant-mascot__bubble__body > :first-child { margin-top: 0; }
+	.assistant-mascot__bubble__body > :last-child { margin-bottom: 0; }
+	.assistant-mascot__bubble__body p,
+	.assistant-mascot__bubble__body ul,
+	.assistant-mascot__bubble__body ol,
+	.assistant-mascot__bubble__body blockquote,
+	.assistant-mascot__bubble__body pre { margin: 0.32rem 0; }
+	.assistant-mascot__bubble__body ul,
+	.assistant-mascot__bubble__body ol {
+		padding-left: 1.2rem;
+		list-style-position: outside;
+	}
+	.assistant-mascot__bubble__body ul { list-style-type: disc; }
+	.assistant-mascot__bubble__body ol { list-style-type: decimal; }
+	.assistant-mascot__bubble__body li + li { margin-top: 0.12rem; }
+	.assistant-mascot__bubble__body li { display: list-item; margin: 0; }
+	.assistant-mascot__bubble__body li::marker {
+		color: color-mix(in srgb, var(--on-surface) 55%, transparent);
+	}
+	.assistant-mascot__bubble__body h1,
+	.assistant-mascot__bubble__body h2,
+	.assistant-mascot__bubble__body h3,
+	.assistant-mascot__bubble__body h4 {
+		margin: 0.45rem 0 0.12rem;
+		font-size: 0.9rem;
+		font-weight: 800;
+		line-height: 1.3;
+	}
+	.assistant-mascot__bubble__body strong { font-weight: 800; }
+	.assistant-mascot__bubble__body em { font-style: italic; }
+	.assistant-mascot__bubble__body blockquote {
+		padding-left: 0.65rem;
+		border-left: 2px solid color-mix(in srgb, var(--on-surface) 16%, transparent);
+		color: color-mix(in srgb, var(--on-surface) 82%, var(--on-surface-variant));
+	}
+	.assistant-mascot__bubble__body a {
+		color: var(--primary);
+		font-weight: 700;
+		text-decoration: underline;
+		text-underline-offset: 0.14em;
+	}
+	.assistant-mascot__bubble__body code {
+		padding: 0.08rem 0.24rem;
+		border-radius: 0.35rem;
+		background: color-mix(in srgb, var(--on-surface) 9%, transparent);
+		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+		font-size: 0.86em;
+	}
+	.assistant-mascot__bubble__body pre {
+		overflow-x: auto;
+		padding: 0.65rem;
+		border-radius: 0.6rem;
+		background: color-mix(in srgb, var(--on-surface) 9%, transparent);
+	}
+	.assistant-mascot__bubble__body pre code { background: transparent; padding: 0; }
+	.assistant-mascot__metadata {
+		max-width: 100%;
+		color: var(--on-surface-variant);
+		font-size: 0.68rem;
+		line-height: 1.4;
+	}
+	.assistant-mascot__metadata summary {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		cursor: pointer;
+		list-style: none;
+		user-select: none;
+	}
+	.assistant-mascot__metadata summary::-webkit-details-marker { display: none; }
+	.assistant-mascot__metadata-label {
+		padding: 0.18rem 0.45rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface) 6%, transparent);
+	}
+	.assistant-mascot__metadata p { margin: 0.35rem 0 0; padding-left: 0.1rem; }
 	.assistant-mascot__thinking { display: inline-flex; gap: 0.25rem; align-items: center; min-width: 3.25rem; padding: 0.75rem 0.9rem; border-radius: 1rem; border-bottom-left-radius: 0.25rem; background: var(--surface-container); }
 	.assistant-mascot__thinking span { width: 0.35rem; height: 0.35rem; border-radius: 50%; background: var(--primary); animation: numa-dot 1.1s ease-in-out infinite; }
 	.assistant-mascot__thinking span:nth-child(2) { animation-delay: 140ms; }
 	.assistant-mascot__thinking span:nth-child(3) { animation-delay: 280ms; }
 	.assistant-mascot__error { margin: 0 0.8rem 0.55rem; padding: 0.55rem 0.65rem; border-radius: 0.7rem; background: color-mix(in srgb, #ef4444 12%, var(--surface-bright)); color: #b42318; font-size: 0.76rem; line-height: 1.4; }
-	.assistant-mascot__composer { display: flex; align-items: flex-end; gap: 0.45rem; margin: 0 0.8rem; padding: 0.45rem; border: 1px solid var(--shell-border); border-radius: 0.95rem; background: var(--surface-container); }
-	.assistant-mascot__composer:focus-within { border-color: color-mix(in srgb, var(--primary) 48%, var(--shell-border)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 13%, transparent); }
+	.assistant-mascot__composer {
+		display: flex;
+		align-items: flex-end;
+		gap: 0.45rem;
+		margin: 0 0.8rem;
+		padding: 0.45rem;
+		border: 1px solid var(--shell-border);
+		border-radius: 0.95rem;
+		background: var(--surface-container);
+	}
+	.assistant-mascot__composer:focus-within {
+		border-color: color-mix(in srgb, var(--shell-border) 70%, var(--on-surface) 30%);
+		box-shadow: none;
+	}
 	.assistant-mascot__composer textarea { flex: 1; min-width: 0; max-height: 7.25rem; padding: 0.35rem 0.25rem 0.35rem 0.45rem; border: 0; outline: 0; resize: none; color: var(--on-surface); background: transparent; font: inherit; font-size: 0.84rem; line-height: 1.42; }
 	.assistant-mascot__composer textarea::placeholder { color: var(--on-surface-variant); }
 	.assistant-mascot__send { display: grid; width: 2rem; height: 2rem; flex: 0 0 auto; place-items: center; border: 0; border-radius: 0.65rem; color: var(--on-primary); background: var(--primary); cursor: pointer; transition: transform 130ms ease, background 130ms ease; }
@@ -946,10 +1370,6 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 	@keyframes numa-dot { 0%, 80%, 100% { transform: scale(0.72); opacity: 0.45; } 40% { transform: scale(1); opacity: 1; } }
 	@media (max-width: 1023px) {
 		assistant-mascot { top: auto; right: max(0.6rem, env(safe-area-inset-right)); bottom: calc(var(--mobile-bottom-nav-height, 5.5rem) + 0.35rem); }
-		assistant-mascot[data-assistant-card-wait]:not([data-assistant-card-anchor]) {
-			visibility: hidden;
-			pointer-events: none;
-		}
 		.assistant-mascot__art--desktop { display: none; }
 		.assistant-mascot__art--dashboard-mobile { display: block; }
 		.assistant-mascot__launcher { width: min(13rem, 58vw); aspect-ratio: 3 / 2; }
@@ -1010,6 +1430,8 @@ const isAnalyticsDesktopArt = desktopArt === 'analytics';
 		assistant-mascot[data-assistant-reacting] .assistant-mascot__art,
 		assistant-mascot[data-assistant-card-anchor] .assistant-mascot__reading [data-tail-layer],
 		.assistant-mascot__thinking span,
-		.assistant-mascot__panel { animation: none; transition: none; }
+		.assistant-mascot__panel,
+		.assistant-mascot__resize-handle::before,
+		assistant-mascot[data-assistant-card-wait][data-assistant-card-anchor] { animation: none; transition: none; }
 	}
 </style>
