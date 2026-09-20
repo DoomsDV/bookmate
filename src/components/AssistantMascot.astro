@@ -3,17 +3,23 @@ interface Props {
 	userId: number;
 	organizationId: number;
 	mobilePeek?: boolean;
+	desktopArt?: 'hammock' | 'analytics';
 }
 
-const { userId, organizationId, mobilePeek = true } = Astro.props;
+const { userId, organizationId, mobilePeek = true, desktopArt = 'hammock' } = Astro.props;
 const storageKey = `hasel-assistant:${userId}:${organizationId}`;
 const panelId = `hasel-assistant-panel-${userId}-${organizationId}`;
+const desktopArtSrc = desktopArt === 'analytics'
+	? '/assistant/auri-analytics-desktop.png'
+	: '/assistant/auri-hammock-desktop.png';
+const isAnalyticsDesktopArt = desktopArt === 'analytics';
 ---
 
 <assistant-mascot
 	data-assistant-mascot
 	data-storage-key={storageKey}
 	{...(mobilePeek ? { 'data-assistant-mobile-peek': '' } : { 'data-assistant-card-wait': '' })}
+	{...(isAnalyticsDesktopArt ? { 'data-assistant-analytics': '' } : {})}
 >
 	<section
 		id={panelId}
@@ -75,7 +81,7 @@ const panelId = `hasel-assistant-panel-${userId}-${organizationId}`;
 	>
 		<img
 			class="assistant-mascot__art assistant-mascot__art--desktop"
-			src="/assistant/auri-hammock-desktop.png"
+			src={desktopArtSrc}
 			width="1536"
 			height="1024"
 			alt=""
@@ -94,7 +100,7 @@ const panelId = `hasel-assistant-panel-${userId}-${organizationId}`;
 			/>
 			<img
 				data-tail-wag
-				src="/assistant/auri-reading-mobile-tail.png"
+				src="/assistant/auri-reading-mobile-tail-forward.png"
 				width="1774"
 				height="887"
 				alt=""
@@ -138,6 +144,7 @@ const panelId = `hasel-assistant-panel-${userId}-${organizationId}`;
 
 	const MAX_MESSAGES = 8;
 	const MAX_HISTORY_LENGTH = 12_000;
+	const ANALYTICS_COMPACT_CHART_MAX_WIDTH = 960;
 	const ALLOWED_TAGS = new Set(['a', 'blockquote', 'br', 'code', 'em', 'h1', 'h2', 'h3', 'h4', 'li', 'ol', 'p', 'pre', 'strong', 'ul']);
 	const ALLOWED_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:']);
 
@@ -155,6 +162,8 @@ const panelId = `hasel-assistant-panel-${userId}-${organizationId}`;
 		private requestAbort: AbortController | null = null;
 		private confirmationCard: HTMLElement | null = null;
 		private confirmationCardObserver: ResizeObserver | null = null;
+		private analyticsChartObserver: ResizeObserver | null = null;
+		private analyticsChartObserverTarget: HTMLElement | null = null;
 		private anchorFrame = 0;
 		private lookFrame = 0;
 		private look = 0;
@@ -215,6 +224,7 @@ const panelId = `hasel-assistant-panel-${userId}-${organizationId}`;
 			this.requestAbort?.abort();
 			this.abort?.abort();
 			this.confirmationCardObserver?.disconnect();
+			this.analyticsChartObserver?.disconnect();
 			if (this.anchorFrame) window.cancelAnimationFrame(this.anchorFrame);
 			if (this.lookFrame) window.cancelAnimationFrame(this.lookFrame);
 			this.abort = null;
@@ -232,8 +242,34 @@ const panelId = `hasel-assistant-panel-${userId}-${organizationId}`;
 			return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 		}
 
+		private syncAnalyticsCompactMode() {
+			if (!this.hasAttribute('data-assistant-analytics')) return false;
+			const chart = document.querySelector<HTMLElement>('[data-assistant-analytics-chart]');
+			if (!chart) {
+				this.analyticsChartObserver?.disconnect();
+				this.analyticsChartObserver = null;
+				this.analyticsChartObserverTarget = null;
+				this.removeAttribute('data-assistant-analytics-compact');
+				return false;
+			}
+
+			if (this.analyticsChartObserverTarget !== chart) {
+				this.analyticsChartObserver?.disconnect();
+				this.analyticsChartObserverTarget = chart;
+				this.analyticsChartObserver = new ResizeObserver(this.scheduleMobileAnchor);
+				this.analyticsChartObserver.observe(chart);
+			}
+
+			const isCompact = chart.getBoundingClientRect().width <= ANALYTICS_COMPACT_CHART_MAX_WIDTH;
+			this.toggleAttribute('data-assistant-analytics-compact', isCompact);
+			return isCompact;
+		}
+
 		private isMobilePeekActive() {
-			return this.hasAttribute('data-assistant-mobile-peek') && window.matchMedia('(max-width: 1023px)').matches;
+			return this.hasAttribute('data-assistant-mobile-peek') && (
+				window.matchMedia('(max-width: 1023px)').matches ||
+				this.hasAttribute('data-assistant-analytics-compact')
+			);
 		}
 
 		private getScrollMetrics() {
@@ -296,9 +332,10 @@ const panelId = `hasel-assistant-panel-${userId}-${organizationId}`;
 		}
 
 		private syncMobileAnchor() {
+			this.syncAnalyticsCompactMode();
 			this.syncPeekLook();
 			const isMobile = window.matchMedia('(max-width: 1023px)').matches;
-			if (isMobile && this.hasAttribute('data-assistant-mobile-peek')) {
+			if (this.isMobilePeekActive()) {
 				this.removeAttribute('data-assistant-card-anchor');
 				this.style.removeProperty('--assistant-mobile-width');
 				this.style.removeProperty('--assistant-mobile-right');
@@ -310,7 +347,11 @@ const panelId = `hasel-assistant-panel-${userId}-${organizationId}`;
 			}
 
 			const card = document.querySelector<HTMLElement>('[data-assistant-confirmation-card]');
-			if (!card) {
+			const analyticsChart = this.hasAttribute('data-assistant-analytics')
+				? document.querySelector<HTMLElement>('[data-assistant-analytics-chart]')
+				: null;
+			const anchor = card ?? analyticsChart;
+			if (!anchor) {
 				this.confirmationCardObserver?.disconnect();
 				this.confirmationCardObserver = null;
 				this.confirmationCard = null;
@@ -334,7 +375,9 @@ const panelId = `hasel-assistant-panel-${userId}-${organizationId}`;
 					? canvas.left + canvas.width * 0.375
 					: window.innerWidth * 0.45;
 				const right = Math.max(8, window.innerWidth - center - width / 2);
-				const top = Math.max(0, Math.round(topBar?.getBoundingClientRect().bottom || 0));
+				const top = this.hasAttribute('data-assistant-analytics')
+					? Math.max(0, Math.round(topBar?.getBoundingClientRect().bottom || 0))
+					: 0;
 				this.style.setProperty('--assistant-desktop-width', `${width}px`);
 				this.style.setProperty('--assistant-desktop-right', `${Math.round(right)}px`);
 				this.style.setProperty('--assistant-desktop-top', `${top}px`);
@@ -342,14 +385,14 @@ const panelId = `hasel-assistant-panel-${userId}-${organizationId}`;
 				return;
 			}
 
-			if (this.confirmationCard !== card) {
+			if (this.confirmationCard !== anchor) {
 				this.confirmationCardObserver?.disconnect();
-				this.confirmationCard = card;
+				this.confirmationCard = anchor;
 				this.confirmationCardObserver = new ResizeObserver(this.scheduleMobileAnchor);
-				this.confirmationCardObserver.observe(card);
+				this.confirmationCardObserver.observe(anchor);
 			}
 
-			const bounds = card.getBoundingClientRect();
+			const bounds = anchor.getBoundingClientRect();
 			if (isMobile) {
 				const width = Math.min(bounds.width * 0.72, 126);
 				const right = Math.max(8, window.innerWidth - bounds.right + (bounds.width - width) / 2);
@@ -363,10 +406,16 @@ const panelId = `hasel-assistant-panel-${userId}-${organizationId}`;
 				this.style.removeProperty('--assistant-desktop-right');
 				this.style.removeProperty('--assistant-desktop-top');
 			} else {
-				const width = Math.min(bounds.width * 0.48, 152);
-				const right = Math.max(8, window.innerWidth - bounds.right + (bounds.width - width) / 2);
-				const topBar = document.querySelector<HTMLElement>('[data-shell-topbar]');
-				const top = Math.max(0, Math.round(topBar?.getBoundingClientRect().bottom || 0));
+				const isAnalyticsAnchor = anchor === analyticsChart;
+				const width = isAnalyticsAnchor
+					? Math.min(Math.max(bounds.width * 0.18, 144), 184)
+					: Math.min(bounds.width * 0.48, 152);
+				const right = isAnalyticsAnchor
+					? Math.max(8, window.innerWidth - bounds.right + Math.min(56, Math.max(24, bounds.width * 0.04)))
+					: Math.max(8, window.innerWidth - bounds.right + (bounds.width - width) / 2);
+				const top = isAnalyticsAnchor
+					? Math.max(0, Math.round(bounds.top - width * 0.56))
+					: 0;
 				this.style.setProperty('--assistant-desktop-width', `${Math.round(width)}px`);
 				this.style.setProperty('--assistant-desktop-right', `${Math.round(right)}px`);
 				this.style.setProperty('--assistant-desktop-top', `${top}px`);
@@ -799,6 +848,7 @@ const panelId = `hasel-assistant-panel-${userId}-${organizationId}`;
 	}
 	.assistant-mascot__reading [data-tail-wag] { opacity: 0; }
 	.assistant-mascot__launcher img { filter: drop-shadow(0 8px 10px rgb(24 51 112 / 0.16)); transform-origin: top center; animation: auri-hammock-sway 4.6s ease-in-out infinite; }
+	assistant-mascot[data-assistant-analytics] .assistant-mascot__art--desktop { animation: none; transform-origin: bottom center; }
 	.assistant-mascot__peek {
 		position: relative;
 		width: 100%;
@@ -902,8 +952,12 @@ const panelId = `hasel-assistant-panel-${userId}-${organizationId}`;
 		.assistant-mascot__launcher img { filter: drop-shadow(0 5px 7px rgb(24 51 112 / 0.18)); animation: none; }
 		assistant-mascot[data-assistant-card-anchor] { top: auto; right: var(--assistant-mobile-right); bottom: var(--assistant-mobile-bottom); }
 		assistant-mascot[data-assistant-card-anchor] .assistant-mascot__launcher { width: var(--assistant-mobile-width); }
+		assistant-mascot[data-assistant-card-anchor] .assistant-mascot__reading img { filter: none; }
+		assistant-mascot[data-assistant-card-anchor] .assistant-mascot__reading [data-tail-rest] {
+			animation: auri-tail-rest 1.6s ease-in-out infinite;
+		}
 		assistant-mascot[data-assistant-card-anchor] .assistant-mascot__reading [data-tail-wag] {
-			animation: auri-tail-wag 1.15s steps(1, end) infinite;
+			animation: auri-tail-wag 1.6s ease-in-out infinite;
 		}
 		assistant-mascot[data-assistant-mobile-peek] {
 			top: 0.1rem;
@@ -922,7 +976,24 @@ const panelId = `hasel-assistant-panel-${userId}-${organizationId}`;
 		html:has(assistant-mascot[data-assistant-mobile-peek]) .topbar-actions { margin-right: 3.4rem; }
 		.assistant-mascot__panel { position: fixed; top: auto; right: max(0.75rem, env(safe-area-inset-right)); bottom: calc(var(--mobile-bottom-nav-height, 5.5rem) + 0.7rem); width: min(24rem, calc(100vw - 1.5rem)); height: min(71dvh, 38rem); border-radius: 1.25rem; transform-origin: bottom right; }
 	}
-	@keyframes auri-tail-wag { 50% { opacity: 1; } }
+	assistant-mascot[data-assistant-analytics-compact] {
+		top: 0.1rem;
+		right: max(-0.35rem, calc(env(safe-area-inset-right) - 0.35rem));
+		bottom: auto;
+		left: auto;
+	}
+	assistant-mascot[data-assistant-analytics-compact] .assistant-mascot__art--desktop { display: none; }
+	assistant-mascot[data-assistant-analytics-compact] .assistant-mascot__art--dashboard-mobile { display: none; }
+	assistant-mascot[data-assistant-analytics-compact] .assistant-mascot__peek { display: block; }
+	assistant-mascot[data-assistant-analytics-compact] .assistant-mascot__launcher {
+		width: 4.85rem;
+		aspect-ratio: 2 / 3;
+	}
+	assistant-mascot[data-assistant-analytics-compact] .assistant-mascot__launcher:hover { transform: none; }
+	assistant-mascot[data-assistant-analytics-compact] .assistant-mascot__peek img { animation: none; }
+	html:has(assistant-mascot[data-assistant-analytics-compact]) .topbar-actions { margin-right: 3.4rem; }
+	@keyframes auri-tail-rest { 0%, 42% { opacity: 1; } 50%, 92% { opacity: 0; } 100% { opacity: 1; } }
+	@keyframes auri-tail-wag { 0%, 42% { opacity: 0; } 50%, 92% { opacity: 1; } 100% { opacity: 0; } }
 	@media (prefers-reduced-motion: reduce) {
 		assistant-mascot { --auri-look: 0 !important; }
 		.assistant-mascot__launcher,
@@ -930,6 +1001,8 @@ const panelId = `hasel-assistant-panel-${userId}-${organizationId}`;
 		.assistant-mascot__peek,
 		assistant-mascot[data-assistant-busy] .assistant-mascot__launcher,
 		assistant-mascot[data-assistant-reacting] .assistant-mascot__art,
+		assistant-mascot[data-assistant-card-anchor] .assistant-mascot__reading [data-tail-rest],
+		assistant-mascot[data-assistant-card-anchor] .assistant-mascot__reading [data-tail-wag],
 		.assistant-mascot__thinking span,
 		.assistant-mascot__panel { animation: none; transition: none; }
 	}

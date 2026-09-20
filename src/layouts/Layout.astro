@@ -78,6 +78,7 @@ if (flashTypeFromCookie) {
 
 const isPanelRoute = Astro.url.pathname === '/panel' || Astro.url.pathname.startsWith('/panel/');
 const isDashboardRoute = Astro.url.pathname === '/panel/dashboard' || Astro.url.pathname.startsWith('/panel/dashboard/');
+const isAnalyticsRoute = Astro.url.pathname === '/panel/analiticas';
 const canUseAssistant =
 	hasSession &&
 	isPanelRoute &&
@@ -412,6 +413,7 @@ const themeColor = initialTheme === 'dark' ? '#0e0e10' : '#f9fafb';
                         userId={Number(Astro.locals.userId || 0)}
                         organizationId={Number(Astro.locals.organizationId || 0)}
                         mobilePeek={!isDashboardRoute}
+                        desktopArt={isAnalyticsRoute ? 'analytics' : 'hammock'}
                     />
                 )}
             </>

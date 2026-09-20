@@ -96,6 +96,7 @@ test('la mascota y el BFF quedan desacoplados de ATC', () => {
 	const client = readFileSync(new URL('../src/lib/assistant-agent.ts', import.meta.url), 'utf8');
 	const mascot = readFileSync(new URL('../src/components/AssistantMascot.astro', import.meta.url), 'utf8');
 	const dashboard = readFileSync(new URL('../src/pages/panel/dashboard.astro', import.meta.url), 'utf8');
+	const analytics = readFileSync(new URL('../src/pages/panel/analiticas.astro', import.meta.url), 'utf8');
 
 	assert.match(layout, /AssistantMascot/);
 	assert.doesNotMatch(layout, /AtcChatModal/);
@@ -105,13 +106,15 @@ test('la mascota y el BFF quedan desacoplados de ATC', () => {
 	assert.match(mascot, /text\/event-stream/);
 	assert.match(mascot, /prefers-reduced-motion/);
 	assert.ok(existsSync(new URL('../public/assistant/auri-hammock-desktop.png', import.meta.url)));
+	assert.ok(existsSync(new URL('../public/assistant/auri-analytics-desktop.png', import.meta.url)));
 	assert.ok(existsSync(new URL('../public/assistant/auri-reading-mobile.png', import.meta.url)));
-	assert.ok(existsSync(new URL('../public/assistant/auri-reading-mobile-tail.png', import.meta.url)));
+	assert.ok(existsSync(new URL('../public/assistant/auri-reading-mobile-tail-forward.png', import.meta.url)));
 	assert.ok(existsSync(new URL('../public/assistant/auri-peek-mobile-vertical-right-look-00.png', import.meta.url)));
 	assert.ok(existsSync(new URL('../public/assistant/auri-peek-mobile-vertical-right-look-24.png', import.meta.url)));
 	assert.match(mascot, /auri-hammock-desktop\.png/);
+	assert.match(mascot, /auri-analytics-desktop\.png/);
 	assert.match(mascot, /auri-reading-mobile\.png/);
-	assert.match(mascot, /auri-reading-mobile-tail\.png/);
+	assert.match(mascot, /auri-reading-mobile-tail-forward\.png/);
 	assert.match(mascot, /data-tail-wag/);
 	assert.match(mascot, /auri-tail-wag/);
 	assert.doesNotMatch(mascot, /auri-reading-bob/);
@@ -123,10 +126,14 @@ test('la mascota y el BFF quedan desacoplados de ATC', () => {
 	assert.match(mascot, /mobile-bottom-nav-height/);
 	assert.match(mascot, /data-assistant-card-anchor/);
 	assert.match(mascot, /data-assistant-card-wait/);
+	assert.match(mascot, /data-assistant-analytics-compact/);
+	assert.match(mascot, /ANALYTICS_COMPACT_CHART_MAX_WIDTH/);
 	assert.match(mascot, /data-assistant-card-wait\]:not\(\[data-assistant-card-anchor\]\)/);
 	assert.match(mascot, /assistant-desktop-width/);
 	assert.match(mascot, /canvas\.width \* 0\.375/);
 	assert.doesNotMatch(mascot, /from ['"]gsap['"]|from ['"]motion['"]/);
 	assert.match(layout, /mobilePeek=\{!isDashboardRoute\}/);
+	assert.match(layout, /desktopArt=\{isAnalyticsRoute \? 'analytics' : 'hammock'\}/);
 	assert.match(dashboard, /data-assistant-confirmation-card/);
+	assert.match(analytics, /data-assistant-analytics-chart/);
 });
