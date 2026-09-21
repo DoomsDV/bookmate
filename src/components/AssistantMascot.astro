@@ -1672,10 +1672,26 @@ const peekRestFrame = 4;
 	.assistant-mascot__identity { display: grid; min-width: 0; gap: 0.1rem; }
 	.assistant-mascot__identity p { margin: 0; color: var(--on-surface); font-size: 0.92rem; font-weight: 800; line-height: 1.2; }
 	.assistant-mascot__identity span { display: block; max-width: 14rem; overflow: hidden; color: var(--on-surface-variant); font-size: 0.7rem; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
-	.assistant-mascot__header-actions { display: flex; gap: 0.2rem; }
-	.assistant-mascot__icon-button { display: grid; width: 2rem; height: 2rem; place-items: center; border: 0; border-radius: 0.6rem; background: transparent; color: var(--on-surface-variant); cursor: pointer; }
-	.assistant-mascot__icon-button:hover { background: var(--primary-container); color: var(--primary); }
-	.assistant-mascot__icon-button .material-symbols-rounded { font-size: 1.05rem; }
+	.assistant-mascot__header-actions { display: flex; gap: 0.4rem; }
+	.assistant-mascot__icon-button {
+		display: grid;
+		width: 2.4rem;
+		height: 2.4rem;
+		place-items: center;
+		border: 1px solid color-mix(in srgb, var(--shell-border) 88%, transparent);
+		border-radius: 0.7rem;
+		background: var(--surface-container);
+		color: var(--on-surface);
+		cursor: pointer;
+		transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease;
+	}
+	.assistant-mascot__icon-button:hover {
+		border-color: color-mix(in srgb, var(--primary) 32%, var(--shell-border));
+		background: var(--primary-container);
+		color: var(--primary);
+	}
+	.assistant-mascot__icon-button:active { transform: scale(0.96); }
+	.assistant-mascot__icon-button .material-symbols-rounded { font-size: 1.25rem; }
 	.assistant-mascot__messages {
 		display: flex;
 		flex-direction: column;
@@ -2042,6 +2058,8 @@ const peekRestFrame = 4;
 		.assistant-mascot__resize-handle { display: none; }
 		.assistant-mascot__hint { display: none; }
 		.assistant-mascot__header { padding: 0.45rem 0.95rem 0.75rem; }
+		.assistant-mascot__composer { margin-bottom: 0.75rem; }
+		.assistant-mascot__composer textarea { font-size: 16px; }
 		.assistant-mascot__messages { overscroll-behavior: contain; }
 		assistant-mascot[data-assistant-open] .assistant-mascot__launcher {
 			opacity: 0;
