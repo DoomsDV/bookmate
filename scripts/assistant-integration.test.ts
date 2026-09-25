@@ -222,6 +222,8 @@ test('la mascota y el BFF quedan desacoplados de ATC', () => {
 	assert.match(mascot, /toggleAttribute\('data-assistant-typing', typing\)/);
 	assert.match(mascot, /setAttribute\('data-numa-look'/);
 	assert.match(mascot, /warmNumaFrames/);
+	assert.match(mascot, /@media \(min-width: 1024px\) \{\n\t\t\.assistant-mascot__panel \.numa-front \{ display: none; \}/);
+	assert.match(mascot, /warmNumaFrames\(\) \{\n\t\t\tif \(window\.matchMedia\('\(min-width: 1024px\)'\)\.matches\) return;/);
 	const numaFront = readFileSync(new URL('../src/components/NumaFront.astro', import.meta.url), 'utf8');
 	assert.match(numaFront, /\/assistant\/numa\/numa-front-hero-sheet\.webp/);
 	assert.match(numaFront, /\/assistant\/numa\/numa-front-work-sheet\.webp/);

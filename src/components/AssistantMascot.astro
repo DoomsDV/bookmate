@@ -900,7 +900,9 @@ const peekRestFrame = 4;
 
 		// Los sprite sheets de Numa se piden y decodifican al abrir el panel, así el primer frame
 		// (y el de "Revisando…", que arranca oculto) ya está listo cuando se muestra.
+		// En escritorio el modal no muestra a Numa, así que no se descargan.
 		private warmNumaFrames() {
+			if (window.matchMedia('(min-width: 1024px)').matches) return;
 			for (const el of this.querySelectorAll<HTMLElement>('[data-numa-sheet]')) {
 				const src = el.dataset.numaSheet;
 				if (!src || warmedNumaSheets.has(src)) continue;
@@ -1983,6 +1985,11 @@ const peekRestFrame = 4;
 		font-size: 0.78rem;
 		font-weight: 600;
 		animation: numa-thinking-label 1.6s ease-in-out infinite;
+	}
+	/* En escritorio Numa ya está en el lanzador (hamaca) arriba del panel: el modal no la repite. */
+	@media (min-width: 1024px) {
+		.assistant-mascot__panel .numa-front { display: none; }
+		.assistant-mascot__thinking { padding: 0.62rem 0.95rem; }
 	}
 	.assistant-mascot__error { margin: 0 0.8rem 0.55rem; padding: 0.55rem 0.65rem; border-radius: 0.7rem; background: color-mix(in srgb, #ef4444 12%, var(--surface-bright)); color: #b42318; font-size: 0.76rem; line-height: 1.4; }
 	.assistant-mascot__suggestions-wrap {
