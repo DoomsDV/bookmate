@@ -282,6 +282,9 @@ const peekRestFrame = 4;
 		return render;
 	})();
 
+	// Fundido entre frames del asomo: corto para que siga al scroll, largo para no notar el cambio.
+	const PEEK_FADE_MS = 110;
+
 	// Mantiene referencias a los sheets precargados para que el navegador no descarte su decodificación.
 	const warmedNumaSheets = new Map<string, HTMLImageElement>();
 
@@ -711,13 +714,16 @@ const peekRestFrame = 4;
 			);
 			const index = this.nearestReadyFrame(target);
 			if (index < 0 || index === this.peekFrameIndex) return;
+			// Fundido sin huecos: el frame nuevo entra por encima y el resto se oculta cuando ya es opaco.
+			const fade = this.peekFrameIndex < 0 || this.prefersReducedMotion() ? 0 : PEEK_FADE_MS;
+			frames[index].style.zIndex = '2';
+			frames[index].style.transition = fade ? `opacity ${fade}ms ease-out` : 'none';
 			frames[index].style.opacity = '1';
-			if (this.peekFrameIndex >= 0 && this.peekFrameIndex !== index) {
-				frames[this.peekFrameIndex].style.opacity = '0';
-			} else if (this.peekFrameIndex < 0) {
-				for (let i = 0; i < frames.length; i++) {
-					if (i !== index) frames[i].style.opacity = '0';
-				}
+			for (let i = 0; i < frames.length; i++) {
+				if (i === index) continue;
+				frames[i].style.zIndex = '1';
+				frames[i].style.transition = fade ? `opacity 0s linear ${fade}ms` : 'none';
+				frames[i].style.opacity = '0';
 			}
 			this.peekFrameIndex = index;
 		}

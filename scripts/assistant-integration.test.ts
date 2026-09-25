@@ -251,6 +251,8 @@ test('la mascota y el BFF quedan desacoplados de ATC', () => {
 	assert.match(mascot, /numa-peek-mobile-vertical-right-look-\$\{String\(index\)\.padStart\(2, '0'\)\}\.png/);
 	assert.match(mascot, /data-peek-rest/);
 	assert.match(mascot, /frames\[index\]\.style\.opacity = '1'/);
+	assert.match(mascot, /frames\[index\]\.style\.zIndex = '2'/);
+	assert.match(mascot, /frames\[i\]\.style\.transition = fade \? `opacity 0s linear \$\{fade\}ms` : 'none'/);
 	assert.doesNotMatch(mascot, /style\.visibility/);
 	assert.match(mascot, /nearestReadyFrame/);
 	assert.match(mascot, /frame\.dataset\.peekError = ''/);

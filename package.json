@@ -17,6 +17,7 @@
 		"clean:caches": "node -e \"const fs=require('fs');for (const p of ['node_modules/.vite','.astro']){try{fs.rmSync(p,{recursive:true,force:true});console.log('removed',p);}catch{}}\"",
 		"assets:numa": "node scripts/optimize-assistant-assets.mjs",
 		"assets:numa-front": "node scripts/build-numa-front.mjs",
+		"assets:numa-peek": "node scripts/build-numa-peek.mjs",
 		"perf:hydration": "node scripts/audit-hydration.mjs",
 		"perf:lhci": "lhci autorun",
 		"perf:lighthouse": "node scripts/run-lighthouse-local.mjs",
