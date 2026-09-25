@@ -173,7 +173,7 @@ const peekRestFrame = 4;
 	import { ASSISTANT_SUGGESTED_QUESTIONS, formatDailySummaryMessage, parseClarificationOptions } from '../lib/assistant-chat-ui';
 	import { fetchWithTimeout } from '../lib/fetch-with-timeout';
 	import type { AssistantClarificationOption } from '../lib/assistant-chat-ui';
-	import { lockPanelScroll } from '../lib/panel-scroll-lock';
+	import { getLayoutViewportHeight, lockPanelScroll, restorePanelScrollLayout } from '../lib/panel-scroll-lock';
 
 	type MarkedParse = (
 		src: string,
@@ -313,7 +313,7 @@ const peekRestFrame = 4;
 		private anchorFrame = 0;
 		private lookFrame = 0;
 		private typingFrame = 0;
-		private viewportSettleTimers: number[] = [];
+		private lockedSheetHeightPx = 0;
 		private look = 0;
 		private lookTarget = 0;
 		private peekFrames: HTMLImageElement[] = [];
@@ -363,8 +363,7 @@ const peekRestFrame = 4;
 			window.addEventListener('resize', this.scheduleMobileAnchor, { signal });
 			window.addEventListener('resize', this.handlePanelViewportResize, { signal });
 			document.addEventListener('scroll', this.scheduleMobileAnchor, { capture: true, passive: true, signal });
-			this.addEventListener('focusout', this.handleHostFocusOut, { signal });
-			window.visualViewport?.addEventListener('resize', this.handleKeyboardViewportResize, { signal });
+			this.addEventListener('focusin', this.handleHostFocusIn, { signal });
 			this.syncMobileAnchor();
 			this.scheduleMobileAnchor();
 			this.syncSheetViewport();
@@ -382,7 +381,7 @@ const peekRestFrame = 4;
 			if (this.anchorFrame) window.cancelAnimationFrame(this.anchorFrame);
 			if (this.lookFrame) window.cancelAnimationFrame(this.lookFrame);
 			if (this.typingFrame) window.cancelAnimationFrame(this.typingFrame);
-			this.clearViewportSettle();
+			this.clearMobileSheetLock();
 			this.abort = null;
 			this.listenerSignal = null;
 			this.resizeBoundTo = null;
@@ -497,59 +496,37 @@ const peekRestFrame = 4;
 			this.scheduleTypingState();
 		};
 
-		private handleHostFocusOut = (event: FocusEvent) => {
-			if (event.target !== this.live(this.input, '[data-assistant-input]')) return;
-			this.scheduleViewportSettle();
-		};
-
-		// Al cerrarse el teclado crece el viewport visual: si ya no hay un campo con foco, se reacomoda.
-		private handleKeyboardViewportResize = () => {
-			if (!this.isMobileSheetViewport() || this.isEditableFocused()) return;
-			this.settleKeyboardViewport();
-		};
-
-		private isEditableFocused() {
-			const active = document.activeElement;
-			return active instanceof HTMLElement && (active.isContentEditable || active.matches('input, textarea, select'));
-		}
-
 		/*
-		 * iOS desplaza la vista para dejar el input sobre el teclado y, al cerrarse, puede dejar ese
-		 * desplazamiento puesto: el topbar queda cortado arriba y scrollear no lo corrige, porque el panel
-		 * scrollea en un contenedor y no en el documento. Se reintenta mientras termina la animación.
+		 * Mismo patrón que AtcChatModal y el modal de citas: al enfocar el textarea, Safari desplaza el
+		 * canvas del panel (topbar cortado, barra inferior sin responder). Al enfocar se restaura el
+		 * canvas y el sheet queda fijo en px del layout viewport, que no cambia con el teclado.
 		 */
-		private scheduleViewportSettle() {
-			if (!this.isMobileSheetViewport()) return;
-			this.clearViewportSettle();
-			for (const delay of [0, 120, 320, 650]) {
-				this.viewportSettleTimers.push(window.setTimeout(() => this.settleKeyboardViewport(), delay));
+		private handleHostFocusIn = (event: FocusEvent) => {
+			if (event.target !== this.live(this.input, '[data-assistant-input]')) return;
+			this.applyMobileSheetLock();
+			restorePanelScrollLayout();
+			this.scrollMessages();
+			viewportDebug?.('focus');
+		};
+
+		private applyMobileSheetLock() {
+			if (!this.panel || !this.isMobileSheetViewport()) return;
+			if (!this.lockedSheetHeightPx) {
+				this.lockedSheetHeightPx = Math.round(getLayoutViewportHeight() * 0.9);
 			}
+			this.panel.style.height = `${this.lockedSheetHeightPx}px`;
+			this.panel.style.maxHeight = `${this.lockedSheetHeightPx}px`;
+			this.panel.style.bottom = '0';
+			this.panel.style.top = 'auto';
 		}
 
-		private clearViewportSettle() {
-			for (const timer of this.viewportSettleTimers) window.clearTimeout(timer);
-			this.viewportSettleTimers = [];
-		}
-
-		private settleKeyboardViewport() {
-			if (!this.isMobileSheetViewport() || this.isEditableFocused()) return;
-			// El shell y el body tienen overflow hidden: el dedo no los scrollea, pero iOS sí al hacer foco.
-			for (const shell of document.querySelectorAll<HTMLElement>('[data-app-shell], .app-shell')) {
-				if (shell.scrollTop !== 0) shell.scrollTop = 0;
-			}
-			if (document.body.scrollTop !== 0) document.body.scrollTop = 0;
-			const viewport = window.visualViewport;
-			const shifted = window.scrollY !== 0 || (viewport ? Math.abs(viewport.offsetTop) > 0.5 : false);
-			if (shifted) {
-				// Con el documento en 0, scrollTo no mueve el viewport visual: se lo hace scrolleable 1px un instante.
-				const root = document.documentElement;
-				const previousMinHeight = root.style.minHeight;
-				root.style.minHeight = 'calc(100% + 1px)';
-				window.scrollTo(0, 1);
-				window.scrollTo(0, 0);
-				root.style.minHeight = previousMinHeight;
-			}
-			viewportDebug?.('settle');
+		private clearMobileSheetLock() {
+			this.lockedSheetHeightPx = 0;
+			if (!this.panel) return;
+			this.panel.style.removeProperty('height');
+			this.panel.style.removeProperty('max-height');
+			this.panel.style.removeProperty('bottom');
+			this.panel.style.removeProperty('top');
 		}
 
 		private handleHostCaret = (event: Event) => {
@@ -634,14 +611,17 @@ const peekRestFrame = 4;
 			if (!this.panel) return;
 			if (this.isMobileSheetViewport()) {
 				this.panel.style.removeProperty('width');
-				this.panel.style.removeProperty('height');
 				if (this.isOpen()) {
 					this.acquirePanelScrollLock();
+					this.applyMobileSheetLock();
 					this.showBackdrop();
+				} else {
+					this.clearMobileSheetLock();
 				}
 				return;
 			}
 			this.hideBackdrop(true);
+			this.clearMobileSheetLock();
 			this.releasePanelScrollLock();
 			if (this.panel.dataset.resized !== 'true') return;
 			const stored = this.readStoredPanelSize();
@@ -1018,6 +998,7 @@ const peekRestFrame = 4;
 			this.react();
 			this.warmNumaFrames();
 			this.acquirePanelScrollLock();
+			this.applyMobileSheetLock();
 			this.showBackdrop();
 			window.requestAnimationFrame(() => this.panel?.classList.add('is-open'));
 			if (!this.isMobileSheetViewport()) {
@@ -1047,11 +1028,11 @@ const peekRestFrame = 4;
 			this.removeAttribute('data-assistant-open');
 			this.hideBackdrop();
 			this.input?.blur();
-			this.scheduleViewportSettle();
 			window.setTimeout(() => {
 				if (this.panel?.classList.contains('is-open')) return;
 				if (this.panel) this.panel.hidden = true;
 				this.hideBackdrop(true);
+				this.clearMobileSheetLock();
 				this.releasePanelScrollLock();
 			}, 150);
 			this.launcher.focus({ preventScroll: true });
