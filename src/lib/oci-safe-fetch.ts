@@ -1,4 +1,7 @@
-export const OCI_OBJECT_HOST_RE = /^objectstorage\.[a-z0-9-]+\.oraclecloud\.com$/i;
+// Endpoint regional clásico o el dedicado por namespace que usan los PAR
+// (<namespace>.objectstorage.<region>.oci.customer-oci.com).
+export const OCI_OBJECT_HOST_RE =
+	/^(?:[a-z0-9-]+\.)?objectstorage\.[a-z0-9-]+\.(?:oraclecloud\.com|oci\.customer-oci\.com)$/i;
 
 export const OCI_FETCH_MAX_BYTES = 8 * 1024 * 1024;
 export const OCI_FETCH_TIMEOUT_MS = 30_000;

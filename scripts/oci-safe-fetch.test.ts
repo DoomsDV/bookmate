@@ -10,6 +10,17 @@ test('assertSafeOciHttpsUrl acepta objectstorage OCI', () => {
 	assert.equal(url.hostname, 'objectstorage.sa-saopaulo-1.oraclecloud.com');
 });
 
+test('assertSafeOciHttpsUrl acepta el host dedicado de los PAR', () => {
+	const url = assertSafeOciHttpsUrl(
+		'https://gr7djv0kcgrr.objectstorage.sa-saopaulo-1.oci.customer-oci.com/p/tok/n/gr7djv0kcgrr/b/bucket-etick-prod/o/kude.pdf'
+	);
+	assert.equal(url.hostname, 'gr7djv0kcgrr.objectstorage.sa-saopaulo-1.oci.customer-oci.com');
+	assert.throws(
+		() => assertSafeOciHttpsUrl('https://objectstorage.sa-saopaulo-1.oci.customer-oci.com.evil.example/x'),
+		(error: unknown) => error instanceof OciSafeFetchError && error.code === 'HOST_DENIED'
+	);
+});
+
 test('assertSafeOciHttpsUrl rechaza http, redirects host y credenciales', () => {
 	assert.throws(
 		() => assertSafeOciHttpsUrl('http://objectstorage.sa-saopaulo-1.oraclecloud.com/o/x'),
