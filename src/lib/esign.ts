@@ -1,18 +1,30 @@
 // Cliente HTTP del firmador esign (SIFEN) — ver c:\Users\HP\Desktop\firmador\docs\openapi-emision.yaml
 //
 // Ambiente SIFEN (test/prod) lo determina exclusivamente el prefijo de ESIGN_API_KEY
-// (sk_test_... vs sk_prod_...), nunca la URL. Por ahora localhost y staging siempre
-// usan una key de TEST (ver .env.development); en producción queda vacía hasta tener
-// certificado/timbrado real cargado en el panel esign — mientras esté vacía, la
-// integración se comporta como "no configurada" (ver isEsignConfigured) y no debe
-// romper ningún flujo de pago que la invoque.
+// (sk_test_... vs sk_prod_...), nunca la URL: staging y producción de Hasel usan el
+// mismo firmador (api.etick.uno) y fuera de producción solo se acepta sk_test_ (ver
+// emit-invoice). En producción la key queda vacía hasta tener certificado/timbrado
+// real cargado en el panel esign — mientras esté vacía, la integración se comporta
+// como "no configurada" (ver isEsignConfigured) y no debe romper ningún flujo de
+// pago que la invoque.
 
 import { resolveOrdsApiUrl } from './env-urls';
 
-const ESIGN_API_BASE_URL = String(import.meta.env.ESIGN_API_BASE_URL || 'https://api-staging.etick.uno').replace(/\/+$/, '');
+export const ESIGN_API_BASE_URL = String(import.meta.env.ESIGN_API_BASE_URL || 'https://api.etick.uno').replace(/\/+$/, '');
 const ESIGN_API_KEY = String(import.meta.env.ESIGN_API_KEY || '').trim();
 
 export const isEsignConfigured = () => ESIGN_API_KEY.length > 0;
+
+/** Firmadores a los que se les puede mandar la API key (y localhost para desarrollo). */
+export const isAllowedEsignApiBase = (base: string): boolean => {
+	try {
+		const { protocol, hostname } = new URL(base);
+		if (hostname === 'localhost' || hostname === '127.0.0.1') return true;
+		return protocol === 'https:' && /^api(-staging)?\.etick\.uno$/i.test(hostname);
+	} catch {
+		return false;
+	}
+};
 
 // ORDS interno (X-Service-Token, sin JWT de usuario) — ver
 // aox-dev/migrations/20260810_subscription_einvoice_ords.sql.

@@ -7,6 +7,7 @@ import {
 	buildInvoicePdfHeaders,
 	fetchKudePdfBytes,
 	InvoicePdfError,
+	parseEsignKudeLink,
 	parseInvoiceIdParam,
 } from '../src/lib/subscription-invoice-pdf.ts';
 
@@ -79,4 +80,26 @@ test('fetchKudePdfBytes rechaza HTTP no-OK, redirects y hosts no OCI', async () 
 			}),
 		(error: unknown) => error instanceof InvoicePdfError && error.code === 'PDF_HTTP'
 	);
+});
+
+test('parseEsignKudeLink reconoce el link estable del firmador', () => {
+	const cdc = '0'.repeat(43) + '1';
+	assert.equal(parseEsignKudeLink(`https://api.etick.uno/v1/documents/${cdc}/kude/pdf`), cdc);
+	assert.equal(parseEsignKudeLink(`https://api-staging.etick.uno/v1/documents/${cdc}/kude/pdf`), cdc);
+});
+
+test('parseEsignKudeLink deja pasar objetos OCI y rechaza hosts o rutas ajenas', () => {
+	const cdc = '0'.repeat(43) + '1';
+	for (const raw of [
+		'https://objectstorage.sa-saopaulo-1.oraclecloud.com/p/abc/n/ns/b/bucket/o/kude.pdf',
+		`http://api.etick.uno/v1/documents/${cdc}/kude/pdf`,
+		`https://evil.example/v1/documents/${cdc}/kude/pdf`,
+		`https://api.etick.uno.evil.example/v1/documents/${cdc}/kude/pdf`,
+		`https://api.etick.uno/v1/documents/${cdc}/xml`,
+		'https://api.etick.uno/v1/documents/123/kude/pdf',
+		'',
+		null,
+	]) {
+		assert.equal(parseEsignKudeLink(raw), null, String(raw));
+	}
 });

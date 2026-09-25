@@ -1,10 +1,13 @@
 import type { APIRoute } from 'astro';
 
+import { isProductionAppHost } from '../../../../config/feature-flags';
 import {
 	callEsignInternalCreditNoteOrds,
 	callEsignInternalOrds,
 	createEsignDocument,
+	ESIGN_API_BASE_URL,
 	EsignApiError,
+	isAllowedEsignApiBase,
 	isEsignConfigured,
 	type CreateEsignDocumentPayload,
 	type EsignDocumentResult,
@@ -235,17 +238,18 @@ export const POST: APIRoute = async ({ request }) => {
 		);
 	}
 
+	// El ambiente SIFEN lo decide la key (sk_test_ → test, sk_prod_ → DNIT real).
+	// Fuera del deploy de producción de Hasel solo se emite en test.
 	const apiKey = String(import.meta.env.ESIGN_API_KEY || '').trim();
-	const apiBase = String(import.meta.env.ESIGN_API_BASE_URL || 'https://api-staging.etick.uno');
-	if (apiKey.startsWith('sk_prod_')) {
+	if (apiKey.startsWith('sk_prod_') && !isProductionAppHost()) {
 		return Response.json(
-			{ status: 'error', message: 'Emisión de suscripción bloqueada: se requiere sk_test_.' },
+			{ status: 'error', message: 'Emisión bloqueada: fuera de producción se requiere sk_test_.' },
 			{ status: 403 }
 		);
 	}
-	if (!/api-staging\.etick\.uno/i.test(apiBase) && !/localhost|127\.0\.0\.1/i.test(apiBase)) {
+	if (!isAllowedEsignApiBase(ESIGN_API_BASE_URL)) {
 		return Response.json(
-			{ status: 'error', message: 'Emisión de suscripción solo permitida contra api-staging.' },
+			{ status: 'error', message: 'ESIGN_API_BASE_URL no es un firmador permitido.' },
 			{ status: 403 }
 		);
 	}

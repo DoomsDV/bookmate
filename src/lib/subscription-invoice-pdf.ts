@@ -25,7 +25,25 @@ export class InvoicePdfError extends Error {
 	}
 }
 
-export const parseInvoiceIdParam = (raw: string | undefined): number => {
+// Link estable del firmador que viaja en el webhook invoice.ready
+// (/v1/documents/{cdc}/kude/pdf): exige la API key y redirige a un link
+// temporal del bucket privado, así que no se baja directo como un objeto OCI.
+const ESIGN_KUDE_HOST_RE = /^api(-staging)?\.etick\.uno$/i;
+const ESIGN_KUDE_PATH_RE = /^\/v1\/documents\/(\d{44})\/kude\/pdf$/;
+
+/** CDC del link estable del firmador, o null si kudeUrl es un objeto OCI directo. */
+export const parseEsignKudeLink = (kudeUrl: string | null | undefined): string | null => {
+	let parsed: URL;
+	try {
+		parsed = new URL(String(kudeUrl || '').trim());
+	} catch {
+		return null;
+	}
+	if (parsed.protocol !== 'https:' || !ESIGN_KUDE_HOST_RE.test(parsed.hostname)) return null;
+	return ESIGN_KUDE_PATH_RE.exec(parsed.pathname)?.[1] ?? null;
+};
+
+export const parseInvoiceIdParam =(raw: string | undefined): number => {
 	const id = Number(String(raw || '').trim());
 	if (!Number.isFinite(id) || id <= 0 || !Number.isInteger(id)) {
 		throw new InvoicePdfError('invoice_id inválido.', 400, 'INVALID_INVOICE_ID');

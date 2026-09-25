@@ -25,6 +25,9 @@ function publicAppHost() {
 	}
 }
 
+/** ¿Este deploy es el de producción de Hasel (hasel.app)? */
+export const isProductionAppHost = (): boolean => PRODUCTION_BILLING_HOSTS.has(publicAppHost());
+
 /**
  * UI de plan / facturación de suscripción Hasel (Pagopar plataforma).
  * Apagada en producción hasta encender el cobro. Staging y local siguen visibles.
@@ -36,7 +39,7 @@ export const isSubscriptionBillingUiEnabled = (): boolean => {
 		.toLowerCase();
 	if (explicit === '1' || explicit === 'true') return true;
 	if (explicit === '0' || explicit === 'false') return false;
-	return !PRODUCTION_BILLING_HOSTS.has(publicAppHost());
+	return !isProductionAppHost();
 };
 
 /**
