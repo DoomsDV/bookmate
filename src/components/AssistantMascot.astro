@@ -285,8 +285,9 @@ const peekRestFrame = 4;
 
 	// Qué tan rápido la mirada del asomo alcanza al scroll (por frame): suaviza los saltos bruscos.
 	const PEEK_LOOK_EASE = 0.2;
-	// Al quedar quieto el scroll, la mirada se asienta en el frame más cercano (nunca queda a medio fundir).
-	const PEEK_SNAP_IDLE_MS = 160;
+	// Margen (fracción del tramo) que hay que pasar la mitad entre dos frames para cambiar de destino:
+	// evita que un scroll mínimo cerca de la mitad haga ir y volver a la nutria.
+	const PEEK_SWITCH_MARGIN = 0.15;
 	const smoothStep = (x: number) => {
 		const c = Math.min(1, Math.max(0, x));
 		return c * c * (3 - 2 * c);
@@ -337,7 +338,7 @@ const peekRestFrame = 4;
 		private peekFrames: HTMLImageElement[] = [];
 		private peekFrameIndex = -1;
 		private peekOverlayIndex = -1;
-		private peekSnapTimer = 0;
+		private peekTargetStop = -1;
 		private messages: ChatMessage[] = [];
 		private busy = false;
 		private renderGeneration = 0;
@@ -400,7 +401,6 @@ const peekRestFrame = 4;
 			this.analyticsChartObserver?.disconnect();
 			if (this.anchorFrame) window.cancelAnimationFrame(this.anchorFrame);
 			if (this.lookFrame) window.cancelAnimationFrame(this.lookFrame);
-			window.clearTimeout(this.peekSnapTimer);
 			if (this.typingFrame) window.cancelAnimationFrame(this.typingFrame);
 			this.clearMobileSheetLock();
 			this.abort = null;
@@ -789,31 +789,38 @@ const peekRestFrame = 4;
 			if (!this.isMobilePeekActive() || this.prefersReducedMotion()) {
 				this.look = 0;
 				this.lookTarget = 0;
+				this.peekTargetStop = -1;
 				this.style.setProperty('--numa-look', '0');
 				this.applyLookFrames();
 				return;
 			}
 
 			const { y, max } = this.getScrollMetrics();
-			this.lookTarget = Math.min(1, y / Math.min(max, 620));
+			this.lookTarget = this.snapLookToFrame(Math.min(1, y / Math.min(max, 620)));
 			this.scheduleLookTick();
-			window.clearTimeout(this.peekSnapTimer);
-			this.peekSnapTimer = window.setTimeout(() => {
-				this.lookTarget = this.snapLookToFrame(this.lookTarget);
-				this.scheduleLookTick();
-			}, PEEK_SNAP_IDLE_MS);
 		}
 
-		/** La mirada que corresponde al frame más cercano a `look` (del lado del scroll, desde el reposo). */
+		/*
+		 * El scroll elige el frame destino y la mirada viaja hasta él en un solo movimiento suave: nunca
+		 * queda a medio fundir y no hay un segundo movimiento (ni retroceso) al soltar el scroll. Para
+		 * cambiar de destino hay que pasar la mitad entre frames por un margen, así no titubea.
+		 */
 		private snapLookToFrame(look: number) {
 			const stops = this.peekStops();
 			const restStop = stops[this.restFrameIndex()] ?? 0;
-			if (look <= 0 || restStop >= 1) return look;
-			const position = restStop + look * (1 - restStop);
-			let nearest = restStop;
-			for (const stop of stops) {
-				if (stop >= restStop && Math.abs(stop - position) < Math.abs(nearest - position)) nearest = stop;
+			if (restStop >= 1) return 0;
+			const position = restStop + Math.max(0, look) * (1 - restStop);
+			let nearest = -1;
+			for (const stop of new Set(stops.filter((value) => value >= restStop))) {
+				if (nearest < 0 || Math.abs(stop - position) < Math.abs(nearest - position)) nearest = stop;
 			}
+			const current = this.peekTargetStop;
+			if (current >= 0 && nearest !== current) {
+				const midpoint = (current + nearest) / 2;
+				const margin = Math.abs(nearest - current) * PEEK_SWITCH_MARGIN;
+				if (Math.abs(position - midpoint) < margin) nearest = current;
+			}
+			this.peekTargetStop = nearest;
 			return (nearest - restStop) / (1 - restStop);
 		}
 
