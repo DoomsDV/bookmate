@@ -1,0 +1,81 @@
+---
+interface Props {
+	/** hero: saludo del estado vacío (idle / tipeando). work: lupa y papeles mientras el agente consulta. */
+	variant?: 'hero' | 'work';
+}
+
+const { variant = 'hero' } = Astro.props;
+// Sprite sheets generados por scripts/build-numa-front.mjs (frames en horizontal, en el orden de GROUPS).
+// hero: 0 idle-center, 1 idle-left, 2 idle-up, 3 idle-right, 4 idle-blink, 5 typing-down-left, 6 typing-down-right.
+// work: 0 lens-center, 1 lens-left, 2 lens-right, 3 aha.
+const SHEETS = {
+	hero: { src: '/assistant/numa/numa-front-hero-sheet.webp', frames: 7, ratio: '320 / 376' },
+	work: { src: '/assistant/numa/numa-front-work-sheet.webp', frames: 4, ratio: '320 / 372' },
+} as const;
+const sheet = SHEETS[variant];
+---
+
+<span
+	class:list={['numa-front', `numa-front--${variant}`]}
+	style={`--numa-sheet: url('${sheet.src}'); --numa-frames: ${sheet.frames}; aspect-ratio: ${sheet.ratio};`}
+	data-numa-sheet={sheet.src}
+	aria-hidden="true"
+></span>
+
+<style is:global>
+	/*
+	 * Un solo sprite sheet siempre visible: cambiar de frame es mover background-position,
+	 * sin cargar ni decodificar otra imagen, así nunca aparece un hueco entre frames.
+	 * Frame i de n: background-position-x = i / (n - 1) * 100%.
+	 */
+	.numa-front {
+		display: block;
+		flex: none;
+		background-image: var(--numa-sheet);
+		background-repeat: no-repeat;
+		background-size: calc(var(--numa-frames) * 100%) 100%;
+		background-position: 0% 0%;
+	}
+	.numa-front--hero {
+		width: 6rem;
+		margin: 0 auto 0.4rem;
+		transform-origin: 50% 100%;
+		animation: numa-front-idle 9s step-end infinite, numa-front-breathe 3.8s ease-in-out infinite;
+	}
+	.numa-front--work { width: 4.25rem; animation: numa-front-work 5.6s step-end infinite; }
+
+	/* Tipeando: baja la mirada hacia el input, del lado donde está el cursor. */
+	assistant-mascot[data-assistant-typing] .numa-front--hero { animation: none; background-position-x: 83.333%; }
+	assistant-mascot[data-assistant-typing][data-numa-look='right'] .numa-front--hero { background-position-x: 100%; }
+
+	/* Idle: mira a la izquierda, arriba, a la derecha y guiña (dos veces por ciclo). */
+	@keyframes numa-front-idle {
+		0% { background-position-x: 0%; }
+		20% { background-position-x: 16.667%; }
+		31% { background-position-x: 0%; }
+		38% { background-position-x: 33.333%; }
+		48% { background-position-x: 50%; }
+		58% { background-position-x: 0%; }
+		72% { background-position-x: 66.667%; }
+		73.6% { background-position-x: 0%; }
+		90% { background-position-x: 66.667%; }
+		91.6%, 100% { background-position-x: 0%; }
+	}
+	/* Trabajando: barre el papel con la lupa y cierra el ciclo con un "ajá". */
+	@keyframes numa-front-work {
+		0% { background-position-x: 33.333%; }
+		16% { background-position-x: 0%; }
+		28% { background-position-x: 66.667%; }
+		44% { background-position-x: 0%; }
+		56% { background-position-x: 33.333%; }
+		72% { background-position-x: 0%; }
+		84%, 100% { background-position-x: 100%; }
+	}
+	@keyframes numa-front-breathe {
+		0%, 100% { transform: scale(1); }
+		50% { transform: scale(1.012, 0.994); }
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.numa-front { animation: none !important; }
+	}
+</style>

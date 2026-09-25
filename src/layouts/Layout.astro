@@ -7,9 +7,8 @@ import FcmManager from '../components/FcmManager.astro';
 import OrgNotificationDeepLink from '../components/OrgNotificationDeepLink.astro';
 import SessionGuard from '../components/SessionGuard.astro';
 import SubscriptionBanner from '../components/SubscriptionBanner.astro';
-import { CAPABILITIES } from '../config/capabilities';
 import { ROLES } from '../config/roles';
-import { isAssistantAgentConfigured } from '../lib/assistant-agent';
+import { canUseAssistant } from '../lib/assistant-access';
 import {
     FLASH_MESSAGE_COOKIE,
     FLASH_TYPE_COOKIE,
@@ -78,13 +77,7 @@ if (flashTypeFromCookie) {
 
 const isPanelRoute = Astro.url.pathname === '/panel' || Astro.url.pathname.startsWith('/panel/');
 const isDashboardRoute = Astro.url.pathname === '/panel/dashboard' || Astro.url.pathname.startsWith('/panel/dashboard/');
-const canUseAssistant =
-	hasSession &&
-	isPanelRoute &&
-	isAssistantAgentConfigured() &&
-	sessionCapabilities.includes(CAPABILITIES.ASSISTANT_USE) &&
-	Number(Astro.locals.userId || 0) > 0 &&
-	Number(Astro.locals.organizationId || 0) > 0;
+const showAssistant = isPanelRoute && canUseAssistant(Astro.locals);
 const themeCookie = String(Astro.cookies.get('bookmate-theme')?.value || '').trim();
 const storedPanelTheme = themeCookie === 'light' || themeCookie === 'dark' ? themeCookie : null;
 const initialTheme = isPanelRoute ? storedPanelTheme : undefined;
@@ -407,7 +400,7 @@ const themeColor = initialTheme === 'dark' ? '#0e0e10' : '#f9fafb';
                 <FcmManager />
                 <OrgNotificationDeepLink />
                 <AppAlert />
-                {canUseAssistant && (
+                {showAssistant && (
                     <AssistantMascot
                         userId={Number(Astro.locals.userId || 0)}
                         organizationId={Number(Astro.locals.organizationId || 0)}

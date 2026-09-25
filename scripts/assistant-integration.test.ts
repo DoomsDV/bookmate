@@ -8,7 +8,11 @@ import {
 	parseAssistantQueryPayload,
 	queryAssistantAgent,
 } from '../src/lib/assistant-agent.ts';
-import { parseClarificationOptions } from '../src/lib/assistant-chat-ui.ts';
+import {
+	ASSISTANT_SUGGESTED_QUESTIONS,
+	formatDailySummaryMessage,
+	parseClarificationOptions,
+} from '../src/lib/assistant-chat-ui.ts';
 
 test('el contrato de clarificación exige 2 a 5 opciones accionables', () => {
 	assert.deepEqual(
@@ -100,6 +104,39 @@ test('el cliente reporta configuración inválida antes de exponer una llamada a
 	);
 });
 
+test('el resumen del día es una acción rápida local de Numa', () => {
+	const [first] = ASSISTANT_SUGGESTED_QUESTIONS;
+	assert.equal(first.label, 'Resumen del día');
+	assert.equal(first.action, 'daily-summary');
+	assert.equal(
+		formatDailySummaryMessage({
+			ai_summary: 'Texto largo',
+			ai_summary_sections: [
+				{ type: 'sugerencia', text: 'Confirmá los turnos de la tarde.' },
+				{ type: 'panorama', text: 'Hoy tenés 6 turnos.' },
+				{ type: 'contexto', items: ['2 sin confirmar', '', 'Gs. 350.000 estimados'] },
+			],
+		}),
+		'**Panorama**\nHoy tenés 6 turnos.\n\n**Contexto**\n- 2 sin confirmar\n- Gs. 350.000 estimados\n\n**Sugerencia**\nConfirmá los turnos de la tarde.'
+	);
+	assert.equal(formatDailySummaryMessage({ ai_summary: 'Día tranquilo.', ai_summary_sections: [] }), 'Día tranquilo.');
+	assert.equal(formatDailySummaryMessage(null), '');
+	assert.ok(formatDailySummaryMessage({ ai_summary: 'x'.repeat(5000) }).length <= 3800);
+
+	const mascot = readFileSync(new URL('../src/components/AssistantMascot.astro', import.meta.url), 'utf8');
+	assert.match(mascot, /button\.dataset\.assistantAction = suggestion\.action/);
+	assert.match(mascot, /assistantAction === 'daily-summary'\) void this\.showDailySummary\(message\)/);
+	assert.match(mascot, /fetchWithTimeout\('\/api\/dashboard\/ai-summary'/);
+	assert.match(mascot, /sessionStorage\.setItem\(this\.dailySummaryCacheKey\(\)/);
+
+	const dashboard = readFileSync(new URL('../src/pages/panel/dashboard.astro', import.meta.url), 'utf8');
+	assert.match(dashboard, /const assistantAvailable = canUseAssistant\(Astro\.locals\)/);
+	assert.match(dashboard, /\{!assistantAvailable && \(\s*<div\s+class="dashboard-ai-strip"/);
+	assert.match(dashboard, /\{!assistantAvailable && \(\s*<dialog/);
+	const layout = readFileSync(new URL('../src/layouts/Layout.astro', import.meta.url), 'utf8');
+	assert.match(layout, /const showAssistant = isPanelRoute && canUseAssistant\(Astro\.locals\)/);
+});
+
 test('assistant.use se protege por ruta y no aparece en el fallback seguro', () => {
 	assert.equal(CAPABILITIES.ASSISTANT_USE, 'assistant.use');
 	assert.equal(SAFE_FALLBACK_CAPABILITIES.includes(CAPABILITIES.ASSISTANT_USE), false);
@@ -176,8 +213,27 @@ test('la mascota y el BFF quedan desacoplados de ATC', () => {
 	assert.match(mascot, /astro:after-swap/);
 	assert.match(mascot, /handleHostClick/);
 	assert.match(mascot, /await this\.renderMessages\(\)/);
-	assert.match(mascot, /@keyframes numa-dot/);
-	assert.match(mascot, /animation: numa-dot 1\.1s ease-in-out infinite both/);
+	assert.doesNotMatch(mascot, /numa-dot/);
+	assert.match(mascot, /import NumaFront from '\.\/NumaFront\.astro'/);
+	assert.match(mascot, /data-assistant-empty-template/);
+	assert.match(mascot, /template\.content\.cloneNode\(true\)/);
+	assert.match(mascot, /<NumaFront variant="hero" \/>/);
+	assert.match(mascot, /<NumaFront variant="work" \/>/);
+	assert.match(mascot, /toggleAttribute\('data-assistant-typing', typing\)/);
+	assert.match(mascot, /setAttribute\('data-numa-look'/);
+	assert.match(mascot, /warmNumaFrames/);
+	const numaFront = readFileSync(new URL('../src/components/NumaFront.astro', import.meta.url), 'utf8');
+	assert.match(numaFront, /\/assistant\/numa\/numa-front-hero-sheet\.webp/);
+	assert.match(numaFront, /\/assistant\/numa\/numa-front-work-sheet\.webp/);
+	assert.match(numaFront, /data-numa-sheet/);
+	assert.match(numaFront, /animation: numa-front-idle 9s step-end infinite/);
+	assert.match(numaFront, /@keyframes numa-front-work/);
+	assert.match(numaFront, /assistant-mascot\[data-assistant-typing\]\[data-numa-look='right'\]/);
+	assert.match(numaFront, /prefers-reduced-motion: reduce/);
+	assert.doesNotMatch(numaFront, /<img/);
+	for (const sheet of ['hero', 'work']) {
+		assert.ok(existsSync(new URL(`../public/assistant/numa/numa-front-${sheet}-sheet.webp`, import.meta.url)), sheet);
+	}
 	assert.doesNotMatch(mascot, /assistant-mascot__hook/);
 	assert.doesNotMatch(mascot, /numa-tail-sway/);
 	assert.doesNotMatch(mascot, /numa-reading-bob/);

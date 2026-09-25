@@ -38,6 +38,7 @@ import {
 } from '../../lib/dashboard-today-kpis';
 import { getMyProfileWithOrds } from '../../lib/my-profile';
 import { hasCapability } from '../../lib/permissions';
+import { canUseAssistant } from '../../lib/assistant-access';
 import { resolvePublicSiteOrigin } from '../../lib/public-profile-url';
 import Layout from '../../layouts/Layout.astro';
 import { panelPageTitle } from '../../lib/panel-page-title';
@@ -46,6 +47,7 @@ import '../../styles/dashboard-ai-strip.css';
 
 const token = Astro.locals.token ?? '';
 const roleId = Number(Astro.locals.roleId ?? 0);
+const assistantAvailable = canUseAssistant(Astro.locals);
 const showTeamOverview = false;
 const SHOW_TODAY_METRIC_CHIPS = false;
 const PAGE_SIZE = 20;
@@ -485,54 +487,57 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 								</section>
 							)}
 
-							<div
-								class="dashboard-ai-strip"
-								data-ai-summary-card
-								data-role-id={String(roleId)}
-								data-default-summary-short={defaultAiSummaryShort}
-								data-default-summary-full={defaultAiSummaryFull}
-								aria-live="polite"
-								aria-busy="false"
-							>
-								<div class="dashboard-ai-strip__body">
-									<span class="dashboard-ai-strip__spine" aria-hidden="true"></span>
-									<div class="dashboard-ai-strip__copy">
-										<div class="dashboard-ai-strip__head">
-											<span class="dashboard-ai-strip__badge" aria-hidden="true">
-												<span class="dashboard-ai-strip__icon material-symbols-rounded">
-													auto_awesome
+							{/* Con Numa disponible, el resumen del día vive en su acción rápida. */}
+							{!assistantAvailable && (
+								<div
+									class="dashboard-ai-strip"
+									data-ai-summary-card
+									data-role-id={String(roleId)}
+									data-default-summary-short={defaultAiSummaryShort}
+									data-default-summary-full={defaultAiSummaryFull}
+									aria-live="polite"
+									aria-busy="false"
+								>
+									<div class="dashboard-ai-strip__body">
+										<span class="dashboard-ai-strip__spine" aria-hidden="true"></span>
+										<div class="dashboard-ai-strip__copy">
+											<div class="dashboard-ai-strip__head">
+												<span class="dashboard-ai-strip__badge" aria-hidden="true">
+													<span class="dashboard-ai-strip__icon material-symbols-rounded">
+														auto_awesome
+													</span>
 												</span>
-											</span>
-											<div class="dashboard-ai-strip__heading">
-												<p class="dashboard-ai-strip__eyebrow">
-													Resumen del día
-												</p>
-												<p class="dashboard-ai-strip__status" data-ai-summary-status>
-													Leyendo la agenda de hoy
-												</p>
+												<div class="dashboard-ai-strip__heading">
+													<p class="dashboard-ai-strip__eyebrow">
+														Resumen del día
+													</p>
+													<p class="dashboard-ai-strip__status" data-ai-summary-status>
+														Leyendo la agenda de hoy
+													</p>
+												</div>
 											</div>
+											<button
+												type="button"
+												class="dashboard-ai-strip__action"
+												data-open-ai-summary-modal
+												hidden
+											>
+												<span class="dashboard-ai-strip__action-label">Ver más</span>
+												<span class="dashboard-ai-strip__action-icon" aria-hidden="true">
+													<span class="material-symbols-rounded">arrow_forward</span>
+												</span>
+											</button>
+											<div class="dashboard-ai-strip__skeleton" aria-hidden="true">
+												<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--lg"></span>
+												<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--md"></span>
+											</div>
+											<p class="dashboard-ai-strip__text" data-ai-summary-line>
+												{defaultAiSummaryShort}
+											</p>
 										</div>
-										<button
-											type="button"
-											class="dashboard-ai-strip__action"
-											data-open-ai-summary-modal
-											hidden
-										>
-											<span class="dashboard-ai-strip__action-label">Ver más</span>
-											<span class="dashboard-ai-strip__action-icon" aria-hidden="true">
-												<span class="material-symbols-rounded">arrow_forward</span>
-											</span>
-										</button>
-										<div class="dashboard-ai-strip__skeleton" aria-hidden="true">
-											<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--lg"></span>
-											<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--md"></span>
-										</div>
-										<p class="dashboard-ai-strip__text" data-ai-summary-line>
-											{defaultAiSummaryShort}
-										</p>
 									</div>
 								</div>
-							</div>
+							)}
 
 							<DashboardQuickActions
 								newAppointmentHref={newAppointmentHref}
@@ -744,39 +749,41 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	{FEATURE_FLAGS.APPOINTMENT_AI_VOICE && <AgendaScanPreview />}
 	<AppAlert />
 
-	<dialog
-		class="dashboard-ai-modal dashboard-ai-drawer m-0 max-h-none w-full max-w-none border-0 bg-transparent p-0 text-(--on-surface) shadow-none open:flex"
-		data-ai-summary-modal
-	>
-		<div class="dashboard-ai-drawer__panel relative flex flex-col overflow-hidden border-(--shell-border) bg-(--surface-bright)">
-			<div class="dashboard-ai-drawer__handle" aria-hidden="true">
-				<span class="dashboard-ai-drawer__handle-pill"></span>
-			</div>
-			<div class="dashboard-ai-modal__header">
-				<div class="dashboard-ai-modal__title-wrap">
-					<div class="dashboard-ai-modal__mark">
-						<span class="material-symbols-rounded">auto_awesome</span>
-					</div>
-					<h2 class="dashboard-ai-modal__title">Resumen del día</h2>
+	{!assistantAvailable && (
+		<dialog
+			class="dashboard-ai-modal dashboard-ai-drawer m-0 max-h-none w-full max-w-none border-0 bg-transparent p-0 text-(--on-surface) shadow-none open:flex"
+			data-ai-summary-modal
+		>
+			<div class="dashboard-ai-drawer__panel relative flex flex-col overflow-hidden border-(--shell-border) bg-(--surface-bright)">
+				<div class="dashboard-ai-drawer__handle" aria-hidden="true">
+					<span class="dashboard-ai-drawer__handle-pill"></span>
 				</div>
-				<button
-					type="button"
-					class="dashboard-ai-modal__close"
-					data-close-ai-summary-modal
-					aria-label="Cerrar resumen"
-				>
-					<span class="material-symbols-rounded">close</span>
-				</button>
+				<div class="dashboard-ai-modal__header">
+					<div class="dashboard-ai-modal__title-wrap">
+						<div class="dashboard-ai-modal__mark">
+							<span class="material-symbols-rounded">auto_awesome</span>
+						</div>
+						<h2 class="dashboard-ai-modal__title">Resumen del día</h2>
+					</div>
+					<button
+						type="button"
+						class="dashboard-ai-modal__close"
+						data-close-ai-summary-modal
+						aria-label="Cerrar resumen"
+					>
+						<span class="material-symbols-rounded">close</span>
+					</button>
+				</div>
+				<div class="dashboard-ai-modal__body overflow-y-auto overscroll-contain min-h-0 flex-1 px-4 pb-6 pt-1 sm:px-6 sm:pb-7">
+					<div
+						class="dashboard-ai-sections dashboard-ai-sections--modal"
+						data-ai-summary-modal-sections
+						aria-live="polite"
+					></div>
+				</div>
 			</div>
-			<div class="dashboard-ai-modal__body overflow-y-auto overscroll-contain min-h-0 flex-1 px-4 pb-6 pt-1 sm:px-6 sm:pb-7">
-				<div
-					class="dashboard-ai-sections dashboard-ai-sections--modal"
-					data-ai-summary-modal-sections
-					aria-live="polite"
-				></div>
-			</div>
-		</div>
-	</dialog>
+		</dialog>
+	)}
 </Layout>
 
 <script>
