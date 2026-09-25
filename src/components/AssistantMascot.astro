@@ -214,6 +214,74 @@ const peekRestFrame = 4;
 	const ALLOWED_TAGS = new Set(['a', 'blockquote', 'br', 'code', 'em', 'h1', 'h2', 'h3', 'h4', 'li', 'ol', 'p', 'pre', 'strong', 'ul']);
 	const ALLOWED_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:']);
 
+	/*
+	 * Diagnóstico temporal del desplazamiento de iOS al cerrar el teclado.
+	 * Se activa con ?viewport-debug=1 (queda en la sesión) y se apaga con ?viewport-debug=0.
+	 */
+	const viewportDebug = (() => {
+		try {
+			const flag = new URLSearchParams(window.location.search).get('viewport-debug');
+			if (flag === '1') sessionStorage.setItem('hasel:viewport-debug', '1');
+			if (flag === '0') sessionStorage.removeItem('hasel:viewport-debug');
+			if (sessionStorage.getItem('hasel:viewport-debug') !== '1') return null;
+		} catch {
+			return null;
+		}
+		const box = document.createElement('pre');
+		box.style.cssText = 'position:fixed;top:calc(env(safe-area-inset-top) + 64px);left:6px;z-index:2147483647;margin:0;padding:6px 8px;max-width:calc(100vw - 12px);border-radius:8px;background:rgb(0 0 0 / 0.82);color:#7CFC9A;font:10px/1.35 ui-monospace,monospace;pointer-events:none;white-space:pre-wrap;';
+		const probe = document.createElement('div');
+		probe.style.cssText = 'position:fixed;top:0;left:-9999px;width:1px;visibility:hidden;pointer-events:none;';
+		document.body.append(box, probe);
+		const unit = (value: string) => {
+			probe.style.height = value;
+			return Math.round(probe.getBoundingClientRect().height);
+		};
+		const top = (selector: string) => {
+			const el = document.querySelector<HTMLElement>(selector);
+			return el ? Math.round(el.getBoundingClientRect().top) : 'n/a';
+		};
+		const scroll = (selector: string) => document.querySelector<HTMLElement>(selector)?.scrollTop ?? 'n/a';
+		let last = '';
+		const render = (event = '') => {
+			if (event) last = `${event} @${new Date().toLocaleTimeString('es-PY')}`;
+			const vv = window.visualViewport;
+			const nav = document.querySelector<HTMLElement>('[data-mobile-bottom-nav]');
+			let navHit = 'n/a';
+			if (nav) {
+				const rect = nav.getBoundingClientRect();
+				const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+				navHit = `${Math.round(rect.top)} → ${hit ? `${hit.tagName.toLowerCase()}.${String(hit.className || '').split(' ')[0]}` : 'null'}`;
+			}
+			const active = document.activeElement;
+			box.textContent = [
+				`inner ${window.innerHeight}  vv ${vv ? Math.round(vv.height) : 'n/a'}  vvTop ${vv ? vv.offsetTop.toFixed(1) : 'n/a'}  vvPage ${vv ? vv.pageTop.toFixed(1) : 'n/a'}`,
+				`scrollY ${window.scrollY}  docH ${document.documentElement.scrollHeight}/${document.documentElement.clientHeight}  body ${document.body.scrollTop}`,
+				`vh ${unit('100vh')}  dvh ${unit('100dvh')}  svh ${unit('100svh')}  lvh ${unit('100lvh')}`,
+				`shell scroll ${scroll('[data-app-shell]')} top ${top('[data-app-shell]')}  canvas scroll ${scroll('.app-shell > :last-child')}`,
+				`topbar top ${top('.shell-header-zone:not(.sidebar-account-header)')}  nav ${navHit}`,
+				`active ${active ? active.tagName.toLowerCase() : 'none'}  last ${last}`,
+			].join('\n');
+		};
+		let frame = 0;
+		const schedule = (event: Event) => {
+			const label = event.type;
+			if (frame) return;
+			frame = window.requestAnimationFrame(() => {
+				frame = 0;
+				render(label === 'scroll' || label === 'resize' ? '' : label);
+			});
+		};
+		window.visualViewport?.addEventListener('resize', schedule);
+		window.visualViewport?.addEventListener('scroll', schedule);
+		window.addEventListener('scroll', schedule, { passive: true });
+		document.addEventListener('focusin', schedule);
+		document.addEventListener('focusout', schedule);
+		document.addEventListener('touchend', schedule, { passive: true });
+		window.setInterval(() => render(), 700);
+		render('init');
+		return render;
+	})();
+
 	// Mantiene referencias a los sheets precargados para que el navegador no descarte su decodificación.
 	const warmedNumaSheets = new Map<string, HTMLImageElement>();
 
@@ -465,16 +533,23 @@ const peekRestFrame = 4;
 
 		private settleKeyboardViewport() {
 			if (!this.isMobileSheetViewport() || this.isEditableFocused()) return;
+			// El shell y el body tienen overflow hidden: el dedo no los scrollea, pero iOS sí al hacer foco.
+			for (const shell of document.querySelectorAll<HTMLElement>('[data-app-shell], .app-shell')) {
+				if (shell.scrollTop !== 0) shell.scrollTop = 0;
+			}
+			if (document.body.scrollTop !== 0) document.body.scrollTop = 0;
 			const viewport = window.visualViewport;
 			const shifted = window.scrollY !== 0 || (viewport ? Math.abs(viewport.offsetTop) > 0.5 : false);
-			if (!shifted) return;
-			// Con el documento en 0, scrollTo no mueve el viewport visual: se lo hace scrolleable 1px un instante.
-			const root = document.documentElement;
-			const previousMinHeight = root.style.minHeight;
-			root.style.minHeight = 'calc(100% + 1px)';
-			window.scrollTo(0, 1);
-			window.scrollTo(0, 0);
-			root.style.minHeight = previousMinHeight;
+			if (shifted) {
+				// Con el documento en 0, scrollTo no mueve el viewport visual: se lo hace scrolleable 1px un instante.
+				const root = document.documentElement;
+				const previousMinHeight = root.style.minHeight;
+				root.style.minHeight = 'calc(100% + 1px)';
+				window.scrollTo(0, 1);
+				window.scrollTo(0, 0);
+				root.style.minHeight = previousMinHeight;
+			}
+			viewportDebug?.('settle');
 		}
 
 		private handleHostCaret = (event: Event) => {

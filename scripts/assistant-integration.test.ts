@@ -225,7 +225,9 @@ test('la mascota y el BFF quedan desacoplados de ATC', () => {
 	assert.match(mascot, /this\.addEventListener\('focusout', this\.handleHostFocusOut/);
 	assert.match(mascot, /visualViewport\?\.addEventListener\('resize', this\.handleKeyboardViewportResize/);
 	assert.match(mascot, /this\.input\?\.blur\(\);\n\t\t\tthis\.scheduleViewportSettle\(\);/);
-	assert.match(mascot, /root\.style\.minHeight = 'calc\(100% \+ 1px\)';\n\t\t\twindow\.scrollTo\(0, 1\);\n\t\t\twindow\.scrollTo\(0, 0\);/);
+	assert.match(mascot, /root\.style\.minHeight = 'calc\(100% \+ 1px\)';\s+window\.scrollTo\(0, 1\);\s+window\.scrollTo\(0, 0\);/);
+	assert.match(mascot, /querySelectorAll<HTMLElement>\('\[data-app-shell\], \.app-shell'\)\) \{\s+if \(shell\.scrollTop !== 0\) shell\.scrollTop = 0;/);
+	assert.match(mascot, /get\('viewport-debug'\)/);
 	assert.match(mascot, /@media \(min-width: 1024px\) \{\n\t\t\.assistant-mascot__panel \.numa-front \{ display: none; \}/);
 	assert.match(mascot, /warmNumaFrames\(\) \{\n\t\t\tif \(window\.matchMedia\('\(min-width: 1024px\)'\)\.matches\) return;/);
 	const numaFront = readFileSync(new URL('../src/components/NumaFront.astro', import.meta.url), 'utf8');
