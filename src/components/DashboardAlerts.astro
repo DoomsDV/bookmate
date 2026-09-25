@@ -16,12 +16,15 @@ const { alerts } = Astro.props;
 		{
 			alerts.map((alert) => (
 				<li class="dashboard-alerts__item" data-dashboard-alert={alert.id}>
-					<span class="dashboard-alerts__icon" aria-hidden="true">
-						<span class="material-symbols-rounded">{alert.icon}</span>
-					</span>
-					<p class="dashboard-alerts__message">{alert.message}</p>
-					<a class="dashboard-alerts__cta" href={alert.href} data-dashboard-alert-cta={alert.id}>
-						{alert.ctaLabel}
+					<a class="dashboard-alerts__link" href={alert.href} data-dashboard-alert-cta={alert.id}>
+						<span class="dashboard-alerts__icon" aria-hidden="true">
+							<span class="material-symbols-rounded">{alert.icon}</span>
+						</span>
+						<span class="dashboard-alerts__copy">
+							<span class="dashboard-alerts__message">{alert.message}</span>
+							<span class="dashboard-alerts__cta">{alert.ctaLabel}</span>
+						</span>
+						<span class="dashboard-alerts__chevron material-symbols-rounded" aria-hidden="true">chevron_right</span>
 					</a>
 				</li>
 			))
@@ -57,16 +60,33 @@ const { alerts } = Astro.props;
 		list-style: none;
 	}
 
+	/* Toda la alerta es el enlace, como los Accesos rápidos: la acción va como segunda línea. */
 	.dashboard-alerts__item {
+		min-width: 0;
+	}
+
+	.dashboard-alerts__link {
 		display: grid;
 		grid-template-columns: auto minmax(0, 1fr) auto;
 		align-items: center;
 		gap: 0.75rem;
 		min-width: 0;
-		padding: 0.85rem 0.95rem;
+		padding: 0.85rem 0.8rem 0.85rem 0.95rem;
 		border: 1px solid var(--dashboard-card-border, var(--shell-border));
 		border-radius: var(--dashboard-card-radius, 0.75rem);
 		background: var(--dashboard-card-bg, #ffffff);
+		color: inherit;
+		text-decoration: none;
+		transition: border-color 260ms cubic-bezier(0.32, 0.72, 0, 1);
+	}
+
+	.dashboard-alerts__link:hover {
+		border-color: color-mix(in srgb, var(--primary) 32%, var(--shell-border));
+	}
+
+	.dashboard-alerts__link:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--primary) 70%, #fff 30%);
+		outline-offset: 2px;
 	}
 
 	.dashboard-alerts__icon {
@@ -74,6 +94,7 @@ const { alerts } = Astro.props;
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
+		align-self: start;
 		width: 2rem;
 		height: 2rem;
 		border-radius: 0.7rem;
@@ -86,9 +107,13 @@ const { alerts } = Astro.props;
 		line-height: 1;
 	}
 
-	.dashboard-alerts__message {
-		margin: 0;
+	.dashboard-alerts__copy {
+		display: grid;
+		gap: 0.2rem;
 		min-width: 0;
+	}
+
+	.dashboard-alerts__message {
 		font-size: 0.92rem;
 		font-weight: 600;
 		letter-spacing: -0.015em;
@@ -97,35 +122,24 @@ const { alerts } = Astro.props;
 	}
 
 	.dashboard-alerts__cta {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		flex-shrink: 0;
-		min-height: 2rem;
-		padding: 0.35rem 0.75rem;
-		border-radius: 999px;
-		border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--shell-border));
-		background: color-mix(in srgb, var(--primary) 8%, transparent);
-		color: var(--primary);
 		font-size: 0.78rem;
-		font-weight: 700;
+		font-weight: 600;
 		letter-spacing: -0.01em;
-		line-height: 1.2;
-		text-decoration: none;
-		white-space: nowrap;
+		line-height: 1.3;
+		color: var(--primary);
+	}
+
+	.dashboard-alerts__chevron {
+		font-size: 1.25rem;
+		color: var(--on-surface-variant, #64748b);
 		transition:
-			border-color 260ms cubic-bezier(0.32, 0.72, 0, 1),
-			background-color 260ms cubic-bezier(0.32, 0.72, 0, 1);
+			transform 220ms cubic-bezier(0.32, 0.72, 0, 1),
+			color 220ms ease;
 	}
 
-	.dashboard-alerts__cta:hover {
-		border-color: color-mix(in srgb, var(--primary) 48%, var(--shell-border));
-		background: color-mix(in srgb, var(--primary) 14%, transparent);
-	}
-
-	.dashboard-alerts__cta:focus-visible {
-		outline: 2px solid color-mix(in srgb, var(--primary) 70%, #fff 30%);
-		outline-offset: 2px;
+	.dashboard-alerts__link:hover .dashboard-alerts__chevron {
+		transform: translateX(2px);
+		color: var(--primary);
 	}
 
 	html[data-theme='dark'] .dashboard-alerts__title,
@@ -133,30 +147,29 @@ const { alerts } = Astro.props;
 		color: #e5e7eb;
 	}
 
-	html[data-theme='dark'] .dashboard-alerts__item {
+	html[data-theme='dark'] .dashboard-alerts__link {
 		background: var(--surface-bright);
 		border-color: var(--dashboard-card-border, transparent);
+	}
+
+	html[data-theme='dark'] .dashboard-alerts__link:hover {
+		border-color: color-mix(in srgb, var(--primary) 36%, var(--shell-border));
+	}
+
+	/* El primario puro sobre la superficie oscura no llega a 4.5:1 en texto chico. */
+	html[data-theme='dark'] .dashboard-alerts__cta,
+	html[data-theme='dark'] .dashboard-alerts__link:hover .dashboard-alerts__chevron {
+		color: color-mix(in srgb, var(--primary) 72%, #ffffff);
 	}
 
 	html[data-theme='dark'] .dashboard-alerts__icon {
 		background: color-mix(in srgb, var(--primary) 16%, #1f2126);
 	}
 
-	html[data-theme='dark'] .dashboard-alerts__cta {
-		background: color-mix(in srgb, var(--primary) 16%, #1f2126);
-		border-color: color-mix(in srgb, var(--primary) 32%, var(--shell-border));
-	}
-
 	@media (max-width: 640px) {
-		.dashboard-alerts__item {
-			grid-template-columns: auto minmax(0, 1fr);
-			padding: 0.75rem 0.8rem;
-			gap: 0.6rem 0.7rem;
-		}
-
-		.dashboard-alerts__cta {
-			grid-column: 2;
-			justify-self: start;
+		.dashboard-alerts__link {
+			padding: 0.75rem 0.6rem 0.75rem 0.8rem;
+			gap: 0.7rem;
 		}
 
 		.dashboard-alerts__message {
@@ -165,7 +178,8 @@ const { alerts } = Astro.props;
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.dashboard-alerts__cta {
+		.dashboard-alerts__link,
+		.dashboard-alerts__chevron {
 			transition: none;
 		}
 	}
