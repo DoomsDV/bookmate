@@ -34,11 +34,6 @@ export const ASSISTANT_SUGGESTED_QUESTIONS: AssistantChatQuickAction[] = [
 		message: '¿Quién es el profesional con más reservas en los últimos 30 días?',
 		icon: 'groups',
 	},
-	{
-		label: 'Por confirmar',
-		message: '¿Cuántas citas quedan por confirmar?',
-		icon: 'hourglass_top',
-	},
 ];
 
 const asText = (value: unknown) => String(value ?? '').trim();

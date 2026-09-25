@@ -118,6 +118,7 @@ test('el resumen del día es una acción rápida local de Numa', () => {
 	const [first] = ASSISTANT_SUGGESTED_QUESTIONS;
 	assert.equal(first.label, 'Resumen del día');
 	assert.equal(first.action, 'daily-summary');
+	assert.equal(ASSISTANT_SUGGESTED_QUESTIONS.some((item) => item.label === 'Por confirmar'), false);
 	assert.equal(
 		formatDailySummaryMessage({
 			ai_summary: 'Texto largo',
