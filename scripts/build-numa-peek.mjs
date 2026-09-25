@@ -6,15 +6,18 @@
  * color típico de todos (percentiles 10/50/90 por canal), con una curva que deja fijos el negro y el blanco.
  *
  * Lee design/numa/peek-src/ (originales, fuera de public/ y de git) y escribe en public/assistant/
- * con los mismos nombres que usa AssistantMascot.astro.
+ * con los mismos nombres que usa AssistantMascot.astro. Además genera src/lib/numa-peek-timeline.ts:
+ * la posición de cada frame en el recorrido, proporcional a cuánto cambia la pose (los repetidos
+ * comparten posición), para que el asomo avance parejo con el scroll.
  * Uso: node scripts/build-numa-peek.mjs
  */
-import { copyFile, mkdir, readdir } from 'node:fs/promises';
+import { copyFile, mkdir, readdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import sharp from 'sharp';
 
 const SRC = new URL('../design/numa/peek-src/', import.meta.url).pathname;
 const OUT = new URL('../public/assistant/', import.meta.url).pathname;
+const TIMELINE = new URL('../src/lib/numa-peek-timeline.ts', import.meta.url).pathname;
 const FRAME_COUNT = 30;
 const frameName = (index) => `numa-peek-mobile-vertical-right-look-${String(index).padStart(2, '0')}.png`;
 
@@ -112,3 +115,40 @@ for (const { index, img, stats } of frames) {
 		.toFile(join(OUT, frameName(index)));
 	console.log(`  ${frameName(index)}: pelaje R ${stats.fur[0].join('/')} → ${target.fur[0].join('/')}`);
 }
+
+/** Cuánto cambia la pose entre dos frames: diferencia de color donde ambos son opacos + silueta distinta. */
+function poseDistance(a, b) {
+	let colorSum = 0;
+	let both = 0;
+	let union = 0;
+	let xor = 0;
+	for (let i = 0; i < a.length; i += 4) {
+		const inA = a[i + 3] >= 128;
+		const inB = b[i + 3] >= 128;
+		if (!inA && !inB) continue;
+		union += 1;
+		if (inA !== inB) {
+			xor += 1;
+			continue;
+		}
+		both += 1;
+		colorSum += (Math.abs(a[i] - b[i]) + Math.abs(a[i + 1] - b[i + 1]) + Math.abs(a[i + 2] - b[i + 2])) / 3;
+	}
+	return colorSum / Math.max(both, 1) + (100 * xor) / Math.max(union, 1);
+}
+
+const distances = frames.slice(1).map((frame, k) => poseDistance(frames[k].img.data, frame.img.data));
+const total = distances.reduce((sum, value) => sum + value, 0) || 1;
+const stops = [0];
+for (const distance of distances) stops.push(stops[stops.length - 1] + distance / total);
+stops[stops.length - 1] = 1;
+await writeFile(TIMELINE, `// Generado por scripts/build-numa-peek.mjs (pnpm assets:numa-peek): no editar a mano.
+/**
+ * Posición (0 a 1) de cada frame del asomo de Numa en el recorrido del scroll, proporcional a cuánto
+ * cambia la pose respecto del anterior. Los frames repetidos comparten posición y no ocupan scroll.
+ */
+export const NUMA_PEEK_STOPS: readonly number[] = [
+${stops.map((stop) => `\t${stop.toFixed(4)},`).join('\n')}
+];
+`);
+console.log(`timeline: ${distances.filter((d) => d < 1).length} frames repetidos, paso máx ${(Math.max(...distances) / total * 100).toFixed(1)}% del recorrido`);

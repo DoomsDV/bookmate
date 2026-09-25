@@ -173,6 +173,7 @@ const peekRestFrame = 4;
 	import { ASSISTANT_SUGGESTED_QUESTIONS, formatDailySummaryMessage, parseClarificationOptions } from '../lib/assistant-chat-ui';
 	import { fetchWithTimeout } from '../lib/fetch-with-timeout';
 	import type { AssistantClarificationOption } from '../lib/assistant-chat-ui';
+	import { NUMA_PEEK_STOPS } from '../lib/numa-peek-timeline';
 	import { getLayoutViewportHeight, lockPanelScroll, restorePanelScrollLayout } from '../lib/panel-scroll-lock';
 
 	type MarkedParse = (
@@ -282,8 +283,15 @@ const peekRestFrame = 4;
 		return render;
 	})();
 
-	// Fundido entre frames del asomo: corto para que siga al scroll, largo para no notar el cambio.
-	const PEEK_FADE_MS = 110;
+	// Qué tan rápido la mirada del asomo alcanza al scroll (por frame): suaviza los saltos bruscos.
+	const PEEK_LOOK_EASE = 0.2;
+	// Al quedar quieto el scroll, la mirada se asienta en el frame más cercano (nunca queda a medio fundir).
+	const PEEK_SNAP_IDLE_MS = 160;
+	// Cruce en curva S sobre el 70% central de cada tramo: fluido y con menos tiempo de imagen doble.
+	const peekCrossfade = (t: number) => {
+		const x = Math.min(1, Math.max(0, (t - 0.15) / 0.7));
+		return x * x * (3 - 2 * x);
+	};
 
 	// Mantiene referencias a los sheets precargados para que el navegador no descarte su decodificación.
 	const warmedNumaSheets = new Map<string, HTMLImageElement>();
@@ -321,6 +329,8 @@ const peekRestFrame = 4;
 		private lookTarget = 0;
 		private peekFrames: HTMLImageElement[] = [];
 		private peekFrameIndex = -1;
+		private peekOverlayIndex = -1;
+		private peekSnapTimer = 0;
 		private messages: ChatMessage[] = [];
 		private busy = false;
 		private renderGeneration = 0;
@@ -383,6 +393,7 @@ const peekRestFrame = 4;
 			this.analyticsChartObserver?.disconnect();
 			if (this.anchorFrame) window.cancelAnimationFrame(this.anchorFrame);
 			if (this.lookFrame) window.cancelAnimationFrame(this.lookFrame);
+			window.clearTimeout(this.peekSnapTimer);
 			if (this.typingFrame) window.cancelAnimationFrame(this.typingFrame);
 			this.clearMobileSheetLock();
 			this.abort = null;
@@ -414,6 +425,7 @@ const peekRestFrame = 4;
 			this.peekFrames = Array.from(this.querySelectorAll<HTMLImageElement>('[data-peek-frame]'))
 				.sort((a, b) => Number(a.dataset.peekFrame) - Number(b.dataset.peekFrame));
 			this.peekFrameIndex = -1;
+			this.peekOverlayIndex = -1;
 			for (const frame of this.peekFrames) {
 				this.watchPeekFrame(frame);
 				if (frame.decode) void frame.decode().catch(() => undefined);
@@ -664,11 +676,28 @@ const peekRestFrame = 4;
 			return rest >= 0 ? rest : 0;
 		}
 
-		private frameIndexForLook(look: number) {
-			const rest = this.restFrameIndex();
-			const last = Math.max(rest, this.peekFrames.length - 1);
-			if (look <= 0) return rest + look * rest;
-			return rest + look * (last - rest);
+		private peekStops() {
+			const count = this.peekFrames.length;
+			return NUMA_PEEK_STOPS.length === count
+				? NUMA_PEEK_STOPS
+				: Array.from({ length: count }, (_, index) => index / Math.max(count - 1, 1));
+		}
+
+		/*
+		 * La mirada se convierte en una posición del recorrido (proporcional a cuánto cambia la pose) y
+		 * de ahí en dos frames vecinos y cuánto se funde el segundo sobre el primero.
+		 */
+		private peekBlendForLook(look: number) {
+			const stops = this.peekStops();
+			const restStop = stops[this.restFrameIndex()] ?? 0;
+			const position = look <= 0 ? restStop + look * restStop : restStop + look * (1 - restStop);
+			for (let lower = 0; lower < stops.length - 1; lower++) {
+				const from = stops[lower];
+				const to = stops[lower + 1];
+				if (position > to || to <= from) continue;
+				return { lower, upper: lower + 1, t: Math.min(1, Math.max(0, (position - from) / (to - from))) };
+			}
+			return { lower: stops.length - 1, upper: stops.length - 1, t: 0 };
 		}
 
 		// Un fotograma que no cargó pintaría el placeholder de imagen rota del navegador,
@@ -708,33 +737,42 @@ const peekRestFrame = 4;
 		private applyLookFrames() {
 			const frames = this.peekFrames;
 			if (!frames.length) return;
-			const target = Math.min(
-				frames.length - 1,
-				Math.max(0, Math.round(this.frameIndexForLook(this.look))),
-			);
-			const index = this.nearestReadyFrame(target);
-			if (index < 0 || index === this.peekFrameIndex) return;
-			// Fundido sin huecos: el frame nuevo entra por encima y el resto se oculta cuando ya es opaco.
-			const fade = this.peekFrameIndex < 0 || this.prefersReducedMotion() ? 0 : PEEK_FADE_MS;
-			frames[index].style.zIndex = '2';
-			frames[index].style.transition = fade ? `opacity ${fade}ms ease-out` : 'none';
+			const { lower, upper, t: progress } = this.peekBlendForLook(this.look);
+			const t = peekCrossfade(progress);
+			const index = this.nearestReadyFrame(lower);
+			if (index < 0) return;
+			// Fundido atado al scroll: el frame base queda opaco (nunca se ve el fondo) y el siguiente se
+			// funde encima en proporción a cuánto se avanzó entre los dos.
+			const overlay = upper !== index && t > 0.01 && this.isPeekFrameReady(frames[upper]) ? upper : -1;
+			for (const previous of [this.peekFrameIndex, this.peekOverlayIndex]) {
+				if (previous < 0 || previous === index || previous === overlay || !frames[previous]) continue;
+				frames[previous].style.opacity = '0';
+				frames[previous].style.zIndex = '';
+			}
+			if (this.peekFrameIndex < 0) {
+				for (let i = 0; i < frames.length; i++) {
+					if (i !== index && i !== overlay) frames[i].style.opacity = '0';
+				}
+			}
 			frames[index].style.opacity = '1';
-			for (let i = 0; i < frames.length; i++) {
-				if (i === index) continue;
-				frames[i].style.zIndex = '1';
-				frames[i].style.transition = fade ? `opacity 0s linear ${fade}ms` : 'none';
-				frames[i].style.opacity = '0';
+			frames[index].style.zIndex = '1';
+			if (overlay >= 0) {
+				frames[overlay].style.opacity = t.toFixed(3);
+				frames[overlay].style.zIndex = '2';
 			}
 			this.peekFrameIndex = index;
+			this.peekOverlayIndex = overlay;
 		}
 
 		private scheduleLookTick() {
 			if (this.lookFrame) return;
 			this.lookFrame = window.requestAnimationFrame(() => {
 				this.lookFrame = 0;
-				this.look = this.lookTarget;
+				const delta = this.lookTarget - this.look;
+				this.look = Math.abs(delta) < 0.002 ? this.lookTarget : this.look + delta * PEEK_LOOK_EASE;
 				this.style.setProperty('--numa-look', this.look.toFixed(3));
 				this.applyLookFrames();
+				if (this.look !== this.lookTarget) this.scheduleLookTick();
 			});
 		}
 
@@ -750,6 +788,24 @@ const peekRestFrame = 4;
 			const { y, max } = this.getScrollMetrics();
 			this.lookTarget = Math.min(1, y / Math.min(max, 620));
 			this.scheduleLookTick();
+			window.clearTimeout(this.peekSnapTimer);
+			this.peekSnapTimer = window.setTimeout(() => {
+				this.lookTarget = this.snapLookToFrame(this.lookTarget);
+				this.scheduleLookTick();
+			}, PEEK_SNAP_IDLE_MS);
+		}
+
+		/** La mirada que corresponde al frame más cercano a `look` (del lado del scroll, desde el reposo). */
+		private snapLookToFrame(look: number) {
+			const stops = this.peekStops();
+			const restStop = stops[this.restFrameIndex()] ?? 0;
+			if (look <= 0 || restStop >= 1) return look;
+			const position = restStop + look * (1 - restStop);
+			let nearest = restStop;
+			for (const stop of stops) {
+				if (stop >= restStop && Math.abs(stop - position) < Math.abs(nearest - position)) nearest = stop;
+			}
+			return (nearest - restStop) / (1 - restStop);
 		}
 
 		private syncMobileAnchor() {

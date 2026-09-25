@@ -104,6 +104,16 @@ test('el cliente reporta configuración inválida antes de exponer una llamada a
 	);
 });
 
+test('la línea de tiempo del asomo cubre los 30 frames en orden', async () => {
+	const { NUMA_PEEK_STOPS } = await import('../src/lib/numa-peek-timeline.ts');
+	assert.equal(NUMA_PEEK_STOPS.length, 30);
+	assert.equal(NUMA_PEEK_STOPS[0], 0);
+	assert.equal(NUMA_PEEK_STOPS[29], 1);
+	for (let index = 1; index < NUMA_PEEK_STOPS.length; index++) {
+		assert.ok(NUMA_PEEK_STOPS[index] >= NUMA_PEEK_STOPS[index - 1], `frame ${index} en orden`);
+	}
+});
+
 test('el resumen del día es una acción rápida local de Numa', () => {
 	const [first] = ASSISTANT_SUGGESTED_QUESTIONS;
 	assert.equal(first.label, 'Resumen del día');
@@ -251,8 +261,13 @@ test('la mascota y el BFF quedan desacoplados de ATC', () => {
 	assert.match(mascot, /numa-peek-mobile-vertical-right-look-\$\{String\(index\)\.padStart\(2, '0'\)\}\.png/);
 	assert.match(mascot, /data-peek-rest/);
 	assert.match(mascot, /frames\[index\]\.style\.opacity = '1'/);
-	assert.match(mascot, /frames\[index\]\.style\.zIndex = '2'/);
-	assert.match(mascot, /frames\[i\]\.style\.transition = fade \? `opacity 0s linear \$\{fade\}ms` : 'none'/);
+	// Asomo: fundido atado al scroll entre dos frames vecinos, repartido según cuánto cambia la pose.
+	assert.match(mascot, /import \{ NUMA_PEEK_STOPS \} from '\.\.\/lib\/numa-peek-timeline'/);
+	assert.match(mascot, /frames\[overlay\]\.style\.opacity = t\.toFixed\(3\)/);
+	assert.match(mascot, /this\.look \+ delta \* PEEK_LOOK_EASE/);
+	assert.doesNotMatch(mascot, /PEEK_FADE_MS/);
+	assert.match(mascot, /const t = peekCrossfade\(progress\)/);
+	assert.match(mascot, /this\.lookTarget = this\.snapLookToFrame\(this\.lookTarget\)/);
 	assert.doesNotMatch(mascot, /style\.visibility/);
 	assert.match(mascot, /nearestReadyFrame/);
 	assert.match(mascot, /frame\.dataset\.peekError = ''/);
