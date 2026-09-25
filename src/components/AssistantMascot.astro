@@ -287,11 +287,18 @@ const peekRestFrame = 4;
 	const PEEK_LOOK_EASE = 0.2;
 	// Al quedar quieto el scroll, la mirada se asienta en el frame más cercano (nunca queda a medio fundir).
 	const PEEK_SNAP_IDLE_MS = 160;
-	// Cruce en curva S sobre el 70% central de cada tramo: fluido y con menos tiempo de imagen doble.
-	const peekCrossfade = (t: number) => {
-		const x = Math.min(1, Math.max(0, (t - 0.15) / 0.7));
-		return x * x * (3 - 2 * x);
+	const smoothStep = (x: number) => {
+		const c = Math.min(1, Math.max(0, x));
+		return c * c * (3 - 2 * c);
 	};
+	/*
+	 * Fundido en dos tiempos por tramo: primero aparece el frame siguiente con el anterior todavía opaco
+	 * (nunca se ve el fondo) y recién después se va el anterior, así al final no quedan partes suyas
+	 * por fuera del contorno nuevo (p. ej. dos narices).
+	 */
+	const PEEK_OVERLAY_END = 0.55;
+	const peekOverlayOpacity = (t: number) => smoothStep(t / PEEK_OVERLAY_END);
+	const peekBaseOpacity = (t: number) => 1 - smoothStep((t - PEEK_OVERLAY_END) / (1 - PEEK_OVERLAY_END));
 
 	// Mantiene referencias a los sheets precargados para que el navegador no descarte su decodificación.
 	const warmedNumaSheets = new Map<string, HTMLImageElement>();
@@ -694,7 +701,8 @@ const peekRestFrame = 4;
 			for (let lower = 0; lower < stops.length - 1; lower++) {
 				const from = stops[lower];
 				const to = stops[lower + 1];
-				if (position > to || to <= from) continue;
+				// En la posición exacta de un frame se muestra solo ese frame (no el anterior fundido al 100%).
+				if (to <= from || position >= to) continue;
 				return { lower, upper: lower + 1, t: Math.min(1, Math.max(0, (position - from) / (to - from))) };
 			}
 			return { lower: stops.length - 1, upper: stops.length - 1, t: 0 };
@@ -738,7 +746,7 @@ const peekRestFrame = 4;
 			const frames = this.peekFrames;
 			if (!frames.length) return;
 			const { lower, upper, t: progress } = this.peekBlendForLook(this.look);
-			const t = peekCrossfade(progress);
+			const t = peekOverlayOpacity(progress);
 			const index = this.nearestReadyFrame(lower);
 			if (index < 0) return;
 			// Fundido atado al scroll: el frame base queda opaco (nunca se ve el fondo) y el siguiente se
@@ -756,6 +764,7 @@ const peekRestFrame = 4;
 			}
 			frames[index].style.opacity = '1';
 			frames[index].style.zIndex = '1';
+			if (overlay >= 0 && t >= 0.999) frames[index].style.opacity = peekBaseOpacity(progress).toFixed(3);
 			if (overlay >= 0) {
 				frames[overlay].style.opacity = t.toFixed(3);
 				frames[overlay].style.zIndex = '2';

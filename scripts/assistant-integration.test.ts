@@ -266,7 +266,9 @@ test('la mascota y el BFF quedan desacoplados de ATC', () => {
 	assert.match(mascot, /frames\[overlay\]\.style\.opacity = t\.toFixed\(3\)/);
 	assert.match(mascot, /this\.look \+ delta \* PEEK_LOOK_EASE/);
 	assert.doesNotMatch(mascot, /PEEK_FADE_MS/);
-	assert.match(mascot, /const t = peekCrossfade\(progress\)/);
+	assert.match(mascot, /const t = peekOverlayOpacity\(progress\)/);
+	assert.match(mascot, /if \(overlay >= 0 && t >= 0\.999\) frames\[index\]\.style\.opacity = peekBaseOpacity\(progress\)/);
+	assert.match(mascot, /if \(to <= from \|\| position >= to\) continue;/);
 	assert.match(mascot, /this\.lookTarget = this\.snapLookToFrame\(this\.lookTarget\)/);
 	assert.doesNotMatch(mascot, /style\.visibility/);
 	assert.match(mascot, /nearestReadyFrame/);
