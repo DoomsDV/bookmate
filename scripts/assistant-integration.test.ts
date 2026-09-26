@@ -237,7 +237,7 @@ test('la mascota y el BFF quedan desacoplados de ATC', () => {
 	// Mismo patrón que AtcChatModal: restaurar el canvas al enfocar y fijar el sheet en px.
 	assert.match(mascot, /this\.addEventListener\('focusin', this\.handleHostFocusIn/);
 	assert.match(mascot, /this\.applyMobileSheetLock\(\);\s+restorePanelScrollLayout\(\);/);
-	assert.match(mascot, /Math\.round\(getLayoutViewportHeight\(\) \* 0\.9\)/);
+	assert.match(mascot, /Math\.round\(getLayoutViewportHeight\(\)\)/);
 	assert.match(mascot, /this\.clearMobileSheetLock\(\);\s+this\.releasePanelScrollLock\(\);/);
 	assert.doesNotMatch(mascot, /settleKeyboardViewport/);
 	assert.match(mascot, /@media \(min-width: 1024px\) \{\n\t\t\.assistant-mascot__panel \.numa-front \{ display: none; \}/);

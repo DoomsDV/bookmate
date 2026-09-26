@@ -538,7 +538,7 @@ const peekRestFrame = 4;
 		private applyMobileSheetLock() {
 			if (!this.panel || !this.isMobileSheetViewport()) return;
 			if (!this.lockedSheetHeightPx) {
-				this.lockedSheetHeightPx = Math.round(getLayoutViewportHeight() * 0.9);
+				this.lockedSheetHeightPx = Math.round(getLayoutViewportHeight());
 			}
 			this.panel.style.height = `${this.lockedSheetHeightPx}px`;
 			this.panel.style.maxHeight = `${this.lockedSheetHeightPx}px`;
@@ -2385,10 +2385,12 @@ const peekRestFrame = 4;
 			width: 100%;
 			max-width: none;
 			min-width: 0;
-			height: 90svh;
-			max-height: 90svh;
+			height: 100svh;
+			max-height: 100svh;
 			min-height: 0;
-			border-radius: 1.5rem 1.5rem 0 0;
+			border-radius: 0;
+			border-top: 0;
+			padding-top: env(safe-area-inset-top, 0px);
 			border-bottom: 0;
 			box-shadow: var(--modal-shadow-sheet);
 			opacity: 1;
