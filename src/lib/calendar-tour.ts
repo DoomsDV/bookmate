@@ -9,6 +9,8 @@ const HELP_SELECTOR = '[data-calendar-tour-help]';
 const NEW_APPOINTMENT_SELECTOR = '[data-open-appointment-modal]';
 /** Solo flechas + Hoy (no filtros ni título). */
 const NAV_SELECTOR = '[data-calendar-tour-nav]';
+/** Mobile: título del mes (abre la vista mensual). */
+const MOBILE_MONTH_TITLE_SELECTOR = '.calendar-mobile-month-title';
 /** Solo Día/Semana/Mes/Lista (no actualizar/guía/agendar). */
 const VIEW_SWITCH_SELECTOR = '[data-calendar-tour-views]';
 
@@ -54,8 +56,8 @@ function buildTourSteps(): DriveStep[] {
 				title: isMobile ? 'Agenda' : 'Filtros',
 				description: isMobile
 					? hasProfessionalFilter()
-						? 'Abrí este menú para cambiar la vista (Día, 3 días o Lista) y filtrar por profesional o sucursal.'
-						: 'Abrí este menú para cambiar la vista (Día, 3 días o Lista) y filtrar por sucursal.'
+						? 'Abrí este menú para cambiar la vista (Día, 5 días, Mes o Lista) y filtrar por profesional o sucursal.'
+						: 'Abrí este menú para cambiar la vista (Día, 5 días, Mes o Lista) y filtrar por sucursal.'
 					: hasProfessionalFilter()
 						? 'Acota la vista del calendario por profesional y sucursal. Así puedes revisar la agenda de una persona, de una ubicación o de todo el equipo.'
 						: 'Acota la vista del calendario por sucursal para ver solo las reservas de una ubicación concreta.',
@@ -79,7 +81,19 @@ function buildTourSteps(): DriveStep[] {
 		});
 	}
 
-	if (document.querySelector(NAV_SELECTOR)) {
+	// Mobile: sin flechas; se navega deslizando y el mes abre la vista mensual.
+	if (isMobile && document.querySelector(MOBILE_MONTH_TITLE_SELECTOR)) {
+		steps.push({
+			element: MOBILE_MONTH_TITLE_SELECTOR,
+			popover: {
+				title: 'Navegación',
+				description:
+					'Deslizá el calendario hacia los costados para ver otros días. Tocá el mes para ver el mes completo y usá «Hoy» para volver al día actual.',
+				side: 'bottom',
+				align: 'start',
+			},
+		});
+	} else if (document.querySelector(NAV_SELECTOR)) {
 		steps.push({
 			element: NAV_SELECTOR,
 			popover: {

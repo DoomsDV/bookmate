@@ -96,8 +96,11 @@ interface ApiCalendarEvent {
 }
 
 const DESKTOP_DEFAULT_VIEW = 'timeGridWeek';
-const MOBILE_DEFAULT_VIEW = 'timeGridThreeDay';
-const MOBILE_ALLOWED_VIEWS = new Set(['timeGridDay', 'timeGridThreeDay', 'listWeek']);
+const MOBILE_DEFAULT_VIEW = 'timeGridFiveDay';
+const MOBILE_MONTH_VIEW = 'dayGridMonth';
+/** Mes en mobile: etiquetas por día antes de «+N». */
+const MOBILE_MONTH_MAX_EVENTS = 2;
+const MOBILE_ALLOWED_VIEWS = new Set(['timeGridDay', MOBILE_DEFAULT_VIEW, MOBILE_MONTH_VIEW, 'listWeek']);
 const MOBILE_SWIPE_MIN_DISTANCE_PX = 48;
 const MOBILE_SWIPE_HORIZONTAL_RATIO = 1.25;
 
@@ -297,6 +300,7 @@ class CalendarManager extends HTMLElement {
 		}
 		this.#listeners = new AbortController();
 		const signal = this.#listeners.signal;
+		this.bindFabTray(signal);
 
 		ensureSearchableSelect(requiredNodes.professionalFilter, {
 			placeholder: 'Buscar profesional...',
@@ -599,7 +603,7 @@ class CalendarManager extends HTMLElement {
 
 	private getFocusTargetViewType(currentViewType: string) {
 		if (currentViewType.startsWith('list')) return 'listWeek';
-		return this.isMobileLayout ? 'timeGridThreeDay' : 'timeGridWeek';
+		return this.isMobileLayout ? MOBILE_DEFAULT_VIEW : 'timeGridWeek';
 	}
 
 	private isTimeGridView(viewType: string) {
@@ -812,8 +816,9 @@ class CalendarManager extends HTMLElement {
 	private getHeaderToolbar(isMobile: boolean) {
 		return isMobile
 			? {
-					// Vistas viven en el sheet Agenda; toolbar = mes/año (izq) · flechas · Hoy · filtros (der).
-					left: 'title prev next,goToday',
+					// Vistas viven en el sheet Agenda; toolbar = mes (izq, abre la vista mensual) · Hoy · filtros (der).
+					// Sin flechas: se cambia de días o de mes deslizando.
+					left: 'title goToday',
 					center: '',
 					right: '',
 				}
@@ -842,7 +847,67 @@ class CalendarManager extends HTMLElement {
 			'.calendar-mobile-month-title, .fc-toolbar-title'
 		);
 		if (!title) return;
-		title.textContent = this.formatMobileToolbarTitle(this.calendar.getDate());
+		if (!title.classList.contains('calendar-mobile-month-title')) {
+			title.textContent = this.formatMobileToolbarTitle(this.calendar.getDate());
+			title.removeAttribute('role');
+			title.removeAttribute('tabindex');
+			title.removeAttribute('aria-label');
+			return;
+		}
+
+		// Estilo iOS: «‹ Septiembre» vuelve a la vista mensual; en el mes se muestra «Septiembre 2026».
+		const isMonth = this.calendar.view.type === MOBILE_MONTH_VIEW;
+		const date = isMonth ? this.calendar.getDate() : this.calendar.view.activeStart;
+		const month = new Intl.DateTimeFormat('es', { month: 'long' }).format(date);
+		const monthLabel = `${month.charAt(0).toUpperCase()}${month.slice(1)}`;
+		title.classList.toggle('is-month-view', isMonth);
+		if (isMonth) {
+			title.textContent = `${monthLabel} ${date.getFullYear()}`;
+			title.removeAttribute('role');
+			title.removeAttribute('tabindex');
+			title.removeAttribute('aria-label');
+			return;
+		}
+		title.textContent = monthLabel;
+		title.setAttribute('role', 'button');
+		title.setAttribute('tabindex', '0');
+		title.setAttribute('aria-label', `Ver ${monthLabel} ${date.getFullYear()} completo`);
+	}
+
+	/** Mobile: el título del mes abre la vista mensual. */
+	private handleMobileMonthTitleActivate = (event: Event) => {
+		if (!this.calendar || !this.isMobileViewport()) return;
+		const target = event.target;
+		if (!(target instanceof Element) || !target.closest('.calendar-mobile-month-title[role="button"]')) return;
+		if (event instanceof KeyboardEvent) {
+			if (event.key !== 'Enter' && event.key !== ' ') return;
+			event.preventDefault();
+		}
+		this.calendar.changeView(MOBILE_MONTH_VIEW, this.calendar.view.activeStart);
+		this.afterMobileViewChange();
+	};
+
+	/** Mobile: tocar un día del mes abre los 5 días desde esa fecha. */
+	private openMobileDaysFrom(date: Date) {
+		if (!this.calendar) return;
+		this.calendar.unselect();
+		this.calendar.changeView(MOBILE_DEFAULT_VIEW, date);
+		this.afterMobileViewChange();
+	}
+
+	private afterMobileViewChange() {
+		this.syncSheetViewOptions();
+		window.requestAnimationFrame(() => {
+			this.syncToolbarButtonGroupClasses();
+			this.syncMobileDayHeadersOption();
+			this.syncMobileStickyChrome();
+			this.syncCompactToolbarTitle();
+			this.calendar?.updateSize();
+		});
+	}
+
+	private isMobileMonthView(viewType?: string) {
+		return this.isMobileViewport() && (viewType ?? this.calendar?.view.type) === MOBILE_MONTH_VIEW;
 	}
 
 	private getCalendarHeightOption() {
@@ -925,9 +990,8 @@ class CalendarManager extends HTMLElement {
 	}
 
 	private buildStickyDayCellHtml(date: Date) {
-		const dayName = new Intl.DateTimeFormat('es-ES', { weekday: 'short' })
-			.format(date)
-			.replace('.', '');
+		const dayName = new Intl.DateTimeFormat('es-ES', { weekday: 'narrow' }).format(date).toUpperCase();
+		const isWeekend = date.getDay() === 0 || date.getDay() === 6;
 		const dayNumber = date.getDate();
 		const today = new Date();
 		const isToday =
@@ -935,7 +999,7 @@ class CalendarManager extends HTMLElement {
 			date.getMonth() === today.getMonth() &&
 			date.getDate() === today.getDate();
 		return `
-			<div class="calendar-sticky-days__cell${isToday ? ' is-today' : ''}">
+			<div class="calendar-sticky-days__cell${isToday ? ' is-today' : ''}${isWeekend ? ' is-weekend' : ''}">
 				<div class="custom-cal-header">
 					<span class="cal-day-name">${dayName}</span>
 					<span class="cal-day-number">${dayNumber}</span>
@@ -1535,6 +1599,11 @@ class CalendarManager extends HTMLElement {
 
 	private handleGoToday = () => {
 		if (!this.calendar) return;
+		if (this.isMobileMonthView()) {
+			this.openMobileDaysFrom(new Date());
+			window.requestAnimationFrame(() => this.scrollCalendarToNow(true));
+			return;
+		}
 		this.calendar.today();
 		window.requestAnimationFrame(() => {
 			this.scrollCalendarToNow(true);
@@ -1573,6 +1642,7 @@ class CalendarManager extends HTMLElement {
 
 		this.isMobileLayout = isMobile;
 		this.calendar.setOption('headerToolbar', this.getHeaderToolbar(isMobile));
+		this.calendar.setOption('dayMaxEvents', isMobile ? MOBILE_MONTH_MAX_EVENTS : false);
 		this.calendar.setOption('height', this.getCalendarHeightOption());
 		this.calendar.setOption(
 			'titleFormat',
@@ -1590,7 +1660,7 @@ class CalendarManager extends HTMLElement {
 			if (!MOBILE_ALLOWED_VIEWS.has(currentView)) {
 				this.calendar.changeView(MOBILE_DEFAULT_VIEW);
 			}
-		} else if (this.calendar.view.type === 'timeGridThreeDay') {
+		} else if (this.calendar.view.type === MOBILE_DEFAULT_VIEW) {
 			this.calendar.changeView(DESKTOP_DEFAULT_VIEW);
 		}
 
@@ -1603,6 +1673,92 @@ class CalendarManager extends HTMLElement {
 			this.syncMobileStickyChrome();
 			this.syncNowIndicatorSpan();
 		});
+	}
+
+	private ensureFabTray(fabStack: HTMLElement) {
+		let tray = fabStack.querySelector<HTMLElement>('[data-calendar-fab-tray]');
+		if (!tray) {
+			tray = document.createElement('div');
+			tray.className = 'calendar-fab-tray';
+			tray.id = 'calendar-fab-tray';
+			tray.setAttribute('data-calendar-fab-tray', '');
+			tray.inert = true;
+		}
+		let toggle = fabStack.querySelector<HTMLButtonElement>('[data-calendar-fab-toggle]');
+		if (!toggle) {
+			toggle = document.createElement('button');
+			toggle.type = 'button';
+			toggle.className = 'calendar-fab-toggle';
+			toggle.setAttribute('data-calendar-fab-toggle', '');
+			toggle.setAttribute('aria-controls', 'calendar-fab-tray');
+			toggle.setAttribute('aria-expanded', 'false');
+			toggle.setAttribute('aria-label', 'Más acciones');
+			toggle.innerHTML = '<span class="material-symbols-rounded" aria-hidden="true">expand_less</span>';
+		}
+		return { tray, toggle };
+	}
+
+	private setFabTrayOpen(open: boolean) {
+		const fabStack = this.querySelector<HTMLElement>('[data-calendar-fab-stack]');
+		const tray = fabStack?.querySelector<HTMLElement>('[data-calendar-fab-tray]');
+		const toggle = fabStack?.querySelector<HTMLButtonElement>('[data-calendar-fab-toggle]');
+		if (!fabStack || !tray || !toggle) return;
+		if (fabStack.classList.contains('is-expanded') === open) return;
+		fabStack.classList.toggle('is-expanded', open);
+		tray.inert = !open;
+		toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+		this.syncFabToggleLabel();
+	}
+
+	private syncFabToggleLabel() {
+		const toggle = this.querySelector<HTMLButtonElement>('[data-calendar-fab-toggle]');
+		if (!toggle) return;
+		const open = toggle.getAttribute('aria-expanded') === 'true';
+		const conflicts = this.misalignedAppointments.length;
+		const base = open ? 'Ocultar acciones' : 'Más acciones';
+		toggle.setAttribute(
+			'aria-label',
+			conflicts > 0 ? `${base} (${conflicts} ${conflicts === 1 ? 'conflicto' : 'conflictos'})` : base
+		);
+	}
+
+	private bindFabTray(signal: AbortSignal) {
+		this.addEventListener(
+			'click',
+			(event) => {
+				const target = event.target;
+				if (!(target instanceof Element)) return;
+				if (target.closest('[data-calendar-fab-toggle]')) {
+					const open = this.querySelector('[data-calendar-fab-stack]')?.classList.contains('is-expanded');
+					this.setFabTrayOpen(!open);
+					return;
+				}
+				// Usar una acción de la bandeja la cierra.
+				if (target.closest('[data-calendar-fab-tray] button')) this.setFabTrayOpen(false);
+			},
+			{ signal }
+		);
+		document.addEventListener(
+			'pointerdown',
+			(event) => {
+				const target = event.target;
+				if (target instanceof Element && target.closest('[data-calendar-fab-stack]')) return;
+				this.setFabTrayOpen(false);
+			},
+			{ signal }
+		);
+		document.addEventListener(
+			'keydown',
+			(event) => {
+				if (event.key !== 'Escape') return;
+				const stack = this.querySelector('[data-calendar-fab-stack]');
+				if (!stack?.classList.contains('is-expanded')) return;
+				this.setFabTrayOpen(false);
+				stack.querySelector<HTMLButtonElement>('[data-calendar-fab-toggle]')?.focus();
+			},
+			{ signal }
+		);
+		window.addEventListener('scroll', () => this.setFabTrayOpen(false), { capture: true, passive: true, signal });
 	}
 
 	private syncToolbarButtonGroupClasses() {
@@ -1627,7 +1783,7 @@ class CalendarManager extends HTMLElement {
 				(chunk) =>
 					chunk.querySelector('.fc-prev-button, .fc-next-button, .fc-goToday-button, .fc-today-button') &&
 					!chunk.querySelector(
-						'.fc-timeGridDay-button, .fc-timeGridThreeDay-button, .fc-timeGridWeek-button, .fc-dayGridMonth-button, .fc-listWeek-button'
+						'.fc-timeGridDay-button, .fc-timeGridFiveDay-button, .fc-timeGridWeek-button, .fc-dayGridMonth-button, .fc-listWeek-button'
 					)
 			) ?? null;
 		if (timeNavChunk) {
@@ -1638,7 +1794,7 @@ class CalendarManager extends HTMLElement {
 		const viewChunk =
 			chunks.find((chunk) =>
 				chunk.querySelector(
-					'.fc-timeGridDay-button, .fc-timeGridThreeDay-button, .fc-timeGridWeek-button, .fc-dayGridMonth-button, .fc-listWeek-button'
+					'.fc-timeGridDay-button, .fc-timeGridFiveDay-button, .fc-timeGridWeek-button, .fc-dayGridMonth-button, .fc-listWeek-button'
 				)
 			) ?? null;
 		if (viewChunk) {
@@ -1747,6 +1903,14 @@ class CalendarManager extends HTMLElement {
 		const unwrapFabStack = () => {
 			const fabStack = this.querySelector<HTMLElement>('[data-calendar-fab-stack]');
 			if (!fabStack) return;
+			// Desktop: sin bandeja desplegable; los botones vuelven sueltos al toolbar.
+			const tray = fabStack.querySelector<HTMLElement>('[data-calendar-fab-tray]');
+			if (tray) {
+				while (tray.firstChild) fabStack.insertBefore(tray.firstChild, tray);
+				tray.remove();
+			}
+			fabStack.querySelector('[data-calendar-fab-toggle]')?.remove();
+			fabStack.classList.remove('is-expanded');
 			while (fabStack.firstChild) {
 				home.appendChild(fabStack.firstChild);
 			}
@@ -1837,8 +2001,18 @@ class CalendarManager extends HTMLElement {
 				fabStack.setAttribute('data-calendar-fab-stack', '');
 			}
 			if (fabStack.parentElement !== home) home.appendChild(fabStack);
-			if (conflicts) fabStack.appendChild(conflicts);
-			if (refresh) fabStack.appendChild(refresh);
+			// Solo «+» a la vista; conflictos y refrescar en una bandeja que abre la flecha.
+			const { tray, toggle } = this.ensureFabTray(fabStack);
+			fabStack.appendChild(tray);
+			fabStack.appendChild(toggle);
+			if (conflicts) {
+				conflicts.dataset.fabLabel = 'Conflictos';
+				tray.appendChild(conflicts);
+			}
+			if (refresh) {
+				refresh.dataset.fabLabel = 'Actualizar';
+				tray.appendChild(refresh);
+			}
 			if (create) fabStack.appendChild(create);
 			this.querySelectorAll('[data-calendar-chrome-actions]').forEach((node) => {
 				if (!node.childElementCount) node.remove();
@@ -2083,6 +2257,14 @@ class CalendarManager extends HTMLElement {
 			selectMirror: true,
 			selectAllow: (span) => !this.isRangeInsideClosure(span.start, span.end),
 			nowIndicator: true,
+			dayMaxEvents: isMobile ? MOBILE_MONTH_MAX_EVENTS : false,
+			// En mobile la marca del eje muestra la hora actual (píldora estilo iOS); en desktop es un punto.
+			nowIndicatorContent: (arg) =>
+				arg.isAxis
+					? {
+							html: `<span class="cal-now-pill">${new Intl.DateTimeFormat('es', { hour: 'numeric', minute: '2-digit', hour12: true }).format(arg.date).replace(/\s?[ap]\.?\s?m\.?/i, '')}</span>`,
+						}
+					: undefined,
 			allDaySlot: false,
 			height: this.getCalendarHeightOption(),
 			dayHeaders: !this.shouldHideNativeDayHeaders(isMobile, isMobile ? MOBILE_DEFAULT_VIEW : DESKTOP_DEFAULT_VIEW),
@@ -2090,10 +2272,13 @@ class CalendarManager extends HTMLElement {
 			slotMinTime: '06:00:00',
 			slotMaxTime: '22:00:00',
 			slotLabelContent: (args) => {
-				const { hour, meridiem } = formatHourLabelAmPm(args.date.getHours());
+				const hours = args.date.getHours();
+				const { hour, meridiem } = formatHourLabelAmPm(hours);
 				if (!hour || !meridiem) return { html: '' };
+				// En mobile el mediodía se rotula «Mediodía», como en el calendario de iOS.
+				const noon = hours === 12 ? '<span class="cal-hour-label__noon">Mediodía</span>' : '';
 				return {
-					html: `<span class="cal-hour-label"><span class="cal-hour-label__hour">${hour}</span><span class="cal-hour-label__meridiem">${meridiem}</span></span>`,
+					html: `<span class="cal-hour-label${noon ? ' cal-hour-label--noon' : ''}"><span class="cal-hour-label__hour">${hour}</span><span class="cal-hour-label__meridiem">${meridiem}</span>${noon}</span>`,
 				};
 			},
 			headerToolbar: this.getHeaderToolbar(isMobile),
@@ -2105,10 +2290,12 @@ class CalendarManager extends HTMLElement {
 				},
 			},
 			views: {
-				timeGridThreeDay: {
+				timeGridFiveDay: {
 					type: 'timeGrid',
-					duration: { days: 3 },
-					buttonText: '3 días',
+					duration: { days: 5 },
+					buttonText: '5 días',
+					// Columnas angostas: solo la hora de inicio.
+					displayEventEnd: false,
 				},
 			},
 			titleFormat: isMobile
@@ -2131,6 +2318,12 @@ class CalendarManager extends HTMLElement {
 
 				// En vista mes solo hace falta el nombre del día; el número vive en cada celda.
 				if (args.view.type.startsWith('dayGrid')) {
+					if (this.isMobileViewport()) {
+						const letter = new Intl.DateTimeFormat('es-ES', { weekday: 'narrow' }).format(args.date).toUpperCase();
+						return {
+							html: `<div class="custom-cal-header custom-cal-header--month"><span class="cal-day-name">${letter}</span></div>`,
+						};
+					}
 					return {
 						html: `<div class="custom-cal-header custom-cal-header--month"><span class="cal-day-name">${dayName}</span></div>`,
 					};
@@ -2161,7 +2354,14 @@ class CalendarManager extends HTMLElement {
 			eventsSet: () => {
 				void this.applyPendingFocus(0);
 			},
+			dateClick: (info) => {
+				if (this.isMobileMonthView(info.view.type)) this.openMobileDaysFrom(info.date);
+			},
 			select: (info: DateSelectArg) => {
+				if (this.isMobileMonthView(info.view.type)) {
+					this.openMobileDaysFrom(info.start);
+					return;
+				}
 				const modal = hasAppointmentModalApi(this.appointmentModal) ? this.appointmentModal : null;
 				modal?.openCreate({
 					start: info.start,
@@ -2196,6 +2396,9 @@ class CalendarManager extends HTMLElement {
 			eventDidMount: (arg) => {
 				const source = String(arg.event.extendedProps?.source || '').trim().toLowerCase();
 				arg.el.setAttribute('data-appointment-id', String(arg.event.id));
+				// Color del estado como variable: en mobile la cita se pinta tenue con barra lateral (estilo iOS).
+				const eventColor = arg.backgroundColor || arg.borderColor || arg.event.backgroundColor;
+				if (eventColor) arg.el.style.setProperty('--cal-event-color', eventColor);
 				this.tryCompletePendingFocus(arg.event, arg.el);
 
 				if (isImmutableAppointmentEvent(arg.event)) {
@@ -2297,22 +2500,24 @@ class CalendarManager extends HTMLElement {
 		this.applyResponsiveCalendarLayout(true);
 		this.syncMobileStickyChrome();
 		this.bindHostResizeObserver(requiredNodes.calendarEl);
-		this.bindMobileThreeDaySwipe(requiredNodes.calendarEl, this.#listeners?.signal);
+		this.bindMobileSwipe(requiredNodes.calendarEl, this.#listeners?.signal);
+		const titleSignal = this.#listeners?.signal;
+		if (titleSignal) {
+			requiredNodes.calendarEl.addEventListener('click', this.handleMobileMonthTitleActivate, { signal: titleSignal });
+			requiredNodes.calendarEl.addEventListener('keydown', this.handleMobileMonthTitleActivate, { signal: titleSignal });
+		}
 	}
 
 	private isMobileSwipeEnabled() {
 		return this.isMobileViewport();
 	}
 
-	private canSwipeThreeDayView() {
-		return (
-			this.isMobileSwipeEnabled() &&
-			Boolean(this.calendar) &&
-			this.calendar.view.type === 'timeGridThreeDay'
-		);
+	/** Mobile: sin flechas, se navega deslizando (días, mes o lista). */
+	private canSwipeMobileView() {
+		return this.isMobileSwipeEnabled() && Boolean(this.calendar);
 	}
 
-	private bindMobileThreeDaySwipe(calendarEl: HTMLElement, signal?: AbortSignal) {
+	private bindMobileSwipe(calendarEl: HTMLElement, signal?: AbortSignal) {
 		if (!signal || !this.isMobileSwipeEnabled()) return;
 
 		const swipeSurface =
@@ -2323,7 +2528,7 @@ class CalendarManager extends HTMLElement {
 		};
 
 		const handleTouchStart = (event: TouchEvent) => {
-			if (!this.canSwipeThreeDayView() || event.touches.length !== 1) {
+			if (!this.canSwipeMobileView() || event.touches.length !== 1) {
 				resetSwipe();
 				return;
 			}
@@ -2333,7 +2538,7 @@ class CalendarManager extends HTMLElement {
 		};
 
 		const handleTouchEnd = (event: TouchEvent) => {
-			if (!this.swipeTouchStart || !this.canSwipeThreeDayView()) {
+			if (!this.swipeTouchStart || !this.canSwipeMobileView()) {
 				resetSwipe();
 				return;
 			}
@@ -2872,6 +3077,7 @@ class CalendarManager extends HTMLElement {
 			? `${count} ${count === 1 ? 'cita' : 'citas'} con conflicto de horario`
 			: 'Citas con conflicto de horario';
 		this.conflictsOpenButton?.setAttribute('aria-label', label);
+		this.syncFabToggleLabel();
 
 		if (this.conflictsSheet?.classList.contains('is-open') && !hasConflicts) {
 			this.closeConflictsSheet();

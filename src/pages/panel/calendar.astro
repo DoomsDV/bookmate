@@ -431,10 +431,21 @@ const googleErrorMessage = hasGoogleError
 															class="calendar-view-option"
 															role="option"
 															data-calendar-view-option
-															data-view="timeGridThreeDay"
+															data-view="timeGridFiveDay"
 															aria-selected="false"
 														>
-															<span>3 días</span>
+															<span>5 días</span>
+															<span class="material-symbols-rounded" aria-hidden="true">check</span>
+														</button>
+														<button
+															type="button"
+															class="calendar-view-option"
+															role="option"
+															data-calendar-view-option
+															data-view="dayGridMonth"
+															aria-selected="false"
+														>
+															<span>Mes</span>
 															<span class="material-symbols-rounded" aria-hidden="true">check</span>
 														</button>
 														<button
@@ -2996,6 +3007,125 @@ const googleErrorMessage = hasGoogleError
 			pointer-events: auto;
 		}
 
+		/*
+		 * Solo «+» a la vista. La flecha de arriba despliega conflictos y refrescar (con etiqueta),
+		 * flotando sobre ella para no ocupar lugar cerrada. Si hay conflictos, la flecha lleva un punto.
+		 */
+		.calendar-fab-stack {
+			gap: 0.5rem;
+		}
+
+		.calendar-fab-tray {
+			position: absolute;
+			right: 0;
+			bottom: 100%;
+			display: flex;
+			flex-direction: column;
+			align-items: flex-end;
+			gap: 0.5rem;
+			padding-bottom: 0.5rem;
+			pointer-events: none;
+		}
+
+		.calendar-fab-tray > button {
+			position: relative;
+			opacity: 0;
+			visibility: hidden;
+			transform: translateY(0.75rem) scale(0.8);
+			transition:
+				opacity 140ms ease,
+				transform 180ms ease,
+				visibility 0s linear 180ms;
+		}
+
+		.calendar-fab-stack.is-expanded .calendar-fab-tray > button {
+			opacity: 1;
+			visibility: visible;
+			transform: none;
+			pointer-events: auto;
+			transition:
+				opacity 160ms ease,
+				transform 240ms cubic-bezier(0.2, 0.9, 0.3, 1.25),
+				visibility 0s;
+		}
+
+		/* El más cercano a la flecha aparece primero. */
+		.calendar-fab-stack.is-expanded .calendar-fab-tray > button:first-child:not(:last-child) {
+			transition-delay: 45ms;
+		}
+
+		.calendar-fab-tray > button[data-fab-label]::before {
+			content: attr(data-fab-label);
+			position: absolute;
+			top: 50%;
+			right: calc(100% + 0.55rem);
+			padding: 0.4rem 0.7rem;
+			border-radius: 999px;
+			background: var(--surface-bright, #fff);
+			color: var(--on-surface);
+			font-size: 0.8rem;
+			font-weight: 650;
+			line-height: 1;
+			white-space: nowrap;
+			box-shadow:
+				0 0 0 1px color-mix(in srgb, var(--on-surface) 10%, transparent),
+				0 4px 12px color-mix(in srgb, #0e1014 12%, transparent);
+			transform: translateY(-50%);
+			pointer-events: none;
+		}
+
+		.calendar-fab-toggle {
+			position: relative;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 2.3rem;
+			height: 2.3rem;
+			padding: 0;
+			border: 0;
+			border-radius: 999px;
+			background: var(--control-surface);
+			color: var(--on-surface-variant);
+			box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 10%, transparent);
+			cursor: pointer;
+			-webkit-tap-highlight-color: transparent;
+		}
+
+		.calendar-fab-toggle .material-symbols-rounded {
+			font-size: 1.4rem;
+			transition: transform 200ms ease;
+		}
+
+		.calendar-fab-stack.is-expanded .calendar-fab-toggle .material-symbols-rounded {
+			transform: rotate(180deg);
+		}
+
+		.calendar-fab-toggle:focus-visible {
+			outline: 2px solid color-mix(in srgb, var(--primary) 55%, transparent);
+			outline-offset: 2px;
+		}
+
+		/* Conflictos pendientes: aviso en la flecha mientras la bandeja está cerrada. */
+		.calendar-fab-stack:not(.is-expanded):has(.calendar-conflicts-trigger:not(.hidden)) .calendar-fab-toggle::after {
+			content: '';
+			position: absolute;
+			top: 0.1rem;
+			right: 0.1rem;
+			width: 0.6rem;
+			height: 0.6rem;
+			border-radius: 999px;
+			background: #f59e0b;
+			box-shadow: 0 0 0 2px var(--page-background, var(--surface));
+		}
+
+		@media (prefers-reduced-motion: reduce) {
+			.calendar-fab-tray > button,
+			.calendar-fab-stack.is-expanded .calendar-fab-tray > button,
+			.calendar-fab-toggle .material-symbols-rounded {
+				transition: none;
+			}
+		}
+
 		.calendar-fab-stack .calendar-refresh-btn {
 			width: 3.05rem;
 			height: 3.05rem;
@@ -4170,6 +4300,472 @@ const googleErrorMessage = hasGoogleError
 
 		[data-calendar-root] .cal-hour-label__meridiem {
 			font-size: 0.48rem;
+		}
+	}
+
+	/* Solo mobile: rótulo «Mediodía» y píldora con la hora actual. */
+	[data-calendar-root] .cal-hour-label__noon,
+	[data-calendar-root] .cal-now-pill {
+		display: none;
+	}
+
+	/*
+	 * Mobile estilo calendario de iOS: 5 días sin flechas (se desliza), «‹ Mes» abre la vista
+	 * mensual, franja de días con inicial + número, solo líneas de hora y la hora actual en una píldora.
+	 */
+	@media (max-width: 767px) {
+		/* Se navega deslizando: que el gesto no dispare el «atrás» del navegador (Chrome Android). */
+		html:has([data-calendar-root]),
+		body:has([data-calendar-root]),
+		[data-calendar-root] .fc .fc-view-harness {
+			overscroll-behavior-x: none;
+		}
+
+		/* Toolbar: «‹ Septiembre» a la izquierda, Hoy · filtros · guía a la derecha */
+		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav [data-calendar-tour-nav]:empty {
+			display: none;
+		}
+
+		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav .calendar-mobile-month-title,
+		html[data-theme='dark'] [data-calendar-root] .fc .fc-toolbar-chunk--time-nav .calendar-mobile-month-title {
+			gap: 0.05rem;
+			margin-left: -0.3rem;
+			padding: 0.3rem 0.4rem 0.3rem 0.1rem;
+			border-radius: 0.75rem;
+			color: var(--primary);
+			font-size: 1.2rem;
+			font-weight: 700;
+			letter-spacing: -0.02em;
+			cursor: pointer;
+			-webkit-tap-highlight-color: transparent;
+			transition: background-color 140ms ease;
+		}
+
+		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav .calendar-mobile-month-title[role='button']::before {
+			content: 'chevron_left';
+			font-family: 'Material Symbols Rounded';
+			font-size: 1.65rem;
+			font-weight: 400;
+			line-height: 1;
+			letter-spacing: 0;
+			font-variation-settings: 'wght' 500, 'opsz' 24;
+		}
+
+		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav .calendar-mobile-month-title[role='button']:active {
+			background: color-mix(in srgb, var(--primary) 12%, transparent);
+		}
+
+		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav .calendar-mobile-month-title[role='button']:focus-visible {
+			outline: 2px solid color-mix(in srgb, var(--primary) 55%, transparent);
+			outline-offset: 1px;
+		}
+
+		/* Fila compacta: Hoy · filtros · guía más chicos */
+		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav .calendar-time-nav-end {
+			gap: 0.35rem;
+		}
+
+		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav :is(.calendar-filters-trigger, .calendar-tour-help) {
+			width: 2.5rem;
+			height: 2.5rem;
+			min-width: 2.5rem;
+			min-height: 2.5rem;
+			flex-basis: 2.5rem;
+		}
+
+		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav :is(.fc-goToday-button, .fc-today-button) {
+			width: 2.5rem;
+			min-width: 2.5rem;
+			height: 2.5rem;
+			min-height: 2.5rem;
+			padding: 0;
+			border-radius: 999px !important;
+			font-size: 0.74rem;
+		}
+
+		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav .calendar-mobile-month-title.is-month-view,
+		html[data-theme='dark'] [data-calendar-root] .fc .fc-toolbar-chunk--time-nav .calendar-mobile-month-title.is-month-view {
+			margin-left: 0;
+			padding-left: 0;
+			color: var(--on-surface);
+			cursor: default;
+		}
+
+		/* Franja de días: inicial arriba, número abajo; hoy en círculo lleno */
+		[data-calendar-root] .calendar-sticky-days {
+			padding-block: 0.35rem 0.45rem;
+			border-bottom: 1px solid var(--calendar-outline);
+		}
+
+		[data-calendar-root] .calendar-sticky-days__axis {
+			flex-basis: 3.3rem;
+			width: 3.3rem;
+			min-width: 3.3rem;
+		}
+
+		[data-calendar-root] .calendar-sticky-days__cell {
+			padding: 0;
+			border-left: 0;
+		}
+
+		[data-calendar-root] .calendar-sticky-days .custom-cal-header {
+			gap: 0.2rem;
+		}
+
+		[data-calendar-root] .calendar-sticky-days .cal-day-name {
+			color: var(--on-surface-variant);
+			font-size: 0.68rem;
+			font-weight: 600;
+			letter-spacing: 0;
+			text-transform: none;
+		}
+
+		[data-calendar-root] .calendar-sticky-days .cal-day-number {
+			width: 2rem;
+			height: 2rem;
+			border: 0;
+			border-radius: 999px;
+			background: transparent;
+			color: var(--on-surface);
+			font-size: 1.15rem;
+			font-weight: 500;
+			letter-spacing: -0.02em;
+		}
+
+		[data-calendar-root] .calendar-sticky-days__cell.is-weekend .cal-day-number {
+			color: var(--on-surface-variant);
+		}
+
+		[data-calendar-root] .calendar-sticky-days__cell.is-today .cal-day-name {
+			color: var(--primary);
+		}
+
+		[data-calendar-root] .calendar-sticky-days__cell.is-today .cal-day-number {
+			border: 0;
+			background: var(--primary);
+			color: var(--on-primary, #fff);
+			font-weight: 700;
+		}
+
+		/* Grilla: sin tarjeta, solo líneas de hora */
+		[data-calendar-root] .fc-timegrid .fc-scrollgrid,
+		[data-calendar-root] .fc-timegrid .fc-scrollgrid td,
+		[data-calendar-root] .fc-timegrid .fc-scrollgrid th {
+			border-radius: 0;
+		}
+
+		[data-calendar-root] .fc-timegrid .fc-scrollgrid {
+			border: 0;
+		}
+
+		[data-calendar-root] .fc .fc-timegrid-col,
+		[data-calendar-root] .fc .fc-scrollgrid-shrink,
+		[data-calendar-root] .fc .fc-scrollgrid-shrink-frame {
+			background: transparent;
+		}
+
+		[data-calendar-root] .fc .fc-timegrid-col.fc-day-today {
+			background: color-mix(in srgb, var(--primary) 4%, transparent);
+		}
+
+		[data-calendar-root] .fc .fc-timegrid-slot {
+			height: 1.7rem;
+		}
+
+		[data-calendar-root] .fc .fc-timegrid-slot-minor,
+		html[data-theme='dark'] [data-calendar-root] .fc .fc-timegrid-slot-minor {
+			border-top-color: transparent;
+		}
+
+		[data-calendar-root] .fc .fc-timegrid-slot-lane:not(.fc-timegrid-slot-minor) {
+			border-top-color: var(--calendar-outline);
+		}
+
+		/* Eje de horas: «7 a.m.» en una línea, centrado sobre la línea de la hora */
+		[data-calendar-root] .fc .fc-timegrid-axis,
+		[data-calendar-root] .fc .fc-timegrid-slot-label,
+		[data-calendar-root] .fc .fc-scrollgrid-shrink.fc-timegrid-axis,
+		[data-calendar-root] .fc .fc-timegrid-axis .fc-scrollgrid-shrink-frame {
+			width: 3.3rem !important;
+			min-width: 3.3rem !important;
+			max-width: 3.3rem;
+		}
+
+		[data-calendar-root] .fc .fc-timegrid-cols::after {
+			left: 3.3rem;
+		}
+
+		[data-calendar-root] .fc .fc-timegrid-slot-label {
+			vertical-align: top;
+			border-top-color: transparent !important;
+		}
+
+		[data-calendar-root] .fc .fc-timegrid-slot-label-cushion {
+			display: inline-block;
+			padding: 0 0.35rem 0 0;
+			transform: translateY(-50%);
+		}
+
+		/* FC mide el eje por contenido; se fija para que coincida con la franja de días. */
+		[data-calendar-root] .fc-timegrid colgroup > col:first-child {
+			width: 3.3rem !important;
+		}
+
+		[data-calendar-root] .cal-hour-label {
+			flex-direction: row;
+			align-items: baseline;
+			justify-content: flex-end;
+			gap: 0.08rem;
+			line-height: 1;
+		}
+
+		[data-calendar-root] .cal-hour-label__hour {
+			color: var(--on-surface-variant);
+			font-size: 0.78rem;
+			font-weight: 500;
+		}
+
+		[data-calendar-root] .cal-hour-label__meridiem {
+			color: var(--on-surface-variant);
+			font-size: 0.6rem;
+			font-weight: 500;
+			letter-spacing: 0;
+			text-transform: lowercase;
+		}
+
+		[data-calendar-root] .cal-hour-label--noon > :not(.cal-hour-label__noon) {
+			display: none;
+		}
+
+		[data-calendar-root] .cal-hour-label__noon {
+			display: inline;
+			color: var(--on-surface);
+			font-size: 0.68rem;
+			font-weight: 600;
+			letter-spacing: -0.01em;
+		}
+
+		/* Hora actual: píldora en el eje + línea sobre los días */
+		[data-calendar-root] .fc .fc-timegrid-now-indicator-arrow {
+			left: 0.2rem !important;
+			right: 0.2rem;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: auto;
+			height: 1.15rem;
+			margin-top: -0.575rem;
+			border-radius: 999px;
+			box-shadow: 0 0 0 2px var(--page-background, var(--surface));
+		}
+
+		[data-calendar-root] .cal-now-pill {
+			display: block;
+			color: var(--on-primary, #fff);
+			font-size: 0.68rem;
+			font-weight: 700;
+			font-variant-numeric: tabular-nums;
+			line-height: 1;
+			letter-spacing: -0.01em;
+		}
+
+		/* Citas estilo iOS: todo el ancho de la columna, fondo tenue del color del estado y barra lateral */
+		[data-calendar-root] .fc .fc-timegrid-col-events {
+			margin: 0 1px 0 0;
+		}
+
+		[data-calendar-root] .fc-timegrid .fc-event,
+		html[data-theme='dark'] [data-calendar-root] .fc-timegrid .fc-event {
+			--cal-event-tint: var(--cal-event-color, var(--primary));
+			border: 0 !important;
+			border-left: 3px solid var(--cal-event-tint) !important;
+			border-radius: 0.3rem;
+			padding: 0.1rem 0.16rem 0.1rem 0.22rem;
+			background-color: color-mix(in srgb, var(--cal-event-tint) 18%, var(--page-background, var(--surface))) !important;
+			box-shadow: none !important;
+		}
+
+		[data-calendar-root] .fc-timegrid .fc-event .fc-event-main,
+		html[data-theme='dark'] [data-calendar-root] .fc-timegrid .fc-event .fc-event-main {
+			color: color-mix(in srgb, var(--cal-event-tint) 72%, var(--on-surface)) !important;
+		}
+
+		/* Como iOS: nombre arriba, hora abajo */
+		[data-calendar-root] .fc-timegrid .fc-event .fc-event-title-container {
+			order: 1;
+		}
+
+		[data-calendar-root] .fc-timegrid .fc-event .fc-event-time {
+			order: 2;
+		}
+
+		[data-calendar-root] .fc-timegrid .fc-event .fc-event-main {
+			font-size: 0.64rem;
+			line-height: 1.15;
+		}
+
+		/* Columnas angostas: la insignia de asistencia solo reserva lugar junto a la hora. */
+		[data-calendar-root] .fc-timegrid .fc-event :is(.fc-event-main-frame, .fc-event-title-container) {
+			padding-right: 0 !important;
+		}
+
+		[data-calendar-root] .fc-timegrid .fc-event .fc-event-time {
+			margin: 0.05rem 0 0;
+			font-size: 0.6rem;
+			font-weight: 500;
+			opacity: 0.9;
+		}
+
+		[data-calendar-root] .fc-timegrid .fc-event .fc-event-title-container {
+			overflow: hidden;
+		}
+
+		[data-calendar-root] .fc-timegrid .fc-event .fc-event-title {
+			font-size: 0.64rem;
+			font-weight: 700;
+			overflow-wrap: normal;
+		}
+
+		/* La insignia de asistencia va abajo, junto a la hora, para no comerle ancho al nombre. */
+		[data-calendar-root] .fc-timegrid .fc-event .fc-event-attendance-badge {
+			top: auto;
+			bottom: 0.1rem;
+			right: 0.08rem;
+			inline-size: 0.62rem;
+			block-size: 0.62rem;
+			font-size: 0.46rem;
+		}
+
+		/* Vista mensual: números grandes, hoy en círculo, citas como puntos (tocar el día abre los 5 días) */
+		[data-calendar-root] .fc-dayGridMonth-view {
+			--fc-today-bg-color: transparent;
+		}
+
+		[data-calendar-root] .fc-dayGridMonth-view .fc-scrollgrid {
+			border: 0;
+			border-radius: 0;
+		}
+
+		[data-calendar-root] .fc-dayGridMonth-view .fc-col-header-cell {
+			border: 0 !important;
+			background: transparent;
+		}
+
+		[data-calendar-root] .fc-dayGridMonth-view .fc-col-header-cell-cushion {
+			padding: 0.3rem 0 0.45rem !important;
+		}
+
+		[data-calendar-root] .fc-dayGridMonth-view .cal-day-name {
+			color: var(--on-surface-variant);
+			font-size: 0.7rem;
+			font-weight: 600;
+		}
+
+		[data-calendar-root] .fc-dayGridMonth-view .fc-daygrid-day {
+			background: transparent;
+			cursor: pointer;
+		}
+
+		/* Como iOS, el mes ocupa todo el alto disponible (topbar, fila del mes, días y barra inferior aparte). */
+		[data-calendar-root] .fc-dayGridMonth-view .fc-daygrid-day-frame {
+			min-height: max(
+				4.2rem,
+				calc(
+					(100svh - var(--shell-header-height, 4rem) - 3.4rem - 2rem - var(--mobile-bottom-nav-height, 5.5rem) - env(safe-area-inset-bottom, 0px)) /
+						var(--calendar-month-weeks, 6)
+				)
+			);
+		}
+
+		[data-calendar-root] .fc-dayGridMonth-view .fc-daygrid-day-top {
+			padding: 0.3rem 0 0;
+		}
+
+		[data-calendar-root] .fc-dayGridMonth-view .fc-daygrid-day-number {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 2.05rem;
+			height: 2.05rem;
+			padding: 0;
+			border-radius: 999px;
+			color: var(--on-surface);
+			font-size: 1.1rem;
+			font-weight: 500;
+			letter-spacing: -0.02em;
+			pointer-events: none;
+		}
+
+		[data-calendar-root] .fc-dayGridMonth-view :is(.fc-day-sat, .fc-day-sun) .fc-daygrid-day-number {
+			color: var(--on-surface-variant);
+		}
+
+		[data-calendar-root] .fc-dayGridMonth-view .fc-day-other .fc-daygrid-day-number {
+			opacity: 0.35;
+		}
+
+		[data-calendar-root] .fc-dayGridMonth-view .fc-day-today .fc-daygrid-day-number {
+			background: var(--primary);
+			color: var(--on-primary, #fff);
+			font-weight: 700;
+			opacity: 1;
+		}
+
+		[data-calendar-root] .fc-dayGridMonth-view .fc-daygrid-day-events {
+			display: flex;
+			flex-direction: column;
+			gap: 0.12rem;
+			min-height: 0;
+			margin: 0.25rem 0.1rem 0.2rem;
+			pointer-events: none;
+		}
+
+		[data-calendar-root] .fc-dayGridMonth-view .fc-daygrid-event-harness {
+			margin: 0 !important;
+		}
+
+		/* Cada cita es una etiqueta tenue con el nombre, como en iOS */
+		[data-calendar-root] .fc-dayGridMonth-view .fc-daygrid-event,
+		html[data-theme='dark'] [data-calendar-root] .fc-dayGridMonth-view .fc-daygrid-event {
+			--cal-event-tint: var(--cal-event-color, var(--primary));
+			display: block;
+			margin: 0;
+			padding: 0.08rem 0.25rem;
+			border: 0;
+			border-radius: 0.3rem;
+			background: color-mix(in srgb, var(--cal-event-tint) 22%, var(--page-background, var(--surface)));
+			color: color-mix(in srgb, var(--cal-event-tint) 72%, var(--on-surface));
+			box-shadow: none;
+		}
+
+		[data-calendar-root] .fc-dayGridMonth-view .fc-daygrid-event :is(.fc-event-time, .fc-daygrid-event-dot, .fc-event-attendance-badge) {
+			display: none;
+		}
+
+		[data-calendar-root] .fc-dayGridMonth-view .fc-daygrid-event .fc-event-title {
+			display: block;
+			overflow: hidden;
+			color: inherit;
+			font-size: 0.6rem;
+			font-weight: 700;
+			line-height: 1.2;
+			text-overflow: clip;
+			white-space: nowrap;
+		}
+
+		[data-calendar-root] .fc-dayGridMonth-view .fc-daygrid-day-bottom {
+			margin: 0 0.1rem;
+			font-size: 0.58rem;
+			pointer-events: none;
+		}
+
+		[data-calendar-root] .fc-dayGridMonth-view .fc-daygrid-more-link {
+			color: var(--on-surface-variant);
+			font-weight: 600;
+		}
+
+		[data-calendar-root] .fc-dayGridMonth-view .fc-highlight {
+			background: transparent;
 		}
 	}
 
