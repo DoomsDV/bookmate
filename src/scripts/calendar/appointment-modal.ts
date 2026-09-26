@@ -1388,14 +1388,18 @@ class AppointmentModal extends HTMLElement {
 
 	private syncSubmitLabel(occurrences?: Date[] | null) {
 		if (!this.submitLabel || this.isSubmitting) return;
+		const count = (occurrences ?? this.getRecurrenceOccurrences())?.length ?? 0;
 		if (this.mode === 'create') {
-			const count = (occurrences ?? this.getRecurrenceOccurrences())?.length ?? 0;
 			this.submitLabel.textContent = seriesCreateSubmitLabel(this.isRecurrenceEnabled(), count);
 			return;
 		}
 		if (this.isImmutableReadOnly) return;
 		this.submitLabel.textContent =
-			this.activeTab === 'notes' ? 'Guardar ficha' : 'Guardar cambios';
+			this.activeTab === 'notes'
+				? 'Guardar ficha'
+				: this.isRecurrenceEnabled() && count > 1
+					? `Guardar y crear ${count - 1} ${count === 2 ? 'cita' : 'citas'}`
+					: 'Guardar cambios';
 	}
 
 	private getCurrentAppointmentStatus() {
@@ -2419,6 +2423,7 @@ class AppointmentModal extends HTMLElement {
 	setCreateMode() {
 		this.clearImmutableReadOnlyMode();
 		this.mode = 'create';
+		this.setRecurrenceVisible(true);
 		this.editingAppointmentId = 0;
 		this.editingPaymentStatus = null;
 		this.editingDepositAmount = null;
@@ -2455,8 +2460,6 @@ class AppointmentModal extends HTMLElement {
 			this.modalDescription.textContent = 'Actualiza los datos de la reserva seleccionada.';
 		}
 		if (this.submitIcon) this.submitIcon.textContent = 'save';
-		this.setRecurrenceVisible(false);
-		this.resetRecurrenceForm();
 		this.activeTab = 'details';
 		this.syncSubmitLabel();
 		this.syncDeleteButtonVisibility();
@@ -2525,6 +2528,7 @@ class AppointmentModal extends HTMLElement {
 		this.showAttendanceBlock(appointment);
 		this.showScheduleMisalignedBlock(appointment);
 		this.showSeriesNote(appointment);
+		this.setRecurrenceVisible(!appointment.series_id);
 
 		const status = String(appointment.status || '').trim().toUpperCase();
 		if (status === 'CANCELADO' || status === 'COMPLETADO') {
@@ -2841,7 +2845,7 @@ class AppointmentModal extends HTMLElement {
 	};
 
 	handleRecurrenceToggle = () => {
-		this.recurrenceWrap?.classList.toggle('is-enabled', this.isRecurrenceEnabled());
+		this.syncRecurrenceFields();
 		this.scheduleRecurrenceDetailsSync();
 	};
 
@@ -2850,7 +2854,7 @@ class AppointmentModal extends HTMLElement {
 	};
 
 	private isRecurrenceEnabled() {
-		return this.mode === 'create' && Boolean(this.recurrenceEnabledInput?.checked);
+		return Boolean(this.recurrenceEnabledInput?.checked);
 	}
 
 	private getRecurrenceMode(): 'count' | 'until' {
@@ -2991,7 +2995,15 @@ class AppointmentModal extends HTMLElement {
 			return;
 		}
 		const dates = occurrences ?? [];
-		this.recurrencePreview.textContent = formatSeriesPreview(startDate, dates);
+		const preview = formatSeriesPreview(startDate, dates);
+		const repeatCount = dates.length - 1;
+		this.recurrencePreview.textContent =
+			this.mode === 'edit' && dates.length > 1
+				? preview.replace(
+					/^Se crearán \d+ citas/,
+					`Esta reserva se repetirá ${repeatCount === 1 ? 'una vez' : `${repeatCount} veces`}`
+				)
+				: preview;
 		if (dates.length > 1) {
 			const shown = dates.slice(0, 6).map((date) => formatSeriesDateShort(date));
 			const extra = dates.length > 6 ? ` +${dates.length - 6} más` : '';
@@ -3079,6 +3091,17 @@ class AppointmentModal extends HTMLElement {
 				if (this.statusInput) setSearchableSelectValue(this.statusInput, 'COMPLETADO');
 			}
 		}
+		if (this.isRecurrenceEnabled()) {
+			const repeatCount = this.getRecurrenceOccurrences()?.length ?? 0;
+			if (repeatCount < SERIES_MIN_COUNT) {
+				this.showFormError('La serie semanal requiere al menos 2 citas. Revisá el recuento o la fecha de fin.');
+				return;
+			}
+			if (this.mode === 'edit' && payload.status !== 'CONFIRMADO') {
+				this.showFormError('Para repetir una reserva, su estado debe ser Confirmado.');
+				return;
+			}
+		}
 
 		// Fase C2: cancelar con seña pagada → confirmar reembolso vs pedir reprogramar.
 		if (
@@ -3119,6 +3142,28 @@ class AppointmentModal extends HTMLElement {
 
 			const response = await this.persistAppointment(payload);
 			if (!response) return;
+			if (this.mode === 'edit' && this.isRecurrenceEnabled()) {
+				try {
+					const created = await this.persistFutureRepeats(payload);
+					if (created === null) {
+						this.dispatchEvent(new CustomEvent('appointment:changed', {
+							bubbles: true,
+							detail: { mode: this.mode, message: response.message },
+						}));
+						this.showFormError('La reserva se guardó. No se crearon las repeticiones.');
+						return;
+					}
+					response.message += ` Se crearon ${created} ${created === 1 ? 'cita semanal' : 'citas semanales'} más.`;
+				} catch (error) {
+					this.dispatchEvent(new CustomEvent('appointment:changed', {
+						bubbles: true,
+						detail: { mode: this.mode, message: response.message },
+					}));
+					const reason = error instanceof Error ? ` ${error.message}` : '';
+					this.showFormError(`La reserva se guardó, pero no se pudieron crear las repeticiones.${reason}`);
+					return;
+				}
+			}
 
 			this.closeModal();
 			this.dispatchEvent(
@@ -3170,14 +3215,22 @@ class AppointmentModal extends HTMLElement {
 	> {
 		const isEdit = this.mode === 'edit';
 		const title = isEdit ? 'Guardar cambios' : 'Crear reserva';
-		const seriesCount = !isEdit ? this.getRecurrenceOccurrences()?.length ?? 0 : 0;
-		const isSeries = !isEdit && this.isRecurrenceEnabled() && seriesCount > 1;
+		const seriesCount = this.getRecurrenceOccurrences()?.length ?? 0;
+		const isSeries = this.isRecurrenceEnabled() && seriesCount > 1;
 		const lead = isEdit
-			? '¿Confirmás guardar los cambios de esta reserva?'
+			? isSeries
+				? `¿Confirmás guardar esta reserva y crear ${seriesCount - 1} ${seriesCount === 2 ? 'cita semanal' : 'citas semanales'} más?`
+				: '¿Confirmás guardar los cambios de esta reserva?'
 			: isSeries
 				? `¿Confirmás crear ${seriesCount} citas semanales?`
 				: '¿Confirmás crear esta reserva?';
-		const confirmText = isEdit ? 'Guardar' : isSeries ? `Crear ${seriesCount} citas` : 'Crear reserva';
+		const confirmText = isEdit
+			? isSeries
+				? 'Guardar y repetir'
+				: 'Guardar'
+			: isSeries
+				? `Crear ${seriesCount} citas`
+				: 'Crear reserva';
 		const messageHtml = `
 			<p class="app-alert-notify-lead">${lead}</p>
 			<label class="app-alert-notify-row">
@@ -3311,13 +3364,69 @@ class AppointmentModal extends HTMLElement {
 		}
 	}
 
+	private async persistFutureRepeats(payload: AppointmentFormPayload): Promise<number | null> {
+		const occurrences = this.getRecurrenceOccurrences();
+		if (!occurrences || occurrences.length < SERIES_MIN_COUNT) {
+			throw new Error('Revisá el recuento o la fecha de fin de la serie semanal.');
+		}
+		// La reserva editada conserva su ID; solo las fechas posteriores son nuevas citas.
+		const firstRepeat = occurrences[1];
+		const duration = new Date(payload.end_time).getTime() - new Date(payload.start_time).getTime();
+		const repeatBody = {
+			...this.buildCreateBody(payload),
+			start_time: toIsoWithOffset(firstRepeat),
+			end_time: toIsoWithOffset(new Date(firstRepeat.getTime() + duration)),
+		};
+		const additionalCount = occurrences.length - 1;
+		const recurrence = this.getRecurrenceMode() === 'until'
+			? { frequency: 'WEEKLY' as const, until: String(this.recurrenceUntilInput?.value || '').trim() }
+			: { frequency: 'WEEKLY' as const, count: additionalCount };
+
+		const run = async (acknowledgeScheduleMisalignment = false, skipConflicts = false) => {
+			const body = acknowledgeScheduleMisalignment
+				? { ...repeatBody, acknowledge_schedule_misalignment: true }
+				: repeatBody;
+			if (additionalCount === 1) {
+				await this.client!.createAppointment(body);
+				return 1;
+			}
+			const created = await this.client!.createAppointmentSeries({
+				...body,
+				recurrence,
+				...(skipConflicts ? { skip_conflicts: true } : {}),
+			});
+			return created.created || null;
+		};
+
+		try {
+			return await run();
+		} catch (error) {
+			if (additionalCount > 1 && this.isSeriesOverlapConflict(error)) {
+				if (!await this.confirmSeriesConflicts(error, additionalCount)) return null;
+				return run(false, true);
+			}
+			if (!isScheduleMisalignedConflictError(error)) throw error;
+			if (!await this.confirmScheduleMisalignment(error)) return null;
+			try {
+				return await run(true);
+			} catch (retryError) {
+				if (additionalCount === 1 || !this.isSeriesOverlapConflict(retryError)) throw retryError;
+				if (!await this.confirmSeriesConflicts(retryError, additionalCount)) return null;
+				return run(true, true);
+			}
+		}
+	}
+
 	private isSeriesOverlapConflict(error: unknown) {
 		if (!(error instanceof ApiClientError)) return false;
 		if (error.code === 'SERIES_CONFLICT') return true;
 		return error.conflicts.some((item) => item.reason === 'OVERLAP');
 	}
 
-	private async confirmSeriesConflicts(error: unknown): Promise<boolean> {
+	private async confirmSeriesConflicts(
+		error: unknown,
+		totalCount = this.getRecurrenceOccurrences()?.length ?? 0
+	): Promise<boolean> {
 		const conflicts =
 			error instanceof ApiClientError
 				? error.conflicts
@@ -3327,7 +3436,7 @@ class AppointmentModal extends HTMLElement {
 			.map((item) => `• ${formatSeriesConflictDate(item.start_time)}`)
 			.join('\n');
 		const extra = conflicts.length > 8 ? `\n• +${conflicts.length - 8} más` : '';
-		const freeCount = Math.max(0, (this.getRecurrenceOccurrences()?.length ?? 0) - conflicts.length);
+		const freeCount = Math.max(0, totalCount - conflicts.length);
 		const title = 'Conflictos de agenda en la serie';
 		const message =
 			(error instanceof ApiClientError ? error.message : 'Hay fechas ocupadas en la serie.') +
