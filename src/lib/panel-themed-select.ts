@@ -1,4 +1,23 @@
 const ROOT_SELECTOR = '.panel-themed-select, .schedule-themed-select';
+const OPEN_ROOT_SELECTOR = '.panel-themed-select.is-open, .schedule-themed-select.is-open';
+const MOBILE_SELECT_QUERY = '(max-width: 767px)';
+let responsiveListenerBound = false;
+
+function syncNativeSelectAccessibility(select: HTMLSelectElement): void {
+	const mobile = window.matchMedia(MOBILE_SELECT_QUERY).matches;
+	select.tabIndex = mobile ? 0 : -1;
+	if (mobile) select.removeAttribute('aria-hidden');
+	else select.setAttribute('aria-hidden', 'true');
+}
+
+function bindResponsiveListener(): void {
+	if (responsiveListenerBound) return;
+	responsiveListenerBound = true;
+	window.matchMedia(MOBILE_SELECT_QUERY).addEventListener('change', () => {
+		closePanelThemedSelects();
+		syncPanelThemedSelectTriggers();
+	});
+}
 
 export type PanelThemedSelectOptions = {
 	triggerClass?: string;
@@ -26,10 +45,35 @@ function getRootFromSelect(select: HTMLSelectElement): HTMLElement | null {
 	return select.closest<HTMLElement>(ROOT_SELECTOR);
 }
 
+function positionPanelThemedSelectMenu(root: HTMLElement, menu: HTMLElement, trigger: HTMLElement): void {
+	const viewportTop = window.visualViewport?.offsetTop ?? 0;
+	const viewportBottom = viewportTop + (window.visualViewport?.height ?? window.innerHeight);
+	let top = viewportTop;
+	let bottom = viewportBottom;
+	for (let parent = root.parentElement; parent; parent = parent.parentElement) {
+		if (!/(auto|scroll|hidden|clip)/.test(getComputedStyle(parent).overflowY)) continue;
+		const bounds = parent.getBoundingClientRect();
+		top = Math.max(top, bounds.top);
+		bottom = Math.min(bottom, bounds.bottom);
+		break;
+	}
+
+	const triggerBounds = trigger.getBoundingClientRect();
+	const spaceAbove = Math.max(0, triggerBounds.top - top);
+	const spaceBelow = Math.max(0, bottom - triggerBounds.bottom);
+	menu.style.maxHeight = '';
+	const menuHeight = Math.min(menu.scrollHeight, 256, (viewportBottom - viewportTop) * 0.48);
+	const openUpward = spaceBelow < menuHeight + 6 && spaceAbove > spaceBelow;
+	root.classList.toggle('is-open-upward', openUpward);
+	const available = openUpward ? spaceAbove : spaceBelow;
+	menu.style.maxHeight = `${Math.max(0, Math.min(256, available - 6))}px`;
+}
+
 export function mountPanelThemedSelect(
 	select: HTMLSelectElement,
 	options?: PanelThemedSelectOptions
 ): HTMLElement {
+	bindResponsiveListener();
 	const config = resolveOptions(options);
 	const existing = getRootFromSelect(select);
 	if (existing) {
@@ -71,6 +115,7 @@ export function mountPanelThemedSelect(
 
 	const parent = select.parentElement;
 	root.append(select, trigger, menu);
+	root.addEventListener('change', () => syncPanelThemedSelect(root, options));
 	syncPanelThemedSelect(root, options);
 	if (parent && !parent.contains(root)) {
 		parent.appendChild(root);
@@ -88,6 +133,7 @@ export function syncPanelThemedSelect(
 	const menu = root.querySelector('[data-panel-themed-select-menu]');
 	const trigger = root.querySelector<HTMLButtonElement>('[data-panel-themed-select-trigger]');
 	if (!select || !valueNode || !menu) return;
+	syncNativeSelectAccessibility(select);
 
 	const selected = select.selectedOptions[0];
 	const selectedLabel = selected?.textContent?.trim() || '';
@@ -108,6 +154,9 @@ export function syncPanelThemedSelect(
 		button.textContent = option.textContent;
 		menu.appendChild(button);
 	}
+	if (root.classList.contains('is-open') && !menu.hasAttribute('hidden') && trigger) {
+		positionPanelThemedSelectMenu(root, menu as HTMLElement, trigger);
+	}
 }
 
 function setPanelThemedSelectOpen(root: HTMLElement, open: boolean, options?: PanelThemedSelectOptions): void {
@@ -117,11 +166,16 @@ function setPanelThemedSelectOpen(root: HTMLElement, open: boolean, options?: Pa
 	menu.hidden = !open;
 	trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
 	root.classList.toggle('is-open', open);
-	if (open) syncPanelThemedSelect(root, options);
+	if (open) {
+		syncPanelThemedSelect(root, options);
+	} else {
+		root.classList.remove('is-open-upward');
+		menu.style.maxHeight = '';
+	}
 }
 
 export function closePanelThemedSelects(scope: ParentNode = document, except?: HTMLElement | null): void {
-	for (const root of scope.querySelectorAll<HTMLElement>(`${ROOT_SELECTOR}.is-open`)) {
+	for (const root of scope.querySelectorAll<HTMLElement>(OPEN_ROOT_SELECTOR)) {
 		if (except && root === except) continue;
 		setPanelThemedSelectOpen(root, false);
 	}
@@ -131,7 +185,10 @@ export function syncPanelThemedSelectTriggers(scope: ParentNode = document): voi
 	for (const root of scope.querySelectorAll<HTMLElement>(ROOT_SELECTOR)) {
 		const select = root.querySelector('select');
 		const trigger = root.querySelector<HTMLButtonElement>('[data-panel-themed-select-trigger]');
-		if (select && trigger) trigger.disabled = select.disabled;
+		if (select && trigger) {
+			trigger.disabled = select.disabled;
+			syncNativeSelectAccessibility(select);
+		}
 	}
 }
 
@@ -166,6 +223,15 @@ export function handlePanelThemedSelectClick(event: MouseEvent, options?: PanelT
 export function bindPanelThemedSelectRoot(scope: ParentNode, signal: AbortSignal): void {
 	const onClick = (event: MouseEvent) => handlePanelThemedSelectClick(event);
 	scope.addEventListener('click', onClick, { signal });
+	const repositionOpenMenus = () => {
+		for (const root of scope.querySelectorAll<HTMLElement>(OPEN_ROOT_SELECTOR)) {
+			const menu = root.querySelector<HTMLElement>('[data-panel-themed-select-menu]');
+			const trigger = root.querySelector<HTMLElement>('[data-panel-themed-select-trigger]');
+			if (menu && trigger) positionPanelThemedSelectMenu(root, menu, trigger);
+		}
+	};
+	scope.addEventListener('scroll', repositionOpenMenus, { capture: true, signal });
+	window.addEventListener('resize', repositionOpenMenus, { signal });
 
 	const onPointerDown = (event: PointerEvent) => {
 		const target = event.target;

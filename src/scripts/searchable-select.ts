@@ -4,6 +4,40 @@ export type SearchableSelectInstance = TomSelect;
 
 const instances = new WeakMap<HTMLSelectElement, TomSelect>();
 const bodyDropdownCleanups = new WeakMap<TomSelect, () => void>();
+const nativeMobileCleanups = new WeakMap<TomSelect, () => void>();
+
+/** Conserva Tom Select en escritorio y usa el picker del sistema en pantallas móviles. */
+export const bindNativeMobileTomSelect = (select: HTMLSelectElement, instance: TomSelect) => {
+	const mobile = window.matchMedia('(max-width: 767px)');
+	const syncAccessibility = () => {
+		if (mobile.matches) instance.close();
+		select.tabIndex = mobile.matches ? 0 : -1;
+		if (mobile.matches) select.removeAttribute('aria-hidden');
+		else select.setAttribute('aria-hidden', 'true');
+	};
+	const syncValue = () => {
+		if (!mobile.matches) return;
+		const value = select.multiple
+			? Array.from(select.selectedOptions, (option) => option.value)
+			: select.value;
+		instance.setValue(value, true);
+	};
+	select.addEventListener('change', syncValue, true);
+	mobile.addEventListener('change', syncAccessibility);
+	syncAccessibility();
+	const cleanup = () => {
+		select.removeEventListener('change', syncValue, true);
+		mobile.removeEventListener('change', syncAccessibility);
+		select.removeAttribute('aria-hidden');
+	};
+	nativeMobileCleanups.set(instance, cleanup);
+	return cleanup;
+};
+
+export const unbindNativeMobileTomSelect = (instance: TomSelect) => {
+	nativeMobileCleanups.get(instance)?.();
+	nativeMobileCleanups.delete(instance);
+};
 
 const usesFixedDropdown = (instance: TomSelect) => {
 	const parent = instance.settings.dropdownParent;
@@ -28,6 +62,20 @@ const getVisibleBounds = () => {
 	return { top: vv.offsetTop, bottom: vv.offsetTop + vv.height };
 };
 
+const getDropdownBounds = (control: HTMLElement) => {
+	const visible = getVisibleBounds();
+	let top = visible.top;
+	let bottom = visible.bottom;
+	for (let parent = control.parentElement; parent; parent = parent.parentElement) {
+		if (!/(auto|scroll|hidden|clip)/.test(getComputedStyle(parent).overflowY)) continue;
+		const bounds = parent.getBoundingClientRect();
+		top = Math.max(top, bounds.top);
+		bottom = Math.min(bottom, bounds.bottom);
+		break;
+	}
+	return { top, bottom };
+};
+
 const applyDropdownMaxHeight = (instance: TomSelect, maxHeight: number) => {
 	instance.dropdown.style.maxHeight = `${maxHeight}px`;
 	instance.dropdown.style.overflowY = 'hidden';
@@ -36,7 +84,7 @@ const applyDropdownMaxHeight = (instance: TomSelect, maxHeight: number) => {
 	const inputWrap = instance.dropdown.querySelector<HTMLElement>('.dropdown-input-wrap');
 	const chrome = inputWrap?.offsetHeight ?? 0;
 	if (content) {
-		content.style.maxHeight = `${Math.max(72, maxHeight - chrome)}px`;
+		content.style.maxHeight = `${Math.max(0, maxHeight - chrome)}px`;
 		content.style.overflowY = 'auto';
 	}
 };
@@ -46,7 +94,7 @@ const positionFixedDropdown = (instance: TomSelect) => {
 
 	const rect = instance.control.getBoundingClientRect();
 	const parent = instance.settings.dropdownParent;
-	const visible = getVisibleBounds();
+	const visible = getDropdownBounds(instance.control);
 
 	const spaceBelow = Math.max(
 		0,
@@ -60,10 +108,7 @@ const positionFixedDropdown = (instance: TomSelect) => {
 	const openUpward =
 		spaceBelow < Math.min(DROPDOWN_PREFERRED_MAX_PX, 200) && spaceAbove > spaceBelow;
 	const available = openUpward ? spaceAbove : spaceBelow;
-	const maxHeight = Math.min(
-		DROPDOWN_PREFERRED_MAX_PX,
-		Math.max(80, available || DROPDOWN_MIN_PX)
-	);
+	const maxHeight = Math.min(DROPDOWN_PREFERRED_MAX_PX, Math.max(0, available));
 
 	const clampBox = (
 		left: number,
@@ -185,6 +230,11 @@ export const bindFixedDropdownPosition = (instance: TomSelect) => {
 	});
 };
 
+export const unbindFixedDropdownPosition = (instance: TomSelect) => {
+	bodyDropdownCleanups.get(instance)?.();
+	bodyDropdownCleanups.delete(instance);
+};
+
 type SearchableSelectOptions = {
 	placeholder?: string;
 	maxOptions?: number;
@@ -234,6 +284,7 @@ export const ensureSearchableSelect = (
 	});
 
 	bindFixedDropdownPosition(instance);
+	bindNativeMobileTomSelect(select, instance);
 
 	instances.set(select, instance);
 	if (select.disabled) instance.disable();
@@ -327,8 +378,8 @@ export const destroySearchableSelect = (select: HTMLSelectElement | null | undef
 	if (!select) return;
 	const instance = instances.get(select);
 	if (!instance) return;
-	bodyDropdownCleanups.get(instance)?.();
-	bodyDropdownCleanups.delete(instance);
+	unbindFixedDropdownPosition(instance);
+	unbindNativeMobileTomSelect(instance);
 	instance.destroy();
 	instances.delete(select);
 	select.className = select.className

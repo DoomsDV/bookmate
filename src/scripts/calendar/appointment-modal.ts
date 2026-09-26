@@ -611,6 +611,8 @@ class AppointmentModal extends HTMLElement {
 		requiredNodes.customerNameInput.addEventListener('focus', this.handleCustomerFocus, { signal });
 		requiredNodes.customerNameInput.addEventListener('input', this.handleCustomerInput, { signal });
 		requiredNodes.customerNameInput.addEventListener('blur', this.handleCustomerBlur, { signal });
+		window.addEventListener('scroll', () => this.positionCustomerResults(), { capture: true, passive: true, signal });
+		window.addEventListener('resize', () => this.positionCustomerResults(), { passive: true, signal });
 		requiredNodes.clearCustomerButton.addEventListener('click', this.handleCustomerClear, { signal });
 		requiredNodes.customerPhoneInput.addEventListener('input', this.handlePhoneInput, { signal });
 		requiredNodes.customerPhoneInput.addEventListener('blur', this.handlePhoneBlur, { signal });
@@ -888,10 +890,30 @@ class AppointmentModal extends HTMLElement {
 
 	private hideCustomerResults() {
 		this.customerResults?.classList.add('hidden');
+		this.customerResults?.classList.remove('is-open-upward');
 	}
 
 	private showCustomerResults() {
 		this.customerResults?.classList.remove('hidden');
+		this.positionCustomerResults();
+	}
+
+	private positionCustomerResults() {
+		const results = this.customerResults;
+		const input = this.customerNameInput;
+		if (!results || !input || results.classList.contains('hidden')) return;
+		const scrollBounds = input.closest('[data-appointment-form-scroll]')?.getBoundingClientRect();
+		const viewportTop = window.visualViewport?.offsetTop ?? 0;
+		const viewportBottom = viewportTop + (window.visualViewport?.height ?? window.innerHeight);
+		const top = Math.max(viewportTop, scrollBounds?.top ?? viewportTop);
+		const bottom = Math.min(viewportBottom, scrollBounds?.bottom ?? viewportBottom);
+		const rect = input.getBoundingClientRect();
+		const above = Math.max(0, rect.top - top - 6);
+		const below = Math.max(0, bottom - rect.bottom - 6);
+		const desired = Math.min(results.scrollHeight, 240);
+		const upward = below < desired && above > below;
+		results.classList.toggle('is-open-upward', upward);
+		results.style.maxHeight = `${Math.min(240, upward ? above : below)}px`;
 	}
 
 	private setSelectedCustomer(customer: CustomerOption) {

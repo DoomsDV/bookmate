@@ -2561,6 +2561,11 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 		padding: 0.35rem;
 	}
 
+	.closure-motive-lov__results.is-open-upward {
+		top: auto;
+		bottom: calc(100% + 0.4rem);
+	}
+
 	.closure-motive-lov__option,
 	.closure-motive-lov__empty {
 		width: 100%;
@@ -2694,7 +2699,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 		font-weight: 700;
 	}
 
-	dialog[data-closure-form-dialog] .ts-wrapper .ts-dropdown {
+	dialog[data-closure-form-dialog] .ts-dropdown {
 		border: 1px solid var(--shell-border);
 		border-radius: 0.75rem;
 		background: var(--surface-bright);
@@ -2703,12 +2708,12 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 		max-height: 11rem;
 	}
 
-	dialog[data-closure-form-dialog] .ts-wrapper .ts-dropdown .ts-dropdown-content {
+	dialog[data-closure-form-dialog] .ts-dropdown .ts-dropdown-content {
 		max-height: 11rem;
 		overflow-y: auto;
 	}
 
-	dialog[data-closure-form-dialog] .ts-wrapper .ts-dropdown .option.active {
+	dialog[data-closure-form-dialog] .ts-dropdown .option.active {
 		background: var(--primary-soft);
 		color: var(--primary);
 	}

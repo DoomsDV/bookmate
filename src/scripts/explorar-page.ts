@@ -100,6 +100,18 @@ const initCombos = () => {
 		if (!select || !trigger || !valueNode || !menu) return;
 
 		root.dataset.explorarComboReady = '1';
+		const mobile = window.matchMedia('(max-width: 767px)');
+		const syncNativeAccessibility = () => {
+			select.tabIndex = mobile.matches ? 0 : -1;
+			if (mobile.matches) select.removeAttribute('aria-hidden');
+			else select.setAttribute('aria-hidden', 'true');
+			if (mobile.matches) closeExplorarCombos();
+		};
+		mobile.addEventListener('change', syncNativeAccessibility);
+		document.addEventListener('astro:before-swap', () => {
+			mobile.removeEventListener('change', syncNativeAccessibility);
+		}, { once: true });
+		syncNativeAccessibility();
 
 		const sync = () => {
 			const selected = select.selectedOptions[0];
@@ -128,6 +140,7 @@ const initCombos = () => {
 		};
 
 		sync();
+		select.addEventListener('change', sync);
 
 		trigger.addEventListener('click', (event) => {
 			event.preventDefault();
@@ -137,7 +150,7 @@ const initCombos = () => {
 		root.addEventListener('click', (event) => {
 			const target = event.target;
 			if (!(target instanceof Element)) return;
-			if (target.closest('[data-explorar-combo-trigger], [data-explorar-combo-menu]')) return;
+			if (target.closest('select, [data-explorar-combo-trigger], [data-explorar-combo-menu]')) return;
 			trigger.click();
 		});
 

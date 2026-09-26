@@ -83,6 +83,7 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 																		id="schedule-professional-select"
 																		class="sr-only"
 																		data-professional-select
+																		aria-labelledby="schedule-professional-label"
 																		tabindex="-1"
 																		aria-hidden="true"
 																	></select>
@@ -794,6 +795,25 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 	.schedule-pro-select__control {
 		position: relative;
 		min-width: 0;
+	}
+
+	@media (max-width: 767px) {
+		.schedule-pro-select__control > select.sr-only {
+			position: absolute !important;
+			inset: 0;
+			z-index: 2;
+			clip: auto !important;
+			clip-path: none !important;
+			width: 100% !important;
+			height: 100% !important;
+			margin: 0 !important;
+			pointer-events: auto;
+			opacity: 0;
+		}
+
+		.schedule-pro-select__menu {
+			display: none !important;
+		}
 	}
 
 	.schedule-pro-select__trigger {

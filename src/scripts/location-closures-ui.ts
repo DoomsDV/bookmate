@@ -1,4 +1,8 @@
 import TomSelect from 'tom-select';
+import {
+	bindFixedDropdownPosition, bindNativeMobileTomSelect,
+	unbindFixedDropdownPosition, unbindNativeMobileTomSelect,
+} from './searchable-select';
 import { showFlashMessage } from '../lib/flash';
 import { showOrgClosuresTour } from '../lib/org-closures-tour';
 import { destroyActiveBookmateTour } from '../lib/product-tour';
@@ -177,6 +181,8 @@ class LocationClosuresUI {
 		this.abortController?.abort();
 		this.abortController = null;
 		if (this.locationsTom) {
+			unbindFixedDropdownPosition(this.locationsTom);
+			unbindNativeMobileTomSelect(this.locationsTom);
 			this.locationsTom.destroy();
 			this.locationsTom = null;
 		}
@@ -293,6 +299,8 @@ class LocationClosuresUI {
 			},
 			{ signal }
 		);
+		window.addEventListener('scroll', () => this.positionMotiveResults(), { capture: true, passive: true, signal });
+		window.addEventListener('resize', () => this.positionMotiveResults(), { passive: true, signal });
 		this.els()?.motiveClear?.addEventListener(
 			'click',
 			(event) => {
@@ -420,11 +428,33 @@ class LocationClosuresUI {
 	}
 
 	private hideMotiveResults() {
-		this.els()?.motiveResults?.classList.add('hidden');
+		const results = this.els()?.motiveResults;
+		results?.classList.add('hidden');
+		results?.classList.remove('is-open-upward');
 	}
 
 	private showMotiveResults() {
 		this.els()?.motiveResults?.classList.remove('hidden');
+		this.positionMotiveResults();
+	}
+
+	private positionMotiveResults() {
+		const els = this.els();
+		const results = els?.motiveResults;
+		const input = els?.inputName;
+		if (!results || !input || results.classList.contains('hidden')) return;
+		const scrollBounds = input.closest('.closure-form__body')?.getBoundingClientRect();
+		const viewportTop = window.visualViewport?.offsetTop ?? 0;
+		const viewportBottom = viewportTop + (window.visualViewport?.height ?? window.innerHeight);
+		const top = Math.max(viewportTop, scrollBounds?.top ?? viewportTop);
+		const bottom = Math.min(viewportBottom, scrollBounds?.bottom ?? viewportBottom);
+		const rect = input.getBoundingClientRect();
+		const above = Math.max(0, rect.top - top - 6);
+		const below = Math.max(0, bottom - rect.bottom - 6);
+		const desired = Math.min(results.scrollHeight, 240);
+		const upward = below < desired && above > below;
+		results.classList.toggle('is-open-upward', upward);
+		results.style.maxHeight = `${Math.min(240, upward ? above : below)}px`;
 	}
 
 	private formatHolidayDate(iso: string) {
@@ -605,8 +635,11 @@ class LocationClosuresUI {
 			maxOptions: 200,
 			closeAfterSelect: false,
 			hideSelected: true,
+			dropdownParent: els.formDialog,
 			render: TOM_SELECT_ES_RENDER,
 		});
+		bindFixedDropdownPosition(this.locationsTom);
+		bindNativeMobileTomSelect(els.locationsSelect, this.locationsTom);
 	}
 
 	private async ensureLocationsLoaded() {

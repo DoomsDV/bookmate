@@ -175,6 +175,11 @@ html[data-theme='dark'] .appointment-modal-feedback__alert {
 	padding: 0.35rem;
 }
 
+.appointment-customer-results.is-open-upward {
+	top: auto;
+	bottom: calc(100% + 0.45rem);
+}
+
 .appointment-customer-option,
 .appointment-customer-empty {
 	width: 100%;
@@ -1303,5 +1308,4 @@ html[data-theme='dark'] .appointment-recurrence-date__native {
 .appointment-series-note[hidden] {
 	display: none;
 }
-
 

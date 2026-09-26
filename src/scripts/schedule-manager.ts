@@ -244,6 +244,18 @@ class ScheduleManager extends HTMLElement {
 
 		this.#listenerController = new AbortController();
 		const signal = this.#listenerController.signal;
+		if (this.proSelectTrigger) {
+			const mobile = window.matchMedia('(max-width: 767px)');
+			const syncNativeAccessibility = () => {
+				if (!this.professionalSelect) return;
+				this.professionalSelect.tabIndex = mobile.matches ? 0 : -1;
+				if (mobile.matches) this.professionalSelect.removeAttribute('aria-hidden');
+				else this.professionalSelect.setAttribute('aria-hidden', 'true');
+				if (mobile.matches) this.setProSelectOpen(false);
+			};
+			mobile.addEventListener('change', syncNativeAccessibility, { signal });
+			syncNativeAccessibility();
+		}
 
 		this.professionalSelect.addEventListener('change', this.handleProfessionalChange, { signal });
 		this.proSelectTrigger?.addEventListener('click', this.handleProSelectTriggerClick, { signal });

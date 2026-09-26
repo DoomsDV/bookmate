@@ -463,6 +463,10 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 <script>
 	import TomSelect from 'tom-select';
 	import {
+		bindFixedDropdownPosition, bindNativeMobileTomSelect,
+		unbindFixedDropdownPosition, unbindNativeMobileTomSelect,
+	} from '../../scripts/searchable-select';
+	import {
 		isAcceptedProfileImage,
 		ProfileImageCropper,
 	} from '../../lib/profile-image-crop';
@@ -746,6 +750,8 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 			if (this.closeTimer) window.clearTimeout(this.closeTimer);
 			this.clearSlugSuggestTimer();
 			if (this.servicesTom) {
+				unbindFixedDropdownPosition(this.servicesTom);
+				unbindNativeMobileTomSelect(this.servicesTom);
 				this.servicesTom.destroy();
 				this.servicesTom = null;
 			}
@@ -1651,7 +1657,10 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 				maxOptions: 200,
 				closeAfterSelect: false,
 				hideSelected: true,
+				dropdownParent: this.els.modal,
 			});
+			bindFixedDropdownPosition(this.servicesTom);
+			bindNativeMobileTomSelect(this.formEls.services, this.servicesTom);
 			
 			this.servicesTom.on('change', () => {
 				if (!this.suppressServicesTouched) this.servicesTouched = true;
@@ -2861,7 +2870,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 		font-weight: 700;
 	}
 
-	dialog[data-professional-modal] .ts-wrapper .ts-dropdown {
+	dialog[data-professional-modal] .ts-dropdown {
 		border: 1px solid var(--shell-border);
 		border-radius: 0.75rem;
 		background: var(--surface-bright);
@@ -2869,7 +2878,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 		overflow: hidden;
 	}
 
-	dialog[data-professional-modal] .ts-wrapper .ts-dropdown .option.active {
+	dialog[data-professional-modal] .ts-dropdown .option.active {
 		background: var(--primary-soft);
 		color: var(--primary);
 	}

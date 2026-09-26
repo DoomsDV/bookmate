@@ -7,6 +7,35 @@
 	width: 100%;
 }
 
+@media (max-width: 767px) {
+	.panel-themed-select > select.sr-only,
+	.schedule-themed-select > select.sr-only {
+		position: relative !important;
+		clip: auto !important;
+		clip-path: none !important;
+		width: 100% !important;
+		height: 3rem !important;
+		margin: 0 !important;
+		padding: 0 2.75rem 0 1rem !important;
+		overflow: visible !important;
+		white-space: normal !important;
+		border: 1px solid var(--shell-border) !important;
+		border-radius: 0.75rem;
+		background: var(--surface-bright);
+		color: var(--on-surface);
+		font-size: 0.95rem;
+		font-weight: 700;
+		appearance: auto;
+	}
+
+	.panel-themed-select > .panel-themed-select__trigger,
+	.panel-themed-select > .panel-themed-select__menu,
+	.schedule-themed-select > .schedule-themed-select__trigger,
+	.schedule-themed-select > .schedule-themed-select__menu {
+		display: none !important;
+	}
+}
+
 /* Ocultar chevron nativo del markup cuando el widget custom está montado */
 .relative:has(.panel-themed-select) > .pointer-events-none,
 .relative:has(.schedule-themed-select) > .pointer-events-none {
@@ -77,6 +106,12 @@
 	box-shadow:
 		0 0 0 1px color-mix(in srgb, var(--on-surface) 8%, transparent),
 		0 4px 12px color-mix(in srgb, #0e1014 8%, transparent);
+}
+
+.panel-themed-select.is-open-upward > .panel-themed-select__menu,
+.schedule-themed-select.is-open-upward > .schedule-themed-select__menu {
+	top: auto;
+	bottom: calc(100% + 0.35rem);
 }
 
 .panel-themed-select__menu[hidden],
