@@ -160,6 +160,7 @@ const peekRestFrame = 4;
 						height="768"
 						alt=""
 						aria-hidden="true"
+						loading="lazy"
 						decoding="async"
 					/>
 				))}
@@ -370,6 +371,7 @@ const peekRestFrame = 4;
 			const { signal } = this.abort;
 			this.listenerSignal = signal;
 			this.addEventListener('click', this.handleHostClick, { signal });
+			document.addEventListener('click', this.handleTopbarLauncherClick, { signal });
 			this.addEventListener('submit', this.handleHostSubmit, { signal });
 			this.addEventListener('keydown', this.handleHostKeydown, { signal });
 			this.addEventListener('input', this.handleHostInput, { signal });
@@ -433,9 +435,11 @@ const peekRestFrame = 4;
 				.sort((a, b) => Number(a.dataset.peekFrame) - Number(b.dataset.peekFrame));
 			this.peekFrameIndex = -1;
 			this.peekOverlayIndex = -1;
+			// En móvil Numa vive en el topbar: los frames del asomo (solo Analíticas en escritorio) no se piden.
+			const decodePeek = window.matchMedia('(min-width: 1024px)').matches;
 			for (const frame of this.peekFrames) {
 				this.watchPeekFrame(frame);
-				if (frame.decode) void frame.decode().catch(() => undefined);
+				if (decodePeek && frame.decode) void frame.decode().catch(() => undefined);
 			}
 			if (!this.messageListEl && this.messagesEl) {
 				const list = document.createElement('div');
@@ -786,7 +790,8 @@ const peekRestFrame = 4;
 		}
 
 		private syncPeekLook() {
-			if (!this.isMobilePeekActive() || this.prefersReducedMotion()) {
+			const peekVisible = this.isMobilePeekActive() && !window.matchMedia('(max-width: 1023px)').matches;
+			if (!peekVisible || this.prefersReducedMotion()) {
 				this.look = 0;
 				this.lookTarget = 0;
 				this.peekTargetStop = -1;
@@ -931,7 +936,24 @@ const peekRestFrame = 4;
 			this.close();
 		};
 
+		private handleTopbarLauncherClick = (event: Event) => {
+			const target = event.target;
+			if (!(target instanceof Element) || !target.closest('[data-assistant-topbar-launcher]')) return;
+			this.toggle();
+		};
+
+		private topbarLauncher() {
+			return document.querySelector<HTMLButtonElement>('[data-assistant-topbar-launcher]');
+		}
+
+		private isTopbarLauncherActive() {
+			const launcher = this.topbarLauncher();
+			return Boolean(launcher && launcher.offsetParent !== null);
+		}
+
 		private handleOutsidePointer = (event: PointerEvent) => {
+			const target = event.target;
+			if (target instanceof Element && target.closest('[data-assistant-topbar-launcher]')) return;
 			if (this.resizeState || !this.isOpen() || this.contains(event.target as Node)) return;
 			this.close();
 		};
@@ -1071,6 +1093,7 @@ const peekRestFrame = 4;
 			if (!this.panel || !this.launcher) return;
 			this.panel.hidden = false;
 			this.launcher.setAttribute('aria-expanded', 'true');
+			this.topbarLauncher()?.setAttribute('aria-expanded', 'true');
 			this.toggleAttribute('data-assistant-open', true);
 			this.clearError();
 			this.react();
@@ -1103,6 +1126,7 @@ const peekRestFrame = 4;
 			if (!this.panel || !this.launcher || !this.isOpen()) return;
 			this.panel.classList.remove('is-open');
 			this.launcher.setAttribute('aria-expanded', 'false');
+			this.topbarLauncher()?.setAttribute('aria-expanded', 'false');
 			this.removeAttribute('data-assistant-open');
 			this.hideBackdrop();
 			this.input?.blur();
@@ -1113,7 +1137,8 @@ const peekRestFrame = 4;
 				this.clearMobileSheetLock();
 				this.releasePanelScrollLock();
 			}, 150);
-			this.launcher.focus({ preventScroll: true });
+			const focusTarget = this.isTopbarLauncherActive() ? this.topbarLauncher() : this.launcher;
+			focusTarget?.focus({ preventScroll: true });
 		}
 
 		private resizeInput() {
@@ -2321,21 +2346,8 @@ const peekRestFrame = 4;
 			bottom: auto;
 			left: auto;
 		}
-		assistant-mascot[data-assistant-mobile-peek] .assistant-mascot__art--dashboard-mobile { display: none; }
-		assistant-mascot[data-assistant-mobile-peek] .assistant-mascot__peek { display: block; }
-		assistant-mascot[data-assistant-mobile-peek] .assistant-mascot__launcher {
-			width: 4.85rem;
-			aspect-ratio: 2 / 3;
-		}
-		assistant-mascot[data-assistant-mobile-peek] .assistant-mascot__launcher:hover { transform: none; }
-		assistant-mascot[data-assistant-mobile-peek] .assistant-mascot__peek {
-			filter: drop-shadow(0 5px 7px rgb(24 51 112 / 0.18));
-		}
-		assistant-mascot[data-assistant-mobile-peek] .assistant-mascot__peek img {
-			animation: none;
-			filter: none;
-		}
-		html:has(assistant-mascot[data-assistant-mobile-peek]) .topbar-actions { margin-right: 3.4rem; }
+		/* Fuera del dashboard, en móvil Numa está acostada en el topbar ([data-assistant-topbar-launcher]). */
+		assistant-mascot[data-assistant-mobile-peek] .assistant-mascot__launcher { display: none; }
 		.assistant-mascot__backdrop {
 			display: block;
 			position: fixed;
@@ -2424,7 +2436,9 @@ const peekRestFrame = 4;
 		animation: none;
 		filter: none;
 	}
-	html:has(assistant-mascot[data-assistant-analytics-compact]) .topbar-actions { margin-right: 3.4rem; }
+	@media (min-width: 1024px) {
+		html:has(assistant-mascot[data-assistant-analytics-compact]) .topbar-actions { margin-right: 3.4rem; }
+	}
 	@keyframes numa-tail-swing {
 		0%, 100% { transform: rotate(0deg); }
 		50% { transform: rotate(-8deg); }

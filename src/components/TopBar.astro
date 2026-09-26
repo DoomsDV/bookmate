@@ -33,7 +33,7 @@ const { userName = 'Perfil' } = Astro.props;
 				</svg>
 			</button>
 
-			<div class="min-w-0">
+			<div class="topbar-brand flex min-w-0 items-center">
 				<a href="/panel/dashboard" class="topbar-brand-link no-underline" aria-label="Ir al dashboard">
 					<img
 						src="/icons/icon-64.png"
@@ -46,6 +46,17 @@ const { userName = 'Perfil' } = Astro.props;
 					/>
 					<span class="topbar-brand-wordmark">Hasel</span>
 				</a>
+				<!-- En móvil Numa reemplaza al logo y abre el asistente (fuera del dashboard, que la muestra en su card). -->
+				<button
+					type="button"
+					class="topbar-numa"
+					data-assistant-topbar-launcher
+					aria-label="Abrir Asistente Hasel"
+					title="Asistente Hasel"
+				>
+					<img data-topbar-numa-tail src="/assistant/numa-topbar-tail.webp" width="420" height="180" alt="" loading="lazy" decoding="async" />
+					<img src="/assistant/numa-topbar-body.webp" width="420" height="180" alt="" loading="lazy" decoding="async" />
+				</button>
 			</div>
 		</div>
 

@@ -1194,6 +1194,20 @@ html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header).is-scrol
 	box-shadow: none;
 }
 
+/*
+ * Móvil: el topbar siempre con el fondo de la página. Transparente dejaba ver el contenido
+ * detrás en pantallas que scrollean en otro contenedor (p. ej. la ficha del cliente),
+ * donde no se detecta .is-scrolled.
+ */
+@media (max-width: 1023px) {
+	.shell-header-zone:not(.sidebar-account-header),
+	.shell-header-zone:not(.sidebar-account-header).is-scrolled,
+	html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header),
+	html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header).is-scrolled {
+		background-color: var(--page-background);
+	}
+}
+
 @media (min-width: 1024px) {
 	.shell-header-zone:not(.sidebar-account-header).is-scrolled {
 		background-color: color-mix(in srgb, var(--page-background, #f9fafb) 86%, transparent);
@@ -1441,6 +1455,74 @@ html[data-page-hidden] .schedule-page-header__sticky-bar {
 	letter-spacing: -0.02em;
 	line-height: 1;
 	text-transform: none;
+}
+
+/*
+ * Numa acostada en lugar del logo: solo en móvil y en páginas donde el asistente no tiene otra ancla
+ * (el dashboard la muestra en su card). Reemplaza al logo y abre el asistente.
+ */
+.topbar-numa {
+	display: none;
+}
+
+@media (max-width: 1023px) {
+	html:has(assistant-mascot[data-assistant-mobile-peek]) .topbar-brand-link {
+		display: none;
+	}
+
+	html:has(assistant-mascot[data-assistant-mobile-peek]) .topbar-numa {
+		position: relative;
+		z-index: 1;
+		display: block;
+		flex-shrink: 0;
+		width: 5.9rem;
+		aspect-ratio: 7 / 3;
+		margin: 0;
+		padding: 0;
+		border: 0;
+		background: transparent;
+		line-height: 0;
+		cursor: pointer;
+		filter: drop-shadow(0 3px 4px rgb(24 51 112 / 0.16));
+		transform: translateY(1px);
+		-webkit-tap-highlight-color: transparent;
+	}
+
+	.topbar-numa img {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		pointer-events: none;
+		user-select: none;
+		-webkit-user-drag: none;
+	}
+
+	.topbar-numa [data-topbar-numa-tail] {
+		transform-origin: 80.6% 70.5%;
+		animation: topbar-numa-tail 1.5s ease-in-out infinite;
+	}
+
+	.topbar-numa:active {
+		transform: translateY(2px) scale(0.97);
+	}
+
+	.topbar-numa:focus-visible {
+		outline: 3px solid color-mix(in srgb, var(--primary) 58%, transparent);
+		outline-offset: 2px;
+		border-radius: 0.75rem;
+	}
+}
+
+@keyframes topbar-numa-tail {
+	0%, 100% { transform: rotate(0deg); }
+	50% { transform: rotate(-8deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.topbar-numa [data-topbar-numa-tail] {
+		animation: none;
+	}
 }
 
 @media (max-width: 380px) {

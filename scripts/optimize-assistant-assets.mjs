@@ -60,8 +60,29 @@ async function buildAvatar() {
 	return { before, after: buf.length };
 }
 
+// Numa acostada del topbar móvil: mismo recorte en cuerpo y cola para que las capas sigan alineadas.
+const TOPBAR_CROP = { left: 0, top: 70, width: 1200, height: 515 };
+const TOPBAR_WIDTH = 420;
+
+async function buildTopbarLayers() {
+	const layers = [
+		['numa-reading-mobile-body.png', 'numa-topbar-body.webp'],
+		['numa-tail-layer.png', 'numa-topbar-tail.webp'],
+	];
+	for (const [source, output] of layers) {
+		const buf = await sharp(join(ROOT, source))
+			.extract(TOPBAR_CROP)
+			.resize(TOPBAR_WIDTH, null)
+			.webp({ quality: 88, alphaQuality: 100, effort: 6 })
+			.toBuffer();
+		await sharp(buf).toFile(join(ROOT, output));
+		console.log(`${output}: ${(buf.length / 1024).toFixed(0)}K`);
+	}
+}
+
 async function main() {
 	let saved = 0;
+	await buildTopbarLayers();
 	for (const { name, maxWidth } of TARGETS) {
 		const { before, after } = await optimizePng(join(ROOT, name), maxWidth);
 		saved += before - after;
