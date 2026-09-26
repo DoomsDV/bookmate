@@ -3,6 +3,15 @@ import type { AppointmentAiDraft } from '../../lib/appointment-ai-types';
 import { APPOINTMENT_ATTACHMENT_MAX_BYTES } from '../../lib/appointment-attachment';
 import { formatPersonName } from '../../lib/format-person-name';
 import {
+	CUSTOMER_PRELOAD_LIMIT,
+	CUSTOMER_RESULTS_LIMIT,
+	CUSTOMER_SERVER_SEARCH_DEBOUNCE_MS,
+	customerSearchKey,
+	filterCustomersLocally,
+	isCustomerPreloadComplete,
+	shouldSearchCustomersOnServer,
+} from '../../lib/customer-search';
+import {
 	PARAGUAY_MOBILE_PHONE_ERROR,
 	parseParaguayMobilePhone,
 } from '../../lib/paraguay-phone';
@@ -245,6 +254,12 @@ class AppointmentModal extends HTMLElement {
 	immutableReadOnlyStatus: 'CANCELADO' | 'COMPLETADO' | null = null;
 	selectedCustomer: CustomerOption | null = null;
 	lastLoadedCustomerProfessionalId: number | null = null;
+	/** La precarga trajo a todos los clientes: no hace falta buscar en el servidor. */
+	customersPreloadComplete = false;
+	customerSearchResult: { key: string; customers: CustomerOption[] } | null = null;
+	customerSearchPendingKey: string | null = null;
+	customerSearchTimer: number | null = null;
+	customerSearchAbort: AbortController | null = null;
 	closeTimer: number | null = null;
 	#settleOpenHandler: ((event: AnimationEvent) => void) | null = null;
 	private unlockCanvasScroll: (() => void) | null = null;
@@ -912,20 +927,23 @@ class AppointmentModal extends HTMLElement {
 		const requiredNodes = this.getRequiredNodes();
 		if (!requiredNodes) return;
 
-		const query = requiredNodes.customerNameInput.value.trim().toLowerCase();
-		const matches = this.customers
-			.filter((customer) => {
-				if (!query) return true;
-				return `${customer.full_name} ${customer.phone_number}`.toLowerCase().includes(query);
-			})
-			.slice(0, 8);
+		const rawQuery = requiredNodes.customerNameInput.value;
+		const query = rawQuery.trim();
+		const searchKey = customerSearchKey(this.getCustomerFilterProfessionalId(), rawQuery);
+		const serverMatches =
+			this.customerSearchResult?.key === searchKey ? this.customerSearchResult.customers : null;
+		const matches = serverMatches
+			? serverMatches.slice(0, CUSTOMER_RESULTS_LIMIT)
+			: filterCustomersLocally(this.customers, rawQuery);
 
 		requiredNodes.customerResults.replaceChildren();
 
 		if (matches.length === 0) {
 			const empty = document.createElement('div');
 			empty.className = 'appointment-customer-empty';
-			empty.textContent = query
+			empty.textContent = this.customerSearchPendingKey === searchKey
+				? 'Buscando clientes…'
+				: query
 				? 'No existe. Completa el teléfono para crear este cliente.'
 				: this.roleId === ROLES.PROFESIONAL
 					? 'No hay clientes para este profesional.'
@@ -961,6 +979,7 @@ class AppointmentModal extends HTMLElement {
 		const professionalId = shouldFilterByProfessional ? this.getSelectedProfessionalId() : 0;
 		if (shouldFilterByProfessional && !professionalId) {
 			this.customers = [];
+			this.customersPreloadComplete = true;
 			this.lastLoadedCustomerProfessionalId = null;
 			if (shouldShowResults()) this.renderCustomerResults();
 			else this.hideCustomerResults();
@@ -980,18 +999,91 @@ class AppointmentModal extends HTMLElement {
 		try {
 			this.customers = await this.client.getCustomers({
 				...(shouldFilterByProfessional ? { pro_id: professionalId } : {}),
-				limit: 50,
+				limit: CUSTOMER_PRELOAD_LIMIT,
 			});
+			this.customersPreloadComplete = isCustomerPreloadComplete(this.customers.length);
 			this.lastLoadedCustomerProfessionalId = professionalId;
 			if (shouldShowResults()) this.renderCustomerResults();
 			else this.hideCustomerResults();
 		} catch {
 			this.customers = [];
+			this.customersPreloadComplete = false;
 			this.lastLoadedCustomerProfessionalId = professionalId;
 			if (shouldShowResults()) this.renderCustomerResults();
 			else this.hideCustomerResults();
 		} finally {
 			this.isLoadingCustomers = false;
+		}
+	}
+
+	private getCustomerFilterProfessionalId(): number {
+		return this.roleId === ROLES.PROFESIONAL ? this.getSelectedProfessionalId() : 0;
+	}
+
+	private resetCustomerSearch() {
+		if (this.customerSearchTimer !== null) {
+			window.clearTimeout(this.customerSearchTimer);
+			this.customerSearchTimer = null;
+		}
+		this.customerSearchAbort?.abort();
+		this.customerSearchAbort = null;
+		this.customerSearchResult = null;
+		this.customerSearchPendingKey = null;
+	}
+
+	/**
+	 * La precarga trae solo los clientes más recientes: si la organización tiene más,
+	 * busca en el servidor lo que se escribe (con espera entre teclas).
+	 */
+	private scheduleCustomerSearch() {
+		if (this.customerSearchTimer !== null) {
+			window.clearTimeout(this.customerSearchTimer);
+			this.customerSearchTimer = null;
+		}
+		const rawQuery = this.customerNameInput?.value ?? '';
+		const professionalId = this.getCustomerFilterProfessionalId();
+		const searchKey = customerSearchKey(professionalId, rawQuery);
+		if (
+			!this.client ||
+			this.selectedCustomer ||
+			!shouldSearchCustomersOnServer(rawQuery, this.customersPreloadComplete) ||
+			(this.roleId === ROLES.PROFESIONAL && !professionalId) ||
+			this.customerSearchResult?.key === searchKey
+		) {
+			this.customerSearchPendingKey = null;
+			return;
+		}
+
+		this.customerSearchPendingKey = searchKey;
+		this.customerSearchTimer = window.setTimeout(() => {
+			this.customerSearchTimer = null;
+			void this.runCustomerSearch(searchKey, rawQuery.trim(), professionalId);
+		}, CUSTOMER_SERVER_SEARCH_DEBOUNCE_MS);
+	}
+
+	private async runCustomerSearch(searchKey: string, query: string, professionalId: number) {
+		if (!this.client) return;
+		this.customerSearchAbort?.abort();
+		const controller = new AbortController();
+		this.customerSearchAbort = controller;
+		try {
+			const customers = await this.client.getCustomers({
+				...(professionalId ? { pro_id: professionalId } : {}),
+				limit: CUSTOMER_RESULTS_LIMIT,
+				search: query,
+				signal: controller.signal,
+			});
+			if (!controller.signal.aborted) this.customerSearchResult = { key: searchKey, customers };
+		} catch {
+			// Sin respuesta del servidor se sigue mostrando el filtro sobre los precargados.
+		} finally {
+			if (this.customerSearchAbort === controller) {
+				this.customerSearchAbort = null;
+				if (this.customerSearchPendingKey === searchKey) this.customerSearchPendingKey = null;
+				if (document.activeElement === this.customerNameInput && !this.selectedCustomer) {
+					this.renderCustomerResults();
+				}
+			}
 		}
 	}
 
@@ -1121,6 +1213,8 @@ class AppointmentModal extends HTMLElement {
 		if (requiredNodes.paymentStatusInput) requiredNodes.paymentStatusInput.value = 'NONE';
 		this.selectedCustomer = null;
 		this.customers = [];
+		this.customersPreloadComplete = false;
+		this.resetCustomerSearch();
 		this.lastLoadedCustomerProfessionalId = null;
 		this.hideCustomerResults();
 		this.hideAttendanceBlock();
@@ -2614,6 +2708,7 @@ class AppointmentModal extends HTMLElement {
 			this.clearSelectedCustomer();
 		}
 		this.setFieldError('customer_name', '');
+		this.scheduleCustomerSearch();
 		this.renderCustomerResults();
 	};
 
@@ -2623,6 +2718,7 @@ class AppointmentModal extends HTMLElement {
 
 	handleCustomerClear = () => {
 		this.clearSelectedCustomer({ clearFields: true });
+		this.resetCustomerSearch();
 		this.customerNameInput?.focus({ preventScroll: true });
 		void this.loadCustomersForCurrentProfessional(true);
 	};
@@ -2633,6 +2729,8 @@ class AppointmentModal extends HTMLElement {
 		if (this.roleId === ROLES.PROFESIONAL) {
 			if (this.selectedCustomer) this.clearSelectedCustomer({ clearFields: true });
 			this.customers = [];
+			this.customersPreloadComplete = false;
+			this.resetCustomerSearch();
 			this.lastLoadedCustomerProfessionalId = null;
 			void this.loadCustomersForCurrentProfessional(true);
 			return;

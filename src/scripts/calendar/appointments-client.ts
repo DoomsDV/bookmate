@@ -130,16 +130,21 @@ export class AppointmentsClient {
 		};
 	}
 
-	async getCustomers(params: { pro_id?: number; limit?: number } = {}): Promise<CustomerOption[]> {
+	async getCustomers(
+		params: { pro_id?: number; limit?: number; search?: string; signal?: AbortSignal } = {}
+	): Promise<CustomerOption[]> {
 		const query = new URLSearchParams({
 			page: '1',
 			limit: String(params.limit && params.limit > 0 ? params.limit : 50),
 		});
 		if (params.pro_id && params.pro_id > 0) query.set('pro_id', String(params.pro_id));
+		const search = String(params.search || '').trim();
+		if (search) query.set('search', search);
 
 		const response = await fetch(`/api/customers?${query.toString()}`, {
 			method: 'GET',
 			headers: { Accept: 'application/json' },
+			signal: params.signal,
 		});
 		const data = await parseJsonResponse(response);
 		ensureSuccess(response, data, 'No fue posible cargar clientes.');
